@@ -119,6 +119,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
 
 fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, cu_tab: &SelectedTab) {
     let size = f.size();
+    
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(5)
