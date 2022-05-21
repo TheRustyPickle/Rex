@@ -47,16 +47,10 @@ impl <'a> TimeData<'a> {
 } 
 
 impl<'a> TableData<'a> {
-    fn new() -> Self {
+    fn new(data: Vec<Vec<&'a str>>) -> Self {
         TableData {
             state: TableState::default(),
-            items: vec![
-                vec!["Row11", "Row12", "Row13"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row31", "Row32", "Row33"],
-                vec!["Row41", "Row42", "Row43"],
-                vec!["Row51", "Row52", "Row53"],
-            ]
+            items: data,
         }
     }
 
@@ -127,7 +121,11 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     let months = TimeData::new(vec!["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]);
     let years = TimeData::new(vec!["2021", "2022", "2023", "2024", "2025", "2026"]);
-    let tui_table = TableData::new();
+    let tui_table = TableData::new(vec![
+        vec!["05-02-2021","Test Transaction 1", "Source 1", "500", "Expense"],
+        vec!["05-02-2021","Test Transaction 2", "Source 1", "100", "Income"],
+        vec!["05-02-2021","Test Transaction 3", "Source 3", "20", "Expense"]
+    ]);
     let res = run_app(&mut terminal, months, years, tui_table);
 
     disable_raw_mode()?;
@@ -146,9 +144,14 @@ fn main() -> Result<(), Box<dyn Error>>{
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut years: TimeData, mut table: TableData) -> io::Result<()> {
     let mut selected_tab = SelectedTab::Months;
+    let mut balance = vec![
+        vec!["", "Source 1", "Source 2", "Source 3", "Source 4"],
+        vec!["Current", "5000", "7000", "2000", "500"],
+        vec!["Changes", "0", "↓1500", "0", "↑400"]
+    ];
 
     loop {
-        terminal.draw(|f| ui(f, &months, &years, &mut table, &selected_tab))?;
+        terminal.draw(|f| ui(f, &months, &years, &mut table, &mut balance, &selected_tab))?;
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
@@ -211,34 +214,30 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, table: &mut TableData, cu_tab: &SelectedTab) {
+fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, table: &mut TableData, balance: &mut Vec<Vec<& str>>, cu_tab: &SelectedTab) {
     let size = f.size();
-    let selected_style = Style::default().add_modifier(Modifier::REVERSED);
+    let selected_style_blue = Style::default().fg(Color::Blue).add_modifier(Modifier::REVERSED);
+    let selected_style_red = Style::default().fg(Color::Red).add_modifier(Modifier::REVERSED);
     let normal_style = Style::default().bg(Color::LightBlue);
-    let header_cells = ["Header 1", "Header 2", "Header 3"]
+    let header_cells = ["Date", "Details", "Source", "Amount", "Type"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Red)));
+        .map(|h| Cell::from(*h).style(Style::default().fg(Color::White)));
 
     let header = Row::new(header_cells)
         .style(normal_style)
         .height(1)
-        .bottom_margin(1);
+        .bottom_margin(0);
 
-        let rows = table.items.iter().map(|item| {
-            let height = item
-                .iter()
-                .map(|content| content.chars().filter(|c| *c == '\n').count())
-                .max()
-                .unwrap_or(0)
-                + 1;
-            let cells = item.iter().map(|c| Cell::from(*c));
-            Row::new(cells).height(height as u16).bottom_margin(1)
-        });
+    let rows = table.items.iter().map(|item| {
+        let height = 1;
+        let cells = item.iter().map(|c| Cell::from(*c));
+        Row::new(cells).height(height as u16).bottom_margin(0)
+    });
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(5)
-        .constraints([Constraint::Length(3), Constraint::Length(3), Constraint::Min(0)].as_ref())
+        .constraints([Constraint::Length(5), Constraint::Length(3), Constraint::Length(3), Constraint::Min(0)].as_ref())
         .split(size);
 
     let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Green));
@@ -283,11 +282,40 @@ fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, table: 
         .header(header)
         .block(Block::default().borders(Borders::ALL).title("Table"))
         .widths(&[
-            Constraint::Percentage(50),
-            Constraint::Length(30),
-            Constraint::Min(10),
+            Constraint::Length(15),
+            Constraint::Percentage(40),
+            Constraint::Length(15),
+            Constraint::Length(15),
+            Constraint::Length(15)
         ]);
-        
+
+    let bal_data = balance.iter().map(|item| {
+        let height = 1;
+        let cells = item.iter().map(|c| {
+            if c.contains("↑") {
+                Cell::from(*c).style(Style::default().fg(Color::Blue))
+            }
+            else if c.contains("↓"){
+                Cell::from(*c).style(Style::default().fg(Color::Red))
+            }
+            else {
+                Cell::from(*c)
+            }
+            
+        });
+        Row::new(cells).height(height as u16).bottom_margin(0)
+    });
+
+    let balance_area = Table::new(bal_data).block(Block::default().borders(Borders::ALL).title("Balance"))
+            .widths(&[
+                //TODO move percentage based on amount of sources
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20)
+            ]);
+
     match cu_tab {
         SelectedTab::Months => {
             month_tab = month_tab.highlight_style(Style::default()
@@ -302,12 +330,23 @@ fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, table: 
         }
 
         SelectedTab::Table => {
-            table_area = table_area.highlight_style(selected_style)
-            .highlight_symbol(">> ")
+            if let Some(a) = table.state.selected() {
+                if table.items[a][4] == "Expense" {
+                    table_area = table_area.highlight_style(selected_style_red)
+                        .highlight_symbol(">> ")
+                }
+                else if table.items[a][4] == "Income" {
+                    table_area = table_area.highlight_style(selected_style_blue)
+                .highlight_symbol(">> ")
+                }
+            }
+            
+            
         }
     }
 
-    f.render_widget(month_tab, chunks[1]);
-    f.render_widget(year_tab, chunks[0]);
-    f.render_stateful_widget(table_area, chunks[2], &mut table.state)
+    f.render_widget(balance_area, chunks[0]);
+    f.render_widget(month_tab, chunks[2]);
+    f.render_widget(year_tab, chunks[1]);
+    f.render_stateful_widget(table_area, chunks[3], &mut table.state)
 }
