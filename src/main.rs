@@ -1,13 +1,15 @@
-mod ui_render;
+mod transaction_ui;
 mod data_struct;
 mod sub_func;
+mod create_initial_db;
 
 use rusqlite::{Connection, Result};
-use ui_render::ui;
+use transaction_ui::ui;
 use sub_func::*;
 use data_struct::{TimeData, TableData, SelectedTab, TransactionData};
 use std::{error::Error, io};
 use tui::{backend::{Backend, CrosstermBackend}, Terminal,};
+use tui::layout::Constraint;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -54,6 +56,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
         let cu_year_index = years.index;
         let cu_table_index = table.state.selected();
         
+        // reload the data saved in memory each time the month or the year changes
         if cu_month_index != last_month_index || cu_year_index != last_year_index {
             all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
             table = TableData::new(all_data.get_txs());
@@ -62,23 +65,30 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
         };
 
         let mut balance: Vec<Vec<String>> = vec![
-            vec!["".to_string(), "Source_1".to_string(), "Source_2".to_string(), "Source_3".to_string(), "Source_4".to_string()]
+            vec!["".to_string()]
         ];
+        balance[0].extend(get_all_tx_methods(&conn));
+
+        // save the % of space each column should take in the Balance section
+        let width_percent = 100 / balance[0].len() as u16;
+        let mut width_data = vec![];
+        for _i in 0..balance[0].len()  {
+            width_data.push(Constraint::Percentage(width_percent));
+        }
 
         match cu_table_index {
+            // Do a +1 because the index starts at 0
             Some(a) => {
                 balance.push(all_data.get_balance(a as i32 + 1));
                 balance.push(all_data.get_changes(a as i32 + 1));
             },
             None => {
                 balance.push(all_data.get_last_balance());
-                balance.push(vec![
-                    "Changes".to_string(), "0".to_string(), "0".to_string(), "0".to_string(), "0".to_string(),
-                ]);
+                balance.push(get_empty_changes());
             },
         }
 
-        terminal.draw(|f| ui(f, &months, &years, &mut table, &mut balance, &selected_tab))?; 
+        terminal.draw(|f| ui(f, &months, &years, &mut table, &mut balance, &selected_tab, &mut width_data))?; 
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
@@ -105,17 +115,34 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                 KeyCode::Up => {
                     match &selected_tab{
                         SelectedTab::Table => {
-                            if table.state.selected() == Some(0) {
+                            // Do not proceed to the table section If
+                            // there is no transaction
+                            if all_data.all_tx.len() < 1 {
+                                selected_tab = selected_tab.change_tab_up();
+                            }
+                            else if table.state.selected() == Some(0) {
                                 selected_tab = SelectedTab::Months;
                                 table.state.select(None);
                             }
                             else {
-                                table.previous();
+                                if all_data.all_tx.len() > 0 {
+                                    table.previous();
+                                }
                             }
                         },
                         SelectedTab::Years => {
-                            table.state.select(Some(table.items.len() - 1));
-                            selected_tab = selected_tab.change_tab_up();
+                            if all_data.all_tx.len() < 1 {
+                                selected_tab = selected_tab.change_tab_up();
+                            }
+                            else {
+                                // Move to the last value on table if pressed up on Year section
+                                table.state.select(Some(table.items.len() - 1));
+                                selected_tab = selected_tab.change_tab_up();
+                                if all_data.all_tx.len() < 1 {
+                                selected_tab = selected_tab.change_tab_up();
+                                }
+                            }
+                            
                         }
                         _ => selected_tab = selected_tab.change_tab_up()
                     }
@@ -123,12 +150,20 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                 KeyCode::Down => {
                     match &selected_tab {
                         SelectedTab::Table => {
-                            if table.state.selected() == Some(table.items.len() - 1) {
+                            // Do not proceed to the table section If
+                            // there is no transaction
+                            if all_data.all_tx.len() < 1 {
+                                selected_tab = selected_tab.change_tab_down();
+                            }
+                            else if table.state.selected() == Some(table.items.len() - 1) {
                                 selected_tab = SelectedTab::Years;
                                 table.state.select(None);
                             }
                             else {
-                                table.next();
+                                if all_data.all_tx.len() > 0 {
+                                    table.next();
+                                }
+                                
                             }
                         }
                         _ => selected_tab = selected_tab.change_tab_down(),

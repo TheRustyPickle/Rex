@@ -104,16 +104,16 @@ impl SelectedTab {
 }
 
 pub struct TransactionData {
-    all_tx: Vec<Vec<String>>,
+    pub all_tx: Vec<Vec<String>>,
     all_balance: HashMap<i32, Vec<String>>,
     all_changes: HashMap<i32, Vec<String>>,
 }
 
 impl TransactionData {
     pub fn new(conn: &Connection, month: usize, year: usize) -> Self {
-        let all_tx = test_get_all_txs(conn, month, year);
-        let all_balance = get_all_balance(conn, month, year);
-        let all_changes = get_all_changes(conn, month, year);
+        let all_tx = get_all_txs(conn, month, year);
+        let all_balance = get_all_balance(conn);
+        let all_changes = get_all_changes(conn);
 
         TransactionData {
             all_tx,
@@ -148,11 +148,10 @@ impl TransactionData {
 
     pub fn get_last_balance(&self) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
-        let last_index = self.all_balance.len() as i32 - 1;
+        let last_index = self.all_balance.len() as i32;
         for i in self.all_balance[&last_index].iter() {
             balance_data.push(i.to_string());
         }
-        println!("{:?}", balance_data);
         balance_data
     }
     pub fn get_changes(&self, index: i32) -> Vec<String> {
