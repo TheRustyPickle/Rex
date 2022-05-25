@@ -8,11 +8,14 @@ use tui::{
 };
 use crate::data_struct::{TimeData, TableData, SelectedTab};
 
-pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, table: &mut TableData, balance: &mut Vec<Vec<String>>, cu_tab: &SelectedTab) {
+pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, table: &mut TableData, 
+    balance: &mut Vec<Vec<String>>, cu_tab: &SelectedTab, width_data: &mut Vec<Constraint>) {
+
     let size = f.size();
     let selected_style_blue = Style::default().fg(Color::Blue).add_modifier(Modifier::REVERSED);
     let selected_style_red = Style::default().fg(Color::Red).add_modifier(Modifier::REVERSED);
     let normal_style = Style::default().bg(Color::LightBlue);
+
     let header_cells = ["Date", "Details", "Source", "Amount", "Type"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(Color::White)));
@@ -21,13 +24,15 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, tab
         .style(normal_style)
         .height(1)
         .bottom_margin(0);
-
+    
+    // iter through table data and turn them into rows and columns
     let rows = table.items.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| Cell::from(c.to_string()));
         Row::new(cells).height(height as u16).bottom_margin(0)
     });
 
+    //decides how many chunks of spaces in the terminal will be 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(5)
@@ -37,6 +42,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, tab
     let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Green));
     f.render_widget(block, size);
 
+    //color the first three letters of the month to blue
     let month_titles = months.titles.iter().map(|t| {
         let (first, rest) = t.split_at(3);
         Spans::from(vec![
@@ -46,6 +52,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, tab
     })
     .collect();
 
+    //color the first letter of the year to blue
     let year_titles = years.titles.iter().map(|t| {
         let (first, rest) = t.split_at(1);
         Spans::from(vec![
@@ -72,9 +79,10 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, tab
         .add_modifier(Modifier::BOLD)
         .bg(Color::Black));
 
+    // set up the table columns and their size
     let mut table_area = Table::new(rows)
         .header(header)
-        .block(Block::default().borders(Borders::ALL).title("Table"))
+        .block(Block::default().borders(Borders::ALL).title("Transactions"))
         .widths(&[
             Constraint::Length(15),
             Constraint::Percentage(40),
@@ -101,14 +109,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, tab
     });
 
     let balance_area = Table::new(bal_data).block(Block::default().borders(Borders::ALL).title("Balance"))
-            .widths(&[
-                //TODO move percentage based on amount of sources
-                Constraint::Percentage(20),
-                Constraint::Percentage(20),
-                Constraint::Percentage(20),
-                Constraint::Percentage(20),
-                Constraint::Percentage(20)
-            ]);
+            .widths(&width_data);
 
     match cu_tab {
         SelectedTab::Months => {
@@ -134,7 +135,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, tab
                 .highlight_symbol(">> ")
                 }
             }
-            
             
         }
     }
