@@ -84,11 +84,11 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, tab
         .header(header)
         .block(Block::default().borders(Borders::ALL).title("Transactions"))
         .widths(&[
-            Constraint::Length(15),
+            Constraint::Percentage(10),
             Constraint::Percentage(40),
-            Constraint::Length(15),
-            Constraint::Length(15),
-            Constraint::Length(15)
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15)
         ]);
 
     let bal_data = balance.iter().map(|item| {
