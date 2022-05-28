@@ -2,8 +2,10 @@ mod transaction_ui;
 mod data_struct;
 mod sub_func;
 mod create_initial_db;
+mod add_tx_ui;
 
 use rusqlite::{Connection, Result};
+use add_tx_ui::ui as tx_ui;
 use transaction_ui::ui;
 use sub_func::*;
 use data_struct::{TimeData, TableData, SelectedTab, TransactionData};
@@ -16,6 +18,14 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 
+// [ ] Check current path for the db, create new db if necessary
+// [ ] create add transaction ui + editing box with inputs
+// [ ] create initial ui asking for tx methods
+// [ ] add creating tx button
+// [ ] add remvoing tx button
+// [ ] create a popup ui on tx data window for commands list
+// [ ] allow manually changing tx methods balances
+// [ ] change color scheme?
 
 fn main() -> Result<(), Box<dyn Error>>{
     enable_raw_mode()?;
@@ -88,6 +98,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
             },
         }
 
+        //terminal.draw(|f| tx_ui(f,))?;
         terminal.draw(|f| ui(f, &months, &years, &mut table, &mut balance, &selected_tab, &mut width_data))?; 
         if let Event::Key(key) = event::read()? {
             match key.code {
