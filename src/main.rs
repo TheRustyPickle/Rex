@@ -5,10 +5,10 @@ mod create_initial_db;
 mod add_tx_ui;
 
 use rusqlite::{Connection, Result};
-use add_tx_ui::ui as tx_ui;
+use add_tx_ui::tx_ui;
 use transaction_ui::ui;
 use sub_func::*;
-use data_struct::{TimeData, TableData, SelectedTab, TransactionData};
+use data_struct::*;
 use std::{error::Error, io};
 use tui::{backend::{Backend, CrosstermBackend}, Terminal,};
 use tui::layout::Constraint;
@@ -19,13 +19,17 @@ use crossterm::{
 };
 
 // [ ] Check current path for the db, create new db if necessary
-// [ ] create add transaction ui + editing box with inputs
+// [x] create add transaction ui + editing box with inputs
+// [ ] func for saving & deleting txs
 // [ ] create initial ui asking for tx methods
 // [ ] add creating tx button
 // [ ] add remvoing tx button
-// [ ] create a popup ui on tx data window for commands list
+// [ ] create a popup ui on Home window for commands list
 // [ ] allow manually changing tx methods balances
+// [ ] allow adding/removing tx methods(will require renaming columns)
 // [ ] change color scheme?
+// [ ] Check if database connection is alive
+// [ ] change balances to f32?
 
 fn main() -> Result<(), Box<dyn Error>>{
     enable_raw_mode()?;
@@ -61,6 +65,10 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
     let conn = Connection::open(path).expect("Could not connect to database");
     let mut all_data = TransactionData::new(&conn, 0, 0);
     let mut table = TableData::new(all_data.get_txs());
+    let mut cu_page = CurrentUi::Home;
+    let mut cu_tx_page = TxTab::Nothing;
+    let mut data_for_tx = AddTxData::new();
+
     loop {
         let cu_month_index = months.index;
         let cu_year_index = years.index;
@@ -98,90 +106,152 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
             },
         }
 
+        match cu_page {
+            CurrentUi::Home => terminal.draw(|f| ui(f, &months, &years, &mut table, &mut balance, &selected_tab, &mut width_data))?,
+            CurrentUi::AddTx => terminal.draw(|f| tx_ui(f, data_for_tx.get_all_texts(), &cu_tx_page),)?,
+        };
         //terminal.draw(|f| tx_ui(f,))?;
-        terminal.draw(|f| ui(f, &months, &years, &mut table, &mut balance, &selected_tab, &mut width_data))?; 
+        //terminal.draw(|f| ui(f, &months, &years, &mut table, &mut balance, &selected_tab, &mut width_data))?; 
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => return Ok(()),
-                KeyCode::Right => {
-                    match &selected_tab {
-                        SelectedTab::Months => months.next(),
-                        SelectedTab::Years => {
-                            years.next();
-                            months.index = 0;
-                        },
-                        _ => {}
-                    }
-                },
-                KeyCode::Left => {
-                    match &selected_tab {
-                        SelectedTab::Months => months.previous(),
-                        SelectedTab::Years => {
-                            years.previous();
-                            months.index = 0;
-                        },
-                        _ => {}
-                    }
-                },
-                KeyCode::Up => {
-                    match &selected_tab{
-                        SelectedTab::Table => {
-                            // Do not proceed to the table section If
-                            // there is no transaction
-                            if all_data.all_tx.len() < 1 {
-                                selected_tab = selected_tab.change_tab_up();
-                            }
-                            else if table.state.selected() == Some(0) {
-                                selected_tab = SelectedTab::Months;
-                                table.state.select(None);
-                            }
-                            else {
-                                if all_data.all_tx.len() > 0 {
-                                    table.previous();
-                                }
-                            }
-                        },
-                        SelectedTab::Years => {
-                            if all_data.all_tx.len() < 1 {
-                                selected_tab = selected_tab.change_tab_up();
-                            }
-                            else {
-                                // Move to the last value on table if pressed up on Year section
-                                table.state.select(Some(table.items.len() - 1));
-                                selected_tab = selected_tab.change_tab_up();
-                                if all_data.all_tx.len() < 1 {
-                                selected_tab = selected_tab.change_tab_up();
-                                }
-                            }
-                            
+            match cu_page {
+                CurrentUi::Home => match key.code {
+                    KeyCode::Char('q') => return Ok(()),
+                    KeyCode::Char('a') => cu_page = CurrentUi::AddTx,
+                    KeyCode::Right => {
+                        match &selected_tab {
+                            SelectedTab::Months => months.next(),
+                            SelectedTab::Years => {
+                                years.next();
+                                months.index = 0;
+                            },
+                            _ => {}
                         }
-                        _ => selected_tab = selected_tab.change_tab_up()
-                    }
-                },
-                KeyCode::Down => {
-                    match &selected_tab {
-                        SelectedTab::Table => {
-                            // Do not proceed to the table section If
-                            // there is no transaction
-                            if all_data.all_tx.len() < 1 {
-                                selected_tab = selected_tab.change_tab_down();
-                            }
-                            else if table.state.selected() == Some(table.items.len() - 1) {
-                                selected_tab = SelectedTab::Years;
-                                table.state.select(None);
-                            }
-                            else {
-                                if all_data.all_tx.len() > 0 {
-                                    table.next();
+                    },
+                    KeyCode::Left => {
+                        match &selected_tab {
+                            SelectedTab::Months => months.previous(),
+                            SelectedTab::Years => {
+                                years.previous();
+                                months.index = 0;
+                            },
+                            _ => {}
+                        }
+                    },
+                    KeyCode::Up => {
+                        match &selected_tab{
+                            SelectedTab::Table => {
+                                // Do not proceed to the table section If
+                                // there is no transaction
+                                if all_data.all_tx.len() < 1 {
+                                    selected_tab = selected_tab.change_tab_up();
+                                }
+                                else if table.state.selected() == Some(0) {
+                                    selected_tab = SelectedTab::Months;
+                                    table.state.select(None);
+                                }
+                                else {
+                                    if all_data.all_tx.len() > 0 {
+                                        table.previous();
+                                    }
+                                }
+                            },
+                            SelectedTab::Years => {
+                                if all_data.all_tx.len() < 1 {
+                                    selected_tab = selected_tab.change_tab_up();
+                                }
+                                else {
+                                    // Move to the last value on table if pressed up on Year section
+                                    table.state.select(Some(table.items.len() - 1));
+                                    selected_tab = selected_tab.change_tab_up();
+                                    if all_data.all_tx.len() < 1 {
+                                    selected_tab = selected_tab.change_tab_up();
+                                    }
                                 }
                                 
                             }
+                            _ => selected_tab = selected_tab.change_tab_up()
                         }
-                        _ => selected_tab = selected_tab.change_tab_down(),
+                    },
+                    KeyCode::Down => {
+                        match &selected_tab {
+                            SelectedTab::Table => {
+                                // Do not proceed to the table section If
+                                // there is no transaction
+                                if all_data.all_tx.len() < 1 {
+                                    selected_tab = selected_tab.change_tab_down();
+                                }
+                                else if table.state.selected() == Some(table.items.len() - 1) {
+                                    selected_tab = SelectedTab::Years;
+                                    table.state.select(None);
+                                }
+                                else {
+                                    if all_data.all_tx.len() > 0 {
+                                        table.next();
+                                    }
+                                }
+                            }
+                            _ => selected_tab = selected_tab.change_tab_down(),
+                        }
+                    },
+                    _ => {}
                     }
-                },
-                _ => {}
-            };
+                CurrentUi::AddTx => match cu_tx_page {
+                    TxTab::Nothing => match key.code {
+                        KeyCode::Char('q') => return Ok(()),
+                        KeyCode::Char('h') => {
+                            cu_page = CurrentUi::Home;
+                            cu_tx_page = TxTab::Nothing;
+                        },
+                        KeyCode::Char('1') => cu_tx_page = TxTab::Date,
+                        KeyCode::Char('2') => cu_tx_page = TxTab::Details,
+                        KeyCode::Char('3') => cu_tx_page = TxTab::TxMethod,
+                        KeyCode::Char('4') => cu_tx_page = TxTab::Amount,
+                        KeyCode::Char('5') => cu_tx_page = TxTab::TxType,
+                        KeyCode::Enter => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                        _ => {}
+                    }
+                    TxTab::Date => match key.code {
+                        KeyCode::Enter => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Backspace => data_for_tx.edit_date('a', true),
+                        KeyCode::Char(a) => data_for_tx.edit_date(a, false),
+                        _ => {}
+                    }
+
+                    TxTab::Details => match key.code {
+                        KeyCode::Enter => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Backspace => data_for_tx.edit_details('a', true),
+                        KeyCode::Char(a) => data_for_tx.edit_details(a, false),
+                        _ => {}
+                    }
+
+                    TxTab::TxMethod => match key.code {
+                        KeyCode::Enter => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Backspace => data_for_tx.edit_tx_method('a', true),
+                        KeyCode::Char(a) => data_for_tx.edit_tx_method(a, false),
+                        _ => {}
+                    }
+
+                    TxTab::Amount => match key.code {
+                        KeyCode::Enter => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Backspace => data_for_tx.edit_amount('a', true),
+                        KeyCode::Char(a) => data_for_tx.edit_amount(a, false),
+                        _ => {}
+                    }
+
+                    TxTab::TxType => match key.code {
+                        KeyCode::Enter => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Backspace => data_for_tx.edit_tx_type('a', true),
+                        KeyCode::Char(a) => data_for_tx.edit_tx_type(a, false),
+                        _ => {}
+                    }
+                }
+            }
         };
     }
 }
