@@ -6,20 +6,27 @@ use tui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
+use crate::data_struct::TxTab;
 
-pub fn ui<B: Backend>(f: &mut Frame<B>) {
+pub fn tx_ui<B: Backend>(f: &mut Frame<B>, input_data: Vec<&str>, cu_selected: &TxTab) {
     let size = f.size();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(5)
         .constraints([Constraint::Length(8), Constraint::Length(3), Constraint::Length(3), Constraint::Percentage(20)].as_ref())
         .split(size);
+
+    let another_chunk = Layout::default()
+    .direction(Direction::Horizontal)
+    .constraints([Constraint::Percentage(25), Constraint::Percentage(25),
+                Constraint::Percentage(25), Constraint::Percentage(25)].as_ref())
+    .split(chunks[1]);
     
     let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Green));
     f.render_widget(block, size);
 
-    let text = vec![
-        Spans::from("Press the respective keys to edit fields. Press 'q' to cancel."),
+    let help_text = vec![
+        Spans::from("Press the respective keys to edit fields. Press 'Enter' or 'Esc' to submit/stop editing."),
         Spans::from("'1': Date         Example: 05-12-2022, DD-MM-YYYY"),
         Spans::from("'2': TX details   Example: For Grocery, Salary"),
         Spans::from("'3': TX Method    Example: Cash, Bank, Card"),
@@ -27,12 +34,28 @@ pub fn ui<B: Backend>(f: &mut Frame<B>) {
         Spans::from("'5': TX Type      Example: Income/Expense/I/E"),
     ];
 
-    let text_2 = vec![
+    let status_text = vec![
         Spans::from("Check status here")
     ];
     
-    let text_3 = vec![
-        Spans::from("Edit data here")
+    let date_text = vec![
+        Spans::from(input_data[0])
+    ];
+
+    let details_text = vec![
+        Spans::from(input_data[1])
+    ];
+
+    let tx_method_text = vec![
+        Spans::from(input_data[2])
+    ];
+
+    let amount_text = vec![
+        Spans::from(input_data[3])
+    ];
+
+    let tx_type_text = vec![
+        Spans::from(input_data[4])
     ];
 
     let create_block = |title| {
@@ -44,56 +67,71 @@ pub fn ui<B: Backend>(f: &mut Frame<B>) {
                 Style::default().add_modifier(Modifier::BOLD),
             ))
         };
-    let paragraph = Paragraph::new(text.clone())
+    let help_sec = Paragraph::new(help_text.clone())
     .style(Style::default().bg(Color::White).fg(Color::Green))
-    .block(create_block("Edit"))
+    .block(create_block("Help"))
     .alignment(Alignment::Left);
-    f.render_widget(paragraph, chunks[0]);
-
-    let paragraph_2 = Paragraph::new(text_2.clone())
+    
+    let status_sec = Paragraph::new(status_text.clone())
     .style(Style::default().bg(Color::White).fg(Color::Green))
     .block(create_block("Status"))
     .alignment(Alignment::Left);
-    f.render_widget(paragraph_2, chunks[3]);
 
-    let paragraph_4 = Paragraph::new(text_3.clone())
+    let date_sec = Paragraph::new(date_text.clone())
     .style(Style::default().bg(Color::White).fg(Color::Green))
     .block(create_block("Date"))
     .alignment(Alignment::Left);
 
-    let paragraph_5 = Paragraph::new(text_3.clone())
+    let tx_method_sec = Paragraph::new(tx_method_text.clone())
     .style(Style::default().bg(Color::White).fg(Color::Green))
     .block(create_block("TX Method"))
     .alignment(Alignment::Left);
 
-    let paragraph_6 = Paragraph::new(text_3.clone())
+    let amount_sec = Paragraph::new(amount_text.clone())
     .style(Style::default().bg(Color::White).fg(Color::Green))
     .block(create_block("Amount"))
     .alignment(Alignment::Left);
 
-    let paragraph_7 = Paragraph::new(text_3.clone())
+    let tx_type_sec = Paragraph::new(tx_type_text.clone())
     .style(Style::default().bg(Color::White).fg(Color::Green))
     .block(create_block("TX Type"))
     .alignment(Alignment::Left);
 
-    let paragraph_8 = Paragraph::new(text_3.clone())
+    let details_sec = Paragraph::new(details_text.clone())
     .style(Style::default().bg(Color::White).fg(Color::Green))
     .block(create_block("Details"))
     .alignment(Alignment::Left);
-    f.render_widget(paragraph_8, chunks[2]);
-
     
-
-    let another_chunk = Layout::default()
-    .direction(Direction::Horizontal)
-    .constraints([Constraint::Length(20), Constraint::Length(20),
-                Constraint::Length(20), Constraint::Length(20), 
-                Constraint::Length(20)].as_ref())
-    .split(chunks[1]);
-
-    f.render_widget(paragraph_4, another_chunk[0]);
-    f.render_widget(paragraph_5, another_chunk[1]);
-    f.render_widget(paragraph_6, another_chunk[2]);
-    f.render_widget(paragraph_7, another_chunk[3]);
+    match cu_selected {
+        TxTab::Date => {
+            f.set_cursor(another_chunk[0].x + input_data[0].len() as u16 + 1, 
+            another_chunk[0].y + 1,)
+        }
+        TxTab::Details => {
+            f.set_cursor(chunks[2].x + input_data[1].len() as u16 + 1, 
+            chunks[2].y + 1,)
+        }
+        TxTab::TxMethod => {
+            f.set_cursor(another_chunk[1].x + input_data[2].len() as u16 + 1, 
+            another_chunk[1].y + 1,)
+        }
+        TxTab::Amount => {
+            f.set_cursor(another_chunk[2].x + input_data[3].len() as u16 + 1, 
+            another_chunk[2].y + 1,)
+        }
+        TxTab::TxType => {
+            f.set_cursor(another_chunk[3].x + input_data[4].len() as u16 + 1, 
+            another_chunk[3].y + 1,)
+        }
+        TxTab::Nothing => {}
+    }
+    
+    f.render_widget(details_sec, chunks[2]);
+    f.render_widget(status_sec, chunks[3]);
+    f.render_widget(help_sec, chunks[0]);
+    f.render_widget(date_sec, another_chunk[0]);
+    f.render_widget(tx_method_sec, another_chunk[1]);
+    f.render_widget(amount_sec, another_chunk[2]);
+    f.render_widget(tx_type_sec, another_chunk[3]);
     
 }
