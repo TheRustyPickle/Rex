@@ -1,5 +1,4 @@
 use tui::widgets::TableState;
-use std::collections::HashMap;
 use crate::sub_func::*;
 use rusqlite::Connection;
 
@@ -119,8 +118,8 @@ pub enum CurrentUi {
 
 pub struct TransactionData {
     pub all_tx: Vec<Vec<String>>,
-    all_balance: HashMap<i32, Vec<String>>,
-    all_changes: HashMap<i32, Vec<String>>,
+    all_balance: Vec<Vec<String>>,
+    all_changes: Vec<Vec<String>>,
 }
 
 impl TransactionData {
@@ -152,9 +151,9 @@ impl TransactionData {
         table_data
     }
 
-    pub fn get_balance(&self, index: i32) -> Vec<String> {
+    pub fn get_balance(&self, index: usize) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
-        for i in self.all_balance[&index].iter() {
+        for i in  self.all_balance[index].iter() {
             balance_data.push(i.to_string());
         }
         balance_data
@@ -162,15 +161,15 @@ impl TransactionData {
 
     pub fn get_last_balance(&self) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
-        let last_index = self.all_balance.len() as i32;
-        for i in self.all_balance[&last_index].iter() {
+        let last_index = self.all_balance.len() - 1;
+        for i in self.all_balance[last_index].iter() {
             balance_data.push(i.to_string());
         }
         balance_data
     }
-    pub fn get_changes(&self, index: i32) -> Vec<String> {
+    pub fn get_changes(&self, index: usize) -> Vec<String> {
         let mut changes_data = vec!["Changes".to_string()];
-        for i in self.all_changes[&index].iter() {
+        for i in self.all_changes[index].iter() {
             changes_data.push(i.to_string());
         }
         changes_data
@@ -253,6 +252,14 @@ impl AddTxData {
                 }
             },
             false => self.tx_type = format!("{}{text}", self.tx_type),
+        }
+    }
+
+    pub fn add_tx(&mut self, conn: &Connection) -> String {
+        let status = add_new_tx(conn, &self.date, &self.details, &self.tx_method, &self.amount, &self.tx_type);
+        match status {
+            Ok(_) => "Transaction Added Successfully".to_string(),
+            Err(e) => format!("Error Adding Transaction. Error: {}", e),
         }
     }
 }
