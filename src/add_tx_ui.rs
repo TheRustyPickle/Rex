@@ -13,7 +13,7 @@ pub fn tx_ui<B: Backend>(f: &mut Frame<B>, input_data: Vec<&str>, cu_selected: &
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(5)
-        .constraints([Constraint::Length(8), Constraint::Length(3), Constraint::Length(3), Constraint::Percentage(20)].as_ref())
+        .constraints([Constraint::Length(11), Constraint::Length(3), Constraint::Length(3), Constraint::Percentage(25)].as_ref())
         .split(size);
 
     let another_chunk = Layout::default()
@@ -32,6 +32,9 @@ pub fn tx_ui<B: Backend>(f: &mut Frame<B>, input_data: Vec<&str>, cu_selected: &
         Spans::from("'3': TX Method    Example: Cash, Bank, Card"),
         Spans::from("'4': Amount       Example: 1000, 500"),
         Spans::from("'5': TX Type      Example: Income/Expense/I/E"),
+        Spans::from("'Enter': Submit/Stop Editing Field"),
+        Spans::from("'Esc': Submit/Stop Editing Field"),
+        Spans::from("'S': Save the inputted data as a Transaction"),
     ];
 
     let status_text = vec![
