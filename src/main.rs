@@ -21,15 +21,19 @@ use crossterm::{
 // [ ] Check current path for the db, create new db if necessary
 // [x] create add transaction ui + editing box with inputs
 // [ ] func for saving & deleting txs
+// [ ] reversing date format function
 // [ ] create initial ui asking for tx methods
-// [ ] add creating tx button
+// [x] add creating tx button
 // [ ] add remvoing tx button
 // [ ] create a popup ui on Home window for commands list
-// [ ] allow manually changing tx methods balances
+// [ ] allow manually changing tx methods balances, unsure how yet
 // [ ] allow adding/removing tx methods(will require renaming columns)
 // [ ] change color scheme?
 // [ ] Check if database connection is alive
 // [ ] change balances to f32?
+// [ ] add date column to all_balance & all_changes
+// [ ] verify db cascade method working or not
+// [ ] add more panic handling
 
 fn main() -> Result<(), Box<dyn Error>>{
     enable_raw_mode()?;
@@ -95,10 +99,10 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
         }
 
         match cu_table_index {
-            // Do a +1 because the index starts at 0
+            // pass out the current index to get the necessary balance & changes data
             Some(a) => {
-                balance.push(all_data.get_balance(a as i32 + 1));
-                balance.push(all_data.get_changes(a as i32 + 1));
+                balance.push(all_data.get_balance(a));
+                balance.push(all_data.get_changes(a));
             },
             None => {
                 balance.push(all_data.get_last_balance());
@@ -110,8 +114,6 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
             CurrentUi::Home => terminal.draw(|f| ui(f, &months, &years, &mut table, &mut balance, &selected_tab, &mut width_data))?,
             CurrentUi::AddTx => terminal.draw(|f| tx_ui(f, data_for_tx.get_all_texts(), &cu_tx_page),)?,
         };
-        //terminal.draw(|f| tx_ui(f,))?;
-        //terminal.draw(|f| ui(f, &months, &years, &mut table, &mut balance, &selected_tab, &mut width_data))?; 
         if let Event::Key(key) = event::read()? {
             match cu_page {
                 CurrentUi::Home => match key.code {
@@ -201,6 +203,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                         KeyCode::Char('h') => {
                             cu_page = CurrentUi::Home;
                             cu_tx_page = TxTab::Nothing;
+                        },
+                        KeyCode::Char('s') => {
+                            //TODO send string to status page
+                            let _status = data_for_tx.add_tx(&conn);
+                            cu_page = CurrentUi::Home;
                         },
                         KeyCode::Char('1') => cu_tx_page = TxTab::Date,
                         KeyCode::Char('2') => cu_tx_page = TxTab::Details,
