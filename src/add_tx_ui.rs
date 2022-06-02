@@ -6,7 +6,7 @@ use tui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
-use crate::data_struct::TxTab;
+use crate::ui_data_state::TxTab;
 
 pub fn tx_ui<B: Backend>(f: &mut Frame<B>, input_data: Vec<&str>, cu_selected: &TxTab) {
     let size = f.size();
@@ -27,11 +27,10 @@ pub fn tx_ui<B: Backend>(f: &mut Frame<B>, input_data: Vec<&str>, cu_selected: &
 
     let help_text = vec![
         Spans::from("Press the respective keys to edit fields. Press 'Enter' or 'Esc' to submit/stop editing."),
-        Spans::from("'1': Date         Example: 05-12-2022, DD-MM-YYYY"),
-        Spans::from("'2': TX details   Example: For Grocery, Salary"),
-        Spans::from("'3': TX Method    Example: Cash, Bank, Card"),
-        Spans::from("'4': Amount       Example: 1000, 500"),
-        Spans::from("'5': TX Type      Example: Income/Expense/I/E"),
+        Spans::from("'1': TX details   Example: For Grocery, Salary"),
+        Spans::from("'2': TX Method    Example: Cash, Bank, Card"),
+        Spans::from("'3': Amount       Example: 1000, 500"),
+        Spans::from("'4': TX Type      Example: Income/Expense/I/E"),
         Spans::from("'Enter': Submit/Stop Editing Field"),
         Spans::from("'Esc': Submit/Stop Editing Field"),
         Spans::from("'S': Save the inputted data as a Transaction"),
@@ -106,10 +105,6 @@ pub fn tx_ui<B: Backend>(f: &mut Frame<B>, input_data: Vec<&str>, cu_selected: &
     .alignment(Alignment::Left);
     
     match cu_selected {
-        TxTab::Date => {
-            f.set_cursor(another_chunk[0].x + input_data[0].len() as u16 + 1, 
-            another_chunk[0].y + 1,)
-        }
         TxTab::Details => {
             f.set_cursor(chunks[2].x + input_data[1].len() as u16 + 1, 
             chunks[2].y + 1,)
