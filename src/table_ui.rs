@@ -6,7 +6,7 @@ use tui::{
     text::{Span, Spans},
     Frame
 };
-use crate::data_struct::{TimeData, TableData, SelectedTab};
+use crate::ui_data_state::{TimeData, TableData, SelectedTab};
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, table: &mut TableData, 
     balance: &mut Vec<Vec<String>>, cu_tab: &SelectedTab, width_data: &mut Vec<Constraint>) {
@@ -112,6 +112,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, tab
             .widths(&width_data);
 
     match cu_tab {
+    // previously added a black block to year and month widget on the selected value.
+    // based on which widget is selected, turns the black block to green.
         SelectedTab::Months => {
             month_tab = month_tab.highlight_style(Style::default()
             .add_modifier(Modifier::BOLD)
@@ -123,7 +125,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, tab
             .add_modifier(Modifier::BOLD)
             .bg(Color::LightGreen));
         }
-
+        // changes the color of row based on Expense or Income tx type.
         SelectedTab::Table => {
             if let Some(a) = table.state.selected() {
                 if table.items[a][4] == "Expense" {
