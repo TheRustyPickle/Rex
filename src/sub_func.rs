@@ -1,9 +1,11 @@
 use rusqlite::{Connection, Result as sqlResult};
 
 pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
+    // returns all transaction methods added to the database
+    // example bank, cash.
     let column_names = conn.prepare("SELECT * FROM balance_all").expect("could not prepare statement");
     let mut tx_methods = vec![];
-    for i in 1..99 {
+    for i in 2..99 {
         let column = column_names.column_name(i);
         match column {
             Ok(c) => tx_methods.push(c.to_string()),
@@ -13,70 +15,10 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
     tx_methods
 }
 
-pub fn get_all_balance(conn: &Connection) -> Vec<Vec<String>> {
-    let mut id_result: Vec<i32> = Vec::new();
-    let mut final_result = Vec::new();
-    let tx_methods = get_all_tx_methods(conn);
+fn get_sql_dates(month: usize, year: usize) -> (String, String) {
+    // returns dates from month and year to a format that is suitable for
+    // database WHERE statement.
 
-    let mut statement = conn.prepare("SELECT id_num FROM balance_all").expect("could not prepare statement");
-    let rows = statement.query_map([], |row| {
-        Ok(row.get(0).unwrap())
-    }).expect("Error");
-
-    for i in rows {
-        id_result.push(i.unwrap());
-    }
-
-    let mut statement = conn.prepare("SELECT * FROM balance_all").expect("could not prepare statement");
-
-    let rows = statement.query_map([], |row| {
-        let mut balance_vec: Vec<String> = Vec::new();
-        for i in 1..tx_methods.len()+1 {
-            balance_vec.push(row.get(i).unwrap());
-        }
-        Ok(balance_vec)
-    }).expect("Error");
-
-    for i in rows {
-        final_result.push(i.unwrap());
-    }
-    final_result
-}
-
-pub fn get_all_changes(conn: &Connection) -> Vec<Vec<String>> {
-    let mut id_result: Vec<i32> = Vec::new();
-    let mut final_result = Vec::new();
-    let tx_methods = get_all_tx_methods(conn);
-
-    let mut statement = conn.prepare("SELECT id_num FROM changes_all").expect("could not prepare statement");
-    let rows = statement.query_map([], |row| {
-        Ok(row.get(0).unwrap())
-    }).expect("Error");
-
-    for i in rows {
-        id_result.push(i.unwrap());
-    }
-
-    let mut statement = conn.prepare("SELECT * FROM changes_all").expect("could not prepare statement");
-
-    let rows = statement.query_map([], |row| {
-        let mut balance_vec: Vec<String> = Vec::new();
-        for i in 1..tx_methods.len()+1 {
-            balance_vec.push(row.get(i).unwrap());
-        }
-        Ok(balance_vec)
-    }).expect("Error");
-
-    for i in rows {
-        final_result.push(i.unwrap());
-    }
-
-    final_result
-}
-
-pub fn get_all_txs (conn: &Connection, month: usize, year: usize) -> Vec<Vec<String>> {
-    let mut final_result: Vec<Vec<String>> = Vec::new();
-    
     let mut new_month:String = month.to_string();
     let mut new_year:String = year.to_string();
     
@@ -90,8 +32,66 @@ pub fn get_all_txs (conn: &Connection, month: usize, year: usize) -> Vec<Vec<Str
 
     let datetime_1 = format!("{}-{}-01", new_year, new_month);
     let datetime_2 = format!("{}-{}-31", new_year, new_month);
+    (datetime_1, datetime_2)
+}
 
-    let mut statement = conn.prepare("SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?)").expect("could not prepare statement");
+pub fn get_all_balance(conn: &Connection, month: usize, year: usize) -> Vec<Vec<String>> {
+    // retunrs all balance recorded within a given date
+
+    let mut final_result = Vec::new();
+    let tx_methods = get_all_tx_methods(conn);
+    
+
+    let (datetime_1, datetime_2) = get_sql_dates(month, year);
+    let mut statement = conn.prepare("SELECT * FROM balance_all Where date BETWEEN date(?) AND date(?) ORDER BY id_num").expect("could not prepare statement");
+
+    let rows = statement.query_map([datetime_1, datetime_2], |row| {
+        let mut balance_vec: Vec<String> = Vec::new();
+        for i in 2..tx_methods.len()+2 {
+            balance_vec.push(row.get(i).unwrap());
+        }
+        Ok(balance_vec)
+    }).expect("Error");
+    
+    for i in rows {
+        final_result.push(i.unwrap());
+    }
+    final_result
+}
+
+pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<String>> {
+    // retunrs all balance changes recorded within a given date
+
+    let mut final_result = Vec::new();
+    let tx_methods = get_all_tx_methods(conn);
+
+    let (datetime_1, datetime_2) = get_sql_dates(month, year);
+
+    let mut statement = conn.prepare("SELECT * FROM changes_all Where date BETWEEN date(?) AND date(?) ORDER BY id_num").expect("could not prepare statement");
+
+    let rows = statement.query_map([datetime_1, datetime_2], |row| {
+        let mut balance_vec: Vec<String> = Vec::new();
+        for i in 2..tx_methods.len()+2 {
+            balance_vec.push(row.get(i).unwrap());
+        }
+        Ok(balance_vec)
+    }).expect("Error");
+
+    for i in rows {
+        final_result.push(i.unwrap());
+    }
+
+    final_result
+}
+
+pub fn get_all_txs(conn: &Connection, month: usize, year: usize) -> Vec<Vec<String>> {
+    // retunrs all transactions recorded within a given date
+
+    let mut final_result: Vec<Vec<String>> = Vec::new();
+
+    let (datetime_1, datetime_2) = get_sql_dates(month, year);
+
+    let mut statement = conn.prepare("SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY id_num").expect("could not prepare statement");
     
     let rows = statement.query_map([&datetime_1,&datetime_2], |row| {
         let date: String = row.get(0).unwrap();
@@ -110,12 +110,16 @@ pub fn get_all_txs (conn: &Connection, month: usize, year: usize) -> Vec<Vec<Str
 }
 
 pub fn get_empty_changes() -> Vec<String> {
+    // function for quick vec with 0 changes for adding in widget
+
     vec![
         "Changes".to_string(), "0".to_string(), "0".to_string(), "0".to_string(), "0".to_string(),
         ]
 }
 
 pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<String> {
+    // returns the last recorded balance of all tx methods 
+
     let mut query = format!("SELECT {:?} FROM balance_all ORDER BY id_num DESC LIMIT 1", tx_method);
     query = query.replace("[", "");
     query = query.replace("]", "");
@@ -134,6 +138,8 @@ pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<Stri
 }
 
 pub fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
+    // returns the last id_num recorded by tx_all table
+
     let last_id: sqlResult<i32> = conn.query_row(
         "SELECT id_num FROM tx_all ORDER BY id_num DESC LIMIT 1",
         [],
@@ -143,6 +149,8 @@ pub fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
 }
 
 pub fn add_new_tx(conn: &Connection, date: &str, details: &str, tx_method: &str, amount: &str, tx_type: &str) -> sqlResult<()> {
+    // used for adding transaction on the database
+
     conn.execute("INSERT INTO tx_all (date, details, tx_method, amount, tx_type) VALUES (?, ?, ?, ?, ?)",
         [date, details, tx_method, amount, tx_type])?;
 
@@ -175,16 +183,16 @@ pub fn add_new_tx(conn: &Connection, date: &str, details: &str, tx_method: &str,
     }
 
 
-    let mut balance_query = format!("INSERT INTO balance_all (id_num, {:?}) VALUES ({}, {:?})", all_tx_methods, last_id, new_balance);
+    let mut balance_query = format!("INSERT INTO balance_all (id_num, date, {all_tx_methods:?}) VALUES ({last_id}, ?, {new_balance:?})");
     balance_query = balance_query.replace("[", "");
     balance_query = balance_query.replace("]", "");
 
-    let mut changes_query = format!("INSERT INTO changes_all (id_num, {:?}) VALUES ({}, {:?})", all_tx_methods, last_id, new_changes);
+    let mut changes_query = format!("INSERT INTO changes_all (id_num, date, {all_tx_methods:?}) VALUES ({last_id}, ?, {new_changes:?})");
     changes_query = changes_query.replace("[", "");
     changes_query = changes_query.replace("]", "");
 
-    conn.execute(&balance_query, [])?;
-    conn.execute(&changes_query, [])?;
+    conn.execute(&balance_query, [date])?;
+    conn.execute(&changes_query, [date])?;
 
     Ok(())
 }
