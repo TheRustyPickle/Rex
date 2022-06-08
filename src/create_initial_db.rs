@@ -1,6 +1,8 @@
 use rusqlite::{Connection, Result};
 
 fn _create_db() -> Result<()> {
+    let months = vec!["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    let years = vec!["2022", "2023", "2024", "2025"];
     //TODO change test to actual db path
     let path = "test.sqlite";
     let conn = Connection::open(path)?;
@@ -12,16 +14,17 @@ fn _create_db() -> Result<()> {
         amount TEXT,
         tx_type TEXT,
         id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT
-    );", [])?;
+    );", []).unwrap();
 
     conn.execute("CREATE TABLE changes_all (
-        id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        date TEXT,
+        id_num INTEGER NOT NULL PRIMARY KEY,
         source_1 TEXT DEFAULT 0,
         source_2 TEXT DEFAULT 0,
         source_3 TEXT DEFAULT 0,
         source_4 TEXT DEFAULT 0,
         CONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
-    );", [])?;
+    );", []).unwrap();
 
     //TODO change the sources to real values
     conn.execute("CREATE TABLE balance_all (
@@ -29,15 +32,23 @@ fn _create_db() -> Result<()> {
         source_1 TEXT DEFAULT 0,
         source_2 TEXT DEFAULT 0,
         source_3 TEXT DEFAULT 0,
-        source_4 TEXT DEFAULT 0,
-        CONSTRAINT balance_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
-    );", [])?;
+        source_4 TEXT DEFAULT 0
+    );", []).unwrap();
 
-    conn.execute("CREATE UNIQUE INDEX all_tx_id_num_IDX ON tx_all (id_num);", [])?;
+    conn.execute("CREATE UNIQUE INDEX all_tx_date_IDX ON tx_all (date);", []).unwrap();
 
-    conn.execute("CREATE UNIQUE INDEX changes_all_id_num_IDX ON changes_all (id_num);", [])?;
+    conn.execute("CREATE UNIQUE INDEX changes_all_date_IDX ON changes_all (date);", []).unwrap();
 
-    conn.execute("CREATE UNIQUE INDEX balance_all_id_num_IDX ON balance_all (id_num);", [])?;
+    conn.execute("CREATE UNIQUE INDEX balance_all_id_num_IDX ON balance_all (id_num);", []).unwrap();
+
+    for _i in years {
+        for _a in 0..months.len() {
+            conn.execute("INSERT INTO balance_all (source_1, source_2, source_3, source_4) VALUES (?, ?, ?, ?)",
+        [0, 0, 0, 0]).unwrap();
+        }
+    }
+    conn.execute("INSERT INTO balance_all (source_1, source_2, source_3, source_4) VALUES (?, ?, ?, ?)",
+        [0, 0, 0, 0]).unwrap();
 
     Ok(())
 }
