@@ -75,8 +75,8 @@ impl AddTxData {
     pub fn add_tx(&mut self, conn: &Connection) -> String {
         let status = add_new_tx(conn, &self.date, &self.details, &self.tx_method, &self.amount, &self.tx_type);
         match status {
-            Ok(_) => println!("Transaction Added Successfully"),
-            Err(e) => println!("Error Adding Transaction. Error: {}", e),
+            Ok(_) => {},
+            Err(_) => {},
         }
         "done".to_string()
     }
