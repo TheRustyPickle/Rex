@@ -1,6 +1,5 @@
 use rusqlite::Connection;
-use crate::sub_func::{get_all_txs,
-    get_all_balance, get_all_changes,
+use crate::sub_func::{get_all_txs, get_all_changes,
     get_all_tx_methods, get_last_balances};
 
 pub struct TransactionData {
@@ -11,8 +10,7 @@ pub struct TransactionData {
 
 impl TransactionData {
     pub fn new(conn: &Connection, month: usize, year: usize) -> Self {
-        let all_tx = get_all_txs(conn, month, year);
-        let all_balance = get_all_balance(conn, month, year);
+        let (all_tx, all_balance) = get_all_txs(conn, month, year);
         let all_changes = get_all_changes(conn, month, year);
 
         TransactionData {
