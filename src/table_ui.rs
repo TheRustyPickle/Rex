@@ -16,7 +16,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, months: &TimeData, years: &TimeData, tab
     let selected_style_red = Style::default().fg(Color::Red).add_modifier(Modifier::REVERSED);
     let normal_style = Style::default().bg(Color::LightBlue);
 
-    let header_cells = ["Date", "Details", "Source", "Amount", "Type"]
+    let header_cells = ["Date", "Details", "TX Method", "Amount", "Type"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(Color::White)));
 
