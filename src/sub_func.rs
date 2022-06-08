@@ -1,11 +1,12 @@
 use rusqlite::{Connection, Result as sqlResult};
+use std::collections::HashMap;
 
 pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
     // returns all transaction methods added to the database
     // example bank, cash.
     let column_names = conn.prepare("SELECT * FROM balance_all").expect("could not prepare statement");
     let mut tx_methods = vec![];
-    for i in 2..99 {
+    for i in 1..99 {
         let column = column_names.column_name(i);
         match column {
             Ok(c) => tx_methods.push(c.to_string()),
@@ -27,7 +28,7 @@ fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     }
 
     if year+1 < 10 {
-        new_year = format!("202{}", year+1);
+        new_year = format!("202{}", year+2);
     }
 
     let datetime_1 = format!("{}-{}-01", new_year, new_month);
@@ -35,28 +36,47 @@ fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     (datetime_1, datetime_2)
 }
 
-pub fn get_all_balance(conn: &Connection, month: usize, year: usize) -> Vec<Vec<String>> {
-    // retunrs all balance recorded within a given date
+pub fn get_last_month_balance(conn: &Connection, month: usize, year: usize, tx_method: &Vec<String>) -> HashMap<String, i32> {
+    let mut target_id_num = month as i32 + (year as i32 * 12);
 
-    let mut final_result = Vec::new();
-    let tx_methods = get_all_tx_methods(conn);
+    let mut final_value = HashMap::new();
+    let mut to_return: Vec<i32>;
     
-
-    let (datetime_1, datetime_2) = get_sql_dates(month, year);
-    let mut statement = conn.prepare("SELECT * FROM balance_all Where date BETWEEN date(?) AND date(?) ORDER BY id_num").expect("could not prepare statement");
-
-    let rows = statement.query_map([datetime_1, datetime_2], |row| {
-        let mut balance_vec: Vec<String> = Vec::new();
-        for i in 2..tx_methods.len()+2 {
-            balance_vec.push(row.get(i).unwrap());
+    if target_id_num == 0 {
+        for i in tx_method {
+            final_value.insert(i.to_string(), 0);
         }
-        Ok(balance_vec)
-    }).expect("Error");
-    
-    for i in rows {
-        final_result.push(i.unwrap());
+        return final_value;
     }
-    final_result
+
+    loop {
+        let mut query = format!("SELECT {:?} FROM balance_all WHERE id_num = ?", tx_method); 
+        query = query.replace("[", "");
+        query = query.replace("]", "");
+        let final_balance = conn.query_row(
+            &query,
+            [target_id_num],
+            |row| {
+                let mut final_data: Vec<i32> = Vec::new();
+                for i in 0..tx_method.len() {
+                    let to_push: String = row.get(i).unwrap();
+                    let final_value:i32 = to_push.parse::<i32>().unwrap();
+                    final_data.push(final_value);
+                }
+                Ok(final_data)
+            },
+        );
+        target_id_num -= 1;
+        to_return = final_balance.unwrap();
+        
+        if to_return != vec![0, 0, 0, 0] || target_id_num == 0 {
+            break
+        }
+    }
+    for i in 0..to_return.len() {
+        final_value.insert(tx_method[i].to_string(), to_return[i]);
+    }
+    final_value
 }
 
 pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<String>> {
@@ -84,10 +104,19 @@ pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<
     final_result
 }
 
-pub fn get_all_txs(conn: &Connection, month: usize, year: usize) -> Vec<Vec<String>> {
-    // retunrs all transactions recorded within a given date
+pub fn get_all_txs(conn: &Connection, month: usize, year: usize) -> (Vec<Vec<String>>, Vec<Vec<String>>) {
+    // returns all transactions recorded within a given date + balance changes
 
-    let mut final_result: Vec<Vec<String>> = Vec::new();
+    let all_tx_methods = get_all_tx_methods(conn);
+
+    let mut final_all_txs: Vec<Vec<String>> = Vec::new();
+    let mut final_all_balances: Vec<Vec<String>> = Vec::new();
+
+    // we will go through the last month balances and add/substract
+    // current month's transactions to the related tx method. After each tx calulcation, add whatever 
+    // balance for each tx method inside a vec for final return
+
+    let mut last_month_balance = get_last_month_balance(conn, month, year, &all_tx_methods); 
 
     let (datetime_1, datetime_2) = get_sql_dates(month, year);
 
@@ -103,10 +132,34 @@ pub fn get_all_txs(conn: &Connection, month: usize, year: usize) -> Vec<Vec<Stri
     }).expect("Error");
 
     for i in rows {
-        final_result.push(i.unwrap())
-        
+        final_all_txs.push(i.unwrap())
     }
-    final_result
+    
+    for i in &final_all_txs {
+        let tx_type = &i[4];
+        let amount = &i[3].to_string().parse::<i32>().unwrap();
+        let tx_method = &i[2];
+        let mut new_balance = 0;
+
+        if tx_type == "Expense" {
+            new_balance = last_month_balance[tx_method] - amount;
+        }
+        else if tx_type == "Income" {
+            new_balance = last_month_balance[tx_method] + amount;
+        }
+
+        // make changes to the balance map based on the tx
+        *last_month_balance.get_mut(tx_method).unwrap() = new_balance;
+        
+        let mut to_push = vec![];
+        for i in &all_tx_methods {
+            to_push.push(last_month_balance[i].to_string())
+        }
+
+        final_all_balances.push(to_push);
+    }
+
+    (final_all_txs, final_all_balances)
 }
 
 pub fn get_empty_changes() -> Vec<String> {
@@ -149,49 +202,97 @@ pub fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
 }
 
 pub fn add_new_tx(conn: &Connection, date: &str, details: &str, tx_method: &str, amount: &str, tx_type: &str) -> sqlResult<()> {
-    // used for adding transaction on the database
-
     conn.execute("INSERT INTO tx_all (date, details, tx_method, amount, tx_type) VALUES (?, ?, ?, ?, ?)",
         [date, details, tx_method, amount, tx_type])?;
 
-    let mut new_balance = Vec::new();
-    let mut new_changes = Vec::new();
+    let split = date.split("-");
+    let vec = split.collect::<Vec<&str>>();
+    let mut mnth = vec[1].to_string();
+    if &mnth[0..0] == "0" {
+        mnth = mnth.replace("0", "");
+    }
+    let month = mnth.parse::<i32>().unwrap();
+    let year = vec[0][2..].parse::<i32>().unwrap() - 22;
 
+    let target_id_num = month as i32 + (year as i32 * 12);
     let last_id = get_last_tx_id(conn)?;
+
+    let mut new_balance_data = Vec::new();
+    let mut new_changes_data = Vec::new();
+    let mut last_balance_data = Vec::new();
+
+    
     let all_tx_methods = get_all_tx_methods(conn);
     let last_balance = get_last_balances(conn, &all_tx_methods);
-    
-    let int_amount: i32 = amount.parse().unwrap();
+    let mut cu_month_balance = get_last_month_balance(conn, month as usize, year as usize, &all_tx_methods);
+
+    let mut new_balance = 0;
+    let int_amount = amount.parse::<i32>().unwrap();
     let lower_tx_type = tx_type.to_lowercase();
 
-    for i in 0..last_balance.len() {
-        let mut int_balance: i32 = last_balance[i].parse().unwrap();
+    if tx_type == "Expense" {
+        new_balance = cu_month_balance[tx_method] - int_amount;
+    }
+    else if tx_type == "Income" {
+        new_balance = cu_month_balance[tx_method] + int_amount;
+    }
+
+    *cu_month_balance.get_mut(tx_method).unwrap() = new_balance;
+
+    for i in &all_tx_methods {
+        new_balance_data.push(cu_month_balance[i].to_string())
+    }
+
+    for i in 0..all_tx_methods.len() {
+        let cu_last_balance = last_balance[i].parse::<i32>().unwrap();
         let mut default_change = "0".to_string();
-        
+
+        if all_tx_methods[i] == tx_method {
+            let edited_balance = cu_last_balance - int_amount;
+            last_balance_data.push(edited_balance.to_string())
+        }
+        else {
+            last_balance_data.push(cu_last_balance.to_string())
+        }
+
         if &all_tx_methods[i] == &tx_method {
             if lower_tx_type == "expense" || lower_tx_type == "e" {
-                int_balance -= int_amount;
                 default_change = format!("↓{}", &amount);
             }
             else if lower_tx_type == "income" || lower_tx_type == "i" {
-                int_balance += int_amount;
                 default_change = format!("↑{}", &amount);
             }
         }
-        new_balance.push(int_balance.to_string());
-        new_changes.push(default_change);
+        new_changes_data.push(default_change);
     }
 
+    let mut balance_query = format!("UPDATE balance_all SET ");
+    for i in 0..new_balance_data.len() {
+        if i != new_balance_data.len()-1 {
+            balance_query.push_str(&format!("{} = {}, ", all_tx_methods[i], new_balance_data[i]))
+        }
+        else {
+            balance_query.push_str(&format!("{} = {} ", all_tx_methods[i], new_balance_data[i]))
+        }
+    }
+    balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
 
-    let mut balance_query = format!("INSERT INTO balance_all (id_num, date, {all_tx_methods:?}) VALUES ({last_id}, ?, {new_balance:?})");
-    balance_query = balance_query.replace("[", "");
-    balance_query = balance_query.replace("]", "");
-
-    let mut changes_query = format!("INSERT INTO changes_all (id_num, date, {all_tx_methods:?}) VALUES ({last_id}, ?, {new_changes:?})");
+    let mut last_balance_query = format!("UPDATE balance_all SET ");
+    for i in 0..last_balance_data.len() {
+        if i != last_balance_data.len()-1 {
+            last_balance_query.push_str(&format!("{} = {}, ", all_tx_methods[i], last_balance_data[i]))
+        }
+        else {
+            last_balance_query.push_str(&format!("{} = {} ", all_tx_methods[i], last_balance_data[i]))
+        }
+    }
+    //TODO remove from 49 hard coded to balance_all last id_num
+    last_balance_query.push_str(&format!("WHERE id_num = 49"));
+    let mut changes_query = format!("INSERT INTO changes_all (id_num, date, {all_tx_methods:?}) VALUES ({last_id}, ?, {new_changes_data:?})");
     changes_query = changes_query.replace("[", "");
     changes_query = changes_query.replace("]", "");
-
-    conn.execute(&balance_query, [date])?;
+    conn.execute(&balance_query, [])?;
+    conn.execute(&last_balance_query, [])?;
     conn.execute(&changes_query, [date])?;
 
     Ok(())
