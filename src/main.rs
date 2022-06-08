@@ -37,6 +37,7 @@ use crossterm::{
 // [ ] verify db cascade method working or not
 // [ ] add more panic handling
 // [x] latest balance empty = all 0
+// [ ] update balance row if cu balance != db balance after calculation
 
 fn main() -> Result<(), Box<dyn Error>>{
     enable_raw_mode()?;
@@ -48,7 +49,7 @@ fn main() -> Result<(), Box<dyn Error>>{
 
     let months = TimeData::new(vec!["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]);
     //TODO remove 2021
-    let years = TimeData::new(vec!["2021", "2022", "2023", "2024", "2025", "2026"]);
+    let years = TimeData::new(vec!["2022", "2023", "2024", "2025"]);
     let res = run_app(&mut terminal, months, years);
 
     disable_raw_mode()?;
