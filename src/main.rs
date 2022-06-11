@@ -6,6 +6,8 @@ mod add_tx_ui;
 mod table_data;
 mod add_tx_data;
 
+use std::fs;
+use create_initial_db::create_db;
 use rusqlite::{Connection, Result};
 use add_tx_ui::tx_ui;
 use table_ui::ui;
@@ -22,7 +24,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 
-// [ ] Check current path for the db, create new db if necessary
+// [x] Check current path for the db, create new db if necessary
 // [x] create add transaction ui + editing box with inputs
 // [ ] func for saving & deleting txs
 // [ ] create initial ui asking for tx methods
@@ -31,16 +33,37 @@ use crossterm::{
 // [ ] create a popup ui on Home window for commands list
 // [ ] allow adding/removing tx methods(will require renaming columns)
 // [ ] change color scheme?
-// [ ] Check if database connection is alive
 // [ ] change balances to f32?
 // [x] add date column to all_balance & all_changes
 // [ ] verify db cascade method working or not
 // [ ] add more panic handling
+// [ ] add save points for db commits
 // [x] latest balance empty = all 0
-// [ ] update balance row if cu balance != db balance after calculation
 
 fn main() -> Result<(), Box<dyn Error>>{
     enable_raw_mode()?;
+
+    let paths = fs::read_dir(".").unwrap();
+    let mut db_found = false;
+    for path in paths {
+        let path = path.unwrap().path().display().to_string();
+        if path == "./data.sqlite"{
+            db_found = true;
+        }
+    }
+
+    if db_found != true {
+        println!("Creating New Database. It may take some time...");
+        let status = create_db();
+        match status {
+            Ok(_) => {}
+            Err(_) => {
+                println!("Database creation failed. Try again.");
+                fs::remove_file("data.sqlite").expect("Error while deleting database");
+            }
+        }
+    }
+
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -48,7 +71,6 @@ fn main() -> Result<(), Box<dyn Error>>{
     let mut terminal = Terminal::new(backend)?;
 
     let months = TimeData::new(vec!["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]);
-    //TODO remove 2021
     let years = TimeData::new(vec!["2022", "2023", "2024", "2025"]);
     let res = run_app(&mut terminal, months, years);
 
@@ -226,12 +248,21 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                             cu_page = CurrentUi::Home;
                             data_for_tx = AddTxData::new();
                         },
-                        KeyCode::Char('1') => cu_tx_page = TxTab::Details,
-                        KeyCode::Char('2') => cu_tx_page = TxTab::TxMethod,
-                        KeyCode::Char('3') => cu_tx_page = TxTab::Amount,
-                        KeyCode::Char('4') => cu_tx_page = TxTab::TxType,
+                        KeyCode::Char('1') => cu_tx_page = TxTab::Date,
+                        KeyCode::Char('2') => cu_tx_page = TxTab::Details,
+                        KeyCode::Char('3') => cu_tx_page = TxTab::TxMethod,
+                        KeyCode::Char('4') => cu_tx_page = TxTab::Amount,
+                        KeyCode::Char('5') => cu_tx_page = TxTab::TxType,
                         KeyCode::Enter => cu_tx_page = TxTab::Nothing,
                         KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                        _ => {}
+                    }
+
+                    TxTab::Date => match key.code {
+                        KeyCode::Enter => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Backspace => data_for_tx.edit_date('a', true),
+                        KeyCode::Char(a) => data_for_tx.edit_date(a, false),
                         _ => {}
                     }
 
