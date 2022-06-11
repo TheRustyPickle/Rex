@@ -20,17 +20,19 @@ fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     // returns dates from month and year to a format that is suitable for
     // database WHERE statement.
 
-    let mut new_month:String = month.to_string();
-    let mut new_year:String = year.to_string();
+    let new_month: String;
+    let mut new_year = year.to_string();
     
     if month < 10 {
-        new_month = format!("0{}", month+1);
+        new_month = format!("0{}", month);
+    }
+    else {
+        new_month = format!("{}", month);
     }
 
     if year+1 < 10 {
         new_year = format!("202{}", year+2);
     }
-
     let datetime_1 = format!("{}-{}-01", new_year, new_month);
     let datetime_2 = format!("{}-{}-31", new_year, new_month);
     (datetime_1, datetime_2)
@@ -85,7 +87,7 @@ pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<
     let mut final_result = Vec::new();
     let tx_methods = get_all_tx_methods(conn);
 
-    let (datetime_1, datetime_2) = get_sql_dates(month, year);
+    let (datetime_1, datetime_2) = get_sql_dates(month+1, year);
 
     let mut statement = conn.prepare("SELECT * FROM changes_all Where date BETWEEN date(?) AND date(?) ORDER BY id_num").expect("could not prepare statement");
 
@@ -118,10 +120,8 @@ pub fn get_all_txs(conn: &Connection, month: usize, year: usize) -> (Vec<Vec<Str
 
     let mut last_month_balance = get_last_month_balance(conn, month, year, &all_tx_methods); 
 
-    let (datetime_1, datetime_2) = get_sql_dates(month, year);
-
+    let (datetime_1, datetime_2) = get_sql_dates(month+1, year);
     let mut statement = conn.prepare("SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY id_num").expect("could not prepare statement");
-    
     let rows = statement.query_map([&datetime_1,&datetime_2], |row| {
         let date: String = row.get(0).unwrap();
         let splited_date = date.split('-');
@@ -158,7 +158,6 @@ pub fn get_all_txs(conn: &Connection, month: usize, year: usize) -> (Vec<Vec<Str
 
         final_all_balances.push(to_push);
     }
-
     (final_all_txs, final_all_balances)
 }
 
