@@ -1,6 +1,6 @@
 use rusqlite::{Connection, Result};
 
-fn _create_db() -> Result<()> {
+pub fn create_db() -> Result<()> {
     let months = vec!["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     let years = vec!["2022", "2023", "2024", "2025"];
     //TODO change test to actual db path
