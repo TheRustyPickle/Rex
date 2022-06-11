@@ -9,4 +9,3 @@ edition = "2021"
 tui = "0.18"
 crossterm = "0.23"  
 rusqlite = { version = "0.27.0", features = ["bundled"] }
-chrono = "0.4.19"
