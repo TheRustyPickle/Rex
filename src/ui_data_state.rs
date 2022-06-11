@@ -101,6 +101,7 @@ impl SelectedTab {
 }
 
 pub enum TxTab {
+    Date,
     Details,
     TxMethod,
     Amount,
