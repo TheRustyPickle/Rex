@@ -1,4 +1,3 @@
-use chrono::prelude::{Local};
 use rusqlite::Connection;
 use crate::sub_func::add_new_tx;
 pub struct AddTxData {
@@ -11,10 +10,8 @@ pub struct AddTxData {
 
 impl AddTxData {
     pub fn new() -> Self {
-        let cu_date = Local::today().to_string();
-        let formatted_cu_date = &cu_date[0..10];
         AddTxData {
-            date: formatted_cu_date.to_string(),
+            date: "".to_string(),
             details: "".to_string(),
             tx_method: "".to_string(),
             amount: "".to_string(),
@@ -27,6 +24,17 @@ impl AddTxData {
     }
 
     //TODO emit some kind of status to place on placement field ex check date format, amount
+
+    pub fn edit_date(&mut self, text: char, pop_last: bool){
+        match pop_last {
+            true => {
+                if self.date.len() > 0 {
+                    self.date.pop().unwrap();
+                }
+            },
+            false => self.date = format!("{}{text}", self.date),
+        }
+    }
 
     pub fn edit_details(&mut self, text: char, pop_last: bool) {
         match pop_last {
@@ -75,8 +83,8 @@ impl AddTxData {
     pub fn add_tx(&mut self, conn: &Connection) -> String {
         let status = add_new_tx(conn, &self.date, &self.details, &self.tx_method, &self.amount, &self.tx_type);
         match status {
-            Ok(_) => {},
-            Err(_) => {},
+            Ok(_) => println!("Success"),
+            Err(e) => println!("Error happened {}", e),
         }
         "done".to_string()
     }
