@@ -106,13 +106,14 @@ pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<
     final_result
 }
 
-pub fn get_all_txs(conn: &Connection, month: usize, year: usize) -> (Vec<Vec<String>>, Vec<Vec<String>>) {
+pub fn get_all_txs(conn: &Connection, month: usize, year: usize) -> (Vec<Vec<String>>, Vec<Vec<String>>, Vec<String>) {
     // returns all transactions recorded within a given date + balance changes
 
     let all_tx_methods = get_all_tx_methods(conn);
 
     let mut final_all_txs: Vec<Vec<String>> = Vec::new();
     let mut final_all_balances: Vec<Vec<String>> = Vec::new();
+    let mut all_id_num = Vec::new();
 
     // we will go through the last month balances and add/substract
     // current month's transactions to the related tx method. After each tx calulcation, add whatever 
@@ -124,15 +125,20 @@ pub fn get_all_txs(conn: &Connection, month: usize, year: usize) -> (Vec<Vec<Str
     let mut statement = conn.prepare("SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY id_num").expect("could not prepare statement");
     let rows = statement.query_map([&datetime_1,&datetime_2], |row| {
         let date: String = row.get(0).unwrap();
+        let id_num: i32 = row.get(5).unwrap();
         let splited_date = date.split('-');
         let collected_date: Vec<&str> = splited_date.collect(); 
         let new_date = format!("{}-{}-{}", collected_date[2], collected_date[1], collected_date[0]);
 
-        Ok(vec![new_date, row.get(1).unwrap(), row.get(2).unwrap(), row.get(3).unwrap(), row.get(4).unwrap()])
+        Ok(vec![new_date, row.get(1).unwrap(), row.get(2).unwrap(), row.get(3).unwrap(), row.get(4).unwrap(), id_num.to_string()])
     }).expect("Error");
 
     for i in rows {
-        final_all_txs.push(i.unwrap())
+        let mut data = i.unwrap();
+        let id_num = &data.pop().unwrap();
+        all_id_num.push(id_num.to_string());
+        final_all_txs.push(data);
+        
     }
     
     for i in &final_all_txs {
@@ -158,7 +164,7 @@ pub fn get_all_txs(conn: &Connection, month: usize, year: usize) -> (Vec<Vec<Str
 
         final_all_balances.push(to_push);
     }
-    (final_all_txs, final_all_balances)
+    (final_all_txs, final_all_balances, all_id_num)
 }
 
 pub fn get_empty_changes() -> Vec<String> {
@@ -294,5 +300,58 @@ pub fn add_new_tx(conn: &Connection, date: &str, details: &str, tx_method: &str,
     conn.execute(&last_balance_query, [])?;
     conn.execute(&changes_query, [date])?;
 
+    Ok(())
+}
+
+pub fn delete_tx(conn: &Connection, id_num: usize) -> sqlResult<()> {
+    // updates the final balance and deletes the selected transaction
+    
+    let tx_methods = get_all_tx_methods(conn);
+    let last_balance = get_last_balances(conn, &tx_methods);
+
+    let mut final_last_balance = Vec::new();
+
+    let query = format!("SELECT * FROM tx_all Where id_num = {}", id_num);
+    let data = conn.query_row(&query, [], |row| {
+        let mut final_data: Vec<String> = Vec::new();
+        final_data.push(row.get(2).unwrap());
+        final_data.push(row.get(3).unwrap());
+        final_data.push(row.get(4).unwrap());
+        Ok(final_data)
+        },
+    ).unwrap(); 
+
+    let source = &data[0];
+    let amount = &data[1].parse::<i32>().unwrap();
+    let tx_type: &str = &data[2];
+
+
+    for i in 0..tx_methods.len() {
+        let mut cu_balance = last_balance[i].parse::<i32>().unwrap(); 
+        if &tx_methods[i] == source {
+            match tx_type {
+                "Expense" => cu_balance += amount,
+                "Income" => cu_balance -= amount,
+                _ => {}
+            }
+        }
+        final_last_balance.push(cu_balance.to_string());
+    }
+
+    let mut last_balance_query = format!("UPDATE balance_all SET ");
+    for i in 0..final_last_balance.len() {
+        if i != final_last_balance.len()-1 {
+            last_balance_query.push_str(&format!("{} = {}, ", tx_methods[i], final_last_balance[i]))
+        }
+        else {
+            last_balance_query.push_str(&format!("{} = {} ", tx_methods[i], final_last_balance[i]))
+        }
+    }
+    last_balance_query.push_str(&format!("WHERE id_num = 49"));
+
+    let del_query = format!("DELETE FROM tx_all WHERE id_num = {id_num}");
+
+    conn.execute(&last_balance_query, [])?;
+    conn.execute(&del_query, [])?;
     Ok(())
 }
