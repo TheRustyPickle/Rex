@@ -26,19 +26,21 @@ use crossterm::{
 
 // [x] Check current path for the db, create new db if necessary
 // [x] create add transaction ui + editing box with inputs
-// [ ] func for saving & deleting txs
+// [x] func for saving & deleting txs
 // [ ] create initial ui asking for tx methods
 // [x] add creating tx button
-// [ ] add remvoing tx button
+// [x] add remvoing tx button
 // [ ] create a popup ui on Home window for commands list
 // [ ] allow adding/removing tx methods(will require renaming columns)
 // [ ] change color scheme?
 // [ ] change balances to f32?
 // [x] add date column to all_balance & all_changes
-// [ ] verify db cascade method working or not
+// [x] verify db cascade method working or not
 // [ ] add more panic handling
 // [ ] add save points for db commits
 // [x] latest balance empty = all 0
+// [ ] limit add tx date between the available years
+// [ ] add status on add tx page
 
 fn main() -> Result<(), Box<dyn Error>>{
     enable_raw_mode()?;
@@ -94,6 +96,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
     let mut last_year_index = 99;
     let path = "data.sqlite";
     let conn = Connection::open(path).expect("Could not connect to database");
+    conn.execute("PRAGMA foreign_keys = ON", []).expect("Could not enable foreign keys");
     let mut all_data = TransactionData::new(&conn, 0, 0);
     let mut table = TableData::new(all_data.get_txs());
     let mut cu_page = CurrentUi::Home;
@@ -147,6 +150,21 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                 CurrentUi::Home => match key.code {
                     KeyCode::Char('q') => return Ok(()),
                     KeyCode::Char('a') => cu_page = CurrentUi::AddTx,
+                    KeyCode::Char('d') => {
+                        if table.state.selected() != None {
+                            let status = all_data.del_tx(&conn, table.state.selected().unwrap());
+                            match status {
+                                Ok(_) => {
+                                    all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
+                                    table = TableData::new(all_data.get_txs());
+                                    table.state.select(None);
+                                    selected_tab = SelectedTab::Months;
+                                },
+                                    
+                                Err(_) => {}
+                            }
+                        }
+                    }
                     KeyCode::Right => {
                         match &selected_tab {
                             SelectedTab::Months => months.next(),
