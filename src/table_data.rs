@@ -1,22 +1,23 @@
-use rusqlite::Connection;
+use rusqlite::{Connection, Result as sqlResult};
 use crate::sub_func::{get_all_txs, get_all_changes,
-    get_all_tx_methods, get_last_balances};
+    get_all_tx_methods, get_last_balances, delete_tx};
 
 pub struct TransactionData {
     pub all_tx: Vec<Vec<String>>,
     all_balance: Vec<Vec<String>>,
     all_changes: Vec<Vec<String>>,
+    all_id_num: Vec<String>,
 }
 
 impl TransactionData {
     pub fn new(conn: &Connection, month: usize, year: usize) -> Self {
-        let (all_tx, all_balance) = get_all_txs(conn, month, year);
+        let (all_tx, all_balance, all_id_num) = get_all_txs(conn, month, year);
         let all_changes = get_all_changes(conn, month, year);
-
         TransactionData {
             all_tx,
             all_balance,
-            all_changes
+            all_changes,
+            all_id_num,
         }
     }
 
@@ -60,5 +61,10 @@ impl TransactionData {
             changes_data.push(i.to_string());
         }
         changes_data
+    }
+
+    pub fn del_tx(&self,  conn: &Connection, index: usize) -> sqlResult<()> {
+        let target_id = self.all_id_num[index].parse::<i32>().unwrap().to_owned();
+        delete_tx(conn, target_id as usize)
     }
 }
