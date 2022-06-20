@@ -8,7 +8,7 @@ use tui::{
 };
 use crate::ui_data_state::TxTab;
 
-pub fn tx_ui<B: Backend>(f: &mut Frame<B>, input_data: Vec<&str>, cu_selected: &TxTab) {
+pub fn tx_ui<B: Backend>(f: &mut Frame<B>, input_data: Vec<&str>, cu_selected: &TxTab, status_data: &Vec<String>) {
     let size = f.size();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -27,7 +27,7 @@ pub fn tx_ui<B: Backend>(f: &mut Frame<B>, input_data: Vec<&str>, cu_selected: &
 
     let help_text = vec![
         Spans::from("Press the respective keys to edit fields."),
-        Spans::from("'1': Date         Example: 05-12-2022, DD-MM-YYYY"),
+        Spans::from("'1': Date         Example: 2022-05-12, YYYY-MM-DD"),
         Spans::from("'2': TX details   Example: For Grocery, Salary"),
         Spans::from("'3': TX Method    Example: Cash, Bank, Card"),
         Spans::from("'4': Amount       Example: 1000, 500"),
@@ -37,9 +37,16 @@ pub fn tx_ui<B: Backend>(f: &mut Frame<B>, input_data: Vec<&str>, cu_selected: &
         Spans::from("'S': Save the inputted data as a Transaction"),
     ];
 
-    let status_text = vec![
-        Spans::from("Check status here")
-    ];
+    let mut status_text = vec![];
+
+    for i in status_data.iter().rev() {
+        if i.contains("Accepted") == false && i.contains("Nothing") == false {
+            status_text.push(Spans::from(Span::styled(i,Style::default().fg(Color::Red),)));
+        }
+        else {
+            status_text.push(Spans::from(Span::styled(i,Style::default().fg(Color::Blue),)));
+        }
+    }
     
     let date_text = vec![
         Spans::from(input_data[0])
