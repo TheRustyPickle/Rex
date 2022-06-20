@@ -39,8 +39,8 @@ use crossterm::{
 // [ ] add more panic handling
 // [ ] add save points for db commits
 // [x] latest balance empty = all 0
-// [ ] limit add tx date between the available years
-// [ ] add status on add tx page
+// [x] limit add tx date between the available years
+// [x] add status on add tx page
 // [ ] add average expense on home page
 
 fn main() -> Result<(), Box<dyn Error>>{
@@ -260,7 +260,6 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                             data_for_tx = AddTxData::new();
                         },
                         KeyCode::Char('s') => {
-                            //TODO send to status page and verify status
                             let _status = data_for_tx.add_tx(&conn);
                             cu_page = CurrentUi::Home;
                             data_for_tx = AddTxData::new();
@@ -318,23 +317,59 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                     }
 
                     TxTab::TxMethod => match key.code {
-                        KeyCode::Enter => cu_tx_page = TxTab::Nothing,
-                        KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Enter => {
+                            let status = data_for_tx.check_tx_method(&conn);
+                            data_for_tx.add_tx_status(&status);
+                            if status.contains("Accepted") || status.contains("Nothing") {
+                                cu_tx_page = TxTab::Nothing
+                            }
+                        },
+                        KeyCode::Esc => {
+                            let status = data_for_tx.check_tx_method(&conn);
+                            data_for_tx.add_tx_status(&status);
+                            if status.contains("Accepted") {
+                                cu_tx_page = TxTab::Nothing
+                            }
+                        },
                         KeyCode::Backspace => data_for_tx.edit_tx_method('a', true),
                         KeyCode::Char(a) => data_for_tx.edit_tx_method(a, false),
                         _ => {}
                     }
 
                     TxTab::Amount => match key.code {
-                        KeyCode::Enter => cu_tx_page = TxTab::Nothing,
-                        KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Enter => {
+                            let status = data_for_tx.check_amount();
+                            match status {
+                                Ok(a) => {
+                                    data_for_tx.add_tx_status(&a);
+                                    cu_tx_page = TxTab::Nothing;
+                                },
+                                Err(_) => data_for_tx.add_tx_status("Amount: Invalid Amount found")
+                            }
+                        },
+                        KeyCode::Esc => {
+                            let status = data_for_tx.check_amount();
+                            match status {
+                                Ok(a) => {
+                                    data_for_tx.add_tx_status(&a);
+                                    cu_tx_page = TxTab::Nothing;
+                                },
+                                Err(_) => data_for_tx.add_tx_status("Amount: Invalid Amount found")
+                            }
+                        },
                         KeyCode::Backspace => data_for_tx.edit_amount('a', true),
                         KeyCode::Char(a) => data_for_tx.edit_amount(a, false),
                         _ => {}
                     }
 
                     TxTab::TxType => match key.code {
-                        KeyCode::Enter => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Enter => {
+                            let status = data_for_tx.check_tx_type();
+                            data_for_tx.add_tx_status(&status);
+                            if status.contains("Accepted") || status.contains("Nothing"){
+                                cu_tx_page = TxTab::Nothing
+                            }
+                        },
                         KeyCode::Esc => cu_tx_page = TxTab::Nothing,
                         KeyCode::Backspace => data_for_tx.edit_tx_type('a', true),
                         KeyCode::Char(a) => data_for_tx.edit_tx_type(a, false),
