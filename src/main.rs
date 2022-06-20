@@ -41,10 +41,9 @@ use crossterm::{
 // [x] latest balance empty = all 0
 // [ ] limit add tx date between the available years
 // [ ] add status on add tx page
+// [ ] add average expense on home page
 
 fn main() -> Result<(), Box<dyn Error>>{
-    enable_raw_mode()?;
-
     let paths = fs::read_dir(".").unwrap();
     let mut db_found = false;
     for path in paths {
@@ -53,7 +52,7 @@ fn main() -> Result<(), Box<dyn Error>>{
             db_found = true;
         }
     }
-
+    // TODO if db not found take user input for tx method during the initialization
     if db_found != true {
         println!("Creating New Database. It may take some time...");
         let status = create_db();
@@ -65,7 +64,7 @@ fn main() -> Result<(), Box<dyn Error>>{
             }
         }
     }
-
+    enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -143,7 +142,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
         match cu_page {
             //NOTE initial ui to be added here
             CurrentUi::Home => terminal.draw(|f| ui(f, &months, &years, &mut table, &mut balance, &selected_tab, &mut width_data))?,
-            CurrentUi::AddTx => terminal.draw(|f| tx_ui(f, data_for_tx.get_all_texts(), &cu_tx_page),)?,
+            CurrentUi::AddTx => terminal.draw(|f| tx_ui(f, data_for_tx.get_all_texts(), &cu_tx_page, &data_for_tx.tx_status), )?,
         };
         if let Event::Key(key) = event::read()? {
             match cu_page {
@@ -261,7 +260,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                             data_for_tx = AddTxData::new();
                         },
                         KeyCode::Char('s') => {
-                            //TODO send string to status page
+                            //TODO send to status page and verify status
                             let _status = data_for_tx.add_tx(&conn);
                             cu_page = CurrentUi::Home;
                             data_for_tx = AddTxData::new();
@@ -277,8 +276,34 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                     }
 
                     TxTab::Date => match key.code {
-                        KeyCode::Enter => cu_tx_page = TxTab::Nothing,
-                        KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                        KeyCode::Enter => {
+                            let status = data_for_tx.check_date();
+                            match status {
+                                Ok(a) => {
+                                    data_for_tx.add_tx_status(&a);
+                                    if a.contains("Accepted") || a.contains("Nothing") {
+                                        cu_tx_page = TxTab::Nothing
+                                    }
+                                    
+                                }
+                                Err(_) => data_for_tx.add_tx_status("Date: Error acquired or Date not acceptable."),
+                                
+                            }
+                        },
+                        KeyCode::Esc => {
+                            let status = data_for_tx.check_date();
+                            match status {
+                                Ok(a) => {
+                                    data_for_tx.add_tx_status(&a);
+                                    if a.contains("Accepted") {
+                                        cu_tx_page = TxTab::Nothing
+                                    }
+                                    
+                                }
+                                Err(_) => data_for_tx.add_tx_status("Date: Error acquired or Date not acceptable."),
+                                
+                            }
+                        },
                         KeyCode::Backspace => data_for_tx.edit_date('a', true),
                         KeyCode::Char(a) => data_for_tx.edit_date(a, false),
                         _ => {}
