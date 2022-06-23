@@ -40,7 +40,13 @@ impl TransactionData {
     pub fn get_balance(&self, index: usize) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
         for i in  self.all_balance[index].iter() {
-            balance_data.push(i.to_string());
+            if i == "0.0" {
+                balance_data.push(format!("0.00"))
+            }
+            else{
+                balance_data.push(format!("{}", i));
+            }
+            
         }
         balance_data
     }
@@ -49,16 +55,26 @@ impl TransactionData {
         let mut balance_data = vec!["Balance".to_string()];
         let db_data = get_last_balances(conn, &get_all_tx_methods(conn));
         for i in db_data.iter() {
-            balance_data.push(i.to_string())
+            if i == "0.0" {
+                balance_data.push(format!("0.00"))
+            }
+            else {
+                balance_data.push(format!("{}", i))
+            }
         }
-        
         balance_data
     }
 
     pub fn get_changes(&self, index: usize) -> Vec<String> {
         let mut changes_data = vec!["Changes".to_string()];
         for i in self.all_changes[index].iter() {
-            changes_data.push(i.to_string());
+            if i == "0.0" {
+                changes_data.push(format!("0.00"));
+            }
+            else{
+                changes_data.push(format!("{}", i));
+            }
+            
         }
         changes_data
     }
