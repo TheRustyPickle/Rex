@@ -42,13 +42,12 @@ impl TableData {
     }
 }
 
-
 pub struct TimeData<'a> {
     pub titles: Vec<&'a str>,
     pub index: usize,
 }
 
-impl <'a> TimeData<'a> {
+impl<'a> TimeData<'a> {
     pub fn new(values: Vec<&'a str>) -> Self {
         TimeData {
             titles: values,
@@ -63,14 +62,11 @@ impl <'a> TimeData<'a> {
     pub fn previous(&mut self) {
         if self.index > 0 {
             self.index -= 1;
-        }
-        else {
+        } else {
             self.index = self.titles.len() - 1;
         }
     }
-} 
-
-
+}
 
 pub enum SelectedTab {
     Years,
@@ -84,7 +80,7 @@ impl SelectedTab {
         match &self {
             SelectedTab::Years => to_return = SelectedTab::Table,
             SelectedTab::Months => to_return = SelectedTab::Years,
-            SelectedTab::Table => to_return = SelectedTab::Months
+            SelectedTab::Table => to_return = SelectedTab::Months,
         };
         to_return
     }
@@ -94,7 +90,7 @@ impl SelectedTab {
         match &self {
             SelectedTab::Years => to_return = SelectedTab::Months,
             SelectedTab::Months => to_return = SelectedTab::Table,
-            SelectedTab::Table => to_return = SelectedTab::Years
+            SelectedTab::Table => to_return = SelectedTab::Years,
         };
         to_return
     }
@@ -111,5 +107,5 @@ pub enum TxTab {
 
 pub enum CurrentUi {
     Home,
-    AddTx
+    AddTx,
 }

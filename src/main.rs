@@ -1,28 +1,31 @@
+mod add_tx_data;
+mod add_tx_ui;
+mod create_initial_db;
+mod sub_func;
+mod table_data;
 mod table_ui;
 mod ui_data_state;
-mod sub_func;
-mod create_initial_db;
-mod add_tx_ui;
-mod table_data;
-mod add_tx_data;
 
-use std::fs;
-use create_initial_db::create_db;
-use rusqlite::{Connection, Result};
-use add_tx_ui::tx_ui;
-use table_ui::ui;
-use sub_func::{get_all_tx_methods, get_empty_changes};
-use table_data::TransactionData;
 use add_tx_data::AddTxData;
-use ui_data_state::*;
-use std::{error::Error, io};
-use tui::{backend::{Backend, CrosstermBackend}, Terminal,};
-use tui::layout::Constraint;
+use add_tx_ui::tx_ui;
+use create_initial_db::create_db;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use rusqlite::{Connection, Result};
+use std::fs;
+use std::{error::Error, io};
+use sub_func::{get_all_tx_methods, get_empty_changes};
+use table_data::TransactionData;
+use table_ui::ui;
+use tui::layout::Constraint;
+use tui::{
+    backend::{Backend, CrosstermBackend},
+    Terminal,
+};
+use ui_data_state::*;
 
 // [x] Check current path for the db, create new db if necessary
 // [x] create add transaction ui + editing box with inputs
@@ -44,12 +47,12 @@ use crossterm::{
 // [ ] add average expense on home page
 // [ ] add more comments
 
-fn main() -> Result<(), Box<dyn Error>>{
+fn main() -> Result<(), Box<dyn Error>> {
     let paths = fs::read_dir(".").unwrap();
     let mut db_found = false;
     for path in paths {
         let path = path.unwrap().path().display().to_string();
-        if path == "./data.sqlite"{
+        if path == "./data.sqlite" {
             db_found = true;
         }
     }
@@ -72,7 +75,20 @@ fn main() -> Result<(), Box<dyn Error>>{
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let months = TimeData::new(vec!["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]);
+    let months = TimeData::new(vec![
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ]);
     let years = TimeData::new(vec!["2022", "2023", "2024", "2025"]);
     let res = run_app(&mut terminal, months, years);
 
@@ -90,13 +106,18 @@ fn main() -> Result<(), Box<dyn Error>>{
     Ok(())
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut years: TimeData) -> io::Result<()> {
+fn run_app<B: Backend>(
+    terminal: &mut Terminal<B>,
+    mut months: TimeData,
+    mut years: TimeData,
+) -> io::Result<()> {
     let mut selected_tab = SelectedTab::Months;
     let mut last_month_index = 99;
     let mut last_year_index = 99;
     let path = "data.sqlite";
     let conn = Connection::open(path).expect("Could not connect to database");
-    conn.execute("PRAGMA foreign_keys = ON", []).expect("Could not enable foreign keys");
+    conn.execute("PRAGMA foreign_keys = ON", [])
+        .expect("Could not enable foreign keys");
     let mut all_data = TransactionData::new(&conn, 0, 0);
     let mut table = TableData::new(all_data.get_txs());
     let mut cu_page = CurrentUi::Home;
@@ -107,7 +128,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
         let cu_month_index = months.index;
         let cu_year_index = years.index;
         let cu_table_index = table.state.selected();
-        
+
         // reload the data saved in memory each time the month or the year changes
         if cu_month_index != last_month_index || cu_year_index != last_year_index {
             all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
@@ -116,15 +137,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
             last_year_index = cu_year_index;
         };
 
-        let mut balance: Vec<Vec<String>> = vec![
-            vec!["".to_string()]
-        ];
+        let mut balance: Vec<Vec<String>> = vec![vec!["".to_string()]];
         balance[0].extend(get_all_tx_methods(&conn));
 
         // save the % of space each column should take in the Balance section
         let width_percent = 100 / balance[0].len() as u16;
         let mut width_data = vec![];
-        for _i in 0..balance[0].len()  {
+        for _i in 0..balance[0].len() {
             width_data.push(Constraint::Percentage(width_percent));
         }
 
@@ -133,17 +152,34 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
             Some(a) => {
                 balance.push(all_data.get_balance(a));
                 balance.push(all_data.get_changes(a));
-            },
+            }
             None => {
                 balance.push(all_data.get_last_balance(&conn));
                 balance.push(get_empty_changes());
-            },
+            }
         }
 
         match cu_page {
             //NOTE initial ui to be added here
-            CurrentUi::Home => terminal.draw(|f| ui(f, &months, &years, &mut table, &mut balance, &selected_tab, &mut width_data))?,
-            CurrentUi::AddTx => terminal.draw(|f| tx_ui(f, data_for_tx.get_all_texts(), &cu_tx_page, &data_for_tx.tx_status), )?,
+            CurrentUi::Home => terminal.draw(|f| {
+                ui(
+                    f,
+                    &months,
+                    &years,
+                    &mut table,
+                    &mut balance,
+                    &selected_tab,
+                    &mut width_data,
+                )
+            })?,
+            CurrentUi::AddTx => terminal.draw(|f| {
+                tx_ui(
+                    f,
+                    data_for_tx.get_all_texts(),
+                    &cu_tx_page,
+                    &data_for_tx.tx_status,
+                )
+            })?,
         };
         if let Event::Key(key) = event::read()? {
             match cu_page {
@@ -155,76 +191,69 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                             let status = all_data.del_tx(&conn, table.state.selected().unwrap());
                             match status {
                                 Ok(_) => {
-                                    all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
+                                    all_data =
+                                        TransactionData::new(&conn, cu_month_index, cu_year_index);
                                     table = TableData::new(all_data.get_txs());
                                     table.state.select(None);
                                     selected_tab = SelectedTab::Months;
-                                },
-                                    
+                                }
+
                                 Err(_) => {}
                             }
                         }
                     }
-                    KeyCode::Right => {
-                        match &selected_tab {
-                            SelectedTab::Months => months.next(),
-                            SelectedTab::Years => {
-                                years.next();
-                                months.index = 0;
-                            },
-                            _ => {}
+                    KeyCode::Right => match &selected_tab {
+                        SelectedTab::Months => months.next(),
+                        SelectedTab::Years => {
+                            years.next();
+                            months.index = 0;
                         }
+                        _ => {}
                     },
-                    KeyCode::Left => {
-                        match &selected_tab {
-                            SelectedTab::Months => months.previous(),
-                            SelectedTab::Years => {
-                                years.previous();
-                                months.index = 0;
-                            },
-                            _ => {}
+                    KeyCode::Left => match &selected_tab {
+                        SelectedTab::Months => months.previous(),
+                        SelectedTab::Years => {
+                            years.previous();
+                            months.index = 0;
                         }
+                        _ => {}
                     },
                     KeyCode::Up => {
-                        match &selected_tab{
+                        match &selected_tab {
                             SelectedTab::Table => {
                                 // Do not select any table rows in the table section If
                                 // there is no transaction
                                 if all_data.all_tx.len() < 1 {
                                     selected_tab = selected_tab.change_tab_up();
                                 }
-
                                 // executes when going from first table row to month widget
                                 else if table.state.selected() == Some(0) {
                                     selected_tab = SelectedTab::Months;
                                     table.state.select(None);
-                                }
-                                else {
+                                } else {
                                     if all_data.all_tx.len() > 0 {
                                         table.previous();
                                     }
                                 }
-                            },
+                            }
                             SelectedTab::Years => {
                                 // Do not select any table rows in the table section If
                                 // there is no transaction
                                 if all_data.all_tx.len() < 1 {
                                     selected_tab = selected_tab.change_tab_up();
-                                }
-                                else {
+                                } else {
                                     // Move to the selected value on table
                                     // to the last row if pressed up on Year section
                                     table.state.select(Some(table.items.len() - 1));
                                     selected_tab = selected_tab.change_tab_up();
                                     if all_data.all_tx.len() < 1 {
-                                    selected_tab = selected_tab.change_tab_up();
+                                        selected_tab = selected_tab.change_tab_up();
                                     }
                                 }
-                                
                             }
-                            _ => selected_tab = selected_tab.change_tab_up()
+                            _ => selected_tab = selected_tab.change_tab_up(),
                         }
-                    },
+                    }
                     KeyCode::Down => {
                         match &selected_tab {
                             SelectedTab::Table => {
@@ -238,8 +267,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                                 else if table.state.selected() == Some(table.items.len() - 1) {
                                     selected_tab = SelectedTab::Years;
                                     table.state.select(None);
-                                }
-                                else {
+                                } else {
                                     if all_data.all_tx.len() > 0 {
                                         table.next();
                                     }
@@ -247,9 +275,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                             }
                             _ => selected_tab = selected_tab.change_tab_down(),
                         }
-                    },
-                    _ => {}
                     }
+                    _ => {}
+                },
                 CurrentUi::AddTx => match cu_tx_page {
                     // start matching key pressed based on which widget is selected.
                     // current state tracked with enums
@@ -259,12 +287,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                             cu_page = CurrentUi::Home;
                             cu_tx_page = TxTab::Nothing;
                             data_for_tx = AddTxData::new();
-                        },
+                        }
                         KeyCode::Char('s') => {
                             let _status = data_for_tx.add_tx(&conn);
                             cu_page = CurrentUi::Home;
                             data_for_tx = AddTxData::new();
-                        },
+                        }
                         KeyCode::Char('1') => cu_tx_page = TxTab::Date,
                         KeyCode::Char('2') => cu_tx_page = TxTab::Details,
                         KeyCode::Char('3') => cu_tx_page = TxTab::TxMethod,
@@ -273,7 +301,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                         KeyCode::Enter => cu_tx_page = TxTab::Nothing,
                         KeyCode::Esc => cu_tx_page = TxTab::Nothing,
                         _ => {}
-                    }
+                    },
 
                     TxTab::Date => match key.code {
                         KeyCode::Enter => {
@@ -284,12 +312,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                                     if a.contains("Accepted") || a.contains("Nothing") {
                                         cu_tx_page = TxTab::Nothing
                                     }
-                                    
                                 }
-                                Err(_) => data_for_tx.add_tx_status("Date: Error acquired or Date not acceptable."),
-                                
+                                Err(_) => data_for_tx
+                                    .add_tx_status("Date: Error acquired or Date not acceptable."),
                             }
-                        },
+                        }
                         KeyCode::Esc => {
                             let status = data_for_tx.check_date();
                             match status {
@@ -298,16 +325,15 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                                     if a.contains("Accepted") {
                                         cu_tx_page = TxTab::Nothing
                                     }
-                                    
                                 }
-                                Err(_) => data_for_tx.add_tx_status("Date: Error acquired or Date not acceptable."),
-                                
+                                Err(_) => data_for_tx
+                                    .add_tx_status("Date: Error acquired or Date not acceptable."),
                             }
-                        },
+                        }
                         KeyCode::Backspace => data_for_tx.edit_date('a', true),
                         KeyCode::Char(a) => data_for_tx.edit_date(a, false),
                         _ => {}
-                    }
+                    },
 
                     TxTab::Details => match key.code {
                         KeyCode::Enter => cu_tx_page = TxTab::Nothing,
@@ -315,7 +341,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                         KeyCode::Backspace => data_for_tx.edit_details('a', true),
                         KeyCode::Char(a) => data_for_tx.edit_details(a, false),
                         _ => {}
-                    }
+                    },
 
                     TxTab::TxMethod => match key.code {
                         KeyCode::Enter => {
@@ -324,18 +350,18 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                             if status.contains("Accepted") || status.contains("Nothing") {
                                 cu_tx_page = TxTab::Nothing
                             }
-                        },
+                        }
                         KeyCode::Esc => {
                             let status = data_for_tx.check_tx_method(&conn);
                             data_for_tx.add_tx_status(&status);
                             if status.contains("Accepted") {
                                 cu_tx_page = TxTab::Nothing
                             }
-                        },
+                        }
                         KeyCode::Backspace => data_for_tx.edit_tx_method('a', true),
                         KeyCode::Char(a) => data_for_tx.edit_tx_method(a, false),
                         _ => {}
-                    }
+                    },
 
                     TxTab::Amount => match key.code {
                         KeyCode::Enter => {
@@ -344,39 +370,39 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut months: TimeData, mut yea
                                 Ok(a) => {
                                     data_for_tx.add_tx_status(&a);
                                     cu_tx_page = TxTab::Nothing;
-                                },
-                                Err(_) => data_for_tx.add_tx_status("Amount: Invalid Amount found")
+                                }
+                                Err(_) => data_for_tx.add_tx_status("Amount: Invalid Amount found"),
                             }
-                        },
+                        }
                         KeyCode::Esc => {
                             let status = data_for_tx.check_amount();
                             match status {
                                 Ok(a) => {
                                     data_for_tx.add_tx_status(&a);
                                     cu_tx_page = TxTab::Nothing;
-                                },
-                                Err(_) => data_for_tx.add_tx_status("Amount: Invalid Amount found")
+                                }
+                                Err(_) => data_for_tx.add_tx_status("Amount: Invalid Amount found"),
                             }
-                        },
+                        }
                         KeyCode::Backspace => data_for_tx.edit_amount('a', true),
                         KeyCode::Char(a) => data_for_tx.edit_amount(a, false),
                         _ => {}
-                    }
+                    },
 
                     TxTab::TxType => match key.code {
                         KeyCode::Enter => {
                             let status = data_for_tx.check_tx_type();
                             data_for_tx.add_tx_status(&status);
-                            if status.contains("Accepted") || status.contains("Nothing"){
+                            if status.contains("Accepted") || status.contains("Nothing") {
                                 cu_tx_page = TxTab::Nothing
                             }
-                        },
+                        }
                         KeyCode::Esc => cu_tx_page = TxTab::Nothing,
                         KeyCode::Backspace => data_for_tx.edit_tx_type('a', true),
                         KeyCode::Char(a) => data_for_tx.edit_tx_type(a, false),
                         _ => {}
-                    }
-                }
+                    },
+                },
             }
         };
     }

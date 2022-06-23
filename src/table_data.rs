@@ -1,6 +1,7 @@
+use crate::sub_func::{
+    delete_tx, get_all_changes, get_all_tx_methods, get_all_txs, get_last_balances,
+};
 use rusqlite::{Connection, Result as sqlResult};
-use crate::sub_func::{get_all_txs, get_all_changes,
-    get_all_tx_methods, get_last_balances, delete_tx};
 
 pub struct TransactionData {
     pub all_tx: Vec<Vec<String>>,
@@ -39,14 +40,12 @@ impl TransactionData {
 
     pub fn get_balance(&self, index: usize) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
-        for i in  self.all_balance[index].iter() {
+        for i in self.all_balance[index].iter() {
             if i == "0.0" {
                 balance_data.push(format!("0.00"))
-            }
-            else{
+            } else {
                 balance_data.push(format!("{}", i));
             }
-            
         }
         balance_data
     }
@@ -57,8 +56,7 @@ impl TransactionData {
         for i in db_data.iter() {
             if i == "0.0" {
                 balance_data.push(format!("0.00"))
-            }
-            else {
+            } else {
                 balance_data.push(format!("{}", i))
             }
         }
@@ -70,16 +68,14 @@ impl TransactionData {
         for i in self.all_changes[index].iter() {
             if i == "0.0" {
                 changes_data.push(format!("0.00"));
-            }
-            else{
+            } else {
                 changes_data.push(format!("{}", i));
             }
-            
         }
         changes_data
     }
 
-    pub fn del_tx(&self,  conn: &Connection, index: usize) -> sqlResult<()> {
+    pub fn del_tx(&self, conn: &Connection, index: usize) -> sqlResult<()> {
         let target_id = self.all_id_num[index].parse::<i32>().unwrap().to_owned();
         delete_tx(conn, target_id as usize)
     }
