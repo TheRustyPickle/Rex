@@ -38,15 +38,15 @@ fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     (datetime_1, datetime_2)
 }
 
-pub fn get_last_month_balance(conn: &Connection, month: usize, year: usize, tx_method: &Vec<String>) -> HashMap<String, i32> {
+pub fn get_last_month_balance(conn: &Connection, month: usize, year: usize, tx_method: &Vec<String>) -> HashMap<String, f32> {
     let mut target_id_num = month as i32 + (year as i32 * 12);
 
     let mut final_value = HashMap::new();
-    let mut to_return: Vec<i32>;
+    let mut to_return: Vec<f32>;
     
     if target_id_num == 0 {
         for i in tx_method {
-            final_value.insert(i.to_string(), 0);
+            final_value.insert(i.to_string(), 0.0);
         }
         return final_value;
     }
@@ -59,10 +59,10 @@ pub fn get_last_month_balance(conn: &Connection, month: usize, year: usize, tx_m
             &query,
             [target_id_num],
             |row| {
-                let mut final_data: Vec<i32> = Vec::new();
+                let mut final_data: Vec<f32> = Vec::new();
                 for i in 0..tx_method.len() {
                     let to_push: String = row.get(i).unwrap();
-                    let final_value:i32 = to_push.parse::<i32>().unwrap();
+                    let final_value = to_push.parse::<f32>().unwrap();
                     final_data.push(final_value);
                 }
                 Ok(final_data)
@@ -71,7 +71,7 @@ pub fn get_last_month_balance(conn: &Connection, month: usize, year: usize, tx_m
         target_id_num -= 1;
         to_return = final_balance.unwrap();
         
-        if to_return != vec![0, 0, 0, 0] || target_id_num == 0 {
+        if to_return != vec![0.0, 0.0, 0.0, 0.0] || target_id_num == 0 {
             break
         }
     }
@@ -143,9 +143,9 @@ pub fn get_all_txs(conn: &Connection, month: usize, year: usize) -> (Vec<Vec<Str
     
     for i in &final_all_txs {
         let tx_type = &i[4];
-        let amount = &i[3].to_string().parse::<i32>().unwrap();
+        let amount = &i[3].to_string().parse::<f32>().unwrap();
         let tx_method = &i[2];
-        let mut new_balance = 0;
+        let mut new_balance: f32 = 0.0;
 
         if tx_type == "Expense" {
             new_balance = last_month_balance[tx_method] - amount;
@@ -159,7 +159,7 @@ pub fn get_all_txs(conn: &Connection, month: usize, year: usize) -> (Vec<Vec<Str
         
         let mut to_push = vec![];
         for i in &all_tx_methods {
-            to_push.push(last_month_balance[i].to_string())
+            to_push.push(format!("{:.2}", last_month_balance[i]))
         }
 
         final_all_balances.push(to_push);
@@ -171,7 +171,7 @@ pub fn get_empty_changes() -> Vec<String> {
     // function for quick vec with 0 changes for adding in widget
 
     vec![
-        "Changes".to_string(), "0".to_string(), "0".to_string(), "0".to_string(), "0".to_string(),
+        "Changes".to_string(), format!("{:.2}", 0.0), format!("{:.2}", 0.0), format!("{:.2}", 0.0), format!("{:.2}", 0.0),
         ]
 }
 
@@ -231,8 +231,8 @@ pub fn add_new_tx(conn: &Connection, date: &str, details: &str, tx_method: &str,
     let last_balance = get_last_balances(conn, &all_tx_methods);
     let mut cu_month_balance = get_last_month_balance(conn, month as usize, year as usize, &all_tx_methods);
 
-    let mut new_balance = 0;
-    let int_amount = amount.parse::<i32>().unwrap();
+    let mut new_balance = 0.0;
+    let int_amount = amount.parse::<f32>().unwrap();
     let lower_tx_type = tx_type.to_lowercase();
 
     if tx_type == "Expense" {
@@ -245,27 +245,36 @@ pub fn add_new_tx(conn: &Connection, date: &str, details: &str, tx_method: &str,
     *cu_month_balance.get_mut(tx_method).unwrap() = new_balance;
 
     for i in &all_tx_methods {
-        new_balance_data.push(cu_month_balance[i].to_string())
+        new_balance_data.push(format!("{:.2}", cu_month_balance[i]))
     }
 
     for i in 0..all_tx_methods.len() {
-        let cu_last_balance = last_balance[i].parse::<i32>().unwrap();
-        let mut default_change = "0".to_string();
-
-        if all_tx_methods[i] == tx_method {
-            let edited_balance = cu_last_balance - int_amount;
-            last_balance_data.push(edited_balance.to_string())
-        }
-        else {
-            last_balance_data.push(cu_last_balance.to_string())
-        }
+        let cu_last_balance = last_balance[i].parse::<f32>().unwrap();
+        let mut default_change = format!("{:.2}", 0.0);
 
         if &all_tx_methods[i] == &tx_method {
             if lower_tx_type == "expense" || lower_tx_type == "e" {
                 default_change = format!("↓{}", &amount);
+
+                if all_tx_methods[i] == tx_method {
+                    let edited_balance = cu_last_balance - int_amount;
+                    last_balance_data.push(format!("{edited_balance:.2}"))
+                }
+                else {
+                    last_balance_data.push(format!("{cu_last_balance:.2}"))
+                }
             }
             else if lower_tx_type == "income" || lower_tx_type == "i" {
                 default_change = format!("↑{}", &amount);
+
+                if all_tx_methods[i] == tx_method {
+                    let edited_balance = cu_last_balance + int_amount;
+                    last_balance_data.push(format!("{edited_balance:.2}"))
+                }
+                else {
+                    
+                    last_balance_data.push(format!("{cu_last_balance:.2}"))
+                }
             }
         }
         new_changes_data.push(default_change);
@@ -322,12 +331,12 @@ pub fn delete_tx(conn: &Connection, id_num: usize) -> sqlResult<()> {
     ).unwrap(); 
 
     let source = &data[0];
-    let amount = &data[1].parse::<i32>().unwrap();
+    let amount = &data[1].parse::<f32>().unwrap();
     let tx_type: &str = &data[2];
 
 
     for i in 0..tx_methods.len() {
-        let mut cu_balance = last_balance[i].parse::<i32>().unwrap(); 
+        let mut cu_balance = last_balance[i].parse::<f32>().unwrap(); 
         if &tx_methods[i] == source {
             match tx_type {
                 "Expense" => cu_balance += amount,
