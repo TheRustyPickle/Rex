@@ -1,6 +1,6 @@
-use chrono::prelude::{Local};
-use rusqlite::Connection;
 use crate::sub_func::{add_new_tx, get_all_tx_methods};
+use chrono::prelude::Local;
+use rusqlite::Connection;
 use std::error::Error;
 
 pub struct AddTxData {
@@ -27,18 +27,24 @@ impl AddTxData {
     }
 
     pub fn get_all_texts(&self) -> Vec<&str> {
-        vec![&self.date, &self.details, &self.tx_method, &self.amount, &self.tx_type]
+        vec![
+            &self.date,
+            &self.details,
+            &self.tx_method,
+            &self.amount,
+            &self.tx_type,
+        ]
     }
 
     //TODO emit some kind of status to place on placement field ex check date format, amount
 
-    pub fn edit_date(&mut self, text: char, pop_last: bool){
+    pub fn edit_date(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
                 if self.date.len() > 0 {
                     self.date.pop().unwrap();
                 }
-            },
+            }
             false => self.date = format!("{}{text}", self.date),
         }
     }
@@ -49,7 +55,7 @@ impl AddTxData {
                 if self.details.len() > 0 {
                     self.details.pop().unwrap();
                 }
-            },
+            }
             false => self.details = format!("{}{text}", self.details),
         }
     }
@@ -60,7 +66,7 @@ impl AddTxData {
                 if self.tx_method.len() > 0 {
                     self.tx_method.pop().unwrap();
                 }
-            },
+            }
             false => self.tx_method = format!("{}{text}", self.tx_method),
         }
     }
@@ -71,11 +77,11 @@ impl AddTxData {
                 if self.amount.len() > 0 {
                     self.amount.pop().unwrap();
                 }
-            },
+            }
             false => {
                 let data = format!("{}{text}", self.amount);
                 self.amount = data;
-            },
+            }
         }
     }
 
@@ -85,15 +91,22 @@ impl AddTxData {
                 if self.tx_type.len() > 0 {
                     self.tx_type.pop().unwrap();
                 }
-            },
+            }
             false => self.tx_type = format!("{}{text}", self.tx_type),
         }
     }
 
     pub fn add_tx(&mut self, conn: &Connection) -> String {
-        let status = add_new_tx(conn, &self.date, &self.details, &self.tx_method, &self.amount, &self.tx_type);
+        let status = add_new_tx(
+            conn,
+            &self.date,
+            &self.details,
+            &self.tx_method,
+            &self.amount,
+            &self.tx_type,
+        );
         match status {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(e) => println!("Error happened {}", e),
         }
         "done".to_string()
@@ -112,7 +125,7 @@ impl AddTxData {
         if user_date.len() == 0 {
             return Ok("Date: Nothing to check".to_string());
         }
-        
+
         let splitted = user_date.split("-");
         let data = splitted.collect::<Vec<&str>>();
         let int_year: u32 = data[0].parse()?;
@@ -127,82 +140,61 @@ impl AddTxData {
             if data[0].len() < 4 {
                 let new_date = format!("2022-{}-{}", data[1], data[2]);
                 self.date = new_date;
-            }
-            else if data[0].len() > 4 {
+            } else if data[0].len() > 4 {
                 let new_date = format!("{}-{}-{}", &data[0][..4], data[1], data[2]);
                 self.date = new_date;
             }
-            return Ok("Date: Year length not acceptable. Example Date: 2022-05-01".to_string())
-        }
-
-        else if data[1].len() != 2 {
+            return Ok("Date: Year length not acceptable. Example Date: 2022-05-01".to_string());
+        } else if data[1].len() != 2 {
             if int_month < 10 {
                 let new_date = format!("{}-0{int_month}-{}", data[0], data[2]);
                 self.date = new_date;
-            }
-
-            else if int_month > 12 {
+            } else if int_month > 12 {
                 let new_date = format!("{}-12-{}", data[0], data[2]);
                 self.date = new_date;
             }
 
-            return Ok("Date: Month length not acceptable. Example Date: 2022-05-01".to_string())
-        }
-
-        else if data[2].len() != 2 {
+            return Ok("Date: Month length not acceptable. Example Date: 2022-05-01".to_string());
+        } else if data[2].len() != 2 {
             if int_day < 10 {
                 let new_date = format!("{}-{}-0{int_day}", data[0], data[1]);
                 self.date = new_date;
-            }
-
-            else if int_day > 31 {
+            } else if int_day > 31 {
                 let new_date = format!("{}-{}-31", data[0], data[1]);
                 self.date = new_date;
             }
 
-            return Ok("Date: Day length not acceptable. Example Date: 2022-05-01".to_string())
-        }
-
-        else if int_year < 2022 || int_year > 2025 {
+            return Ok("Date: Day length not acceptable. Example Date: 2022-05-01".to_string());
+        } else if int_year < 2022 || int_year > 2025 {
             if int_year < 2022 {
                 let new_date = format!("2022-{}-{}", data[1], data[2]);
                 self.date = new_date;
-            }
-
-            else if int_year > 2025 {
+            } else if int_year > 2025 {
                 let new_date = format!("2025-{}-{}", data[1], data[2]);
                 self.date = new_date;
             }
 
-            return Ok("Date: Year must be between 2022-2025".to_string())
-        }
-
-        else if int_month < 1 || int_month > 12 {
+            return Ok("Date: Year must be between 2022-2025".to_string());
+        } else if int_month < 1 || int_month > 12 {
             if int_month < 1 {
                 let new_date = format!("{}-01-{}", data[0], data[2]);
                 self.date = new_date;
-            }
-
-            else if int_month > 12 {
+            } else if int_month > 12 {
                 let new_date = format!("{}-12-{}", data[0], data[2]);
                 self.date = new_date;
             }
 
-            return Ok("Date: Month must be between 01-12".to_string())
-        }
-
-        else if int_day < 1 || int_day > 31 {
+            return Ok("Date: Month must be between 01-12".to_string());
+        } else if int_day < 1 || int_day > 31 {
             if int_day < 1 {
                 let new_date = format!("{}-{}-01", data[0], data[1]);
                 self.date = new_date;
-            }
-
-            else if int_day > 31 {
+            } else if int_day > 31 {
                 let new_date = format!("{}-{}-31", data[0], data[1]);
                 self.date = new_date;
             }
 
-            return Ok("Date: Day must be between 01-31".to_string())
+            return Ok("Date: Day must be between 01-31".to_string());
         }
 
         Ok("Date: Date Accepted".to_string())
@@ -216,10 +208,8 @@ impl AddTxData {
         }
 
         if all_tx_methods.contains(&current_text) {
-            return "Tx Method: Transaction Method Accepted".to_string()
-        }
-
-        else {
+            return "Tx Method: Transaction Method Accepted".to_string();
+        } else {
             let mut current_match = all_tx_methods[0].clone();
             let mut current_chance = 0;
 
@@ -230,8 +220,8 @@ impl AddTxData {
                         total_match += 1;
                     }
                 }
-                let chance = (100*total_match)/method.len();
-                
+                let chance = (100 * total_match) / method.len();
+
                 if chance > current_chance {
                     current_match = method;
                     current_chance = chance;
@@ -239,7 +229,7 @@ impl AddTxData {
             }
             self.tx_method = current_match;
 
-            return "TX Method: Transaction Method not found".to_string()
+            return "TX Method: Transaction Method not found".to_string();
         }
     }
 
@@ -266,14 +256,10 @@ impl AddTxData {
 
             if splitted_data[1].len() < 2 {
                 data = format!("{data}0");
-            }
-
-            else if splitted_data[1].len() > 2 {
+            } else if splitted_data[1].len() > 2 {
                 data = format!("{}.{}", splitted_data[0], &splitted_data[1][..2]);
             }
-        }
-
-        else {
+        } else {
             data = format!("{data}.00");
         }
 
@@ -281,7 +267,7 @@ impl AddTxData {
         let splitted_data = splitted.collect::<Vec<&str>>();
 
         if splitted_data[0].len() > 10 {
-            data = format!("{}.{}", &splitted_data[0][..10 ], splitted_data[1]);
+            data = format!("{}.{}", &splitted_data[0][..10], splitted_data[1]);
         }
 
         self.amount = data.to_string();
@@ -296,15 +282,12 @@ impl AddTxData {
         if self.tx_type.to_lowercase().starts_with("e") {
             self.tx_type = "Expense".to_string();
             return "TX Type: Transaction Type Accepted".to_string();
-        }
-
-        else if self.tx_type.to_lowercase().starts_with("i") {
+        } else if self.tx_type.to_lowercase().starts_with("i") {
             self.tx_type = "Income".to_string();
             return "TX Type: Transaction Type Accepted".to_string();
-        }
-
-        else {
-            return "TX Type: Transaction Type not acceptable. Values: Expense/Income/E/I".to_string()
+        } else {
+            return "TX Type: Transaction Type not acceptable. Values: Expense/Income/E/I"
+                .to_string();
         }
     }
 }
