@@ -72,7 +72,10 @@ impl AddTxData {
                     self.amount.pop().unwrap();
                 }
             },
-            false => self.amount = format!("{}{text}", self.amount),
+            false => {
+                let data = format!("{}{text}", self.amount);
+                self.amount = data;
+            },
         }
     }
 
@@ -90,7 +93,7 @@ impl AddTxData {
     pub fn add_tx(&mut self, conn: &Connection) -> String {
         let status = add_new_tx(conn, &self.date, &self.details, &self.tx_method, &self.amount, &self.tx_type);
         match status {
-            Ok(_) => println!("Success"),
+            Ok(_) => {},
             Err(e) => println!("Error happened {}", e),
         }
         "done".to_string()
@@ -102,7 +105,7 @@ impl AddTxData {
         }
         self.tx_status.push(data.to_string());
     }
-
+    // TODO check details to make sure it is not empty
     pub fn check_date(&mut self) -> Result<String, Box<dyn Error>> {
         let user_date = &self.date;
 
@@ -217,7 +220,7 @@ impl AddTxData {
         }
 
         else {
-            let mut current_match = "".to_string();
+            let mut current_match = all_tx_methods[0].clone();
             let mut current_chance = 0;
 
             for method in all_tx_methods {
@@ -240,11 +243,49 @@ impl AddTxData {
         }
     }
 
-    pub fn check_amount(&self) -> Result<String, Box<dyn Error>> {
+    pub fn check_amount(&mut self) -> Result<String, Box<dyn Error>> {
         if self.amount.len() == 0 {
             return Ok("Amount: Nothing to check".to_string());
         }
-        let _int_amount: u32 = self.amount.parse()?;
+        let mut data = self.amount.clone();
+
+        if data.contains(".") {
+            let state = data.split(".");
+            let splitted = state.collect::<Vec<&str>>();
+            if splitted[1].len() == 0 {
+                data += "00"
+            }
+        }
+
+        // If the amount contains non-number character, make it fail
+        let _int_amount: f32 = self.amount.parse()?;
+
+        if data.contains(".") {
+            let splitted = data.split(".");
+            let splitted_data = splitted.collect::<Vec<&str>>();
+
+            if splitted_data[1].len() < 2 {
+                data = format!("{data}0");
+            }
+
+            else if splitted_data[1].len() > 2 {
+                data = format!("{}.{}", splitted_data[0], &splitted_data[1][..2]);
+            }
+        }
+
+        else {
+            data = format!("{data}.00");
+        }
+
+        let splitted = data.split(".");
+        let splitted_data = splitted.collect::<Vec<&str>>();
+
+        if splitted_data[0].len() > 10 {
+            data = format!("{}.{}", &splitted_data[0][..10 ], splitted_data[1]);
+        }
+
+        self.amount = data.to_string();
+
         Ok("Amount: Amount Accepted".to_string())
     }
 
