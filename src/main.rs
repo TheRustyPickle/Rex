@@ -33,7 +33,7 @@ use crossterm::{
 // [ ] create a popup ui on Home window for commands list
 // [ ] allow adding/removing tx methods(will require renaming columns)
 // [ ] change color scheme?
-// [ ] change balances to f32?
+// [x] change balances to f32?
 // [x] add date column to all_balance & all_changes
 // [x] verify db cascade method working or not
 // [ ] add more panic handling
@@ -42,6 +42,7 @@ use crossterm::{
 // [x] limit add tx date between the available years
 // [x] add status on add tx page
 // [ ] add average expense on home page
+// [ ] add more comments
 
 fn main() -> Result<(), Box<dyn Error>>{
     let paths = fs::read_dir(".").unwrap();
