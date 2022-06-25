@@ -1,14 +1,14 @@
-mod add_tx_data;
-mod add_tx_ui;
-mod create_initial_db;
-mod sub_func;
-mod table_data;
-mod table_ui;
-mod ui_data_state;
+mod home_page;
+mod tx_page;
+mod db;
 
-use add_tx_data::AddTxData;
-use add_tx_ui::tx_ui;
-use create_initial_db::create_db;
+use db::create_db;
+use tx_page::AddTxData;
+use tx_page::tx_ui;
+use home_page::{TableData, TimeData, SelectedTab, CurrentUi, TxTab};
+use db::{get_all_tx_methods, get_empty_changes};
+use home_page::TransactionData;
+use home_page::ui;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -17,15 +17,12 @@ use crossterm::{
 use rusqlite::{Connection, Result};
 use std::fs;
 use std::{error::Error, io};
-use sub_func::{get_all_tx_methods, get_empty_changes};
-use table_data::TransactionData;
-use table_ui::ui;
 use tui::layout::Constraint;
 use tui::{
     backend::{Backend, CrosstermBackend},
     Terminal,
 };
-use ui_data_state::*;
+
 
 // [x] Check current path for the db, create new db if necessary
 // [x] create add transaction ui + editing box with inputs

@@ -1,4 +1,4 @@
-use crate::sub_func::{
+use crate::db::{
     delete_tx, get_all_changes, get_all_tx_methods, get_all_txs, get_last_balances,
 };
 use rusqlite::{Connection, Result as sqlResult};
