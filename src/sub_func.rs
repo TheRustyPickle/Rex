@@ -286,24 +286,15 @@ pub fn add_new_tx(
         let mut default_change = format!("{:.2}", 0.0);
 
         if &all_tx_methods[i] == &tx_method {
-            if lower_tx_type == "expense" || lower_tx_type == "e" {
+            if lower_tx_type == "expense" {
                 default_change = format!("↓{}", &amount);
+                let edited_balance = cu_last_balance - int_amount;
+                last_balance_data.push(format!("{edited_balance:.2}"));
 
-                if all_tx_methods[i] == tx_method {
-                    let edited_balance = cu_last_balance - int_amount;
-                    last_balance_data.push(format!("{edited_balance:.2}"))
-                } else {
-                    last_balance_data.push(format!("{cu_last_balance:.2}"))
-                }
-            } else if lower_tx_type == "income" || lower_tx_type == "i" {
+            } else if lower_tx_type == "income" {
                 default_change = format!("↑{}", &amount);
-
-                if all_tx_methods[i] == tx_method {
-                    let edited_balance = cu_last_balance + int_amount;
-                    last_balance_data.push(format!("{edited_balance:.2}"))
-                } else {
-                    last_balance_data.push(format!("{cu_last_balance:.2}"))
-                }
+                let edited_balance = cu_last_balance + int_amount;
+                last_balance_data.push(format!("{edited_balance:.2}"));
             }
         }
         new_changes_data.push(default_change);
@@ -322,22 +313,9 @@ pub fn add_new_tx(
     }
     balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
 
-    let mut last_balance_query = format!("UPDATE balance_all SET ");
-    for i in 0..last_balance_data.len() {
-        if i != last_balance_data.len() - 1 {
-            last_balance_query.push_str(&format!(
-                "{} = {}, ",
-                all_tx_methods[i], last_balance_data[i]
-            ))
-        } else {
-            last_balance_query.push_str(&format!(
-                "{} = {} ",
-                all_tx_methods[i], last_balance_data[i]
-            ))
-        }
-    }
     //TODO remove from 49 hard coded to balance_all last id_num
-    last_balance_query.push_str(&format!("WHERE id_num = 49"));
+    let last_balance_query = format!("UPDATE balance_all SET {tx_method} = {} WHERE id_num = 49", last_balance_data[0]);
+    
     let mut changes_query = format!("INSERT INTO changes_all (id_num, date, {all_tx_methods:?}) VALUES ({last_id}, ?, {new_changes_data:?})");
     changes_query = changes_query.replace("[", "");
     changes_query = changes_query.replace("]", "");
