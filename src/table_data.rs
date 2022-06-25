@@ -41,12 +41,16 @@ impl TransactionData {
     pub fn get_balance(&self, index: usize) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
         for i in self.all_balance[index].iter() {
-            if i == "0.0" {
-                balance_data.push(format!("0.00"))
-            } else {
-                balance_data.push(format!("{}", i));
-            }
+            balance_data.push(format!("{:.2}", i.parse::<f32>().unwrap()));
         }
+
+        let mut total_balance: f32 = 0.0;
+        for i in balance_data.iter().skip(1) {
+            let int_bal = i.parse::<f32>().unwrap();
+            total_balance += int_bal;
+        }
+        let formatted_total_balance = format!("{:.2}", total_balance);
+        balance_data.push(formatted_total_balance);
         balance_data
     }
 
@@ -54,23 +58,31 @@ impl TransactionData {
         let mut balance_data = vec!["Balance".to_string()];
         let db_data = get_last_balances(conn, &get_all_tx_methods(conn));
         for i in db_data.iter() {
-            if i == "0.0" {
-                balance_data.push(format!("0.00"))
-            } else {
-                balance_data.push(format!("{}", i))
-            }
+            balance_data.push(format!("{:.2}", i.parse::<f32>().unwrap()));
         }
+
+        let mut total_balance: f32 = 0.0;
+        for i in balance_data.iter().skip(1) {
+            let int_bal = i.parse::<f32>().unwrap();
+            total_balance += int_bal;
+        }
+        let formatted_total_balance = format!("{:.2}", total_balance);
+        balance_data.push(formatted_total_balance);
         balance_data
     }
 
     pub fn get_changes(&self, index: usize) -> Vec<String> {
         let mut changes_data = vec!["Changes".to_string()];
         for i in self.all_changes[index].iter() {
-            if i == "0.0" {
-                changes_data.push(format!("0.00"));
-            } else {
-                changes_data.push(format!("{}", i));
+            let mut new_value = i.to_string();
+            let split = i.split(".");
+            let splitted = split.collect::<Vec<&str>>();
+            if splitted[1].len() == 1 {
+                new_value = format!("{}0", i)
+            } else if splitted[1].len() == 0 {
+                new_value = format!("{}00", i)
             }
+            changes_data.push(new_value);
         }
         changes_data
     }

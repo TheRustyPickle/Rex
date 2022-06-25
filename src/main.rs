@@ -30,10 +30,10 @@ use ui_data_state::*;
 // [x] Check current path for the db, create new db if necessary
 // [x] create add transaction ui + editing box with inputs
 // [x] func for saving & deleting txs
-// [ ] create initial ui asking for tx methods
 // [x] add creating tx button
 // [x] add remvoing tx button
-// [ ] create a popup ui on Home window for commands list
+// [ ] create a popup ui on Home window for commands list or if a new versin is available
+// [ ] simple ui at the start of the program highlighting button
 // [ ] allow adding/removing tx methods(will require renaming columns)
 // [ ] change color scheme?
 // [x] change balances to f32?
@@ -44,7 +44,7 @@ use ui_data_state::*;
 // [x] latest balance empty = all 0
 // [x] limit add tx date between the available years
 // [x] add status on add tx page
-// [ ] add average expense on home page
+// [ ] add monthly expense & income on home page
 // [ ] add more comments
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -139,11 +139,13 @@ fn run_app<B: Backend>(
 
         let mut balance: Vec<Vec<String>> = vec![vec!["".to_string()]];
         balance[0].extend(get_all_tx_methods(&conn));
+        balance[0].extend(vec!["Total".to_string()]);
 
         // save the % of space each column should take in the Balance section
-        let width_percent = 100 / balance[0].len() as u16;
+        // Need to do a + 1 because there is a Total column & to make the gap tighter
+        let width_percent = 100 / balance[0].len() as u16 + 1;
         let mut width_data = vec![];
-        for _i in 0..balance[0].len() {
+        for _i in 0..balance[0].len()+1 {
             width_data.push(Constraint::Percentage(width_percent));
         }
 
@@ -369,7 +371,11 @@ fn run_app<B: Backend>(
                             match status {
                                 Ok(a) => {
                                     data_for_tx.add_tx_status(&a);
-                                    cu_tx_page = TxTab::Nothing;
+                                    if a.contains("zero"){
+                                    }
+                                    else {
+                                        cu_tx_page = TxTab::Nothing;
+                                    }
                                 }
                                 Err(_) => data_for_tx.add_tx_status("Amount: Invalid Amount found"),
                             }
@@ -379,7 +385,11 @@ fn run_app<B: Backend>(
                             match status {
                                 Ok(a) => {
                                     data_for_tx.add_tx_status(&a);
-                                    cu_tx_page = TxTab::Nothing;
+                                    if a.contains("zero"){
+                                    }
+                                    else {
+                                        cu_tx_page = TxTab::Nothing;
+                                    }
                                 }
                                 Err(_) => data_for_tx.add_tx_status("Amount: Invalid Amount found"),
                             }
