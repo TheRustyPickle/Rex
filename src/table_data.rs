@@ -91,4 +91,42 @@ impl TransactionData {
         let target_id = self.all_id_num[index].parse::<i32>().unwrap().to_owned();
         delete_tx(conn, target_id as usize)
     }
+
+    pub fn get_total_income(&self, conn: &Connection) -> Vec<String> {
+        let mut final_income = vec!["Income".to_string()];
+        let all_tx_methods = get_all_tx_methods(conn);
+        for _i in all_tx_methods.iter() {
+            final_income.push("-".to_string())
+        }
+        let mut total_income = 0.0_f32;
+        for tx in self.all_tx.iter() {
+            let amount = &tx[3];
+            let tx_type = &tx[4];
+
+            if tx_type == "Income" {
+                total_income += amount.parse::<f32>().unwrap();
+            }
+        }
+        final_income.push(format!("{:.2}", total_income));
+        final_income
+    }
+
+    pub fn get_total_expense(&self, conn: &Connection) -> Vec<String> {
+        let mut final_expense = vec!["Expense".to_string()];
+        let all_tx_methods = get_all_tx_methods(conn);
+        for _i in all_tx_methods.iter() {
+            final_expense.push("-".to_string())
+        }
+        let mut total_expense = 0.0_f32;
+        for tx in self.all_tx.iter() {
+            let amount = &tx[3];
+            let tx_type = &tx[4];
+
+            if tx_type == "Expense" {
+                total_expense += amount.parse::<f32>().unwrap();
+            }
+        }
+        final_expense.push(format!("{:.2}", total_expense));
+        final_expense
+    }
 }

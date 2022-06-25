@@ -44,8 +44,10 @@ use ui_data_state::*;
 // [x] latest balance empty = all 0
 // [x] limit add tx date between the available years
 // [x] add status on add tx page
-// [ ] add monthly expense & income on home page
+// [x] add monthly expense & income on home page
 // [ ] add more comments
+// [ ] check for empty fields if S is pressed
+// [ ] do not return to home if add tx is failed and show error on status section
 
 fn main() -> Result<(), Box<dyn Error>> {
     let paths = fs::read_dir(".").unwrap();
@@ -123,6 +125,8 @@ fn run_app<B: Backend>(
     let mut cu_page = CurrentUi::Home;
     let mut cu_tx_page = TxTab::Nothing;
     let mut data_for_tx = AddTxData::new();
+    let mut total_income = vec![];
+    let mut total_expense = vec![];
 
     loop {
         let cu_month_index = months.index;
@@ -133,6 +137,8 @@ fn run_app<B: Backend>(
         if cu_month_index != last_month_index || cu_year_index != last_year_index {
             all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
             table = TableData::new(all_data.get_txs());
+            total_income = all_data.get_total_income(&conn);
+            total_expense = all_data.get_total_expense(&conn);
             last_month_index = cu_month_index;
             last_year_index = cu_year_index;
         };
@@ -160,6 +166,8 @@ fn run_app<B: Backend>(
                 balance.push(get_empty_changes());
             }
         }
+        balance.push(total_income.clone());
+        balance.push(total_expense.clone());
 
         match cu_page {
             //NOTE initial ui to be added here
