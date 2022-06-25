@@ -1,4 +1,4 @@
-use crate::ui_data_state::TxTab;
+use crate::home_page::TxTab;
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout},

@@ -1,4 +1,4 @@
-use crate::sub_func::{add_new_tx, get_all_tx_methods};
+use crate::db::{add_new_tx, get_all_tx_methods};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::error::Error;

@@ -39,7 +39,7 @@ fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     (datetime_1, datetime_2)
 }
 
-pub fn get_last_month_balance(
+fn get_last_month_balance(
     conn: &Connection,
     month: usize,
     year: usize,
@@ -220,7 +220,7 @@ pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<Stri
     final_balance.unwrap()
 }
 
-pub fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
+fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
     // returns the last id_num recorded by tx_all table
 
     let last_id: sqlResult<i32> = conn.query_row(
