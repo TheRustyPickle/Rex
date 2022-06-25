@@ -248,7 +248,11 @@ impl AddTxData {
         }
 
         // If the amount contains non-number character, make it fail
-        let _int_amount: f32 = self.amount.parse()?;
+        let int_amount: f32 = self.amount.parse()?;
+        
+        if int_amount == 0.0 {
+            return Ok("Amount: Value must be bigger than zero".to_string());
+        }
 
         if data.contains(".") {
             let splitted = data.split(".");
