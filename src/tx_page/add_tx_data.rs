@@ -250,7 +250,7 @@ impl AddTxData {
         // If the amount contains non-number character, make it fail
         let int_amount: f32 = self.amount.parse()?;
         
-        if int_amount == 0.0 {
+        if int_amount <= 0.0 {
             return Ok("Amount: Value must be bigger than zero".to_string());
         }
 
