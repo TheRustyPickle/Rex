@@ -3,6 +3,17 @@ use crate::db::{
 };
 use rusqlite::{Connection, Result as sqlResult};
 
+/// This struct stores the transaction data, balance, changes and the id num
+/// TX, Balance, Changes are parsed and selected to only show the relevant part.
+/// Data storing format is:
+/// 
+/// all_tx : `[[date, details, tx_method, source, tx_type],]`
+/// 
+/// all_balance: `[["123.00", "123.00"],]`
+/// 
+/// all_changes: `[["↓123.00", "↑123.00"],]`
+/// 
+/// all_id_num : `["1", "2", "3",]` required only to delete the transaction
 pub struct TransactionData {
     pub all_tx: Vec<Vec<String>>,
     all_balance: Vec<Vec<String>>,
@@ -11,6 +22,8 @@ pub struct TransactionData {
 }
 
 impl TransactionData {
+
+    /// Calls the db to fetch transaction data, transaction changes, balances and id numbers
     pub fn new(conn: &Connection, month: usize, year: usize) -> Self {
         let (all_tx, all_balance, all_id_num) = get_all_txs(conn, month, year);
         let all_changes = get_all_changes(conn, month, year);
@@ -22,14 +35,7 @@ impl TransactionData {
         }
     }
 
-    /*pub fn get_txs(&self) -> Vec<Vec<String>> {
-        let mut table_data = Vec::new();
-        for (i, x) in self.all_tx.iter() {
-            table_data.push(x.clone())
-        }
-        table_data
-    }*/
-
+    /// returns all the Transaction data that is saved inside the struct for the current selected month
     pub fn get_txs(&self) -> Vec<Vec<String>> {
         let mut table_data = Vec::new();
         for i in self.all_tx.iter() {
@@ -38,6 +44,7 @@ impl TransactionData {
         table_data
     }
 
+    /// returns all the balance data that is saved inside the struct for the current selected month
     pub fn get_balance(&self, index: usize) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
         for i in self.all_balance[index].iter() {
@@ -54,6 +61,8 @@ impl TransactionData {
         balance_data
     }
 
+    /// returns the absolute final balance that is found after all transactions were counted for.
+    /// The value is saved in the DB at the final row
     pub fn get_last_balance(&self, conn: &Connection) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
         let db_data = get_last_balances(conn, &get_all_tx_methods(conn));
@@ -71,27 +80,33 @@ impl TransactionData {
         balance_data
     }
 
+    /// returns the data of balance Changes of a specific index, in this case, the selected table row index 
     pub fn get_changes(&self, index: usize) -> Vec<String> {
         let mut changes_data = vec!["Changes".to_string()];
         for i in self.all_changes[index].iter() {
             let mut new_value = i.to_string();
             let split = i.split(".");
             let splitted = split.collect::<Vec<&str>>();
+
+            // the splitting and checking is necessary to make sure all strings are
+            // properly ending with 2 values after dot. it's a string with ↓ or ↑
+            // so format!("{:.2}", parse to f32) won't work.
+
             if splitted[1].len() == 1 {
                 new_value = format!("{}0", i)
-            } else if splitted[1].len() == 0 {
-                new_value = format!("{}00", i)
             }
             changes_data.push(new_value);
         }
         changes_data
     }
 
+    /// gets the ID Number of the selected table row and calls the function to delete a transaction from the database
     pub fn del_tx(&self, conn: &Connection, index: usize) -> sqlResult<()> {
         let target_id = self.all_id_num[index].parse::<i32>().unwrap().to_owned();
         delete_tx(conn, target_id as usize)
     }
 
+    /// returns total incomes for the selected month by going through all the tx saved in the struct
     pub fn get_total_income(&self, conn: &Connection) -> Vec<String> {
         let mut final_income = vec!["Income".to_string()];
         let all_tx_methods = get_all_tx_methods(conn);
@@ -111,6 +126,7 @@ impl TransactionData {
         final_income
     }
 
+    /// returns total expenses for the selected month by going through all the tx saved in the struct
     pub fn get_total_expense(&self, conn: &Connection) -> Vec<String> {
         let mut final_expense = vec!["Expense".to_string()];
         let all_tx_methods = get_all_tx_methods(conn);
