@@ -3,6 +3,14 @@ use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::error::Error;
 
+/// The struct maintains the data that has been entered by the
+/// user to the relevant field in order to create a new transcation and push it
+/// to the database. This is also designed to parse and validate the data that
+/// is being passed by the user. tx_status values contains the status comment whether
+/// if the user inputted value was accepted or rejected and shown in the Status widget on
+/// the Add Transaction page.
+/// 
+/// tx_status : `["Date: Date Accepted", "Tx Method: Transaction Method Not Found"]`
 pub struct AddTxData {
     date: String,
     details: String,
@@ -13,6 +21,8 @@ pub struct AddTxData {
 }
 
 impl AddTxData {
+    /// Creates an instance of the struct however the date field is
+    /// edited with the current local date of the device.
     pub fn new() -> Self {
         let cu_date = Local::today().to_string();
         let formatted_cu_date = &cu_date[0..10];
@@ -26,6 +36,8 @@ impl AddTxData {
         }
     }
 
+    /// Sends out all the collected data that has been inputted into the Add Transaction widgets
+    ///  that is going to be used for creating a new transaction
     pub fn get_all_texts(&self) -> Vec<&str> {
         vec![
             &self.date,
@@ -36,8 +48,8 @@ impl AddTxData {
         ]
     }
 
-    //TODO emit some kind of status to place on placement field ex check date format, amount
-
+    /// Used to add a new character to the date value being inputted by the
+    /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_date(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
@@ -49,6 +61,8 @@ impl AddTxData {
         }
     }
 
+    /// Used to add a new character to the details value being inputted by the
+    /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_details(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
@@ -60,6 +74,8 @@ impl AddTxData {
         }
     }
 
+    /// Used to add a new character to the tx method value being inputted by the
+    /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_tx_method(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
@@ -71,6 +87,8 @@ impl AddTxData {
         }
     }
 
+    /// Used to add a new character to the amount value being inputted by the
+    /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_amount(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
@@ -85,6 +103,8 @@ impl AddTxData {
         }
     }
 
+    /// Used to add a new character to the tx type value being inputted by the
+    /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_tx_type(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
@@ -96,7 +116,10 @@ impl AddTxData {
         }
     }
 
+    /// Collects all the data for the transaction and calls the function
+    /// that pushes them to the database.
     pub fn add_tx(&mut self, conn: &Connection) -> String {
+        // TODO check details to make sure nothing is empty
         let status = add_new_tx(
             conn,
             &self.date,
@@ -105,6 +128,8 @@ impl AddTxData {
             &self.amount,
             &self.tx_type,
         );
+        // TODO do more checking and prevent page switching
+        
         match status {
             Ok(_) => {}
             Err(e) => println!("Error happened {}", e),
@@ -112,13 +137,28 @@ impl AddTxData {
         "done".to_string()
     }
 
+    /// Adds a status after a checking is complete. Used for the Status widget
+    /// on Add Transaction page and called upon on Enter/Esc presses.
+    /// Removes the earliest status if total status number passes 20.
     pub fn add_tx_status(&mut self, data: &str) {
         if self.tx_status.len() == 20 {
             self.tx_status.remove(0);
         }
         self.tx_status.push(data.to_string());
     }
-    // TODO check details to make sure it is not empty
+    
+    /// Checks the inputted Date by the user upon pressing Enter/Esc for various
+    /// error. Checks if:
+    /// 
+    /// - the inputted year is between 2022 to 2025
+    /// - the inputted month is between 01 to 12 
+    /// - the inputted date is between 01 to 31
+    /// - the inputted date is empty
+    /// 
+    /// Finally, tries to correct the date if it was not accepted by
+    /// adding 0 if the beginning if the length is smaller than necessary
+    /// or restores to the smallest or the largest date if date is beyond the
+    /// accepted value.
     pub fn check_date(&mut self) -> Result<String, Box<dyn Error>> {
         let user_date = &self.date;
 
@@ -200,6 +240,14 @@ impl AddTxData {
         Ok("Date: Date Accepted".to_string())
     }
 
+    /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various
+    /// error. Checks if:
+    /// 
+    /// - The Transaction method exists on the database.
+    /// - The Transaction method is empty
+    /// 
+    /// if the Transaction is not found, matches each character with the available
+    /// Transaction Methods and corrects to the best matching one.
     pub fn check_tx_method(&mut self, conn: &Connection) -> String {
         let all_tx_methods = get_all_tx_methods(conn);
         let current_text = &self.tx_method;
@@ -233,6 +281,13 @@ impl AddTxData {
         }
     }
 
+    /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various
+    /// error. Checks if:
+    /// 
+    /// - Amount is empty
+    /// - Amount is zero or below
+    /// 
+    /// if the value is not float, tries to make it float ending with double zero 
     pub fn check_amount(&mut self) -> Result<String, Box<dyn Error>> {
         if self.amount.len() == 0 {
             return Ok("Amount: Nothing to check".to_string());
@@ -279,6 +334,12 @@ impl AddTxData {
         Ok("Amount: Amount Accepted".to_string())
     }
 
+    /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various
+    /// error. Checks if:
+    /// 
+    /// - The transaction method starts with E or I
+    /// 
+    /// Auto expands E to Expense and I to Income.
     pub fn check_tx_type(&mut self) -> String {
         if self.tx_type.len() == 0 {
             return "TX Type: Nothing to check".to_string();
