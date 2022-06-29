@@ -8,6 +8,10 @@ use tui::{
     Frame,
 };
 
+/// This function is responsible for drawing all the widgets in the Home page,
+/// coloring everything and all related things.  This function takes several arguments
+/// from the run_app function with the necessary data and fields.
+
 pub fn ui<B: Backend>(
     f: &mut Frame<B>,
     months: &TimeData,
@@ -18,14 +22,19 @@ pub fn ui<B: Backend>(
     width_data: &mut Vec<Constraint>,
 ) {
     let size = f.size();
+
+    // These two colors are used with the Changes value when a row is selected
+    // to color the Changes row in Balance widget.
     let selected_style_blue = Style::default()
         .fg(Color::Blue)
         .add_modifier(Modifier::REVERSED);
     let selected_style_red = Style::default()
         .fg(Color::Red)
         .add_modifier(Modifier::REVERSED);
+
     let normal_style = Style::default().bg(Color::LightBlue);
 
+    // Transaction widget's top row/header to highlight what each data will mean
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(Color::White)));
@@ -42,7 +51,10 @@ pub fn ui<B: Backend>(
         Row::new(cells).height(height as u16).bottom_margin(0)
     });
 
-    //decides how many chunks of spaces in the terminal will be
+    // Decides how many chunks of spaces in the terminal will be.
+    // Each constraint creates an empty space in the terminal with the given
+    // length. The final one was given 0 as minimum value which is the Transaction
+    // field to keep it exapanding.
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(5)
@@ -78,7 +90,7 @@ pub fn ui<B: Backend>(
         .titles
         .iter()
         .map(|t| {
-            let (first, rest) = t.split_at(1);
+            let (first, rest) = t.split_at(2);
             Spans::from(vec![
                 Span::styled(first, Style::default().fg(Color::Blue)),
                 Span::styled(rest, Style::default().fg(Color::Green)),
@@ -86,6 +98,8 @@ pub fn ui<B: Backend>(
         })
         .collect();
 
+    // The default style for the select index in the month section if
+    // the Month widget is not selected
     let mut month_tab = Tabs::new(month_titles)
         .block(Block::default().borders(Borders::ALL).title("Months"))
         .select(months.index)
@@ -96,6 +110,8 @@ pub fn ui<B: Backend>(
                 .bg(Color::Black),
         );
 
+    // The default style for the select index in the year section if
+    // the Year widget is not selected
     let mut year_tab = Tabs::new(year_titles)
         .block(Block::default().borders(Borders::ALL).title("Years"))
         .select(years.index)
@@ -107,6 +123,8 @@ pub fn ui<B: Backend>(
         );
 
     // set up the table columns and their size
+    // resizing the table headers to match a % of the 
+    // terminal space
     let mut table_area = Table::new(rows)
         .header(header)
         .block(Block::default().borders(Borders::ALL).title("Transactions"))
@@ -118,6 +136,8 @@ pub fn ui<B: Backend>(
             Constraint::Percentage(15),
         ]);
 
+    // This is what makes the Changes row in the Balance widget red or blue based on
+    // a selected transaction inside the Table/Transaction widget
     let bal_data = balance.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| {
@@ -132,13 +152,15 @@ pub fn ui<B: Backend>(
         Row::new(cells).height(height as u16).bottom_margin(0)
     });
 
+    // use the acquired width data to allocated spaces
+    // between columns on Balance widget.
     let balance_area = Table::new(bal_data)
         .block(Block::default().borders(Borders::ALL).title("Balance"))
         .widths(&width_data);
 
     match cu_tab {
-        // previously added a black block to year and month widget on the selected value.
-        // based on which widget is selected, turns the black block to green.
+        // previously added a black block to year and month widget if a value is not selected
+        // Now we will turn that black block into green if a value is selected
         SelectedTab::Months => {
             month_tab = month_tab.highlight_style(
                 Style::default()
@@ -154,7 +176,7 @@ pub fn ui<B: Backend>(
                     .bg(Color::LightGreen),
             );
         }
-        // changes the color of row based on Expense or Income tx type.
+        // changes the color of row based on Expense or Income tx type on Transaction widget.
         SelectedTab::Table => {
             if let Some(a) = table.state.selected() {
                 if table.items[a][4] == "Expense" {
@@ -170,8 +192,12 @@ pub fn ui<B: Backend>(
         }
     }
 
+    // after all data is in place, render the widgets one by one
+    // the chunks are selected based on the format I want the widgets to render
     f.render_widget(balance_area, chunks[0]);
     f.render_widget(month_tab, chunks[2]);
     f.render_widget(year_tab, chunks[1]);
+
+    // this one is different because the Transaction widget interface works differently
     f.render_stateful_widget(table_area, chunks[3], &mut table.state)
 }
