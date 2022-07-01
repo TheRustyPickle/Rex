@@ -55,7 +55,7 @@ impl TableData {
 /// This struct takes anything inside a vector and adds an index it it.
 /// It is used for keeping track of the Months and Years current index.
 /// 
-/// titles: `["January", "Febrary",]`
+/// titles: `["January", "February",]`
 pub struct TimeData<'a> {
     pub titles: Vec<&'a str>,
     pub index: usize,
@@ -86,7 +86,7 @@ impl<'a> TimeData<'a> {
 }
 
 /// The enum is used to keep track of which tab is currently set at active
-/// or being interacted with in the Home page. There are 3 interactable widgets 
+/// or being interacted with in the Home page. There are 3 interact-able widgets 
 /// in the home page thus three values. The goal is to keep them cycling through
 /// all values.
 pub enum SelectedTab {
@@ -135,7 +135,7 @@ pub enum TxTab {
 }
 
 /// Shows the currently active page in the terminal. Used to properly
-/// direct keypresses to the relevant structs and widget selection.
+/// direct key presses to the relevant structs and widget selection.
 pub enum CurrentUi {
     Home,
     AddTx,

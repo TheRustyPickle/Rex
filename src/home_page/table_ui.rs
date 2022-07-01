@@ -54,7 +54,7 @@ pub fn ui<B: Backend>(
     // Decides how many chunks of spaces in the terminal will be.
     // Each constraint creates an empty space in the terminal with the given
     // length. The final one was given 0 as minimum value which is the Transaction
-    // field to keep it exapanding.
+    // field to keep it expanding.
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(5)

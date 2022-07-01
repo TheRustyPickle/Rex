@@ -28,7 +28,7 @@ use tui::{
 // [x] create add transaction ui + editing box with inputs
 // [x] func for saving & deleting txs
 // [x] add creating tx button
-// [x] add remvoing tx button
+// [x] add removing tx button
 // [ ] create a popup ui on Home window for commands list or if a new versin is available
 // [ ] simple ui at the start of the program highlighting button
 // [ ] allow adding/removing tx methods(will require renaming columns)
@@ -42,7 +42,7 @@ use tui::{
 // [x] limit add tx date between the available years
 // [x] add status on add tx page
 // [x] add monthly expense & income on home page
-// [ ] add more comments
+// [x] add more comments
 // [ ] check for empty fields if S is pressed
 // [ ] do not return to home if add tx is failed and show error on status section
 // [ ] check amount that it is not negative
@@ -142,7 +142,7 @@ fn run_app<B: Backend>(
     //
     // all_data : This is a struct that fetches and stores the home page data based on the current month and year index.
     // It contains the selected month and year's all transaction, all ↑ and ↓ which is stored in the database,
-    // monthly balance data and the datase id numbers. The data is parsed in various functions to only select the 
+    // monthly balance data and the database id numbers. The data is parsed in various functions to only select the 
     // relevant content and pass to the UI. Operates in the Home page UI.
     //
     // table : I am calling the spreadsheet like widget the table. It contains the selected month and year's all transactions
