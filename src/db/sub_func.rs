@@ -29,7 +29,7 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
     tx_methods
 }
 
-/// The functin is used to create dates in the form of strings to use the WHERE statement
+/// The function is used to create dates in the form of strings to use the WHERE statement
 /// based on the index that has been passed to it. 
 fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     // returns dates from month and year to a format that is suitable for
@@ -55,7 +55,7 @@ fn get_sql_dates(month: usize, year: usize) -> (String, String) {
 /// A function that returns the balance that was saved in the database
 /// in the previous month from the current working month. This is necessary
 /// because the program tries to add or take away balance based on all the transactions
-/// that happened in the current month. So Take the previous month balance and do the calculations.
+/// that happened in the current month. So take the previous month balance and do the calculations.
 /// 
 /// Return Value : `{"source_1": 10.50, "source_2": 100.0}`
 fn get_last_month_balance(
@@ -112,7 +112,7 @@ fn get_last_month_balance(
 
 /// The functions sends all the changes that happened after transactions on the month and year provided
 pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<String>> {
-    // retunrs all balance changes recorded within a given date
+    // returns all balance changes recorded within a given date
 
     let mut final_result = Vec::new();
     let tx_methods = get_all_tx_methods(conn);
@@ -157,8 +157,8 @@ pub fn get_all_txs(
     let mut final_all_balances: Vec<Vec<String>> = Vec::new();
     let mut all_id_num = Vec::new();
 
-    // we will go through the last month balances and add/substract
-    // current month's transactions to the related tx method. After each tx calulcation, add whatever
+    // we will go through the last month balances and add/subtract
+    // current month's transactions to the related tx method. After each tx calculation, add whatever
     // balance for each tx method inside a vec for final return
 
     let mut last_month_balance = get_last_month_balance(conn, month, year, &all_tx_methods);
@@ -171,8 +171,8 @@ pub fn get_all_txs(
         .query_map([&datetime_1, &datetime_2], |row| {
             let date: String = row.get(0).unwrap();
             let id_num: i32 = row.get(5).unwrap();
-            let splited_date = date.split('-');
-            let collected_date: Vec<&str> = splited_date.collect();
+            let splitted_date = date.split('-');
+            let collected_date: Vec<&str> = splitted_date.collect();
             let new_date = format!(
                 "{}-{}-{}",
                 collected_date[2], collected_date[1], collected_date[0]
@@ -198,7 +198,7 @@ pub fn get_all_txs(
 
     for i in &final_all_txs {
         // this is where the calculation for the balance happens. We will loop through each tx,
-        // look at the tx type, tx method and add/substract the amount on last month balance which was fetched earlier
+        // look at the tx type, tx method and add/subtract the amount on last month balance which was fetched earlier
         // while adding the balance data after each calculation is done inside a vector.
 
         let tx_type = &i[4];
@@ -269,8 +269,8 @@ fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
     last_id
 }
 
+/// Returns the last id_num recorded by balance_all table
 fn get_last_balance_id(conn: &Connection) -> sqlResult<i32> {
-    
 
     let last_id: sqlResult<i32> = conn.query_row(
         "SELECT id_num FROM balance_all ORDER BY id_num DESC LIMIT 1",

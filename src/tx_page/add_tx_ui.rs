@@ -26,7 +26,7 @@ pub fn tx_ui<B: Backend>(
 ) {
     let size = f.size();
 
-    // divide the terminal into varios chunks to draw the interface.
+    // divide the terminal into various chunks to draw the interface.
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(5)
