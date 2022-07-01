@@ -1,6 +1,6 @@
 use rusqlite::{Connection, Result};
 
-/// If the local database is not found, this is executed to create a the default
+/// If the local database is not found, this is executed to create the default
 /// database with a set of provided Transaction Methods. 
 pub fn create_db() -> Result<()> {
     let months = vec![

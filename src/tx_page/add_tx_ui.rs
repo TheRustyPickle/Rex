@@ -8,6 +8,16 @@ use tui::{
     Frame,
 };
 
+/// The UI functions that draws the Add Transaction page of the interface.
+/// Takes arguments for user inputted data, status page data to process the details and turns them into
+/// the the interface.
+/// 
+/// - input_data : Contains all the data for all field that has been inserted by the user so far for the transaction
+/// 
+/// Example input_data : `["2020-10-10", "", "", "", "Expense"]` 
+/// - cu_selected : For verifying the current selected widget to add a block box 
+/// - status_data : Contains all the String to push into the Status widget
+
 pub fn tx_ui<B: Backend>(
     f: &mut Frame<B>,
     input_data: Vec<&str>,
@@ -15,6 +25,8 @@ pub fn tx_ui<B: Backend>(
     status_data: &Vec<String>,
 ) {
     let size = f.size();
+
+    // divide the terminal into varios chunks to draw the interface.
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(5)
@@ -28,7 +40,9 @@ pub fn tx_ui<B: Backend>(
             .as_ref(),
         )
         .split(size);
-
+    
+    // This is a vertical chunk. We will basically be using this to divide the chunk[1]
+    // into another 4 chunks or 4 widgets
     let another_chunk = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(
@@ -45,6 +59,7 @@ pub fn tx_ui<B: Backend>(
     let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Green));
     f.render_widget(block, size);
 
+    // This is the details of the Help widget
     let help_text = vec![
         Spans::from("Press the respective keys to edit fields."),
         Spans::from("'1': Date         Example: 2022-05-12, YYYY-MM-DD"),
@@ -59,6 +74,8 @@ pub fn tx_ui<B: Backend>(
 
     let mut status_text = vec![];
 
+    // iter through the data in reverse mode because we want the latest status text
+    // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
         if i.contains("Accepted") == false && i.contains("Nothing") == false {
             status_text.push(Spans::from(Span::styled(
@@ -73,6 +90,7 @@ pub fn tx_ui<B: Backend>(
         }
     }
 
+    // We got all these data from the run_app function already so just assign them
     let date_text = vec![Spans::from(input_data[0])];
 
     let details_text = vec![Spans::from(input_data[1])];
@@ -92,6 +110,8 @@ pub fn tx_ui<B: Backend>(
                 Style::default().add_modifier(Modifier::BOLD),
             ))
     };
+
+    // creates the widgets to ready it for rendering
     let help_sec = Paragraph::new(help_text.clone())
         .style(Style::default().bg(Color::White).fg(Color::Green))
         .block(create_block("Help"))
@@ -127,6 +147,8 @@ pub fn tx_ui<B: Backend>(
         .block(create_block("Details"))
         .alignment(Alignment::Left);
 
+    // We will be adding a cursor/box based on which tab is selected.
+    // This was created utilizing the tui-rs example named user_input.rs
     match cu_selected {
         TxTab::Date => f.set_cursor(
             another_chunk[0].x + input_data[0].len() as u16 + 1,
@@ -151,6 +173,7 @@ pub fn tx_ui<B: Backend>(
         TxTab::Nothing => {}
     }
 
+    // render the previously generated data into an interface
     f.render_widget(details_sec, chunks[2]);
     f.render_widget(status_sec, chunks[3]);
     f.render_widget(help_sec, chunks[0]);
