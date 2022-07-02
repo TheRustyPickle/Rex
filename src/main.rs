@@ -29,9 +29,9 @@ use tui::{
 // [x] func for saving & deleting txs
 // [x] add creating tx button
 // [x] add removing tx button
-// [ ] create a popup ui on Home window for commands list or if a new versin is available
+// [ ] create a popup ui on Home window for commands list or if a new version is available
 // [ ] simple ui at the start of the program highlighting button
-// [ ] allow adding/removing tx methods(will require renaming columns)
+// [ ] allow adding tx methods
 // [ ] change color scheme?
 // [x] change balances to f32?
 // [x] add date column to all_balance & all_changes
@@ -43,9 +43,10 @@ use tui::{
 // [x] add status on add tx page
 // [x] add monthly expense & income on home page
 // [x] add more comments
-// [ ] check for empty fields if S is pressed
-// [ ] do not return to home if add tx is failed and show error on status section
-// [ ] check amount that it is not negative
+// [x] check for empty fields if S is pressed
+// [x] do not return to home if add tx is failed and show error on status section
+// [x] check amount that it is not negative
+// [ ] write tests
 
 /// The main function is designed for 3 things. 
 /// - checks if the local database named data.sqlite is found or create the database
@@ -361,9 +362,15 @@ fn run_app<B: Backend>(
                             data_for_tx = AddTxData::new();
                         }
                         KeyCode::Char('s') => {
-                            let _status = data_for_tx.add_tx(&conn);
-                            cu_page = CurrentUi::Home;
-                            data_for_tx = AddTxData::new();
+                            let status = data_for_tx.add_tx(&conn);
+                            if status == "".to_string() {
+                                cu_page = CurrentUi::Home;
+                                data_for_tx = AddTxData::new();
+                                
+                            } else {
+                                data_for_tx.add_tx_status(&status);
+                            }
+                            
                         }
                         KeyCode::Char('1') => cu_tx_page = TxTab::Date,
                         KeyCode::Char('2') => cu_tx_page = TxTab::Details,

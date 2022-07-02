@@ -119,7 +119,23 @@ impl AddTxData {
     /// Collects all the data for the transaction and calls the function
     /// that pushes them to the database.
     pub fn add_tx(&mut self, conn: &Connection) -> String {
-        // TODO check details to make sure nothing is empty
+
+        if &self.date == "" {
+            return format!("Date: Date cannot be empty")
+        }
+        else if &self.details == "" {
+            return format!("Details: Details cannot be empty")
+        }
+        else if &self.tx_method == "" {
+            return format!("Tx Method: Transaction method cannot be empty")
+        }
+        else if &self.amount == "" {
+            return format!("Amount: Amount cannot be empty")
+        }
+        else if &self.tx_type == "" {
+            return format!("Tx Type: Transaction Type cannot be empty")
+        }
+
         let status = add_new_tx(
             conn,
             &self.date,
@@ -131,10 +147,9 @@ impl AddTxData {
         // TODO do more checking and prevent page switching
         
         match status {
-            Ok(_) => {}
-            Err(e) => println!("Error happened {}", e),
+            Ok(_) => return format!(""),
+            Err(e) => return format!("Add Transaction: Something went wrong {}", e),
         }
-        "done".to_string()
     }
 
     /// Adds a status after a checking is complete. Used for the Status widget
