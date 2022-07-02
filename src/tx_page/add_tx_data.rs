@@ -4,7 +4,7 @@ use rusqlite::Connection;
 use std::error::Error;
 
 /// The struct maintains the data that has been entered by the
-/// user to the relevant field in order to create a new transcation and push it
+/// user to the relevant field in order to create a new transaction and push it
 /// to the database. This is also designed to parse and validate the data that
 /// is being passed by the user. tx_status values contains the status comment whether
 /// if the user inputted value was accepted or rejected and shown in the Status widget on
