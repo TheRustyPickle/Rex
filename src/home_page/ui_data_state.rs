@@ -137,6 +137,7 @@ pub enum TxTab {
 /// Shows the currently active page in the terminal. Used to properly
 /// direct key presses to the relevant structs and widget selection.
 pub enum CurrentUi {
+    Initial,
     Home,
     AddTx,
 }
