@@ -57,7 +57,7 @@ pub fn ui<B: Backend>(
     // field to keep it expanding.
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .margin(5)
+        .margin(2)
         .constraints(
             [
                 Constraint::Length(7),

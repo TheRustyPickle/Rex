@@ -29,7 +29,7 @@ pub fn tx_ui<B: Backend>(
     // divide the terminal into various chunks to draw the interface.
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .margin(5)
+        .margin(2)
         .constraints(
             [
                 Constraint::Length(11),
