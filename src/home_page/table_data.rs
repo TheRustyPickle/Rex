@@ -1,18 +1,16 @@
-use crate::db::{
-    delete_tx, get_all_changes, get_all_tx_methods, get_all_txs, get_last_balances,
-};
+use crate::db::{delete_tx, get_all_changes, get_all_tx_methods, get_all_txs, get_last_balances};
 use rusqlite::{Connection, Result as sqlResult};
 
 /// This struct stores the transaction data, balance, changes and the id num
 /// TX, Balance, Changes are parsed and selected to only show the relevant part.
 /// Data storing format is:
-/// 
+///
 /// all_tx : `[[date, details, tx_method, source, tx_type],]`
-/// 
+///
 /// all_balance: `[["123.00", "123.00"],]`
-/// 
+///
 /// all_changes: `[["↓123.00", "↑123.00"],]`
-/// 
+///
 /// all_id_num : `["1", "2", "3",]` required only to delete the transaction
 pub struct TransactionData {
     pub all_tx: Vec<Vec<String>>,
@@ -22,7 +20,6 @@ pub struct TransactionData {
 }
 
 impl TransactionData {
-
     /// Calls the db to fetch transaction data, transaction changes, balances and id numbers
     pub fn new(conn: &Connection, month: usize, year: usize) -> Self {
         let (all_tx, all_balance, all_id_num) = get_all_txs(conn, month, year);
@@ -80,7 +77,7 @@ impl TransactionData {
         balance_data
     }
 
-    /// returns the data of balance Changes of a specific index, in this case, the selected table row index 
+    /// returns the data of balance Changes of a specific index, in this case, the selected table row index
     pub fn get_changes(&self, index: usize) -> Vec<String> {
         let mut changes_data = vec!["Changes".to_string()];
         for i in self.all_changes[index].iter() {

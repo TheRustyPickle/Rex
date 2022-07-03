@@ -11,11 +11,11 @@ use tui::{
 /// The UI functions that draws the Add Transaction page of the interface.
 /// Takes arguments for user inputted data, status page data to process the details and turns them into
 /// the the interface.
-/// 
+///
 /// - input_data : Contains all the data for all field that has been inserted by the user so far for the transaction
-/// 
-/// Example input_data : `["2020-10-10", "", "", "", "Expense"]` 
-/// - cu_selected : For verifying the current selected widget to add a block box 
+///
+/// Example input_data : `["2020-10-10", "", "", "", "Expense"]`
+/// - cu_selected : For verifying the current selected widget to add a block box
 /// - status_data : Contains all the String to push into the Status widget
 
 pub fn tx_ui<B: Backend>(
@@ -40,7 +40,7 @@ pub fn tx_ui<B: Backend>(
             .as_ref(),
         )
         .split(size);
-    
+
     // This is a vertical chunk. We will basically be using this to divide the chunk[1]
     // into another 4 chunks or 4 widgets
     let another_chunk = Layout::default()

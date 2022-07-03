@@ -9,7 +9,7 @@ use std::error::Error;
 /// is being passed by the user. tx_status values contains the status comment whether
 /// if the user inputted value was accepted or rejected and shown in the Status widget on
 /// the Add Transaction page.
-/// 
+///
 /// tx_status : `["Date: Date Accepted", "Tx Method: Transaction Method Not Found"]`
 pub struct AddTxData {
     date: String,
@@ -119,21 +119,16 @@ impl AddTxData {
     /// Collects all the data for the transaction and calls the function
     /// that pushes them to the database.
     pub fn add_tx(&mut self, conn: &Connection) -> String {
-
         if &self.date == "" {
-            return format!("Date: Date cannot be empty")
-        }
-        else if &self.details == "" {
-            return format!("Details: Details cannot be empty")
-        }
-        else if &self.tx_method == "" {
-            return format!("Tx Method: Transaction method cannot be empty")
-        }
-        else if &self.amount == "" {
-            return format!("Amount: Amount cannot be empty")
-        }
-        else if &self.tx_type == "" {
-            return format!("Tx Type: Transaction Type cannot be empty")
+            return format!("Date: Date cannot be empty");
+        } else if &self.details == "" {
+            return format!("Details: Details cannot be empty");
+        } else if &self.tx_method == "" {
+            return format!("Tx Method: Transaction method cannot be empty");
+        } else if &self.amount == "" {
+            return format!("Amount: Amount cannot be empty");
+        } else if &self.tx_type == "" {
+            return format!("Tx Type: Transaction Type cannot be empty");
         }
 
         let status = add_new_tx(
@@ -145,7 +140,7 @@ impl AddTxData {
             &self.tx_type,
         );
         // TODO do more checking and prevent page switching
-        
+
         match status {
             Ok(_) => return format!(""),
             Err(e) => return format!("Add Transaction: Something went wrong {}", e),
@@ -161,15 +156,15 @@ impl AddTxData {
         }
         self.tx_status.push(data.to_string());
     }
-    
+
     /// Checks the inputted Date by the user upon pressing Enter/Esc for various
     /// error. Checks if:
-    /// 
+    ///
     /// - the inputted year is between 2022 to 2025
-    /// - the inputted month is between 01 to 12 
+    /// - the inputted month is between 01 to 12
     /// - the inputted date is between 01 to 31
     /// - the inputted date is empty
-    /// 
+    ///
     /// Finally, tries to correct the date if it was not accepted by
     /// adding 0 if the beginning if the length is smaller than necessary
     /// or restores to the smallest or the largest date if date is beyond the
@@ -257,10 +252,10 @@ impl AddTxData {
 
     /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various
     /// error. Checks if:
-    /// 
+    ///
     /// - The Transaction method exists on the database.
     /// - The Transaction method is empty
-    /// 
+    ///
     /// if the Transaction is not found, matches each character with the available
     /// Transaction Methods and corrects to the best matching one.
     pub fn check_tx_method(&mut self, conn: &Connection) -> String {
@@ -298,11 +293,11 @@ impl AddTxData {
 
     /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various
     /// error. Checks if:
-    /// 
+    ///
     /// - Amount is empty
     /// - Amount is zero or below
-    /// 
-    /// if the value is not float, tries to make it float ending with double zero 
+    ///
+    /// if the value is not float, tries to make it float ending with double zero
     pub fn check_amount(&mut self) -> Result<String, Box<dyn Error>> {
         if self.amount.len() == 0 {
             return Ok("Amount: Nothing to check".to_string());
@@ -319,7 +314,7 @@ impl AddTxData {
 
         // If the amount contains non-number character, make it fail
         let int_amount: f32 = self.amount.parse()?;
-        
+
         if int_amount <= 0.0 {
             return Ok("Amount: Value must be bigger than zero".to_string());
         }
@@ -351,9 +346,9 @@ impl AddTxData {
 
     /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various
     /// error. Checks if:
-    /// 
+    ///
     /// - The transaction method starts with E or I
-    /// 
+    ///
     /// Auto expands E to Expense and I to Income.
     pub fn check_tx_type(&mut self) -> String {
         if self.tx_type.len() == 0 {

@@ -4,4 +4,4 @@ mod ui_data_state;
 
 pub use table_data::TransactionData;
 pub use table_ui::ui;
-pub use ui_data_state::{TableData, TimeData, SelectedTab, CurrentUi, TxTab};
+pub use ui_data_state::{CurrentUi, SelectedTab, TableData, TimeData, TxTab};

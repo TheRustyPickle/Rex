@@ -4,10 +4,9 @@ use std::collections::HashMap;
 // This file contains a number of functions that makes calls to the database
 // to fetch relevant data which is later users in various structs. I didn't
 // wanted to go around multiple files to find that one db call so just put them all together.
-// The file also contains non-db functions for generating data and for general utilization as well.   
+// The file also contains non-db functions for generating data and for general utilization as well.
 // All the DB calls are created keeping in mind that the program does not know the amount of
 // Transaction Methods that will be added by the user.
-
 
 /// Makes a call to the database to find out all the columns in the balance_all section
 /// so we can determine the number of TX Methods that has been added.
@@ -30,7 +29,7 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
 }
 
 /// The function is used to create dates in the form of strings to use the WHERE statement
-/// based on the index that has been passed to it. 
+/// based on the index that has been passed to it.
 fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     // returns dates from month and year to a format that is suitable for
     // database WHERE statement.
@@ -56,7 +55,7 @@ fn get_sql_dates(month: usize, year: usize) -> (String, String) {
 /// in the previous month from the current working month. This is necessary
 /// because the program tries to add or take away balance based on all the transactions
 /// that happened in the current month. So take the previous month balance and do the calculations.
-/// 
+///
 /// Return Value : `{"source_1": 10.50, "source_2": 100.0}`
 fn get_last_month_balance(
     conn: &Connection,
@@ -65,7 +64,7 @@ fn get_last_month_balance(
     tx_method: &Vec<String>,
 ) -> HashMap<String, f32> {
     // We can get the id_num of the month which is saved in the database based on the
-    // month and year index there is passed. 
+    // month and year index there is passed.
     let mut target_id_num = month as i32 + (year as i32 * 12);
 
     let mut final_value = HashMap::new();
@@ -97,7 +96,7 @@ fn get_last_month_balance(
         to_return = final_balance.unwrap();
 
         // We will keep the loop ongoing until we hit a non-zero balance for all tx method or
-        // the id number goes to zero. Why? Example: current working month is 6th month. So we did the last 
+        // the id number goes to zero. Why? Example: current working month is 6th month. So we did the last
         // transaction on January and only consider the balance of the 5th month, that is a false balance
         // and is not the balance we are supposed to doing the calculations on.
         if to_return != vec![0.0, 0.0, 0.0, 0.0] || target_id_num == 0 {
@@ -240,7 +239,6 @@ pub fn get_empty_changes() -> Vec<String> {
 
 /// Returns the absolute final balance which is the balance saved after each transaction was counted.
 pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<String> {
-
     let mut query = format!(
         "SELECT {:?} FROM balance_all ORDER BY id_num DESC LIMIT 1",
         tx_method
@@ -259,8 +257,6 @@ pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<Stri
 
 /// Returns the last id_num recorded by tx_all table
 fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
-    
-
     let last_id: sqlResult<i32> = conn.query_row(
         "SELECT id_num FROM tx_all ORDER BY id_num DESC LIMIT 1",
         [],
@@ -271,7 +267,6 @@ fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
 
 /// Returns the last id_num recorded by balance_all table
 fn get_last_balance_id(conn: &Connection) -> sqlResult<i32> {
-
     let last_id: sqlResult<i32> = conn.query_row(
         "SELECT id_num FROM balance_all ORDER BY id_num DESC LIMIT 1",
         [],
@@ -353,13 +348,12 @@ pub fn add_new_tx(
         // we could have just used the tx_method from the argument but adding the default values
         // manually after that would make it tricky because have to maintain the tx method balance order
         // and the Changes order
-        
+
         if &all_tx_methods[i] == &tx_method {
             if lower_tx_type == "expense" {
                 default_change = format!("↓{}", &amount);
                 let edited_balance = cu_last_balance - int_amount;
                 last_balance_data.push(format!("{edited_balance:.2}"));
-
             } else if lower_tx_type == "income" {
                 default_change = format!("↑{}", &amount);
                 let edited_balance = cu_last_balance + int_amount;
@@ -384,8 +378,11 @@ pub fn add_new_tx(
     balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
 
     // there is only 1 value in the last_balance_data, we already know on which tx method the changes happened
-    let last_balance_query = format!("UPDATE balance_all SET {tx_method} = {} WHERE id_num = {}", last_balance_data[0], last_balance_id);
-    
+    let last_balance_query = format!(
+        "UPDATE balance_all SET {tx_method} = {} WHERE id_num = {}",
+        last_balance_data[0], last_balance_id
+    );
+
     let mut changes_query = format!("INSERT INTO changes_all (id_num, date, {all_tx_methods:?}) VALUES ({last_id}, ?, {new_changes_data:?})");
     changes_query = changes_query.replace("[", "");
     changes_query = changes_query.replace("]", "");
@@ -399,7 +396,6 @@ pub fn add_new_tx(
 /// Updates the absolute final balance and deletes the selected transaction.
 /// Foreign key cascade takes care of the Changes data in the database.
 pub fn delete_tx(conn: &Connection, id_num: usize) -> sqlResult<()> {
-
     let tx_methods = get_all_tx_methods(conn);
     let last_balance = get_last_balances(conn, &tx_methods);
 

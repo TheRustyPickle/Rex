@@ -1,32 +1,31 @@
-mod home_page;
-mod tx_page;
 mod db;
+mod home_page;
 mod initial_page;
+mod tx_page;
 
-use db::create_db;
-use tx_page::AddTxData;
-use tx_page::tx_ui;
-use home_page::{TableData, TimeData, SelectedTab, CurrentUi, TxTab};
-use db::{get_all_tx_methods, get_empty_changes};
-use home_page::TransactionData;
-use home_page::ui;
-use initial_page::starter_ui;
+use crossterm::event::poll;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use crossterm::{event::{poll}};
-use std::time::Duration;
+use db::create_db;
+use db::{get_all_tx_methods, get_empty_changes};
+use home_page::ui;
+use home_page::TransactionData;
+use home_page::{CurrentUi, SelectedTab, TableData, TimeData, TxTab};
+use initial_page::starter_ui;
 use rusqlite::{Connection, Result};
 use std::fs;
+use std::time::Duration;
 use std::{error::Error, io};
 use tui::layout::Constraint;
 use tui::{
     backend::{Backend, CrosstermBackend},
     Terminal,
 };
-
+use tx_page::tx_ui;
+use tx_page::AddTxData;
 
 // [x] Check current path for the db, create new db if necessary
 // [x] create add transaction ui + editing box with inputs
@@ -55,10 +54,10 @@ use tui::{
 // [ ] change database location
 // [ ] Need to update hotkey for the popup ui
 
-/// The main function is designed for 3 things. 
+/// The main function is designed for 3 things.
 /// - checks if the local database named data.sqlite is found or create the database
 /// - Calls lib function that makes the tui magic work such as moving to an alternate screen
-/// - Passes a few terminal state and if there is an error, quits the application 
+/// - Passes a few terminal state and if there is an error, quits the application
 
 fn main() -> Result<(), Box<dyn Error>> {
     // checks the local folder and searches for data.sqlite
@@ -108,7 +107,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // pass a few data to the main function and loop forever or until quit/faced with an error
     let res = run_app(&mut terminal, months, years);
-    
+
     disable_raw_mode()?;
     execute!(
         terminal.backend_mut(),
@@ -126,19 +125,18 @@ fn main() -> Result<(), Box<dyn Error>> {
 /// run_app is the core part that makes the entire program run. It basically loops
 /// incredibly fast to refresh the terminal and passes the provided data to ui modules to draw them.
 /// While the loop is running, the program executes, gets the data from the db and key presses to
-/// To keep on providing new data to the UI. 
+/// To keep on providing new data to the UI.
 /// What it does:
 /// - Sends relevant data to the UI creating modules
 /// - Stores the current UI data and states
 /// - Detects all key presses and directs the UI accordingly
 /// - Modifies UI data as needed
- 
+
 fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     mut months: TimeData,
     mut years: TimeData,
 ) -> io::Result<()> {
-
     // Setting up some default values. Let's go through all of them
     // selected_tab : Basically the current selected widget/field. Default set to the month selection/3rd widget
     //
@@ -149,7 +147,7 @@ fn run_app<B: Backend>(
     //
     // all_data : This is a struct that fetches and stores the home page data based on the current month and year index.
     // It contains the selected month and year's all transaction, all ↑ and ↓ which is stored in the database,
-    // monthly balance data and the database id numbers. The data is parsed in various functions to only select the 
+    // monthly balance data and the database id numbers. The data is parsed in various functions to only select the
     // relevant content and pass to the UI. Operates in the Home page UI.
     //
     // table : I am calling the spreadsheet like widget the table. It contains the selected month and year's all transactions
@@ -162,8 +160,7 @@ fn run_app<B: Backend>(
     //
     // total_income & total_expense : Contains the data of all incomes and expenses of the selected month and year,
     // calculated from the transaction saved in the database, it is needed for the Income and Expense section in the Home page.
-    // Why is it a vector? Because the entire row has to be saved inside this to put in the UI. 
-
+    // Why is it a vector? Because the entire row has to be saved inside this to put in the UI.
 
     let mut selected_tab = SelectedTab::Months;
     let mut last_month_index = 99;
@@ -184,7 +181,6 @@ fn run_app<B: Backend>(
     // The loop begins at this point and before the loop starts, multiple variables are initiated
     // with the default values which will quickly be changing once the loop starts.
     loop {
-
         // after each refresh this will check the current selected month, year and if a table/spreadsheet row is selected in the ui.
         let cu_month_index = months.index;
         let cu_year_index = years.index;
@@ -206,12 +202,12 @@ fn run_app<B: Backend>(
         balance[0].extend(get_all_tx_methods(&conn));
         balance[0].extend(vec!["Total".to_string()]);
 
-        // save the % of space each column should take in the Balance section based on the total 
+        // save the % of space each column should take in the Balance section based on the total
         // transaction methods/columns available
         // Need to do a + 1 because there is a Total column & to make the gap tighter
         let width_percent = 100 / balance[0].len() as u16 + 1;
         let mut width_data = vec![];
-        for _i in 0..balance[0].len()+1 {
+        for _i in 0..balance[0].len() + 1 {
             width_data.push(Constraint::Percentage(width_percent));
         }
 
@@ -236,7 +232,7 @@ fn run_app<B: Backend>(
         balance.push(total_income.clone());
         balance.push(total_expense.clone());
 
-        // passing out relevant data to the ui function 
+        // passing out relevant data to the ui function
         match cu_page {
             CurrentUi::Home => terminal.draw(|f| {
                 ui(
@@ -260,8 +256,10 @@ fn run_app<B: Backend>(
             CurrentUi::Initial => terminal.draw(|f| {
                 starter_ui(f, starter_index);
                 starter_index += 1;
-                if starter_index > 28 { starter_index = 0;}
-            })?
+                if starter_index > 28 {
+                    starter_index = 0;
+                }
+            })?,
         };
 
         // This is where the keyboard press tracking starts
@@ -276,12 +274,16 @@ fn run_app<B: Backend>(
                         KeyCode::Char('a') => cu_page = CurrentUi::AddTx,
                         KeyCode::Char('d') => {
                             if table.state.selected() != None {
-                                let status = all_data.del_tx(&conn, table.state.selected().unwrap());
+                                let status =
+                                    all_data.del_tx(&conn, table.state.selected().unwrap());
                                 match status {
                                     Ok(_) => {
                                         // transaction deleted so reload the data again
-                                        all_data =
-                                            TransactionData::new(&conn, cu_month_index, cu_year_index);
+                                        all_data = TransactionData::new(
+                                            &conn,
+                                            cu_month_index,
+                                            cu_year_index,
+                                        );
                                         table = TableData::new(all_data.get_txs());
                                         table.state.select(None);
                                         selected_tab = SelectedTab::Months;
@@ -353,7 +355,8 @@ fn run_app<B: Backend>(
                                     }
                                     // executes when pressed on last row of the table
                                     // moves to the year widget
-                                    else if table.state.selected() == Some(table.items.len() - 1) {
+                                    else if table.state.selected() == Some(table.items.len() - 1)
+                                    {
                                         selected_tab = SelectedTab::Years;
                                         table.state.select(None);
                                     } else {
@@ -367,152 +370,154 @@ fn run_app<B: Backend>(
                         }
                         _ => {}
                     },
-                    CurrentUi::AddTx => match cu_tx_page {
-                        // start matching key pressed based on which widget is selected.
-                        // current state tracked with enums
-                        TxTab::Nothing => match key.code {
-                            KeyCode::Char('q') => return Ok(()),
-                            KeyCode::Char('h') => {
-                                cu_page = CurrentUi::Home;
-                                cu_tx_page = TxTab::Nothing;
-                                data_for_tx = AddTxData::new();
-                            }
-                            KeyCode::Char('s') => {
-                                let status = data_for_tx.add_tx(&conn);
-                                if status == "".to_string() {
+                    CurrentUi::AddTx => {
+                        match cu_tx_page {
+                            // start matching key pressed based on which widget is selected.
+                            // current state tracked with enums
+                            TxTab::Nothing => match key.code {
+                                KeyCode::Char('q') => return Ok(()),
+                                KeyCode::Char('h') => {
                                     cu_page = CurrentUi::Home;
+                                    cu_tx_page = TxTab::Nothing;
                                     data_for_tx = AddTxData::new();
-                                    
-                                } else {
+                                }
+                                KeyCode::Char('s') => {
+                                    let status = data_for_tx.add_tx(&conn);
+                                    if status == "".to_string() {
+                                        cu_page = CurrentUi::Home;
+                                        data_for_tx = AddTxData::new();
+                                    } else {
+                                        data_for_tx.add_tx_status(&status);
+                                    }
+                                }
+                                KeyCode::Char('1') => cu_tx_page = TxTab::Date,
+                                KeyCode::Char('2') => cu_tx_page = TxTab::Details,
+                                KeyCode::Char('3') => cu_tx_page = TxTab::TxMethod,
+                                KeyCode::Char('4') => cu_tx_page = TxTab::Amount,
+                                KeyCode::Char('5') => cu_tx_page = TxTab::TxType,
+                                KeyCode::Enter => cu_tx_page = TxTab::Nothing,
+                                KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                                _ => {}
+                            },
+
+                            TxTab::Date => match key.code {
+                                KeyCode::Enter => {
+                                    let status = data_for_tx.check_date();
+                                    match status {
+                                        Ok(a) => {
+                                            data_for_tx.add_tx_status(&a);
+                                            if a.contains("Accepted") || a.contains("Nothing") {
+                                                cu_tx_page = TxTab::Nothing
+                                            }
+                                        }
+                                        Err(_) => data_for_tx.add_tx_status(
+                                            "Date: Error acquired or Date not acceptable.",
+                                        ),
+                                    }
+                                }
+                                KeyCode::Esc => {
+                                    let status = data_for_tx.check_date();
+                                    match status {
+                                        Ok(a) => {
+                                            data_for_tx.add_tx_status(&a);
+                                            if a.contains("Accepted") {
+                                                cu_tx_page = TxTab::Nothing
+                                            }
+                                        }
+                                        Err(_) => data_for_tx.add_tx_status(
+                                            "Date: Error acquired or Date not acceptable.",
+                                        ),
+                                    }
+                                }
+                                KeyCode::Backspace => data_for_tx.edit_date('a', true),
+                                KeyCode::Char(a) => data_for_tx.edit_date(a, false),
+                                _ => {}
+                            },
+
+                            TxTab::Details => match key.code {
+                                KeyCode::Enter => cu_tx_page = TxTab::Nothing,
+                                KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                                KeyCode::Backspace => data_for_tx.edit_details('a', true),
+                                KeyCode::Char(a) => data_for_tx.edit_details(a, false),
+                                _ => {}
+                            },
+
+                            TxTab::TxMethod => match key.code {
+                                KeyCode::Enter => {
+                                    let status = data_for_tx.check_tx_method(&conn);
                                     data_for_tx.add_tx_status(&status);
-                                }
-                                
-                            }
-                            KeyCode::Char('1') => cu_tx_page = TxTab::Date,
-                            KeyCode::Char('2') => cu_tx_page = TxTab::Details,
-                            KeyCode::Char('3') => cu_tx_page = TxTab::TxMethod,
-                            KeyCode::Char('4') => cu_tx_page = TxTab::Amount,
-                            KeyCode::Char('5') => cu_tx_page = TxTab::TxType,
-                            KeyCode::Enter => cu_tx_page = TxTab::Nothing,
-                            KeyCode::Esc => cu_tx_page = TxTab::Nothing,
-                            _ => {}
-                        },
-
-                        TxTab::Date => match key.code {
-                            KeyCode::Enter => {
-                                let status = data_for_tx.check_date();
-                                match status {
-                                    Ok(a) => {
-                                        data_for_tx.add_tx_status(&a);
-                                        if a.contains("Accepted") || a.contains("Nothing") {
-                                            cu_tx_page = TxTab::Nothing
-                                        }
+                                    if status.contains("Accepted") || status.contains("Nothing") {
+                                        cu_tx_page = TxTab::Nothing
                                     }
-                                    Err(_) => data_for_tx
-                                        .add_tx_status("Date: Error acquired or Date not acceptable."),
                                 }
-                            }
-                            KeyCode::Esc => {
-                                let status = data_for_tx.check_date();
-                                match status {
-                                    Ok(a) => {
-                                        data_for_tx.add_tx_status(&a);
-                                        if a.contains("Accepted") {
-                                            cu_tx_page = TxTab::Nothing
-                                        }
+                                KeyCode::Esc => {
+                                    let status = data_for_tx.check_tx_method(&conn);
+                                    data_for_tx.add_tx_status(&status);
+                                    if status.contains("Accepted") {
+                                        cu_tx_page = TxTab::Nothing
                                     }
-                                    Err(_) => data_for_tx
-                                        .add_tx_status("Date: Error acquired or Date not acceptable."),
                                 }
-                            }
-                            KeyCode::Backspace => data_for_tx.edit_date('a', true),
-                            KeyCode::Char(a) => data_for_tx.edit_date(a, false),
-                            _ => {}
-                        },
+                                KeyCode::Backspace => data_for_tx.edit_tx_method('a', true),
+                                KeyCode::Char(a) => data_for_tx.edit_tx_method(a, false),
+                                _ => {}
+                            },
 
-                        TxTab::Details => match key.code {
-                            KeyCode::Enter => cu_tx_page = TxTab::Nothing,
-                            KeyCode::Esc => cu_tx_page = TxTab::Nothing,
-                            KeyCode::Backspace => data_for_tx.edit_details('a', true),
-                            KeyCode::Char(a) => data_for_tx.edit_details(a, false),
-                            _ => {}
-                        },
-
-                        TxTab::TxMethod => match key.code {
-                            KeyCode::Enter => {
-                                let status = data_for_tx.check_tx_method(&conn);
-                                data_for_tx.add_tx_status(&status);
-                                if status.contains("Accepted") || status.contains("Nothing") {
-                                    cu_tx_page = TxTab::Nothing
-                                }
-                            }
-                            KeyCode::Esc => {
-                                let status = data_for_tx.check_tx_method(&conn);
-                                data_for_tx.add_tx_status(&status);
-                                if status.contains("Accepted") {
-                                    cu_tx_page = TxTab::Nothing
-                                }
-                            }
-                            KeyCode::Backspace => data_for_tx.edit_tx_method('a', true),
-                            KeyCode::Char(a) => data_for_tx.edit_tx_method(a, false),
-                            _ => {}
-                        },
-
-                        TxTab::Amount => match key.code {
-                            KeyCode::Enter => {
-                                let status = data_for_tx.check_amount();
-                                match status {
-                                    Ok(a) => {
-                                        data_for_tx.add_tx_status(&a);
-                                        if a.contains("zero"){
+                            TxTab::Amount => match key.code {
+                                KeyCode::Enter => {
+                                    let status = data_for_tx.check_amount();
+                                    match status {
+                                        Ok(a) => {
+                                            data_for_tx.add_tx_status(&a);
+                                            if a.contains("zero") {
+                                            } else {
+                                                cu_tx_page = TxTab::Nothing;
+                                            }
                                         }
-                                        else {
-                                            cu_tx_page = TxTab::Nothing;
-                                        }
+                                        Err(_) => data_for_tx
+                                            .add_tx_status("Amount: Invalid Amount found"),
                                     }
-                                    Err(_) => data_for_tx.add_tx_status("Amount: Invalid Amount found"),
                                 }
-                            }
-                            KeyCode::Esc => {
-                                let status = data_for_tx.check_amount();
-                                match status {
-                                    Ok(a) => {
-                                        data_for_tx.add_tx_status(&a);
-                                        if a.contains("zero"){
+                                KeyCode::Esc => {
+                                    let status = data_for_tx.check_amount();
+                                    match status {
+                                        Ok(a) => {
+                                            data_for_tx.add_tx_status(&a);
+                                            if a.contains("zero") {
+                                            } else {
+                                                cu_tx_page = TxTab::Nothing;
+                                            }
                                         }
-                                        else {
-                                            cu_tx_page = TxTab::Nothing;
-                                        }
+                                        Err(_) => data_for_tx
+                                            .add_tx_status("Amount: Invalid Amount found"),
                                     }
-                                    Err(_) => data_for_tx.add_tx_status("Amount: Invalid Amount found"),
                                 }
-                            }
-                            KeyCode::Backspace => data_for_tx.edit_amount('a', true),
-                            KeyCode::Char(a) => data_for_tx.edit_amount(a, false),
-                            _ => {}
-                        },
+                                KeyCode::Backspace => data_for_tx.edit_amount('a', true),
+                                KeyCode::Char(a) => data_for_tx.edit_amount(a, false),
+                                _ => {}
+                            },
 
-                        TxTab::TxType => match key.code {
-                            KeyCode::Enter => {
-                                let status = data_for_tx.check_tx_type();
-                                data_for_tx.add_tx_status(&status);
-                                if status.contains("Accepted") || status.contains("Nothing") {
-                                    cu_tx_page = TxTab::Nothing
+                            TxTab::TxType => match key.code {
+                                KeyCode::Enter => {
+                                    let status = data_for_tx.check_tx_type();
+                                    data_for_tx.add_tx_status(&status);
+                                    if status.contains("Accepted") || status.contains("Nothing") {
+                                        cu_tx_page = TxTab::Nothing
+                                    }
                                 }
-                            }
-                            KeyCode::Esc => cu_tx_page = TxTab::Nothing,
-                            KeyCode::Backspace => data_for_tx.edit_tx_type('a', true),
-                            KeyCode::Char(a) => data_for_tx.edit_tx_type(a, false),
-                            _ => {}
-                        },
-                    },
+                                KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                                KeyCode::Backspace => data_for_tx.edit_tx_type('a', true),
+                                KeyCode::Char(a) => data_for_tx.edit_tx_type(a, false),
+                                _ => {}
+                            },
+                        }
+                    }
                     CurrentUi::Initial => match key.code {
                         KeyCode::Char('q') => return Ok(()),
                         _ => cu_page = CurrentUi::Home,
-                    }
+                    },
                 }
             };
+        } else {
         }
-        else {}
     }
 }
