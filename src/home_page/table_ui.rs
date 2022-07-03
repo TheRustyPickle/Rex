@@ -123,7 +123,7 @@ pub fn ui<B: Backend>(
         );
 
     // set up the table columns and their size
-    // resizing the table headers to match a % of the 
+    // resizing the table headers to match a % of the
     // terminal space
     let mut table_area = Table::new(rows)
         .header(header)

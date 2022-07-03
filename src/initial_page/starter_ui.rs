@@ -1,29 +1,20 @@
 use tui::{
     backend::Backend,
-    layout::{Constraint, Direction, Layout, Alignment},
+    layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    text::{Span},
+    text::Span,
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
 
 /// The initial UI that starts on the startup of the program. The function
 /// draws 2 widgets with the intention to show the hotkeys of the program.
-pub fn starter_ui<B: Backend>(
-    f: &mut Frame<B>,
-    index: usize,
-) {
+pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
     let size = f.size();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints(
-            [
-                Constraint::Length(8),
-                Constraint::Min(5),
-            ]
-            .as_ref(),
-        )
+        .constraints([Constraint::Length(8), Constraint::Min(5)].as_ref())
         .split(size);
 
     let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Green));
@@ -44,7 +35,8 @@ pub fn starter_ui<B: Backend>(
     | |_) | |  _|    \  / 
     |  _ <  | |___   /  \ 
     |_| \_\ |_____| /_/\_\
-                          "#.to_string();
+                          "#
+    .to_string();
 
     // To work with this and add a slight touch of animation, we will split the entire
     // text by \n. Once it is done, we will loop through each line and add the chars in a string for rendering.
@@ -67,8 +59,8 @@ pub fn starter_ui<B: Backend>(
             total_initial_to_add = index + total_to_add - 1 - line.len();
 
             // unsure why this part works but it makes the rendering a bit smoother.
-            if total_initial_to_add > total_to_add-1 {
-                total_initial_to_add = total_to_add-1
+            if total_initial_to_add > total_to_add - 1 {
+                total_initial_to_add = total_to_add - 1
             }
         }
 
@@ -81,13 +73,11 @@ pub fn starter_ui<B: Backend>(
                 total_to_add -= 1;
                 cu_index += 1;
                 target_index += 1
-            }
-            else if total_initial_to_add != 0 {
+            } else if total_initial_to_add != 0 {
                 new_text.push(char);
                 cu_index += 1;
                 total_initial_to_add -= 1;
-            }
-            else {
+            } else {
                 new_text.push_str(" ");
                 cu_index += 1;
             }
@@ -116,10 +106,9 @@ Add Transaction Page:
         .alignment(Alignment::Center);
 
     let paragraph_2 = Paragraph::new(second_text)
-    .style(Style::default().bg(Color::White).fg(Color::Green))
-    .block(create_block("Help"));
+        .style(Style::default().bg(Color::White).fg(Color::Green))
+        .block(create_block("Help"));
 
     f.render_widget(paragraph, chunks[0]);
     f.render_widget(paragraph_2, chunks[1]);
-    
 }
