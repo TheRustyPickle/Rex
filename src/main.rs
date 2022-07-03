@@ -51,6 +51,8 @@ use tui::{
 // [x] do not return to home if add tx is failed and show error on status section
 // [x] check amount that it is not negative
 // [ ] write tests
+// [x] initial ui
+// [ ] No ||, if index > len then go back to 0+how many was added to the index
 
 /// The main function is designed for 3 things. 
 /// - checks if the local database named data.sqlite is found or create the database
@@ -176,6 +178,7 @@ fn run_app<B: Backend>(
     let mut data_for_tx = AddTxData::new();
     let mut total_income = vec![];
     let mut total_expense = vec![];
+    let mut starter_index = 0;
 
     // The loop begins at this point and before the loop starts, multiple variables are initiated
     // with the default values which will quickly be changing once the loop starts.
@@ -234,7 +237,6 @@ fn run_app<B: Backend>(
 
         // passing out relevant data to the ui function 
         match cu_page {
-            //NOTE initial ui to be added here
             CurrentUi::Home => terminal.draw(|f| {
                 ui(
                     f,
@@ -255,12 +257,14 @@ fn run_app<B: Backend>(
                 )
             })?,
             CurrentUi::Initial => terminal.draw(|f| {
-                starter_ui(f);
+                starter_ui(f, starter_index);
+                starter_index += 1;
+                if starter_index > 28 { starter_index = 0;}
             })?
         };
 
         // This is where the keyboard press tracking starts
-        if poll(Duration::from_millis(100))? {
+        if poll(Duration::from_millis(50))? {
             if let Event::Key(key) = event::read()? {
                 match cu_page {
                     CurrentUi::Home => match key.code {
