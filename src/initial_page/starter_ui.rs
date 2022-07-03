@@ -9,6 +9,7 @@ use tui::{
 
 pub fn starter_ui<B: Backend>(
     f: &mut Frame<B>,
+    index: usize,
 ) {
     let size = f.size();
     let chunks = Layout::default()
@@ -35,14 +36,34 @@ pub fn starter_ui<B: Backend>(
     };
     f.render_widget(block, size);
     let text = r#"  ____    _____  __  __
-|  _ \  | ____| \ \/ /
-| |_) | |  _|    \  / 
-|  _ <  | |___   /  \ 
-|_| \_\ |_____| /_/\_\
-                          
+    |  _ \  | ____| \ \/ /
+    | |_) | |  _|    \  / 
+    |  _ <  | |___   /  \ 
+    |_| \_\ |_____| /_/\_\
+                            "#.to_string();
+    let state = text.split("\n");
+    let splitted = state.collect::<Vec<&str>>();
+    let mut new_text = String::new();
+    for line in splitted {
+        let mut cu_index = 0;
+        let mut total_to_add = 10;
+        let mut target_index = index;
+        for char in line.chars() {
+            if cu_index == target_index && total_to_add != 0 {
+                new_text.push(char);
+                total_to_add -= 1;
+                cu_index += 1;
+                target_index += 1
+            }
+            else {
+                new_text.push_str(" ");
+                cu_index += 1;
+            }
+        }
+        new_text.push_str("\n");
+    }
 
-Pres Any Key To Continue"#.to_string();
-
+    new_text.push_str("\n    Press Any Key To Continue");
     let second_text = "'Arrow Key' : Navigate
 'A' : Add Transaction Page
 'H' : Home Page
@@ -57,7 +78,7 @@ Add Transaction Page:
 'Enter' or 'Esc': Submit/Stop Editing Field
 ";
 
-    let paragraph = Paragraph::new(text)
+    let paragraph = Paragraph::new(new_text)
         .style(Style::default().bg(Color::White).fg(Color::Green))
         .alignment(Alignment::Center);
 
