@@ -265,6 +265,9 @@ fn run_app<B: Backend>(
         };
 
         // This is where the keyboard press tracking starts
+        // What is poll? This is something from crossterm lib.
+        // There are two options, event or timer. Timer keeps the loop unblocked. Loops for
+        // event checking each 40 milliseconds
         if poll(Duration::from_millis(40))? {
             if let Event::Key(key) = event::read()? {
                 match cu_page {
