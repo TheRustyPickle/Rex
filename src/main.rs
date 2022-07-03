@@ -34,7 +34,7 @@ use tui::{
 // [x] add creating tx button
 // [x] add removing tx button
 // [ ] create a popup ui on Home window for commands list or if a new version is available
-// [ ] simple ui at the start of the program highlighting button
+// [x] simple ui at the start of the program highlighting button
 // [ ] allow adding tx methods
 // [ ] change color scheme?
 // [x] change balances to f32?
@@ -52,7 +52,8 @@ use tui::{
 // [x] check amount that it is not negative
 // [ ] write tests
 // [x] initial ui
-// [ ] No ||, if index > len then go back to 0+how many was added to the index
+// [ ] change database location
+// [ ] Need to update hotkey for the popup ui
 
 /// The main function is designed for 3 things. 
 /// - checks if the local database named data.sqlite is found or create the database
@@ -264,7 +265,7 @@ fn run_app<B: Backend>(
         };
 
         // This is where the keyboard press tracking starts
-        if poll(Duration::from_millis(50))? {
+        if poll(Duration::from_millis(40))? {
             if let Event::Key(key) = event::read()? {
                 match cu_page {
                     CurrentUi::Home => match key.code {
