@@ -2,7 +2,7 @@ use rusqlite::{Connection, Result};
 
 /// If the local database is not found, this is executed to create the default
 /// database with a set of provided Transaction Methods.
-pub fn create_db() -> Result<()> {
+pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
     let months = vec![
         "January",
         "February",
@@ -18,7 +18,7 @@ pub fn create_db() -> Result<()> {
         "December",
     ];
     let years = vec!["2022", "2023", "2024", "2025"];
-    //TODO change test to actual db path
+
     let path = "data.sqlite";
     let conn = Connection::open(path)?;
 
@@ -34,28 +34,29 @@ pub fn create_db() -> Result<()> {
         [],
     )?;
 
-    conn.execute(
-        "CREATE TABLE changes_all (
+    let mut query = format!("CREATE TABLE changes_all (
         date TEXT,
-        id_num INTEGER NOT NULL PRIMARY KEY,
-        source_1 TEXT DEFAULT 0.00,
-        source_2 TEXT DEFAULT 0.00,
-        source_3 TEXT DEFAULT 0.00,
-        source_4 TEXT DEFAULT 0.00,
-        CONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
-    );",
+        id_num INTEGER NOT NULL PRIMARY KEY,");
+    for i in &tx_methods {
+        query.push_str(&format!("\n{i} TEXT DEFAULT 0.00,"))
+    }
+    query.push_str("\nCONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
+);");
+
+    conn.execute(
+        &query,
         [],
     )?;
 
-    //TODO change the sources to real values
+    let mut query = format!("CREATE TABLE balance_all (
+        id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT");
+    for i in &tx_methods {
+        query.push_str(&format!(",\n{i} TEXT DEFAULT 0.00"))
+    }
+    query.push_str(");");
+
     conn.execute(
-        "CREATE TABLE balance_all (
-        id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        source_1 TEXT DEFAULT 0.00,
-        source_2 TEXT DEFAULT 0.00,
-        source_3 TEXT DEFAULT 0.00,
-        source_4 TEXT DEFAULT 0.00
-    );",
+        &query,
         [],
     )?;
 
@@ -77,15 +78,23 @@ pub fn create_db() -> Result<()> {
     )
     .unwrap();
 
+    let mut q_marks = vec![];
+    for _i in &tx_methods {
+        q_marks.push("0.0")
+    }
+
+    let mut query = format!("INSERT INTO balance_all ({:?}) VALUES ({:?})", tx_methods, q_marks);
+    query = query.replace("[", "").replace("]", "").replace(r#"""#, "");
+
     for _i in years {
         for _a in 0..months.len() {
-            conn.execute("INSERT INTO balance_all (source_1, source_2, source_3, source_4) VALUES (?, ?, ?, ?)",
-        [0.0, 0.0, 0.0, 0.0])?;
+            conn.execute(&query,
+        [])?;
         }
     }
     conn.execute(
-        "INSERT INTO balance_all (source_1, source_2, source_3, source_4) VALUES (?, ?, ?, ?)",
-        [0.0, 0.0, 0.0, 0.0],
+        &query,
+        [],
     )?;
 
     Ok(())

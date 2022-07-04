@@ -18,7 +18,8 @@ use initial_page::starter_ui;
 use rusqlite::{Connection, Result};
 use std::fs;
 use std::time::Duration;
-use std::{error::Error, io};
+use std::{error::Error, io, process};
+use std::collections::HashSet;
 use tui::layout::Constraint;
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -69,16 +70,49 @@ fn main() -> Result<(), Box<dyn Error>> {
             db_found = true;
         }
     }
-    // TODO if db not found take user input for tx method during the initialization
     // create a new db if not found. If there is an error, delete the failed data.sqlite file
+    // we will take input from the user and use the input data to create a new database
+    let mut db_tx_methods = vec![];
     if db_found != true {
+        loop {
+            let mut line = String::new();
+            let mut verify_line = String::new();
+            let mut verify_input = "Inserted Transaction Methods:\n".to_string();
+
+            println!("User input required for Transaction Methods. Must be separated by one comma and one space \
+or ', '. Example: Bank, Cash, PayPal\n\nEnter Transaction Methods:");
+
+            // take user input for transaction methods
+            std::io::stdin().read_line(&mut line).unwrap();
+
+            // remove the \n at the end, split them and remove duplicates
+            line.pop();
+            let split = line.split(", ");
+            let mut splitted = split.collect::<Vec<&str>>();
+            let set: HashSet<_> = splitted.drain(..).collect();
+            splitted.extend(set.into_iter());
+
+            for i in &splitted {
+                verify_input.push_str(&format!("- {i}\n"));
+            }
+            verify_input.push_str("Accept the values? y/n");
+            println!("{verify_input}");
+            std::io::stdin().read_line(&mut verify_line).unwrap();
+            if verify_line.to_lowercase().starts_with("y") {
+                for i in splitted {
+                    db_tx_methods.push(i.to_string());
+                }
+                break;
+            }
+        }
         println!("Creating New Database. It may take some time...");
-        let status = create_db();
+        let status = create_db(db_tx_methods);
         match status {
             Ok(_) => {}
-            Err(_) => {
-                println!("Database creation failed. Try again.");
+            Err(e) => {
+                println!("Database creation failed. Try again. Error: {}", e);
                 fs::remove_file("data.sqlite").expect("Error while deleting database");
+                process::exit(1);
             }
         }
     }
@@ -223,7 +257,7 @@ fn run_app<B: Backend>(
             }
             None => {
                 balance.push(all_data.get_last_balance(&conn));
-                balance.push(get_empty_changes());
+                balance.push(get_empty_changes(&conn));
             }
         }
 
