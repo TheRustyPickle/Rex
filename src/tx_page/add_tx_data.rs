@@ -265,6 +265,9 @@ impl AddTxData {
             return "TX Method: Nothing to check".to_string();
         }
 
+        // loops through all tx methods and matches each character
+        // of the tx method with the current inputted text. Based on matches
+        // selects the best matching one if text is not any exact match.
         if all_tx_methods.contains(&current_text) {
             return "Tx Method: Transaction Method Accepted".to_string();
         } else {
@@ -274,7 +277,7 @@ impl AddTxData {
             for method in all_tx_methods {
                 let mut total_match = 0;
                 for i in method.chars() {
-                    if current_text.contains(i) {
+                    if current_text.to_lowercase().contains(&format!("{}", i.to_string().to_lowercase())) {
                         total_match += 1;
                     }
                 }

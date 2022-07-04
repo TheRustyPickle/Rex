@@ -225,16 +225,16 @@ pub fn get_all_txs(
 }
 
 /// Returns the a vector with data required to create the Changes row for zero changes in the home page.
-pub fn get_empty_changes() -> Vec<String> {
+pub fn get_empty_changes(conn: &Connection) -> Vec<String> {
     // function for quick vec with 0 changes for adding in widget
-
-    vec![
-        "Changes".to_string(),
-        format!("{:.2}", 0.0),
-        format!("{:.2}", 0.0),
-        format!("{:.2}", 0.0),
-        format!("{:.2}", 0.0),
-    ]
+    let tx_methods = get_all_tx_methods(conn);
+    let mut changes = vec![
+        "Changes".to_string()
+    ];
+    for _i in tx_methods {
+        changes.push(format!("{:.2}", 0.0))
+    }
+    changes
 }
 
 /// Returns the absolute final balance which is the balance saved after each transaction was counted.
