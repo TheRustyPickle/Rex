@@ -99,3 +99,32 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
 
     Ok(())
 }
+
+pub fn add_new_tx_methods(tx_methods: Vec<String>) -> Result<()> {
+    let path = "data.sqlite";
+    let conn = Connection::open(path)?;
+
+    let mut query = format!("ALTER TABLE balance_all ADD COLUMN ");
+    for i in 0..tx_methods.len() {
+        query.push_str(&format!("{} TEXT DEFAULT 0.0", tx_methods[i]));
+        if i < tx_methods.len() - 1 {
+            query.push_str(",")
+        }
+    }
+    query.push_str(";");
+
+    conn.execute(&query, [])?;
+
+    let mut query = format!("ALTER TABLE changes_all ADD COLUMN ");
+    for i in 0..tx_methods.len() {
+        query.push_str(&format!("{} TEXT DEFAULT 0.0", tx_methods[i]));
+        if i < tx_methods.len() - 1 {
+            query.push_str(",")
+        }
+    }
+    query.push_str(";");
+
+    conn.execute(&query, [])?;
+
+    Ok(())
+}

@@ -1,5 +1,6 @@
 use rusqlite::{Connection, Result as sqlResult};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+
 
 // This file contains a number of functions that makes calls to the database
 // to fetch relevant data which is later users in various structs. I didn't
@@ -443,4 +444,70 @@ pub fn delete_tx(conn: &Connection, id_num: usize) -> sqlResult<()> {
     conn.execute(&last_balance_query, [])?;
     conn.execute(&del_query, [])?;
     Ok(())
+}
+
+pub fn get_user_tx_methods(add_new_method: bool) -> Vec<String>{
+
+    let mut cu_tx_methods: Vec<String> = Vec::new();
+    let mut db_tx_methods = vec![];
+
+    let mut line = String::new();
+    let mut verify_line = String::new();
+    let mut verify_input = "Inserted Transaction Methods:\n".to_string();
+    let mut method_line = "Currently added Transaction Methods: ".to_string();
+
+    // if we are adding more tx methods to an existing database, we need to
+    // to get the existing columns to prevent duplicates/error.
+    if add_new_method == true {
+        let conn = Connection::open("data.sqlite").expect("Could not connect to database");
+        cu_tx_methods = get_all_tx_methods(&conn);
+        for i in &cu_tx_methods {
+            method_line.push_str(&format!("\n- {i}"))
+        }
+        println!("{method_line}");
+    }
+
+    // we will take input from the user and use the input data to create a new database
+    // keep on looping until the methods are approved by sending y.
+    loop {
+        println!("\nUser input required for Transaction Methods. Must be separated by one comma and one space \
+or ', '. Example: Bank, Cash, PayPal\n\nEnter Transaction Methods:");
+
+        // take user input for transaction methods
+        std::io::stdin().read_line(&mut line).unwrap(); 
+
+        // remove the \n at the end, split them and remove duplicates
+        line.pop();
+        let split = line.split(", ");
+        let mut splitted = split.collect::<Vec<&str>>();
+        let set: HashSet<_> = splitted.drain(..).collect();
+        splitted.extend(set.into_iter());
+
+        // If adding new transactions methods, remove the existing methods
+        // from in the inputted data
+        if add_new_method == true {
+            for i in 0..splitted.len() {
+                let user_tx_method = splitted[i].to_string();
+                if cu_tx_methods.contains(&user_tx_method) {
+                    splitted.swap_remove(i);
+                }
+            }
+        }
+
+        for i in &splitted {
+            verify_input.push_str(&format!("- {i}\n"));
+        }
+        verify_input.push_str("Accept the values? y/n");
+        println!("{verify_input}");
+
+        std::io::stdin().read_line(&mut verify_line).unwrap();
+        
+        if verify_line.to_lowercase().starts_with("y") {
+            for i in splitted {
+                db_tx_methods.push(i.to_string());
+            }
+            break;
+        }
+    }
+    db_tx_methods
 }

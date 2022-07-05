@@ -9,8 +9,8 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use db::create_db;
-use db::{get_all_tx_methods, get_empty_changes};
+use db::{create_db, add_new_tx_methods};
+use db::{get_all_tx_methods, get_empty_changes, get_user_tx_methods};
 use home_page::ui;
 use home_page::TransactionData;
 use home_page::{CurrentUi, SelectedTab, TableData, TimeData, TxTab};
@@ -19,7 +19,6 @@ use rusqlite::{Connection, Result};
 use std::fs;
 use std::time::Duration;
 use std::{error::Error, io, process};
-use std::collections::HashSet;
 use tui::layout::Constraint;
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -35,7 +34,7 @@ use tx_page::AddTxData;
 // [x] add removing tx button
 // [ ] create a popup ui on Home window for commands list or if a new version is available
 // [x] simple ui at the start of the program highlighting button
-// [ ] allow adding tx methods
+// [x] allow adding tx methods
 // [ ] change color scheme?
 // [x] change balances to f32?
 // [x] add date column to all_balance & all_changes
@@ -54,6 +53,7 @@ use tx_page::AddTxData;
 // [x] initial ui
 // [ ] change database location
 // [ ] Need to update hotkey for the popup ui
+// [ ] run on terminal when using the binary
 
 /// The main function is designed for 3 things.
 /// - checks if the local database named data.sqlite is found or create the database
@@ -71,40 +71,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
     // create a new db if not found. If there is an error, delete the failed data.sqlite file
-    // we will take input from the user and use the input data to create a new database
-    let mut db_tx_methods = vec![];
     if db_found != true {
-        loop {
-            let mut line = String::new();
-            let mut verify_line = String::new();
-            let mut verify_input = "Inserted Transaction Methods:\n".to_string();
-
-            println!("User input required for Transaction Methods. Must be separated by one comma and one space \
-or ', '. Example: Bank, Cash, PayPal\n\nEnter Transaction Methods:");
-
-            // take user input for transaction methods
-            std::io::stdin().read_line(&mut line).unwrap();
-
-            // remove the \n at the end, split them and remove duplicates
-            line.pop();
-            let split = line.split(", ");
-            let mut splitted = split.collect::<Vec<&str>>();
-            let set: HashSet<_> = splitted.drain(..).collect();
-            splitted.extend(set.into_iter());
-
-            for i in &splitted {
-                verify_input.push_str(&format!("- {i}\n"));
-            }
-            verify_input.push_str("Accept the values? y/n");
-            println!("{verify_input}");
-            std::io::stdin().read_line(&mut verify_line).unwrap();
-            if verify_line.to_lowercase().starts_with("y") {
-                for i in splitted {
-                    db_tx_methods.push(i.to_string());
-                }
-                break;
-            }
-        }
+        let db_tx_methods = get_user_tx_methods(false);
         println!("Creating New Database. It may take some time...");
         let status = create_db(db_tx_methods);
         match status {
@@ -115,6 +83,7 @@ or ', '. Example: Bank, Cash, PayPal\n\nEnter Transaction Methods:");
                 process::exit(1);
             }
         }
+        
     }
     // TUI magic functions starts here with multiple calls
     enable_raw_mode()?;
@@ -150,8 +119,20 @@ or ', '. Example: Bank, Cash, PayPal\n\nEnter Transaction Methods:");
     )?;
     terminal.show_cursor()?;
 
-    if let Err(err) = res {
-        println!("{:?}", err)
+    match res {
+        Err(e) => println!("not here{:?}", e),
+        Ok(a) => {
+            println!("{:?}", a);
+            if &a == "Change" {
+                let db_data = get_user_tx_methods(true);
+                let status = add_new_tx_methods(db_data);
+                match status {
+                    //TODO restart the app once it is done by looping back. Move some things to a different func?
+                    Ok(_) => println!("Added Transaction Methods Successfully. The app will restart in 5 seconds"),
+                    Err(e) => println!("Error while add new transaction methods. Error: {e:?}")
+                }
+            }
+        }
     }
     Ok(())
 }
@@ -170,7 +151,7 @@ fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     mut months: TimeData,
     mut years: TimeData,
-) -> io::Result<()> {
+) -> io::Result<String> {
     // Setting up some default values. Let's go through all of them
     // selected_tab : Basically the current selected widget/field. Default set to the month selection/3rd widget
     //
@@ -304,8 +285,9 @@ fn run_app<B: Backend>(
             if let Event::Key(key) = event::read()? {
                 match cu_page {
                     CurrentUi::Home => match key.code {
-                        KeyCode::Char('q') => return Ok(()),
+                        KeyCode::Char('q') => return Ok("".to_string()),
                         KeyCode::Char('a') => cu_page = CurrentUi::AddTx,
+                        KeyCode::Char('j') => return Ok("Change".to_string()),
                         KeyCode::Char('d') => {
                             if table.state.selected() != None {
                                 let status =
@@ -409,7 +391,7 @@ fn run_app<B: Backend>(
                             // start matching key pressed based on which widget is selected.
                             // current state tracked with enums
                             TxTab::Nothing => match key.code {
-                                KeyCode::Char('q') => return Ok(()),
+                                KeyCode::Char('q') => return Ok("".to_string()),
                                 KeyCode::Char('h') => {
                                     cu_page = CurrentUi::Home;
                                     cu_tx_page = TxTab::Nothing;
@@ -546,7 +528,7 @@ fn run_app<B: Backend>(
                         }
                     }
                     CurrentUi::Initial => match key.code {
-                        KeyCode::Char('q') => return Ok(()),
+                        KeyCode::Char('q') => return Ok("".to_string()),
                         _ => cu_page = CurrentUi::Home,
                     },
                 }
