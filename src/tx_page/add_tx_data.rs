@@ -139,7 +139,6 @@ impl AddTxData {
             &self.amount,
             &self.tx_type,
         );
-        // TODO do more checking and prevent page switching
 
         match status {
             Ok(_) => return format!(""),
