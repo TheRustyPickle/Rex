@@ -482,20 +482,27 @@ or ', '. Example: Bank, Cash, PayPal\n\nEnter Transaction Methods:");
         let mut splitted = split.collect::<Vec<&str>>();
         let set: HashSet<_> = splitted.drain(..).collect();
         splitted.extend(set.into_iter());
+        let mut filtered_splitted = vec![];
 
         // If adding new transactions methods, remove the existing methods
         // from in the inputted data
         if add_new_method == true {
             for i in 0..splitted.len() {
                 let user_tx_method = splitted[i].to_string();
-                if cu_tx_methods.contains(&user_tx_method) {
-                    splitted.swap_remove(i);
+                if cu_tx_methods.contains(&user_tx_method) == false {
+                    filtered_splitted.push(user_tx_method)
                 }
             }
         }
-
-        for i in &splitted {
-            verify_input.push_str(&format!("- {i}\n"));
+        if add_new_method == true {
+            for i in &filtered_splitted {
+                verify_input.push_str(&format!("- {i}\n"));
+            }
+        }
+        else {
+            for i in &splitted {
+                verify_input.push_str(&format!("- {i}\n"));
+            }
         }
         verify_input.push_str("Accept the values? y/n");
         println!("{verify_input}");
@@ -503,8 +510,15 @@ or ', '. Example: Bank, Cash, PayPal\n\nEnter Transaction Methods:");
         std::io::stdin().read_line(&mut verify_line).unwrap();
         
         if verify_line.to_lowercase().starts_with("y") {
-            for i in splitted {
-                db_tx_methods.push(i.to_string());
+            if add_new_method == true {
+                for i in filtered_splitted {
+                    db_tx_methods.push(i.to_string());
+                }
+            }
+            else {
+                for i in splitted {
+                    db_tx_methods.push(i.to_string());
+                }
             }
             break;
         }
