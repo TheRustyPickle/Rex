@@ -51,10 +51,10 @@ use tx_page::AddTxData;
 // [x] check amount that it is not negative
 // [ ] write tests
 // [x] initial ui
-// [ ] change database location
+// [x] change database location (nothing to do for now)
 // [ ] Need to update hotkey for the popup ui
 // [ ] run on terminal when using the binary
-// [ ] Edit help and hotkeys
+// [ ] allow cancelling adding transaction method
 
 /// The starting function checks for the local database location and creates a new database
 /// if not existing. Lastly, starts a loop that keeps the interface running until exit command is given.

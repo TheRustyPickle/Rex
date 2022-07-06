@@ -67,9 +67,8 @@ pub fn tx_ui<B: Backend>(
         Spans::from("'3': TX Method    Example: Cash, Bank, Card"),
         Spans::from("'4': Amount       Example: 1000, 500"),
         Spans::from("'5': TX Type      Example: Income/Expense/I/E"),
-        Spans::from("'Enter': Submit/Stop Editing Field"),
-        Spans::from("'Esc': Submit/Stop Editing Field"),
         Spans::from("'S': Save the inputted data as a Transaction"),
+        Spans::from("'Enter' or 'Esc': Submit/Stop Editing Field"),
     ];
 
     let mut status_text = vec![];
