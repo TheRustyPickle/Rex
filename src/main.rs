@@ -17,7 +17,7 @@ use home_page::{CurrentUi, SelectedTab, TableData, TimeData, TxTab};
 use initial_page::starter_ui;
 use rusqlite::{Connection, Result};
 use std::fs;
-use std::time::Duration;
+use std::{time::Duration, thread};
 use std::{error::Error, io, process};
 use tui::layout::Constraint;
 use tui::{
@@ -54,12 +54,10 @@ use tx_page::AddTxData;
 // [ ] change database location
 // [ ] Need to update hotkey for the popup ui
 // [ ] run on terminal when using the binary
+// [ ] Edit help and hotkeys
 
-/// The main function is designed for 3 things.
-/// - checks if the local database named data.sqlite is found or create the database
-/// - Calls lib function that makes the tui magic work such as moving to an alternate screen
-/// - Passes a few terminal state and if there is an error, quits the application
-
+/// The starting function checks for the local database location and creates a new database
+/// if not existing. Lastly, starts a loop that keeps the interface running until exit command is given.
 fn main() -> Result<(), Box<dyn Error>> {
     // checks the local folder and searches for data.sqlite
     let paths = fs::read_dir(".").unwrap();
@@ -85,6 +83,44 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         
     }
+    loop { 
+        // Continue to loop through until until res == "" which means exit.
+        // This is added so the app will restart if a new Transaction Method is added.
+        let res = start_run_app();
+        exit_tui_interface()?;
+
+        match res {
+            Err(e) => {
+                println!("Error: {:?}", e);
+                break;
+            },
+            Ok(a) => {
+                if &a == "Change" {
+                    let db_data = get_user_tx_methods(true);
+                    let status = add_new_tx_methods(db_data);
+                    match status {
+                        Ok(_) => {
+                            println!("Added Transaction Methods Successfully. The app will restart in 5 seconds");
+                            thread::sleep(Duration::from_millis(5000));
+                        },
+                        Err(e) => {
+                            println!("Error while add new transaction methods. Error: {e:?}");
+                            thread::sleep(Duration::from_millis(5000));
+                        }
+                    }
+                }
+                else {
+                    break;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// The function to start run_app along with executing commands for switching to an alternate screen,
+/// mouse capturing and passing months and year data to the function and starts the interface
+fn start_run_app() -> Result<String, Box<dyn Error>> {
     // TUI magic functions starts here with multiple calls
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -109,8 +145,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     let years = TimeData::new(vec!["2022", "2023", "2024", "2025"]);
 
     // pass a few data to the main function and loop forever or until quit/faced with an error
-    let res = run_app(&mut terminal, months, years);
+    let res = run_app(&mut terminal, months, years)?;
 
+    Ok(res)
+}
+
+/// The function is used to exit out of the interface 
+fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
+    let stdout = io::stdout();
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
     disable_raw_mode()?;
     execute!(
         terminal.backend_mut(),
@@ -118,22 +162,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         DisableMouseCapture
     )?;
     terminal.show_cursor()?;
-
-    match res {
-        Err(e) => println!("not here{:?}", e),
-        Ok(a) => {
-            println!("{:?}", a);
-            if &a == "Change" {
-                let db_data = get_user_tx_methods(true);
-                let status = add_new_tx_methods(db_data);
-                match status {
-                    //TODO restart the app once it is done by looping back. Move some things to a different func?
-                    Ok(_) => println!("Added Transaction Methods Successfully. The app will restart in 5 seconds"),
-                    Err(e) => println!("Error while add new transaction methods. Error: {e:?}")
-                }
-            }
-        }
-    }
     Ok(())
 }
 
@@ -146,7 +174,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 /// - Stores the current UI data and states
 /// - Detects all key presses and directs the UI accordingly
 /// - Modifies UI data as needed
-
 fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     mut months: TimeData,
@@ -219,10 +246,9 @@ fn run_app<B: Backend>(
 
         // save the % of space each column should take in the Balance section based on the total
         // transaction methods/columns available
-        // Need to do a + 1 because there is a Total column & to make the gap tighter
-        let width_percent = 100 / balance[0].len() as u16 + 1;
+        let width_percent = 100 / balance[0].len() as u16 ;
         let mut width_data = vec![];
-        for _i in 0..balance[0].len() + 1 {
+        for _i in 0..balance[0].len() {
             width_data.push(Constraint::Percentage(width_percent));
         }
 
