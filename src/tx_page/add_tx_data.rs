@@ -118,7 +118,7 @@ impl AddTxData {
 
     /// Collects all the data for the transaction and calls the function
     /// that pushes them to the database.
-    pub fn add_tx(&mut self, conn: &Connection) -> String {
+    pub fn add_tx(&mut self) -> String {
         if &self.date == "" {
             return format!("Date: Date cannot be empty");
         } else if &self.details == "" {
@@ -132,7 +132,6 @@ impl AddTxData {
         }
 
         let status = add_new_tx(
-            conn,
             &self.date,
             &self.details,
             &self.tx_method,

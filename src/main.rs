@@ -40,7 +40,7 @@ use tx_page::AddTxData;
 // [x] add date column to all_balance & all_changes
 // [x] verify db cascade method working or not
 // [ ] add more panic handling
-// [ ] add save points for db commits
+// [x] add save points for db commits
 // [x] latest balance empty = all 0
 // [x] limit add tx date between the available years
 // [x] add status on add tx page
@@ -324,7 +324,7 @@ fn run_app<B: Backend>(
                         KeyCode::Char('d') => {
                             if table.state.selected() != None {
                                 let status =
-                                    all_data.del_tx(&conn, table.state.selected().unwrap());
+                                    all_data.del_tx(table.state.selected().unwrap());
                                 match status {
                                     Ok(_) => {
                                         // transaction deleted so reload the data again
@@ -431,7 +431,7 @@ fn run_app<B: Backend>(
                                     data_for_tx = AddTxData::new();
                                 }
                                 KeyCode::Char('s') => {
-                                    let status = data_for_tx.add_tx(&conn);
+                                    let status = data_for_tx.add_tx();
                                     if status == "".to_string() {
                                         cu_page = CurrentUi::Home;
                                         data_for_tx = AddTxData::new();
