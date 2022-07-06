@@ -86,12 +86,13 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
     }
 
     new_text.push_str("\n    Press Any Key To Continue");
-    // TODO add htokey changes here
+    // TODO add hotkey changes here
     let second_text = "'Arrow Key' : Navigate
 'A' : Add Transaction Page
 'H' : Home Page
 'D' : Delete Selected Transaction (Home Page)
 'S' : Save the inputted data as a Transaction (Add Transaction Page)
+'J' : Switches interface to take input for new Transaction Methods (Home Page)
 'Q' : Quit
 
 Add Transaction Page:
