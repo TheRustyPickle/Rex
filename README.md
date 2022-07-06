@@ -20,24 +20,3 @@ cargo run
 
 <h4>Executables</h4>
 To Be Released with version 0.1. Currently work in progress.
-
-<h4>Hotkeys</h4>
-May be subject to changes
-
-- 'Arrow Keys' : Navigate on the Home page
-- 'Q' : Quits the interface
-- 'A' : Selects the Add Transaction interface
-- 'H' : Selects the main Home page
-- 'D' : If a transaction is selected on the Home page, deletes it
-- 'S' : Works in the Transaction Interface to save a Transaction data
-- 'Enter' : Submits the field data in Add Transaction interface
-- 'Esc' : Submits the field data in Add Transaction interface
-
-<h4>Currently in the works</h4>
-
-* Initial UI
-* Tighter transaction data checking
-* Proper error handling
-* Better Hotkey guide and Help
-* Color scheme changes?
-* Custom Transaction Methods. Currently only supports default values source_1 to 4
