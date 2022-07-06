@@ -1,6 +1,10 @@
 use rusqlite::{Connection, Result as sqlResult};
 use std::collections::{HashMap, HashSet};
-
+use crossterm::{
+    execute,
+    terminal::{Clear, ClearType},
+};
+use std::io;
 
 // This file contains a number of functions that makes calls to the database
 // to fetch relevant data which is later users in various structs. I didn't
@@ -291,7 +295,7 @@ pub fn add_new_tx(
     tx_type: &str,
 ) -> sqlResult<()> {
     conn.execute(
-        "INSERT INTO tx_all (date, details, tx_method, amount, tx_type) VALUES (?, ?, ?, ?, ?)",
+        r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type) VALUES (?, ?, ?, ?, ?)"#,
         [date, details, tx_method, amount, tx_type],
     )?;
 
@@ -369,18 +373,18 @@ pub fn add_new_tx(
     for i in 0..new_balance_data.len() {
         if i != new_balance_data.len() - 1 {
             balance_query.push_str(&format!(
-                "{} = {}, ",
+                r#""{}" = {}, "#,
                 all_tx_methods[i], new_balance_data[i]
             ))
         } else {
-            balance_query.push_str(&format!("{} = {} ", all_tx_methods[i], new_balance_data[i]))
+            balance_query.push_str(&format!(r#""{}" = {} "#, all_tx_methods[i], new_balance_data[i]))
         }
     }
     balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
 
     // there is only 1 value in the last_balance_data, we already know on which tx method the changes happened
     let last_balance_query = format!(
-        "UPDATE balance_all SET {tx_method} = {} WHERE id_num = {}",
+        r#"UPDATE balance_all SET "{tx_method}" = {} WHERE id_num = {}"#,
         last_balance_data[0], last_balance_id
     );
 
@@ -432,9 +436,9 @@ pub fn delete_tx(conn: &Connection, id_num: usize) -> sqlResult<()> {
     let mut last_balance_query = format!("UPDATE balance_all SET ");
     for i in 0..final_last_balance.len() {
         if i != final_last_balance.len() - 1 {
-            last_balance_query.push_str(&format!("{} = {}, ", tx_methods[i], final_last_balance[i]))
+            last_balance_query.push_str(&format!(r#""{}" = {}, "#, tx_methods[i], final_last_balance[i]))
         } else {
-            last_balance_query.push_str(&format!("{} = {} ", tx_methods[i], final_last_balance[i]))
+            last_balance_query.push_str(&format!(r#""{}" = {} "#, tx_methods[i], final_last_balance[i]))
         }
     }
     last_balance_query.push_str(&format!("WHERE id_num = 49"));
@@ -447,13 +451,16 @@ pub fn delete_tx(conn: &Connection, id_num: usize) -> sqlResult<()> {
 }
 
 pub fn get_user_tx_methods(add_new_method: bool) -> Vec<String>{
+    
+    let mut stdout = io::stdout();
 
+    // this command clears up the terminal. This is added so the terminal doesn't get
+    //filled up with previous unnecessary texts.
+    execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
+    
     let mut cu_tx_methods: Vec<String> = Vec::new();
     let mut db_tx_methods = vec![];
 
-    let mut line = String::new();
-    let mut verify_line = String::new();
-    let mut verify_input = "Inserted Transaction Methods:\n".to_string();
     let mut method_line = "Currently added Transaction Methods: ".to_string();
 
     // if we are adding more tx methods to an existing database, we need to
@@ -464,17 +471,30 @@ pub fn get_user_tx_methods(add_new_method: bool) -> Vec<String>{
         for i in &cu_tx_methods {
             method_line.push_str(&format!("\n- {i}"))
         }
-        println!("{method_line}");
     }
 
     // we will take input from the user and use the input data to create a new database
     // keep on looping until the methods are approved by sending y.
     loop {
-        println!("\nUser input required for Transaction Methods. Must be separated by one comma and one space \
-or ', '. Example: Bank, Cash, PayPal\n\nEnter Transaction Methods:");
+        let mut line = String::new();
+        let mut verify_line = String::new();
+        let mut verify_input = "Inserted Transaction Methods:\n".to_string();
 
+        if add_new_method == true {
+            println!("{method_line}\n");
+            println!("\nUser input required for Transaction Methods. Must be separated by one comma and one space \
+or ', '. Example: Bank, Cash, PayPal. Input 'Cancel' to cancel the operation\n\nEnter Transaction Methods:");
+        }
+        else {
+            println!("\nUser input required for Transaction Methods. Must be separated by one comma and one space \
+or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
+        }
+        
         // take user input for transaction methods
         std::io::stdin().read_line(&mut line).unwrap(); 
+        if line.to_lowercase().starts_with("cancel") && add_new_method == true {
+            return vec!["".to_string()];
+        }
 
         // remove the \n at the end, split them and remove duplicates
         line.pop();
@@ -482,6 +502,7 @@ or ', '. Example: Bank, Cash, PayPal\n\nEnter Transaction Methods:");
         let mut splitted = split.collect::<Vec<&str>>();
         let set: HashSet<_> = splitted.drain(..).collect();
         splitted.extend(set.into_iter());
+
         let mut filtered_splitted = vec![];
 
         // If adding new transactions methods, remove the existing methods
@@ -494,33 +515,49 @@ or ', '. Example: Bank, Cash, PayPal\n\nEnter Transaction Methods:");
                 }
             }
         }
-        if add_new_method == true {
-            for i in &filtered_splitted {
-                verify_input.push_str(&format!("- {i}\n"));
-            }
+        // Check if the input is not empty. If yes, start from the beginning
+        if (splitted == vec!["".to_string()] && add_new_method == false) || 
+            (filtered_splitted == vec!["".to_string()] &&  add_new_method == true) || 
+            (add_new_method == false && splitted.len() == 0) || 
+            (add_new_method == true && filtered_splitted.len() == 0) {
+            execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
+            println!("\nTransaction Method input cannot be empty and existing Transaction Methods cannot be used twice");
+            
         }
-        else {
-            for i in &splitted {
-                verify_input.push_str(&format!("- {i}\n"));
-            }
-        }
-        verify_input.push_str("Accept the values? y/n");
-        println!("{verify_input}");
-
-        std::io::stdin().read_line(&mut verify_line).unwrap();
-        
-        if verify_line.to_lowercase().starts_with("y") {
+        else { 
             if add_new_method == true {
-                for i in filtered_splitted {
-                    db_tx_methods.push(i.to_string());
+                for i in &filtered_splitted {
+                    verify_input.push_str(&format!("- {i}\n"));
                 }
             }
             else {
-                for i in splitted {
-                    db_tx_methods.push(i.to_string());
+                for i in &splitted {
+                    verify_input.push_str(&format!("- {i}\n"));
                 }
             }
-            break;
+            verify_input.push_str("Accept the values? y/n");
+            println!("\n{verify_input}");
+    
+            std::io::stdin().read_line(&mut verify_line).unwrap();
+            
+            // until the answer is y/yes/cancel continue the loop
+            if verify_line.to_lowercase().starts_with("y") {
+                if add_new_method == true {
+                    for i in filtered_splitted {
+                        db_tx_methods.push(i);
+                    }
+                }
+                else {
+                    for i in splitted {
+                        let value = i.to_string();
+                        db_tx_methods.push(value);
+                    }
+                }
+                break;
+            }
+            else {
+                execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
+            }
         }
     }
     db_tx_methods

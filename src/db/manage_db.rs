@@ -38,9 +38,9 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
         date TEXT,
         id_num INTEGER NOT NULL PRIMARY KEY,");
     for i in &tx_methods {
-        query.push_str(&format!("\n{i} TEXT DEFAULT 0.00,"))
+        query.push_str(&format!("{i} TEXT DEFAULT 0.00,"))
     }
-    query.push_str("\nCONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
+    query.push_str("CONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
 );");
 
     conn.execute(
@@ -51,7 +51,7 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
     let mut query = format!("CREATE TABLE balance_all (
         id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT");
     for i in &tx_methods {
-        query.push_str(&format!(",\n{i} TEXT DEFAULT 0.00"))
+        query.push_str(&format!(",{i} TEXT DEFAULT 0.00"))
     }
     query.push_str(");");
 
@@ -104,27 +104,15 @@ pub fn add_new_tx_methods(tx_methods: Vec<String>) -> Result<()> {
     let path = "data.sqlite";
     let conn = Connection::open(path)?;
 
-    let mut query = format!("ALTER TABLE balance_all ADD COLUMN ");
-    for i in 0..tx_methods.len() {
-        query.push_str(&format!("{} TEXT DEFAULT 0.0", tx_methods[i]));
-        if i < tx_methods.len() - 1 {
-            query.push_str(",")
-        }
+    for i in &tx_methods {
+        let query = format!(r#"ALTER TABLE balance_all ADD COLUMN "{i}" TEXT DEFAULT 0.0"#);
+        conn.execute(&query, [])?;
     }
-    query.push_str(";");
 
-    conn.execute(&query, [])?;
-
-    let mut query = format!("ALTER TABLE changes_all ADD COLUMN ");
-    for i in 0..tx_methods.len() {
-        query.push_str(&format!("{} TEXT DEFAULT 0.0", tx_methods[i]));
-        if i < tx_methods.len() - 1 {
-            query.push_str(",")
-        }
+    for i in &tx_methods {
+        let query = format!(r#"ALTER TABLE changes_all ADD COLUMN "{i}" TEXT DEFAULT 0.0"#);
+        conn.execute(&query, [])?;
     }
-    query.push_str(";");
-
-    conn.execute(&query, [])?;
 
     Ok(())
 }

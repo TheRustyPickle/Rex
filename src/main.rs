@@ -54,7 +54,7 @@ use tx_page::AddTxData;
 // [x] change database location (nothing to do for now)
 // [ ] Need to update hotkey for the popup ui
 // [ ] run on terminal when using the binary
-// [ ] allow cancelling adding transaction method
+// [x] allow cancelling adding transaction method
 
 /// The starting function checks for the local database location and creates a new database
 /// if not existing. Lastly, starts a loop that keeps the interface running until exit command is given.
@@ -97,17 +97,24 @@ fn main() -> Result<(), Box<dyn Error>> {
             Ok(a) => {
                 if &a == "Change" {
                     let db_data = get_user_tx_methods(true);
-                    let status = add_new_tx_methods(db_data);
-                    match status {
-                        Ok(_) => {
-                            println!("Added Transaction Methods Successfully. The app will restart in 5 seconds");
-                            thread::sleep(Duration::from_millis(5000));
-                        },
-                        Err(e) => {
-                            println!("Error while add new transaction methods. Error: {e:?}");
-                            thread::sleep(Duration::from_millis(5000));
+                    if db_data == vec!["".to_string()] {  
+                        println!("Operation Cancelled. Restarting in 5 seconds");
+                        thread::sleep(Duration::from_millis(5000));
+                    }
+                    else {
+                        let status = add_new_tx_methods(db_data);
+                        match status {
+                            Ok(_) => {
+                                println!("Added Transaction Methods Successfully. The app will restart in 5 seconds");
+                                thread::sleep(Duration::from_millis(5000));
+                            },
+                            Err(e) => {
+                                println!("Error while add new transaction methods. Error: {e:?}");
+                                thread::sleep(Duration::from_millis(5000));
+                            }
                         }
                     }
+                    
                 }
                 else {
                     break;
