@@ -287,14 +287,17 @@ fn get_last_balance_id(conn: &Connection) -> sqlResult<i32> {
 /// - Find the Changes that happened due to the transaction
 /// - Push them to the database
 pub fn add_new_tx(
-    conn: &Connection,
     date: &str,
     details: &str,
     tx_method: &str,
     amount: &str,
     tx_type: &str,
 ) -> sqlResult<()> {
-    conn.execute(
+    let path = "data.sqlite";
+    let mut conn = Connection::open(path).expect("Could not connect to database");
+    let sp = conn.savepoint().unwrap();
+
+    sp.execute(
         r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type) VALUES (?, ?, ?, ?, ?)"#,
         [date, details, tx_method, amount, tx_type],
     )?;
@@ -312,8 +315,8 @@ pub fn add_new_tx(
 
     // This is necessary for the foreign key field in the changes_all table
     // and must align with the latest transaction id_num
-    let last_id = get_last_tx_id(conn)?;
-    let last_balance_id = get_last_balance_id(conn)?;
+    let last_id = get_last_tx_id(&sp)?;
+    let last_balance_id = get_last_balance_id(&sp)?;
 
     // we have to get these following data to push to the database
     // new_balance_data : the current month balance after the transaction
@@ -323,10 +326,10 @@ pub fn add_new_tx(
     let mut new_changes_data = Vec::new();
     let mut last_balance_data = Vec::new();
 
-    let all_tx_methods = get_all_tx_methods(conn);
-    let last_balance = get_last_balances(conn, &all_tx_methods);
+    let all_tx_methods = get_all_tx_methods(&sp);
+    let last_balance = get_last_balances(&sp, &all_tx_methods);
     let mut cu_month_balance =
-        get_last_month_balance(conn, month as usize, year as usize, &all_tx_methods);
+        get_last_month_balance(&sp, month as usize, year as usize, &all_tx_methods);
 
     let mut new_balance = 0.0;
     let int_amount = amount.parse::<f32>().unwrap();
@@ -391,23 +394,27 @@ pub fn add_new_tx(
     let mut changes_query = format!("INSERT INTO changes_all (id_num, date, {all_tx_methods:?}) VALUES ({last_id}, ?, {new_changes_data:?})");
     changes_query = changes_query.replace("[", "");
     changes_query = changes_query.replace("]", "");
-    conn.execute(&balance_query, [])?;
-    conn.execute(&last_balance_query, [])?;
-    conn.execute(&changes_query, [date])?;
-
+    sp.execute(&balance_query, [])?;
+    sp.execute(&last_balance_query, [])?;
+    sp.execute(&changes_query, [date])?;
+    sp.commit()?;
     Ok(())
 }
 
 /// Updates the absolute final balance and deletes the selected transaction.
 /// Foreign key cascade takes care of the Changes data in the database.
-pub fn delete_tx(conn: &Connection, id_num: usize) -> sqlResult<()> {
-    let tx_methods = get_all_tx_methods(conn);
-    let last_balance = get_last_balances(conn, &tx_methods);
+pub fn delete_tx(id_num: usize) -> sqlResult<()> {
+    let path = "data.sqlite";
+    let mut conn = Connection::open(path).expect("Could not connect to database");
+    let sp = conn.savepoint().unwrap();
+
+    let tx_methods = get_all_tx_methods(&sp);
+    let last_balance = get_last_balances(&sp, &tx_methods);
 
     let mut final_last_balance = Vec::new();
 
     let query = format!("SELECT * FROM tx_all Where id_num = {}", id_num);
-    let data = conn
+    let data = sp
         .query_row(&query, [], |row| {
             let mut final_data: Vec<String> = Vec::new();
             final_data.push(row.get(2).unwrap());
@@ -445,11 +452,16 @@ pub fn delete_tx(conn: &Connection, id_num: usize) -> sqlResult<()> {
 
     let del_query = format!("DELETE FROM tx_all WHERE id_num = {id_num}");
 
-    conn.execute(&last_balance_query, [])?;
-    conn.execute(&del_query, [])?;
+    sp.execute(&last_balance_query, [])?;
+    sp.execute(&del_query, [])?;
+    sp.commit()?;
     Ok(())
 }
 
+/// This function asks user to input one or more Transaction Method names.
+/// Once the collection is done sends to the database for adding the columns.
+/// This functions is both used when creating the initial db and when updating
+/// the database with new transaction methods.
 pub fn get_user_tx_methods(add_new_method: bool) -> Vec<String>{
     
     let mut stdout = io::stdout();
@@ -457,7 +469,7 @@ pub fn get_user_tx_methods(add_new_method: bool) -> Vec<String>{
     // this command clears up the terminal. This is added so the terminal doesn't get
     //filled up with previous unnecessary texts.
     execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
-    
+
     let mut cu_tx_methods: Vec<String> = Vec::new();
     let mut db_tx_methods = vec![];
 
@@ -483,7 +495,7 @@ pub fn get_user_tx_methods(add_new_method: bool) -> Vec<String>{
         if add_new_method == true {
             println!("{method_line}\n");
             println!("\nUser input required for Transaction Methods. Must be separated by one comma and one space \
-or ', '. Example: Bank, Cash, PayPal. Input 'Cancel' to cancel the operation\n\nEnter Transaction Methods:");
+or ', '. Example: Bank, Cash, PayPal. \n\nInput 'Cancel' to cancel the operation\n\nEnter Transaction Methods:");
         }
         else {
             println!("\nUser input required for Transaction Methods. Must be separated by one comma and one space \

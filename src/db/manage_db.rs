@@ -19,10 +19,12 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
     ];
     let years = vec!["2022", "2023", "2024", "2025"];
 
+    // add a save point to reverse commits if failed
     let path = "data.sqlite";
-    let conn = Connection::open(path)?;
+    let mut conn = Connection::open(path)?;
+    let sp = conn.savepoint().unwrap();
 
-    conn.execute(
+    sp.execute(
         "CREATE TABLE tx_all (
         date TEXT,
         details TEXT,
@@ -43,7 +45,7 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
     query.push_str("CONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
 );");
 
-    conn.execute(
+    sp.execute(
         &query,
         [],
     )?;
@@ -55,24 +57,24 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
     }
     query.push_str(");");
 
-    conn.execute(
+    sp.execute(
         &query,
         [],
     )?;
 
-    conn.execute(
+    sp.execute(
         "CREATE UNIQUE INDEX all_tx_date_IDX ON tx_all (id_num);",
         [],
     )
     .unwrap();
 
-    conn.execute(
+    sp.execute(
         "CREATE UNIQUE INDEX changes_all_date_IDX ON changes_all (id_num);",
         [],
     )
     .unwrap();
 
-    conn.execute(
+    sp.execute(
         "CREATE UNIQUE INDEX balance_all_id_num_IDX ON balance_all (id_num);",
         [],
     )
@@ -88,31 +90,35 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
 
     for _i in years {
         for _a in 0..months.len() {
-            conn.execute(&query,
+            sp.execute(&query,
         [])?;
         }
     }
-    conn.execute(
+    sp.execute(
         &query,
         [],
     )?;
-
+    sp.commit()?;
     Ok(())
 }
 
+/// This function is used for adding new column to the database when adding new
+/// Transaction Methods. Takes vector with transaction method names and commits them.
 pub fn add_new_tx_methods(tx_methods: Vec<String>) -> Result<()> {
+    // add a save point to reverse commits if failed
     let path = "data.sqlite";
-    let conn = Connection::open(path)?;
+    let mut conn = Connection::open(path)?;
+    let sp = conn.savepoint().unwrap();
 
     for i in &tx_methods {
         let query = format!(r#"ALTER TABLE balance_all ADD COLUMN "{i}" TEXT DEFAULT 0.0"#);
-        conn.execute(&query, [])?;
+        sp.execute(&query, [])?;
     }
 
     for i in &tx_methods {
         let query = format!(r#"ALTER TABLE changes_all ADD COLUMN "{i}" TEXT DEFAULT 0.0"#);
-        conn.execute(&query, [])?;
+        sp.execute(&query, [])?;
     }
-
+    sp.commit()?;
     Ok(())
 }
