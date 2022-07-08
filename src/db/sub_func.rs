@@ -294,8 +294,8 @@ pub fn add_new_tx(
     tx_type: &str,
 ) -> sqlResult<()> {
     let path = "data.sqlite";
-    let mut conn = Connection::open(path).expect("Could not connect to database");
-    let sp = conn.savepoint().unwrap();
+    let mut conn = Connection::open(path)?;
+    let sp = conn.savepoint()?;
 
     sp.execute(
         r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type) VALUES (?, ?, ?, ?, ?)"#,
@@ -405,8 +405,8 @@ pub fn add_new_tx(
 /// Foreign key cascade takes care of the Changes data in the database.
 pub fn delete_tx(id_num: usize) -> sqlResult<()> {
     let path = "data.sqlite";
-    let mut conn = Connection::open(path).expect("Could not connect to database");
-    let sp = conn.savepoint().unwrap();
+    let mut conn = Connection::open(path)?;
+    let sp = conn.savepoint()?;
 
     let tx_methods = get_all_tx_methods(&sp);
     let last_balance = get_last_balances(&sp, &tx_methods);
@@ -417,12 +417,11 @@ pub fn delete_tx(id_num: usize) -> sqlResult<()> {
     let data = sp
         .query_row(&query, [], |row| {
             let mut final_data: Vec<String> = Vec::new();
-            final_data.push(row.get(2).unwrap());
-            final_data.push(row.get(3).unwrap());
-            final_data.push(row.get(4).unwrap());
+            final_data.push(row.get(2)?);
+            final_data.push(row.get(3)?);
+            final_data.push(row.get(4)?);
             Ok(final_data)
-        })
-        .unwrap();
+        })?;
 
     let source = &data[0];
     let amount = &data[1].parse::<f32>().unwrap();
