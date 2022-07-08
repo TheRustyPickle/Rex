@@ -3,13 +3,13 @@ use tui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span},
-    widgets::{Block, Borders, Paragraph, Clear},
+    widgets::{Block, Borders, Paragraph},
     Frame,
 };
-use crate::popup_page::{centered_rect};
 
 /// The initial UI that starts on the startup of the program. The function
 /// draws 2 widgets with the intention to show the hotkeys of the program.
+/// Takes an additional vector parameter to show pop up if necessary.
 pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
     let size = f.size();
     let chunks = Layout::default()
@@ -90,17 +90,19 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
     // TODO add hotkey changes here
     let second_text = "'Arrow Key' : Navigate
 'A' : Add Transaction Page
-'H' : Home Page
-'D' : Delete Selected Transaction (Home Page)
-'S' : Save the inputted data as a Transaction (Add Transaction Page)
-'J' : Switches interface to take input for new Transaction Methods (Home Page)
+'F' : Home Page
+'D' : Delete selected Transaction (Home Page)
+ (Add Transaction Page)
+'J' : Add new Transaction Methods (Home Page)
+'H' : Open Hotkey Help
 'Q' : Quit
 
 Add Transaction Page:
 '1': Edit Date          '4': Edit Amount
 '2': Edit TX details    '3': Edit TX Method
 '5': Edit TX Type
-'Enter' or 'Esc': Submit/Stop Editing Field
+'S' : Save the data as a Transaction
+'Enter' or 'Esc': Submit/Stop editing field
 ";
 
     let paragraph = Paragraph::new(new_text)
@@ -113,22 +115,5 @@ Add Transaction Page:
 
     f.render_widget(paragraph, chunks[0]);
     f.render_widget(paragraph_2, chunks[1]);
-
-    // TODO get custom data here in form of vec containing title + text + x + y width.
-    let block = Block::default().title("Popup").borders(Borders::ALL).style(Style::default().bg(Color::White).fg(Color::Green));
-    let area = centered_rect(50, 20, size);
     
-    let new_chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .margin(2)
-        .constraints([Constraint::Percentage(100)].as_ref())
-        .split(area);
-
-    f.render_widget(Clear, area);
-    f.render_widget(block, area);
-
-    let help_sec = Paragraph::new("New Update available\n\nEnter to Continue or Esc to Cancel redirect")
-        .style(Style::default().bg(Color::White).fg(Color::Green))
-        .alignment(Alignment::Center);
-    f.render_widget(help_sec, new_chunks[0]);
 }
