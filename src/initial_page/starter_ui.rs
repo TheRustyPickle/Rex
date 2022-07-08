@@ -2,10 +2,11 @@ use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    text::Span,
-    widgets::{Block, Borders, Paragraph},
+    text::{Span},
+    widgets::{Block, Borders, Paragraph, Clear},
     Frame,
 };
+use crate::popup_page::{centered_rect};
 
 /// The initial UI that starts on the startup of the program. The function
 /// draws 2 widgets with the intention to show the hotkeys of the program.
@@ -112,4 +113,22 @@ Add Transaction Page:
 
     f.render_widget(paragraph, chunks[0]);
     f.render_widget(paragraph_2, chunks[1]);
+
+    // TODO get custom data here in form of vec containing title + text + x + y width.
+    let block = Block::default().title("Popup").borders(Borders::ALL).style(Style::default().bg(Color::White).fg(Color::Green));
+    let area = centered_rect(50, 20, size);
+    
+    let new_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(2)
+        .constraints([Constraint::Percentage(100)].as_ref())
+        .split(area);
+
+    f.render_widget(Clear, area);
+    f.render_widget(block, area);
+
+    let help_sec = Paragraph::new("New Update available\n\nEnter to Continue or Esc to Cancel redirect")
+        .style(Style::default().bg(Color::White).fg(Color::Green))
+        .alignment(Alignment::Center);
+    f.render_widget(help_sec, new_chunks[0]);
 }
