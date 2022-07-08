@@ -2,6 +2,7 @@ mod db;
 mod home_page;
 mod initial_page;
 mod tx_page;
+mod popup_page;
 
 use crossterm::event::poll;
 use crossterm::{
@@ -337,7 +338,7 @@ fn run_app<B: Backend>(
                                         table.state.select(None);
                                         selected_tab = SelectedTab::Months;
                                     }
-
+                                    //TODO possibly add a ui pop up here if failed
                                     Err(_) => {}
                                 }
                             }
