@@ -4,6 +4,8 @@ mod initial_page;
 mod tx_page;
 mod popup_page;
 
+use atty::Stream;
+use std::process::Command;
 use open;
 use crossterm::event::poll;
 use crossterm::{
@@ -20,8 +22,7 @@ use initial_page::starter_ui;
 use rusqlite::{Connection, Result};
 use popup_page::create_popup;
 use std::fs;
-use std::{time::Duration, thread};
-use std::{error::Error, io, process};
+use std::{time::Duration, error::Error, thread, io, process};
 use tui::layout::Constraint;
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -38,7 +39,7 @@ use tx_page::AddTxData;
 // [x] create a popup ui on Home window for commands list or if a new version is available
 // [x] simple ui at the start of the program highlighting button
 // [x] allow adding tx methods
-// [ ] change color scheme?
+// [x] change color scheme?
 // [x] change balances to f32?
 // [x] add date column to all_balance & all_changes
 // [x] verify db cascade method working or not
@@ -56,17 +57,29 @@ use tx_page::AddTxData;
 // [x] initial ui
 // [x] change database location (nothing to do for now)
 // [x] Need to update hotkey for the popup ui
-// [ ] run on terminal when using the binary
-// [x] allow cancelling adding transaction method
+// [x] run on terminal when using the binary
+// [x] allow cancelling adding transaction method 
 
 /// The starting function checks for the local database location and creates a new database
-/// if not existing. Lastly, starts a loop that keeps the interface running until exit command is given.
+/// if not existing. Also checks if the user is trying to open the app via a terminal or the binary.
+/// If trying to open using the binary, tries open the relevant terminal to execute the app.
+/// Lastly, starts a loop that keeps the interface running until exit command is given.
 fn main() -> Result<(), Box<dyn Error>> {
+
+    // atty verifies whether a terminal is being used or not.
+    if atty::is(Stream::Stdout) {} else {
+        // TODO add checking for common and most used terminal among different O
+        // Windows cmd, Konsole, other to be found out.
+        let cu_directory = std::env::current_dir()?;
+        let arg = format!("--working-directory={:?}", cu_directory).replace(r#"""#, "");
+        Command::new("gnome-terminal").arg(arg).arg("--").arg("./rex").output().expect("");
+        return Ok(());
+    }
     // checks the local folder and searches for data.sqlite
-    let paths = fs::read_dir(".").unwrap();
+    let paths = fs::read_dir(".")?;
     let mut db_found = false;
     for path in paths {
-        let path = path.unwrap().path().display().to_string();
+        let path = path?.path().display().to_string();
         if path == "./data.sqlite" {
             db_found = true;
         }
