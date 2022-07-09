@@ -497,6 +497,7 @@ pub fn get_user_tx_methods(add_new_method: bool) -> Vec<String>{
 or ', '. Example: Bank, Cash, PayPal. \n\nInput 'Cancel' to cancel the operation\n\nEnter Transaction Methods:");
         }
         else {
+            println!("Database not found. Follow the guide below to start the app.");
             println!("\nUser input required for Transaction Methods. Must be separated by one comma and one space \
 or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
         }
