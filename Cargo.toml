@@ -11,3 +11,4 @@ crossterm = "0.24.0"
 rusqlite = { version = "0.27.0", features = ["bundled"] }
 chrono = "0.4.19"
 open = "3.0.1"
+atty = "0.2.14"
