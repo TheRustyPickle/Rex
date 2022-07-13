@@ -37,7 +37,7 @@ pub fn ui<B: Backend>(
     // Transaction widget's top row/header to highlight what each data will mean
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::White)));
+        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Rgb(255,255,255))));
 
     let header = Row::new(header_cells)
         .style(normal_style)
@@ -69,7 +69,7 @@ pub fn ui<B: Backend>(
         )
         .split(size);
 
-    let block = Block::default().style(Style::default().bg(Color::White).fg(Color::Green));
+    let block = Block::default().style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)));
     f.render_widget(block, size);
 
     //color the first three letters of the month to blue
@@ -80,7 +80,7 @@ pub fn ui<B: Backend>(
             let (first, rest) = t.split_at(3);
             Spans::from(vec![
                 Span::styled(first, Style::default().fg(Color::Blue)),
-                Span::styled(rest, Style::default().fg(Color::Green)),
+                Span::styled(rest, Style::default().fg(Color::Rgb(50, 205, 50))),
             ])
         })
         .collect();
@@ -93,7 +93,7 @@ pub fn ui<B: Backend>(
             let (first, rest) = t.split_at(2);
             Spans::from(vec![
                 Span::styled(first, Style::default().fg(Color::Blue)),
-                Span::styled(rest, Style::default().fg(Color::Green)),
+                Span::styled(rest, Style::default().fg(Color::Rgb(50, 205, 50))),
             ])
         })
         .collect();
@@ -103,7 +103,7 @@ pub fn ui<B: Backend>(
     let mut month_tab = Tabs::new(month_titles)
         .block(Block::default().borders(Borders::ALL).title("Months"))
         .select(months.index)
-        .style(Style::default().fg(Color::Green))
+        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
@@ -115,7 +115,7 @@ pub fn ui<B: Backend>(
     let mut year_tab = Tabs::new(year_titles)
         .block(Block::default().borders(Borders::ALL).title("Years"))
         .select(years.index)
-        .style(Style::default().fg(Color::Green))
+        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
@@ -165,7 +165,7 @@ pub fn ui<B: Backend>(
             month_tab = month_tab.highlight_style(
                 Style::default()
                     .add_modifier(Modifier::BOLD)
-                    .bg(Color::LightGreen),
+                    .bg(Color::Rgb(152, 251, 152)),
             );
         }
 
@@ -173,7 +173,7 @@ pub fn ui<B: Backend>(
             year_tab = year_tab.highlight_style(
                 Style::default()
                     .add_modifier(Modifier::BOLD)
-                    .bg(Color::LightGreen),
+                    .bg(Color::Rgb(152, 251, 152)),
             );
         }
         // changes the color of row based on Expense or Income tx type on Transaction widget.

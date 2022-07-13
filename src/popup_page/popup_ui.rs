@@ -17,7 +17,7 @@ pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &Vec<String>) {
     let y_value = popup_data[3].parse::<u16>().unwrap();
 
     let block = Block::default().title(title).borders(Borders::ALL).
-    style(Style::default().bg(Color::White).fg(Color::Green));
+    style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)));
 
     // returns an area where we can add anything like a normal window.
     let area = centered_rect(x_value, y_value, size);
@@ -32,7 +32,7 @@ pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &Vec<String>) {
     f.render_widget(block, area);
 
     let help_sec = Paragraph::new(text)
-        .style(Style::default().bg(Color::White).fg(Color::Green))
+        .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
         .alignment(Alignment::Left);
     f.render_widget(help_sec, new_chunks[0]);
 }
