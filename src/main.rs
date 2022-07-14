@@ -30,6 +30,8 @@ use tui::{
 };
 use tx_page::tx_ui;
 use tx_page::AddTxData;
+use std::fs::File;
+use std::io::prelude::*;
 
 // [x] Check current path for the db, create new db if necessary
 // [x] create add transaction ui + editing box with inputs
@@ -66,21 +68,46 @@ use tx_page::AddTxData;
 /// Lastly, starts a loop that keeps the interface running until exit command is given.
 fn main() -> Result<(), Box<dyn Error>> {
 
+    let mut is_windows = false;
+    let mut verifying_path = "./data.sqlite";
+    // change details if running on windows
+    if cfg!(target_os = "windows") {
+        is_windows = true;
+        verifying_path = r#".\data.sqlite"#;
+    }
+
     // atty verifies whether a terminal is being used or not.
     if atty::is(Stream::Stdout) {} else {
+        let cu_directory = std::env::current_dir()?.display().to_string();
+        let output = if is_windows {
+            Command::new("cmd.exe")
+                    .arg("start")
+                    .arg("rex")
+                    .output()?
+        } else {
+            let linux_dir = format!("--working-directory={}", cu_directory);
+            Command::new("gnome-terminal")
+                    .arg(linux_dir)
+                    .arg("--")
+                    .arg("./rex")
+                    .output()?
+        };
         // TODO add checking for common and most used terminal among different O
         // Windows cmd, Konsole, other to be found out.
-        let cu_directory = std::env::current_dir()?;
-        let arg = format!("--working-directory={:?}", cu_directory).replace(r#"""#, "");
-        Command::new("gnome-terminal").arg(arg).arg("--").arg("./rex").output().expect("");
+        if output.stderr != vec![] {
+            let full_text = format!("Error while trying to run console/terminal. Output: \n\n{:?}", output);
+            let mut open = File::create("info.txt")?;
+            open.write_all(full_text.as_bytes())?;
+        }
         return Ok(());
+        
     }
     // checks the local folder and searches for data.sqlite
     let paths = fs::read_dir(".")?;
     let mut db_found = false;
     for path in paths {
         let path = path?.path().display().to_string();
-        if path == "./data.sqlite" {
+        if path == verifying_path {
             db_found = true;
         }
     }
@@ -102,44 +129,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     loop { 
         // Continue to loop through until until res == "" which means exit.
         // This is added so the app will restart if a new Transaction Method is added.
-        let res = start_run_app();
-        exit_tui_interface()?;
-
-        match res {
-            Err(e) => {
-                println!("Error: {:?}", e);
-                break;
-            },
-            Ok(a) => {
-                if &a == "Change" {
-                    let db_data = get_user_tx_methods(true);
-                    if db_data == vec!["".to_string()] {  
-                        println!("Operation Cancelled. Restarting in 5 seconds");
-                        thread::sleep(Duration::from_millis(5000));
-                    }
-                    else {
-                        let status = add_new_tx_methods(db_data);
-                        match status {
-                            Ok(_) => {
-                                println!("Added Transaction Methods Successfully. The app will restart in 5 seconds");
-                                thread::sleep(Duration::from_millis(5000));
-                            },
-                            Err(e) => {
-                                println!("Error while add new transaction methods. Error: {e:?}");
-                                thread::sleep(Duration::from_millis(5000));
-                            }
-                        }
-                    }
-                    
-                }
-                else if &a == "Link" {
-                    println!("Could not open new version link.\n\nLink: https://github.com/WaffleMixer/Rex");
-                    break;
-                }
-                else {
-                    break;
-                }
-            }
+        let status = check_app(start_run_app());
+        if &status == "break" {
+            break;
         }
     }
     Ok(())
@@ -190,6 +182,48 @@ fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     )?;
     terminal.show_cursor()?;
     Ok(())
+}
+
+fn check_app(res: Result<String, Box<dyn Error>>) -> String {
+    exit_tui_interface().expect("Error exiting the interface");
+
+    match res {
+        Err(e) => {
+            println!("Error: {:?}", e);
+        },
+        Ok(a) => {
+            if &a == "Change" {
+                // NOTE Does not work for windows. The magic library does some magic blocking stdin.
+                let db_data = get_user_tx_methods(true);
+                if db_data == vec!["".to_string()] {  
+                    println!("Operation Cancelled. Restarting in 5 seconds");
+                    thread::sleep(Duration::from_millis(5000));
+                }
+                else {
+                    let status = add_new_tx_methods(db_data);
+                    match status {
+                        Ok(_) => {
+                            println!("Added Transaction Methods Successfully. The app will restart in 5 seconds");
+                            thread::sleep(Duration::from_millis(5000));
+                        },
+                        Err(e) => {
+                            println!("Error while add new transaction methods. Error: {e:?}");
+                            thread::sleep(Duration::from_millis(5000));
+                        }
+                    }
+                }
+                
+            }
+            else if &a == "Link" {
+                println!("Could not open new version link.\n\nLink: https://github.com/WaffleMixer/Rex");
+                return "break".to_string();
+            }
+            else {
+                return "break".to_string();
+            }
+        }
+    }
+    return "".to_string();
 }
 
 /// run_app is the core part that makes the entire program run. It basically loops
