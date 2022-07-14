@@ -86,7 +86,7 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
     }
 
     let mut query = format!("INSERT INTO balance_all ({:?}) VALUES ({:?})", tx_methods, q_marks);
-    query = query.replace("[", "").replace("]", "").replace(r#"""#, "");
+    query = query.replace("[", "").replace("]", "").replace(r#"""#, "").replace(r#"\r"#, "");
 
     for _i in years {
         for _a in 0..months.len() {
