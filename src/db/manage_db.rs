@@ -40,7 +40,7 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
         date TEXT,
         id_num INTEGER NOT NULL PRIMARY KEY,");
     for i in &tx_methods {
-        query.push_str(&format!("{i} TEXT DEFAULT 0.00,"))
+        query.push_str(&format!(r#""{i}" TEXT DEFAULT 0.00,"#))
     }
     query.push_str("CONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
 );");
@@ -53,7 +53,7 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
     let mut query = format!("CREATE TABLE balance_all (
         id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT");
     for i in &tx_methods {
-        query.push_str(&format!(",{i} TEXT DEFAULT 0.00"))
+        query.push_str(&format!(r#","{i}" TEXT DEFAULT 0.00"#))
     }
     query.push_str(");");
 
@@ -86,7 +86,7 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
     }
 
     let mut query = format!("INSERT INTO balance_all ({:?}) VALUES ({:?})", tx_methods, q_marks);
-    query = query.replace("[", "").replace("]", "").replace(r#"""#, "").replace(r#"\r"#, "");
+    query = query.replace("[", "").replace("]", "");
 
     for _i in years {
         for _a in 0..months.len() {
@@ -111,12 +111,12 @@ pub fn add_new_tx_methods(tx_methods: Vec<String>) -> Result<()> {
     let sp = conn.savepoint().unwrap();
 
     for i in &tx_methods {
-        let query = format!(r#"ALTER TABLE balance_all ADD COLUMN "{i}" TEXT DEFAULT 0.0"#);
+        let query = format!(r#"ALTER TABLE balance_all ADD COLUMN "{i}" TEXT DEFAULT 0.00"#);
         sp.execute(&query, [])?;
     }
 
     for i in &tx_methods {
-        let query = format!(r#"ALTER TABLE changes_all ADD COLUMN "{i}" TEXT DEFAULT 0.0"#);
+        let query = format!(r#"ALTER TABLE changes_all ADD COLUMN "{i}" TEXT DEFAULT 0.00"#);
         sp.execute(&query, [])?;
     }
     sp.commit()?;

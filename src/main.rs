@@ -80,6 +80,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     if atty::is(Stream::Stdout) {} else {
         let cu_directory = std::env::current_dir()?.display().to_string();
         let output = if is_windows {
+            // NOTE f*** windows. Unknown errors everywhere. 
             Command::new("cmd.exe")
                     .arg("start")
                     .arg("rex")
@@ -174,13 +175,14 @@ fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-    disable_raw_mode()?;
+    
     execute!(
         terminal.backend_mut(),
         LeaveAlternateScreen,
         DisableMouseCapture
     )?;
     terminal.show_cursor()?;
+    disable_raw_mode()?;
     Ok(())
 }
 
@@ -193,7 +195,6 @@ fn check_app(res: Result<String, Box<dyn Error>>) -> String {
         },
         Ok(a) => {
             if &a == "Change" {
-                // NOTE Does not work for windows. The magic library does some magic blocking stdin.
                 let db_data = get_user_tx_methods(true);
                 if db_data == vec!["".to_string()] {  
                     println!("Operation Cancelled. Restarting in 5 seconds");
