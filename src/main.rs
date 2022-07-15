@@ -128,8 +128,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         
     }
     loop { 
-        // Continue to loop through until until res == "" which means exit.
-        // This is added so the app will restart if a new Transaction Method is added.
+        // Continue to loop to the main interface until the ending command or "break" is given
         let status = check_app(start_run_app());
         if &status == "break" {
             break;
@@ -186,6 +185,8 @@ fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// The function is used to check the output which caused the tui interface to end. This
+/// is used for quitting the app or do something outside of the main tui interface.
 fn check_app(res: Result<String, Box<dyn Error>>) -> String {
     exit_tui_interface().expect("Error exiting the interface");
 
@@ -194,6 +195,7 @@ fn check_app(res: Result<String, Box<dyn Error>>) -> String {
             println!("Error: {:?}", e);
         },
         Ok(a) => {
+            // the string is gotten from run_app to process the data here.
             if &a == "Change" {
                 let db_data = get_user_tx_methods(true);
                 if db_data == vec!["".to_string()] {  
@@ -208,7 +210,7 @@ fn check_app(res: Result<String, Box<dyn Error>>) -> String {
                             thread::sleep(Duration::from_millis(5000));
                         },
                         Err(e) => {
-                            println!("Error while add new transaction methods. Error: {e:?}");
+                            println!("Error while adding new transaction methods. Error: {e:?}");
                             thread::sleep(Duration::from_millis(5000));
                         }
                     }
