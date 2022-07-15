@@ -21,3 +21,5 @@ cargo run
 <h4>Executables</h4>
 
 To Be Released with version 0.1. Currently work in progress.
+
+Windows will not be supported due to unknown errors encountered during testings.
