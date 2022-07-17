@@ -2,7 +2,7 @@ use rusqlite::{Connection, Result};
 
 /// If the local database is not found, this is executed to create the default
 /// database with a set of provided Transaction Methods.
-pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
+pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
     let months = vec![
         "January",
         "February",
@@ -20,8 +20,7 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
     let years = vec!["2022", "2023", "2024", "2025"];
 
     // add a save point to reverse commits if failed
-    let path = "data.sqlite";
-    let mut conn = Connection::open(path)?;
+    let mut conn = Connection::open(file_name)?;
     let sp = conn.savepoint().unwrap();
 
     sp.execute(
@@ -104,10 +103,9 @@ pub fn create_db(tx_methods: Vec<String>) -> Result<()> {
 
 /// This function is used for adding new column to the database when adding new
 /// Transaction Methods. Takes vector with transaction method names and commits them.
-pub fn add_new_tx_methods(tx_methods: Vec<String>) -> Result<()> {
+pub fn add_new_tx_methods(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
     // add a save point to reverse commits if failed
-    let path = "data.sqlite";
-    let mut conn = Connection::open(path)?;
+    let mut conn = Connection::open(file_name)?;
     let sp = conn.savepoint().unwrap();
 
     for i in &tx_methods {
