@@ -28,6 +28,8 @@ extern crate rex;
 // [x] Need to update hotkey for the popup ui
 // [x] run on terminal when using the binary
 // [x] allow cancelling adding transaction method 
+// [ ] auto change add transaction page selected tab after enter
+// [ ] add edit transaction
 
 /// The starting function checks for the local database location and creates a new database
 /// if not existing. Also checks if the user is trying to open the app via a terminal or the binary.
