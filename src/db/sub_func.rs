@@ -124,7 +124,7 @@ pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<
     let (datetime_1, datetime_2) = get_sql_dates(month + 1, year);
 
     let mut statement = conn
-        .prepare("SELECT * FROM changes_all Where date BETWEEN date(?) AND date(?) ORDER BY id_num")
+        .prepare("SELECT * FROM changes_all Where date BETWEEN date(?) AND date(?) ORDER BY date")
         .expect("could not prepare statement");
 
     let rows = statement
@@ -141,7 +141,9 @@ pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<
     for i in rows {
         final_result.push(i.unwrap());
     }
-
+    if final_result.is_empty() {
+        return vec![vec![]] as Vec<Vec<String>>
+    }
     final_result
 }
 
@@ -169,7 +171,7 @@ pub fn get_all_txs(
 
     let (datetime_1, datetime_2) = get_sql_dates(month + 1, year);
     let mut statement = conn
-        .prepare("SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY id_num")
+        .prepare("SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY date")
         .expect("could not prepare statement");
     let rows = statement
         .query_map([&datetime_1, &datetime_2], |row| {
@@ -292,8 +294,8 @@ pub fn add_new_tx(
     tx_method: &str,
     amount: &str,
     tx_type: &str,
+    path: String,
 ) -> sqlResult<()> {
-    let path = "data.sqlite";
     let mut conn = Connection::open(path)?;
     let sp = conn.savepoint()?;
 
