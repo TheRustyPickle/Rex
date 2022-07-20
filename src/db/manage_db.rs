@@ -35,31 +35,31 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
         [],
     )?;
 
-    let mut query = format!("CREATE TABLE changes_all (
+    let mut query = format!(
+        "CREATE TABLE changes_all (
         date TEXT,
-        id_num INTEGER NOT NULL PRIMARY KEY,");
+        id_num INTEGER NOT NULL PRIMARY KEY,"
+    );
     for i in &tx_methods {
         query.push_str(&format!(r#""{i}" TEXT DEFAULT 0.00,"#))
     }
-    query.push_str("CONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
-);");
+    query.push_str(
+        "CONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
+);",
+    );
 
-    sp.execute(
-        &query,
-        [],
-    )?;
+    sp.execute(&query, [])?;
 
-    let mut query = format!("CREATE TABLE balance_all (
-        id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT");
+    let mut query = format!(
+        "CREATE TABLE balance_all (
+        id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT"
+    );
     for i in &tx_methods {
         query.push_str(&format!(r#","{i}" TEXT DEFAULT 0.00"#))
     }
     query.push_str(");");
 
-    sp.execute(
-        &query,
-        [],
-    )?;
+    sp.execute(&query, [])?;
 
     sp.execute(
         "CREATE UNIQUE INDEX all_tx_date_IDX ON tx_all (id_num);",
@@ -84,19 +84,18 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
         q_marks.push("0.0")
     }
 
-    let mut query = format!("INSERT INTO balance_all ({:?}) VALUES ({:?})", tx_methods, q_marks);
+    let mut query = format!(
+        "INSERT INTO balance_all ({:?}) VALUES ({:?})",
+        tx_methods, q_marks
+    );
     query = query.replace("[", "").replace("]", "");
 
     for _i in years {
         for _a in 0..months.len() {
-            sp.execute(&query,
-        [])?;
+            sp.execute(&query, [])?;
         }
     }
-    sp.execute(
-        &query,
-        [],
-    )?;
+    sp.execute(&query, [])?;
     sp.commit()?;
     Ok(())
 }

@@ -56,7 +56,11 @@ pub fn tx_ui<B: Backend>(
         )
         .split(chunks[1]);
 
-    let block = Block::default().style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)));
+    let block = Block::default().style(
+        Style::default()
+            .bg(Color::Rgb(255, 255, 255))
+            .fg(Color::Rgb(50, 205, 50)),
+    );
     f.render_widget(block, size);
 
     // This is the details of the Help widget
@@ -103,7 +107,11 @@ pub fn tx_ui<B: Backend>(
     let create_block = |title| {
         Block::default()
             .borders(Borders::ALL)
-            .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
+            .style(
+                Style::default()
+                    .bg(Color::Rgb(255, 255, 255))
+                    .fg(Color::Rgb(50, 205, 50)),
+            )
             .title(Span::styled(
                 title,
                 Style::default().add_modifier(Modifier::BOLD),
@@ -112,37 +120,65 @@ pub fn tx_ui<B: Backend>(
 
     // creates the widgets to ready it for rendering
     let help_sec = Paragraph::new(help_text.clone())
-        .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
         .block(create_block("Help"))
         .alignment(Alignment::Left);
 
     let status_sec = Paragraph::new(status_text.clone())
-        .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
         .block(create_block("Status"))
         .alignment(Alignment::Left);
 
     let date_sec = Paragraph::new(date_text.clone())
-        .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
         .block(create_block("Date"))
         .alignment(Alignment::Left);
 
     let tx_method_sec = Paragraph::new(tx_method_text.clone())
-        .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
         .block(create_block("TX Method"))
         .alignment(Alignment::Left);
 
     let amount_sec = Paragraph::new(amount_text.clone())
-        .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
         .block(create_block("Amount"))
         .alignment(Alignment::Left);
 
     let tx_type_sec = Paragraph::new(tx_type_text.clone())
-        .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
         .block(create_block("TX Type"))
         .alignment(Alignment::Left);
 
     let details_sec = Paragraph::new(details_text.clone())
-        .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
         .block(create_block("Details"))
         .alignment(Alignment::Left);
 

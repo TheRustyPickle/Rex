@@ -1,23 +1,18 @@
-use open;
-use crossterm::event::poll;
-use crossterm::{
-    event::{self, Event, KeyCode}
-};
 use crate::db::{get_all_tx_methods, get_empty_changes};
 use crate::home_page::ui;
 use crate::home_page::TransactionData;
 use crate::home_page::{CurrentUi, SelectedTab, TableData, TimeData, TxTab};
 use crate::initial_page::starter_ui;
-use rusqlite::{Connection};
 use crate::popup_page::create_popup;
-use std::{time::Duration, io};
-use tui::layout::Constraint;
-use tui::{
-    backend::{Backend},
-    Terminal,
-};
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
+use crossterm::event::poll;
+use crossterm::event::{self, Event, KeyCode};
+use open;
+use rusqlite::Connection;
+use std::{io, time::Duration};
+use tui::layout::Constraint;
+use tui::{backend::Backend, Terminal};
 
 /// run_app is the core part that makes the entire program run. It basically loops
 /// incredibly fast to refresh the terminal and passes the provided data to ui modules to draw them.
@@ -88,14 +83,18 @@ pub fn run_app<B: Backend>(
 
     let mut popup_data_new_update = vec![];
     popup_data_new_update.push("New Update".to_string());
-    popup_data_new_update.push("There is a new version available\n
-'Enter' : Redirect to the new version\n\nPress Any Key to dismiss".to_string());
+    popup_data_new_update.push(
+        "There is a new version available\n
+'Enter' : Redirect to the new version\n\nPress Any Key to dismiss"
+            .to_string(),
+    );
     popup_data_new_update.push("50".to_string());
     popup_data_new_update.push("30".to_string());
 
     let mut popup_data_help = vec![];
     popup_data_help.push("Help".to_string());
-    popup_data_help.push("'Arrow Key' : Navigate
+    popup_data_help.push(
+        "'Arrow Key' : Navigate
 'A' : Add Transaction Page
 'F' : Home Page
 'D' : Delete selected Transaction (Home Page)
@@ -109,7 +108,9 @@ Add Transaction Page:
 '5': Edit TX Type
 'S' : Save the data as a Transaction
 'Enter' or 'Esc': Submit/Stop editing field\n
-Press Any Key to dismiss".to_string());
+Press Any Key to dismiss"
+            .to_string(),
+    );
     popup_data_help.push("50".to_string());
     popup_data_help.push("65".to_string());
 
@@ -139,7 +140,7 @@ Press Any Key to dismiss".to_string());
 
         // save the % of space each column should take in the Balance section based on the total
         // transaction methods/columns available
-        let width_percent = 100 / balance[0].len() as u16 ;
+        let width_percent = 100 / balance[0].len() as u16;
         let mut width_data = vec![];
         for _i in 0..balance[0].len() {
             width_data.push(Constraint::Percentage(width_percent));
@@ -181,8 +182,7 @@ Press Any Key to dismiss".to_string());
                 // based on the bool variable, start a new popup window
                 if help_popup_on == true {
                     create_popup(f, &popup_data_help)
-                }
-                else if delete_popup_on == true {
+                } else if delete_popup_on == true {
                     create_popup(f, &popup_data_delete_failed)
                 }
             })?,
@@ -198,7 +198,7 @@ Press Any Key to dismiss".to_string());
                     create_popup(f, &popup_data_help)
                 }
             })?,
-            CurrentUi::Initial => terminal.draw(|f| {                
+            CurrentUi::Initial => terminal.draw(|f| {
                 starter_ui(f, starter_index);
                 starter_index += 1;
                 if starter_index > 28 {
@@ -229,18 +229,18 @@ Press Any Key to dismiss".to_string());
                                     match open::that("https://github.com/WaffleMixer/Rex") {
                                         Ok(_) => update_popup_on = false,
                                         // if it fails for any reason, break interface and print the link
-                                        Err(_) => return Ok("Link".to_string())
+                                        Err(_) => return Ok("Link".to_string()),
                                     }
-                                },
-                                _ => update_popup_on = false, 
+                                }
+                                _ => update_popup_on = false,
                             }
                         } else if help_popup_on == true {
                             match key.code {
-                                _ => help_popup_on = false, 
+                                _ => help_popup_on = false,
                             }
                         } else if delete_popup_on == true {
                             match key.code {
-                                _ => delete_popup_on = false, 
+                                _ => delete_popup_on = false,
                             }
                         } else {
                             match key.code {
@@ -266,13 +266,15 @@ Press Any Key to dismiss".to_string());
                                             }
                                             Err(e) => {
                                                 popup_data_delete_failed = vec![];
-                                                popup_data_delete_failed.push("Delete Error".to_string());
-                                                popup_data_delete_failed.push(format!("Error while deleting transaction \
-                                                \nError: {e:?}\n\nPress Any Key to dismiss"));
+                                                popup_data_delete_failed
+                                                    .push("Delete Error".to_string());
+                                                popup_data_delete_failed.push(format!(
+                                                    "Error while deleting transaction \
+                                                \nError: {e:?}\n\nPress Any Key to dismiss"
+                                                ));
                                                 popup_data_delete_failed.push("50".to_string());
                                                 popup_data_delete_failed.push("30".to_string());
                                                 delete_popup_on = true;
-
                                             }
                                         }
                                     }
@@ -339,7 +341,8 @@ Press Any Key to dismiss".to_string());
                                             }
                                             // executes when pressed on last row of the table
                                             // moves to the year widget
-                                            else if table.state.selected() == Some(table.items.len() - 1)
+                                            else if table.state.selected()
+                                                == Some(table.items.len() - 1)
                                             {
                                                 selected_tab = SelectedTab::Years;
                                                 table.state.select(None);
@@ -355,16 +358,15 @@ Press Any Key to dismiss".to_string());
                                 _ => {}
                             }
                         }
-                    },
+                    }
                     CurrentUi::AddTx => {
                         // Check if any popup is turned on and if yes, match key for the popup,
                         // otherwise match key for the main interface
                         if help_popup_on == true {
                             match key.code {
-                                _ => help_popup_on = false, 
+                                _ => help_popup_on = false,
                             }
-                        }
-                        else {
+                        } else {
                             match cu_tx_page {
                                 // start matching key pressed based on which widget is selected.
                                 // current state tracked with enums
@@ -441,7 +443,8 @@ Press Any Key to dismiss".to_string());
                                     KeyCode::Enter => {
                                         let status = data_for_tx.check_tx_method(&conn);
                                         data_for_tx.add_tx_status(&status);
-                                        if status.contains("Accepted") || status.contains("Nothing") {
+                                        if status.contains("Accepted") || status.contains("Nothing")
+                                        {
                                             cu_tx_page = TxTab::Nothing
                                         }
                                     }
@@ -495,7 +498,8 @@ Press Any Key to dismiss".to_string());
                                     KeyCode::Enter => {
                                         let status = data_for_tx.check_tx_type();
                                         data_for_tx.add_tx_status(&status);
-                                        if status.contains("Accepted") || status.contains("Nothing") {
+                                        if status.contains("Accepted") || status.contains("Nothing")
+                                        {
                                             cu_tx_page = TxTab::Nothing
                                         }
                                     }
@@ -516,21 +520,21 @@ Press Any Key to dismiss".to_string());
                                     match open::that("https://github.com/WaffleMixer/Rex") {
                                         Ok(_) => update_popup_on = false,
                                         // if it fails for any reason, break interface and print the link
-                                        Err(_) => return Ok("Link".to_string())
+                                        Err(_) => return Ok("Link".to_string()),
                                     }
-                                },
-                                _ => update_popup_on = false, 
+                                }
+                                _ => update_popup_on = false,
                             }
-                        }
-                        else {
+                        } else {
                             match key.code {
                                 KeyCode::Char('q') => return Ok("".to_string()),
                                 _ => cu_page = CurrentUi::Home,
                             }
                         }
-                    },
+                    }
                 }
             };
-        } else {}
+        } else {
+        }
     }
 }

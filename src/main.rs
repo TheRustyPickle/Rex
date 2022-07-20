@@ -27,7 +27,7 @@ extern crate rex;
 // [x] change database location (nothing to do for now)
 // [x] Need to update hotkey for the popup ui
 // [x] run on terminal when using the binary
-// [x] allow cancelling adding transaction method 
+// [x] allow cancelling adding transaction method
 // [ ] auto change add transaction page selected tab after enter
 // [ ] add edit transaction
 
@@ -36,7 +36,6 @@ extern crate rex;
 /// If trying to open using the binary, tries open the relevant terminal to execute the app.
 /// Lastly, starts a loop that keeps the interface running until exit command is given.
 fn main() {
-
     let mut is_windows = false;
     let mut verifying_path = "./data.sqlite";
     // change details if running on windows
@@ -46,10 +45,3 @@ fn main() {
     }
     rex::initializer(is_windows, verifying_path).unwrap();
 }
-
-
-
-
-
-
-

@@ -37,7 +37,7 @@ pub fn ui<B: Backend>(
     // Transaction widget's top row/header to highlight what each data will mean
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Rgb(255,255,255))));
+        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Rgb(255, 255, 255))));
 
     let header = Row::new(header_cells)
         .style(normal_style)
@@ -69,7 +69,11 @@ pub fn ui<B: Backend>(
         )
         .split(size);
 
-    let block = Block::default().style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)));
+    let block = Block::default().style(
+        Style::default()
+            .bg(Color::Rgb(255, 255, 255))
+            .fg(Color::Rgb(50, 205, 50)),
+    );
     f.render_widget(block, size);
 
     //color the first three letters of the month to blue
