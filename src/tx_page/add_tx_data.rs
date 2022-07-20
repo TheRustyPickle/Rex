@@ -137,7 +137,7 @@ impl AddTxData {
             &self.tx_method,
             &self.amount,
             &self.tx_type,
-            "data.sqlite".to_string(),
+            "data.sqlite",
         );
 
         match status {
