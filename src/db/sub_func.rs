@@ -141,9 +141,6 @@ pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<
     for i in rows {
         final_result.push(i.unwrap());
     }
-    if final_result.is_empty() {
-        return vec![vec![]] as Vec<Vec<String>>;
-    }
     final_result
 }
 
@@ -292,7 +289,7 @@ pub fn add_new_tx(
     tx_method: &str,
     amount: &str,
     tx_type: &str,
-    path: String,
+    path: &str,
 ) -> sqlResult<()> {
     let mut conn = Connection::open(path)?;
     let sp = conn.savepoint()?;
@@ -372,16 +369,17 @@ pub fn add_new_tx(
     }
 
     // the query kept on breaking for a single comma so had to follow this ugly way to do this.
+    // loop and add a comma until the last index and ignore it in the last time
     let mut balance_query = format!("UPDATE balance_all SET ");
     for i in 0..new_balance_data.len() {
         if i != new_balance_data.len() - 1 {
             balance_query.push_str(&format!(
-                r#""{}" = {}, "#,
+                r#""{}" = "{}", "#,
                 all_tx_methods[i], new_balance_data[i]
             ))
         } else {
             balance_query.push_str(&format!(
-                r#""{}" = {} "#,
+                r#""{}" = "{}" "#,
                 all_tx_methods[i], new_balance_data[i]
             ))
         }
@@ -390,10 +388,9 @@ pub fn add_new_tx(
 
     // there is only 1 value in the last_balance_data, we already know on which tx method the changes happened
     let last_balance_query = format!(
-        r#"UPDATE balance_all SET "{tx_method}" = {} WHERE id_num = {}"#,
+        r#"UPDATE balance_all SET "{tx_method}" = "{}" WHERE id_num = {}"#,
         last_balance_data[0], last_balance_id
     );
-
     let mut changes_query = format!("INSERT INTO changes_all (id_num, date, {all_tx_methods:?}) VALUES ({last_id}, ?, {new_changes_data:?})");
     changes_query = changes_query.replace("[", "");
     changes_query = changes_query.replace("]", "");
@@ -406,13 +403,13 @@ pub fn add_new_tx(
 
 /// Updates the absolute final balance and deletes the selected transaction.
 /// Foreign key cascade takes care of the Changes data in the database.
-pub fn delete_tx(id_num: usize) -> sqlResult<()> {
-    let path = "data.sqlite";
+pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
     let mut conn = Connection::open(path)?;
     let sp = conn.savepoint()?;
 
     let tx_methods = get_all_tx_methods(&sp);
     let last_balance = get_last_balances(&sp, &tx_methods);
+    let last_balance_id = get_last_balance_id(&sp)?;
 
     let mut final_last_balance = Vec::new();
 
@@ -429,6 +426,8 @@ pub fn delete_tx(id_num: usize) -> sqlResult<()> {
     let amount = &data[1].parse::<f32>().unwrap();
     let tx_type: &str = &data[2];
 
+    // we are deleting 1 transaction, so loop through all tx methods, and whichever method matches
+    // with the one we are deleting, add/subtract from the amount.
     for i in 0..tx_methods.len() {
         let mut cu_balance = last_balance[i].parse::<f32>().unwrap();
         if &tx_methods[i] == source {
@@ -438,24 +437,25 @@ pub fn delete_tx(id_num: usize) -> sqlResult<()> {
                 _ => {}
             }
         }
-        final_last_balance.push(cu_balance.to_string());
+        final_last_balance.push(format!("{:.2}", cu_balance));
     }
-
+    // the query kept on breaking for a single comma so had to follow this ugly way to do this.
+    // loop and add a comma until the last index and ignore it in the last time
     let mut last_balance_query = format!("UPDATE balance_all SET ");
     for i in 0..final_last_balance.len() {
         if i != final_last_balance.len() - 1 {
             last_balance_query.push_str(&format!(
-                r#""{}" = {}, "#,
+                r#""{}" = "{}", "#,
                 tx_methods[i], final_last_balance[i]
             ))
         } else {
             last_balance_query.push_str(&format!(
-                r#""{}" = {} "#,
+                r#""{}" = "{}" "#,
                 tx_methods[i], final_last_balance[i]
             ))
         }
     }
-    last_balance_query.push_str(&format!("WHERE id_num = 49"));
+    last_balance_query.push_str(&format!("WHERE id_num = {last_balance_id}"));
 
     let del_query = format!("DELETE FROM tx_all WHERE id_num = {id_num}");
 
