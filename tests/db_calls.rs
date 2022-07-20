@@ -4,9 +4,7 @@ use rusqlite::Connection;
 use std::fs;
 
 fn create_test_db(file_name: &str) -> Connection {
-
-    create_db(file_name, vec!["test1".to_string(),
-                        "test 2".to_string()]).unwrap();
+    create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
     return Connection::open(file_name).unwrap();
 }
 
@@ -17,27 +15,32 @@ fn check_getting_tx_methods_1() {
     let data = get_all_tx_methods(&conn);
     fs::remove_file(file_name).unwrap();
 
-    assert_eq!(data, vec!["test1".to_string(),
-                "test 2".to_string()]);
+    assert_eq!(data, vec!["test1".to_string(), "test 2".to_string()]);
 }
 
 #[test]
 fn check_getting_tx_methods_2() {
     let file_name = "getting_tx_methods_2.sqlite";
     let conn = create_test_db(file_name);
-    
-    add_new_tx_methods(file_name, vec![
-        "new method 1".to_string(),
-        "testing methods".to_string()
-    ]).unwrap();
+
+    add_new_tx_methods(
+        file_name,
+        vec!["new method 1".to_string(), "testing methods".to_string()],
+    )
+    .unwrap();
 
     let data = get_all_tx_methods(&conn);
     fs::remove_file(file_name).unwrap();
 
-    assert_eq!(data, vec!["test1".to_string(),
-                "test 2".to_string(),
-                "new method 1".to_string(),
-            "testing methods".to_string()]);
+    assert_eq!(
+        data,
+        vec![
+            "test1".to_string(),
+            "test 2".to_string(),
+            "new method 1".to_string(),
+            "testing methods".to_string()
+        ]
+    );
 }
 
 #[test]
@@ -47,11 +50,14 @@ fn check_empty_changes() {
     let data = get_empty_changes(&conn);
     fs::remove_file(file_name).unwrap();
 
-    assert_eq!(data, vec![
-        "Changes".to_string(),
-        "0.00".to_string(),
-        "0.00".to_string()
-    ]);
+    assert_eq!(
+        data,
+        vec![
+            "Changes".to_string(),
+            "0.00".to_string(),
+            "0.00".to_string()
+        ]
+    );
 }
 
 #[test]
@@ -76,8 +82,10 @@ fn check_getting_all_changes_2() {
         "test1",
         "159.00",
         "Expense",
-        file_name).unwrap();
-    
+        file_name,
+    )
+    .unwrap();
+
     // This is the index of the interface. year 0 = 2022, month 0 = January
     let data = get_all_changes(&conn, 6, 0);
     let expected_data: Vec<Vec<String>> = vec![vec!["↓159.00".to_string(), "0.00".to_string()]];

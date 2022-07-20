@@ -1,5 +1,5 @@
 use tui::{
-    backend::{Backend},
+    backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     widgets::{Block, Borders, Clear, Paragraph},
@@ -16,12 +16,15 @@ pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &Vec<String>) {
     let x_value = popup_data[2].parse::<u16>().unwrap();
     let y_value = popup_data[3].parse::<u16>().unwrap();
 
-    let block = Block::default().title(title).borders(Borders::ALL).
-    style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)));
+    let block = Block::default().title(title).borders(Borders::ALL).style(
+        Style::default()
+            .bg(Color::Rgb(255, 255, 255))
+            .fg(Color::Rgb(50, 205, 50)),
+    );
 
     // returns an area where we can add anything like a normal window.
     let area = centered_rect(x_value, y_value, size);
-    
+
     let new_chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -32,7 +35,11 @@ pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &Vec<String>) {
     f.render_widget(block, area);
 
     let help_sec = Paragraph::new(text)
-        .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
         .alignment(Alignment::Left);
     f.render_widget(help_sec, new_chunks[0]);
 }

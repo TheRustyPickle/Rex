@@ -2,7 +2,7 @@ use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    text::{Span},
+    text::Span,
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
@@ -18,11 +18,19 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
         .constraints([Constraint::Length(8), Constraint::Min(5)].as_ref())
         .split(size);
 
-    let block = Block::default().style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)));
+    let block = Block::default().style(
+        Style::default()
+            .bg(Color::Rgb(255, 255, 255))
+            .fg(Color::Rgb(50, 205, 50)),
+    );
     let create_block = |title| {
         Block::default()
             .borders(Borders::ALL)
-            .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
+            .style(
+                Style::default()
+                    .bg(Color::Rgb(255, 255, 255))
+                    .fg(Color::Rgb(50, 205, 50)),
+            )
             .title(Span::styled(
                 title,
                 Style::default().add_modifier(Modifier::BOLD),
@@ -105,14 +113,21 @@ Add Transaction Page:
 ";
 
     let paragraph = Paragraph::new(new_text)
-        .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
         .alignment(Alignment::Center);
 
     let paragraph_2 = Paragraph::new(second_text)
-        .style(Style::default().bg(Color::Rgb(255,255,255)).fg(Color::Rgb(50, 205, 50)))
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
         .block(create_block("Help"));
 
     f.render_widget(paragraph, chunks[0]);
     f.render_widget(paragraph_2, chunks[1]);
-    
 }

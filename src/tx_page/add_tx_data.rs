@@ -137,7 +137,7 @@ impl AddTxData {
             &self.tx_method,
             &self.amount,
             &self.tx_type,
-            "data.sqlite".to_string()
+            "data.sqlite".to_string(),
         );
 
         match status {
@@ -276,7 +276,10 @@ impl AddTxData {
             for method in all_tx_methods {
                 let mut total_match = 0;
                 for i in method.chars() {
-                    if current_text.to_lowercase().contains(&format!("{}", i.to_string().to_lowercase())) {
+                    if current_text
+                        .to_lowercase()
+                        .contains(&format!("{}", i.to_string().to_lowercase()))
+                    {
                         total_match += 1;
                     }
                 }
