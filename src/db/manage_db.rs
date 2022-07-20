@@ -81,7 +81,7 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
 
     let mut q_marks = vec![];
     for _i in &tx_methods {
-        q_marks.push("0.0")
+        q_marks.push("0.00")
     }
 
     let mut query = format!(
