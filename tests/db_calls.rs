@@ -13,6 +13,8 @@ fn check_getting_tx_methods_1() {
     let file_name = "getting_tx_methods_1.sqlite";
     let conn = create_test_db(file_name);
     let data = get_all_tx_methods(&conn);
+    conn.close().unwrap();
+
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(data, vec!["test1".to_string(), "test 2".to_string()]);
@@ -30,6 +32,8 @@ fn check_getting_tx_methods_2() {
     .unwrap();
 
     let data = get_all_tx_methods(&conn);
+    conn.close().unwrap();
+
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(
@@ -48,6 +52,8 @@ fn check_empty_changes() {
     let file_name = "empty_changes.sqlite";
     let conn = create_test_db(file_name);
     let data = get_empty_changes(&conn);
+    conn.close().unwrap();
+
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(
@@ -67,6 +73,7 @@ fn check_last_balances_1() {
     let tx_methods = get_all_tx_methods(&conn);
     let data = get_last_balances(&conn, &tx_methods);
     let expected_data = vec!["0.00".to_string(), "0.00".to_string()];
+    conn.close().unwrap();
 
     fs::remove_file(file_name).unwrap();
 
@@ -107,12 +114,12 @@ fn check_last_balances_2() {
     let data_2 = get_last_balances(&conn, &tx_methods);
     let expected_data_2 = vec!["0.00".to_string(), "159.19".to_string()];
 
+    conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(data, expected_data);
     assert_eq!(data_2, expected_data_2);
 }
-
 
 #[test]
 fn check_getting_all_changes() {
@@ -120,6 +127,8 @@ fn check_getting_all_changes() {
     let conn = create_test_db(file_name);
     let data = get_all_changes(&conn, 5, 6);
     let empty_data: Vec<Vec<String>> = Vec::new();
+
+    conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(data, empty_data);
@@ -169,17 +178,14 @@ fn check_getting_all_changes_2() {
 
     let another_data = get_all_changes(&conn, 4, 0);
 
-    let another_expected = vec![
-        vec!["0.00".to_string(), "↓753.00".to_string()]
-    ];
-    
+    let another_expected = vec![vec!["0.00".to_string(), "↓753.00".to_string()]];
+
     delete_tx(2, &file_name).unwrap();
 
     let data_2 = get_all_changes(&conn, 6, 0);
-    let expected_data_2: Vec<Vec<String>> = vec![
-        vec!["↓159.00".to_string(), "0.00".to_string()]
-    ];
+    let expected_data_2: Vec<Vec<String>> = vec![vec!["↓159.00".to_string(), "0.00".to_string()]];
 
+    conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(data_1, expected_data_1);
@@ -195,6 +201,7 @@ fn check_getting_all_tx_1() {
     let data = get_all_txs(&conn, 6, 0);
     let expected_data = (Vec::new(), Vec::new(), Vec::new());
 
+    conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(data, expected_data);
@@ -209,7 +216,7 @@ fn check_getting_all_tx_2() {
         "2022-07-19",
         "Testing transaction",
         "test1",
-        "159.00",
+        "100.00",
         "Expense",
         &file_name,
     )
@@ -219,18 +226,8 @@ fn check_getting_all_tx_2() {
         "2022-07-19",
         "Testing transaction",
         "test 2",
-        "159.00",
+        "100.00",
         "Expense",
-        &file_name,
-    )
-    .unwrap();
-
-    add_new_tx(
-        "2022-05-20",
-        "Testing transaction",
-        "test 2",
-        "753.00",
-        "Income",
         &file_name,
     )
     .unwrap();
@@ -245,33 +242,68 @@ fn check_getting_all_tx_2() {
     )
     .unwrap();
 
+    add_new_tx(
+        "2022-05-20",
+        "Testing transaction",
+        "test 2",
+        "100.00",
+        "Income",
+        &file_name,
+    )
+    .unwrap();
+
     let data = get_all_txs(&conn, 6, 0);
     let data_2 = get_all_txs(&conn, 4, 0);
 
     let expected_data = (
-    vec![
-        vec!["19-07-2022".to_string(), "Testing transaction".to_string(), "test1".to_string(), "159.00".to_string(), "Expense".to_string()],
-        vec!["19-07-2022".to_string(), "Testing transaction".to_string(), "test 2".to_string(), "159.00".to_string(), "Expense".to_string()]
-    ],
-    vec![
-        vec!["-159.00".to_string(), "0.00".to_string()], 
-        vec!["-159.00".to_string(), "-159.00".to_string()]
-    ],
-    
-    vec!["1".to_string(), "2".to_string()]);
+        vec![
+            vec![
+                "19-07-2022".to_string(),
+                "Testing transaction".to_string(),
+                "test1".to_string(),
+                "100.00".to_string(),
+                "Expense".to_string(),
+            ],
+            vec![
+                "19-07-2022".to_string(),
+                "Testing transaction".to_string(),
+                "test 2".to_string(),
+                "100.00".to_string(),
+                "Expense".to_string(),
+            ],
+        ],
+        vec![
+            vec!["-100.00".to_string(), "0.00".to_string()],
+            vec!["-100.00".to_string(), "-100.00".to_string()],
+        ],
+        vec!["1".to_string(), "2".to_string()],
+    );
 
     let expected_data_2 = (
         vec![
-            vec!["15-05-2022".to_string(), "Testing transaction".to_string(), "test 2".to_string(), "100.00".to_string(), "Expense".to_string()],
-            vec!["20-05-2022".to_string(), "Testing transaction".to_string(), "test 2".to_string(), "753.00".to_string(), "Income".to_string()]
+            vec![
+                "15-05-2022".to_string(),
+                "Testing transaction".to_string(),
+                "test 2".to_string(),
+                "100.00".to_string(),
+                "Expense".to_string(),
+            ],
+            vec![
+                "20-05-2022".to_string(),
+                "Testing transaction".to_string(),
+                "test 2".to_string(),
+                "100.00".to_string(),
+                "Income".to_string(),
+            ],
         ],
         vec![
-            vec!["0.00".to_string(), "-100.00".to_string()], 
-            vec!["0.00".to_string(), "653.00".to_string()]
+            vec!["0.00".to_string(), "-100.00".to_string()],
+            vec!["0.00".to_string(), "0.00".to_string()],
         ],
-        
-        vec!["4".to_string(), "3".to_string()]);
+        vec!["3".to_string(), "4".to_string()],
+    );
 
+    conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(data, expected_data);
