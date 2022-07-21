@@ -34,7 +34,7 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
 }
 
 /// The function is used to create dates in the form of strings to use the WHERE statement
-/// based on the index that has been passed to it.
+/// based on the month and year that has been passed to it.
 fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     // returns dates from month and year to a format that is suitable for
     // database WHERE statement.
@@ -73,43 +73,55 @@ fn get_last_month_balance(
     let mut target_id_num = month as i32 + (year as i32 * 12);
 
     let mut final_value = HashMap::new();
-    let mut to_return: Vec<f32>;
+    for i in tx_method {
+        final_value.insert(i.to_string(), 0.0);
+    }
 
     if target_id_num == 0 {
-        for i in tx_method {
-            final_value.insert(i.to_string(), 0.0);
-        }
         return final_value;
     }
 
+    let mut checked_methods: Vec<&str> = vec![];
+
+    let mut breaking_vec = vec![];
+    for _i in tx_method {
+        breaking_vec.push(0.0)
+    }
     loop {
         let mut query = format!("SELECT {:?} FROM balance_all WHERE id_num = ?", tx_method);
         query = query.replace("[", "");
         query = query.replace("]", "");
-        let final_balance = conn.query_row(&query, [target_id_num], |row| {
-            let mut final_data: Vec<f32> = Vec::new();
+        let final_balance = conn
+            .query_row(&query, [target_id_num], |row| {
+                let mut final_data: Vec<f32> = Vec::new();
 
-            // We don't know the amount of tx method so we need to loop
-            for i in 0..tx_method.len() {
-                let to_push: String = row.get(i).unwrap();
-                let final_value = to_push.parse::<f32>().unwrap();
-                final_data.push(final_value);
-            }
-            Ok(final_data)
-        });
+                // We don't know the amount of tx method so we need to loop
+                for i in 0..tx_method.len() {
+                    let to_push: String = row.get(i).unwrap();
+                    let final_value = to_push.parse::<f32>().unwrap();
+                    final_data.push(final_value);
+                }
+                Ok(final_data)
+            })
+            .unwrap();
         target_id_num -= 1;
-        to_return = final_balance.unwrap();
+
+        for i in 0..tx_method.len() {
+            if checked_methods.contains(&tx_method[i].as_ref()) == false && final_balance[i] != 0.0
+            {
+                *final_value.get_mut(&tx_method[i]).unwrap() = final_balance[i];
+                println!("{:?}", final_value);
+                checked_methods.push(&tx_method[i]);
+            }
+        }
 
         // We will keep the loop ongoing until we hit a non-zero balance for all tx method or
         // the id number goes to zero. Why? Example: current working month is 6th month. So we did the last
         // transaction on January and only consider the balance of the 5th month, that is a false balance
         // and is not the balance we are supposed to doing the calculations on.
-        if to_return != vec![0.0, 0.0, 0.0, 0.0] || target_id_num == 0 {
+        if target_id_num == 0 || checked_methods.len() == tx_method.len() {
             break;
         }
-    }
-    for i in 0..to_return.len() {
-        final_value.insert(tx_method[i].to_string(), to_return[i]);
     }
     final_value
 }
@@ -401,7 +413,7 @@ pub fn add_new_tx(
     Ok(())
 }
 
-/// Updates the absolute final balance and deletes the selected transaction.
+/// Updates the absolute final balance, balance data and deletes the selected transaction.
 /// Foreign key cascade takes care of the Changes data in the database.
 pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
     let mut conn = Connection::open(path)?;
@@ -416,15 +428,90 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
     let query = format!("SELECT * FROM tx_all Where id_num = {}", id_num);
     let data = sp.query_row(&query, [], |row| {
         let mut final_data: Vec<String> = Vec::new();
+        final_data.push(row.get(0)?);
         final_data.push(row.get(2)?);
         final_data.push(row.get(3)?);
         final_data.push(row.get(4)?);
         Ok(final_data)
     })?;
 
-    let source = &data[0];
-    let amount = &data[1].parse::<f32>().unwrap();
-    let tx_type: &str = &data[2];
+    let split = data[0].split("-");
+    let splitted = split.collect::<Vec<&str>>();
+    let (year, month) = (
+        splitted[0].parse::<i32>().unwrap(),
+        splitted[1].parse::<i32>().unwrap(),
+    );
+
+    let year = year - 2022;
+
+    let mut target_id_num = month as i32 + (year as i32 * 12);
+
+    let source = &data[1];
+    let amount = &data[2].parse::<f32>().unwrap();
+    let tx_type: &str = &data[3];
+
+    // loop through all rows in the balance_all table from the deletion point and update balance
+
+    loop {
+        let mut query = format!(
+            "SELECT {:?} FROM balance_all WHERE id_num = {}",
+            tx_methods, target_id_num
+        );
+        query = query.replace("[", "");
+        query = query.replace("]", "");
+
+        let cu_month_balance = sp.query_row(&query, [], |row| {
+            let mut final_data: Vec<String> = Vec::new();
+            for i in 0..tx_methods.len() {
+                final_data.push(row.get(i)?)
+            }
+            Ok(final_data)
+        })?;
+
+        let mut updated_month_balance = vec![];
+
+        // reverse that amount that was previously added and commit them to db
+        for i in 0..tx_methods.len() {
+            if &tx_methods[i] == source && cu_month_balance[i] != "0.00" {
+                let mut cu_int_amount = cu_month_balance[i].parse::<f32>().unwrap();
+                if tx_type == "Expense" {
+                    cu_int_amount += amount;
+                } else if tx_type == "Income" {
+                    cu_int_amount -= amount;
+                }
+                updated_month_balance.push(format!("{:.2}", cu_int_amount));
+            } else {
+                updated_month_balance.push(format!(
+                    "{:.2}",
+                    cu_month_balance[i].parse::<f32>().unwrap()
+                ));
+            }
+        }
+
+        // the query kept on breaking for a single comma so had to follow this ugly way to do this.
+        // loop and add a comma until the last index and ignore it in the last time
+        let mut balance_query = format!("UPDATE balance_all SET ");
+        for i in 0..updated_month_balance.len() {
+            if i != updated_month_balance.len() - 1 {
+                balance_query.push_str(&format!(
+                    r#""{}" = "{}", "#,
+                    tx_methods[i], updated_month_balance[i]
+                ))
+            } else {
+                balance_query.push_str(&format!(
+                    r#""{}" = "{}" "#,
+                    tx_methods[i], updated_month_balance[i]
+                ))
+            }
+        }
+        balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
+        sp.execute(&balance_query, [])?;
+
+        target_id_num += 1;
+        if target_id_num == 48 {
+            break;
+        }
+    }
 
     // we are deleting 1 transaction, so loop through all tx methods, and whichever method matches
     // with the one we are deleting, add/subtract from the amount.
@@ -439,8 +526,9 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
         }
         final_last_balance.push(format!("{:.2}", cu_balance));
     }
-    // the query kept on breaking for a single comma so had to follow this ugly way to do this.
-    // loop and add a comma until the last index and ignore it in the last time
+
+    let del_query = format!("DELETE FROM tx_all WHERE id_num = {id_num}");
+
     let mut last_balance_query = format!("UPDATE balance_all SET ");
     for i in 0..final_last_balance.len() {
         if i != final_last_balance.len() - 1 {
@@ -456,11 +544,9 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
         }
     }
     last_balance_query.push_str(&format!("WHERE id_num = {last_balance_id}"));
-
-    let del_query = format!("DELETE FROM tx_all WHERE id_num = {id_num}");
-
     sp.execute(&last_balance_query, [])?;
     sp.execute(&del_query, [])?;
+
     sp.commit()?;
     Ok(())
 }
@@ -575,4 +661,113 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
         }
     }
     db_tx_methods
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::create_db;
+    use std::fs;
+
+    fn create_test_db(file_name: &str) -> Connection {
+        create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
+        return Connection::open(file_name).unwrap();
+    }
+
+    #[test]
+    fn check_sql_dates() {
+        let data = get_sql_dates(11, 2);
+        let expected_data = ("2024-11-01".to_string(), "2024-11-31".to_string());
+        assert_eq!(data, expected_data);
+    }
+
+    #[test]
+    fn check_last_month_balance_1() {
+        let file_name = "last_month_balance_1.sqlite".to_string();
+        let conn = create_test_db(&file_name);
+        let tx_methods = get_all_tx_methods(&conn);
+
+        let data = get_last_month_balance(&conn, 6, 1, &tx_methods);
+        let expected_data =
+            HashMap::from([("test1".to_string(), 0.0), ("test 2".to_string(), 0.0)]);
+
+        conn.close().unwrap();
+        fs::remove_file(file_name).unwrap();
+
+        assert_eq!(data, expected_data);
+    }
+
+    #[test]
+    fn check_last_month_balance_2() {
+        let file_name = "last_month_balance_2.sqlite".to_string();
+        let conn = create_test_db(&file_name);
+        let tx_methods = get_all_tx_methods(&conn);
+
+        add_new_tx(
+            "2022-07-19",
+            "Testing transaction",
+            "test1",
+            "100.00",
+            "Income",
+            &file_name,
+        )
+        .unwrap();
+
+        add_new_tx(
+            "2022-07-19",
+            "Testing transaction",
+            "test 2",
+            "100.00",
+            "Income",
+            &file_name,
+        )
+        .unwrap();
+
+        add_new_tx(
+            "2022-08-19",
+            "Testing transaction",
+            "test1",
+            "100.00",
+            "Income",
+            &file_name,
+        )
+        .unwrap();
+
+        add_new_tx(
+            "2022-09-19",
+            "Testing transaction",
+            "test1",
+            "100.00",
+            "Income",
+            &file_name,
+        )
+        .unwrap();
+
+        add_new_tx(
+            "2022-10-19",
+            "Testing transaction",
+            "test1",
+            "100.00",
+            "Income",
+            &file_name,
+        )
+        .unwrap();
+
+        let data_1 = get_last_month_balance(&conn, 8, 0, &tx_methods);
+        let expected_data_1 =
+            HashMap::from([("test 2".to_string(), 100.0), ("test1".to_string(), 200.0)]);
+
+        delete_tx(1, &file_name).unwrap();
+        delete_tx(2, &file_name).unwrap();
+
+        let data_2 = get_last_month_balance(&conn, 10, 3, &tx_methods);
+        let expected_data_2 =
+            HashMap::from([("test 2".to_string(), 0.0), ("test1".to_string(), 300.0)]);
+
+        conn.close().unwrap();
+        fs::remove_file(file_name).unwrap();
+
+        assert_eq!(data_1, expected_data_1);
+        assert_eq!(data_2, expected_data_2);
+    }
 }
