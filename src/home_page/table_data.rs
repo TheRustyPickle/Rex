@@ -104,12 +104,19 @@ impl TransactionData {
     }
 
     /// returns total incomes for the selected month by going through all the tx saved in the struct
-    pub fn get_total_income(&self, conn: &Connection) -> Vec<String> {
+    pub fn get_total_income(&self, conn: &Connection, cu_index: Option<usize>) -> Vec<String> {
         let mut final_income = vec!["Income".to_string()];
         let all_tx_methods = get_all_tx_methods(conn);
         for _i in all_tx_methods.iter() {
             final_income.push("-".to_string())
         }
+
+        let mut stopping_index = -1;
+
+        if let Some(a) = cu_index {
+            stopping_index = a as i32;
+        }
+
         let mut total_income = 0.0_f32;
         for tx in self.all_tx.iter() {
             let amount = &tx[3];
@@ -118,18 +125,29 @@ impl TransactionData {
             if tx_type == "Income" {
                 total_income += amount.parse::<f32>().unwrap();
             }
+            if stopping_index == 0 {
+                break;
+            }
+            else{stopping_index -= 1}
         }
         final_income.push(format!("{:.2}", total_income));
         final_income
     }
 
     /// returns total expenses for the selected month by going through all the tx saved in the struct
-    pub fn get_total_expense(&self, conn: &Connection) -> Vec<String> {
+    pub fn get_total_expense(&self, conn: &Connection, cu_index: Option<usize>) -> Vec<String> {
         let mut final_expense = vec!["Expense".to_string()];
         let all_tx_methods = get_all_tx_methods(conn);
         for _i in all_tx_methods.iter() {
             final_expense.push("-".to_string())
         }
+
+        let mut stopping_index = -1;
+
+        if let Some(a) = cu_index {
+            stopping_index = a as i32;
+        }
+        
         let mut total_expense = 0.0_f32;
         for tx in self.all_tx.iter() {
             let amount = &tx[3];
@@ -138,6 +156,10 @@ impl TransactionData {
             if tx_type == "Expense" {
                 total_expense += amount.parse::<f32>().unwrap();
             }
+            if stopping_index == 0 {
+                break;
+            }
+            else{stopping_index -= 1}
         }
         final_expense.push(format!("{:.2}", total_expense));
         final_expense

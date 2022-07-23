@@ -66,8 +66,6 @@ pub fn run_app<B: Backend>(
     let mut cu_page = CurrentUi::Initial;
     let mut cu_tx_page = TxTab::Nothing;
     let mut data_for_tx = AddTxData::new();
-    let mut total_income = vec![];
-    let mut total_expense = vec![];
     let mut starter_index = 0;
 
     // TODO create a separate function in a different thread to check for latest release and update this variable
@@ -126,11 +124,12 @@ Press Any Key to dismiss"
         if cu_month_index != last_month_index || cu_year_index != last_year_index {
             all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
             table = TableData::new(all_data.get_txs());
-            total_income = all_data.get_total_income(&conn);
-            total_expense = all_data.get_total_expense(&conn);
             last_month_index = cu_month_index;
             last_year_index = cu_year_index;
         };
+
+        let total_income = all_data.get_total_income(&conn, cu_table_index);
+        let total_expense = all_data.get_total_expense(&conn, cu_table_index);
 
         // balance variable contains all the 'rows' of the first/Balance widget in the home page.
         // So each line is inside a vector. "" represents empty placeholder.
