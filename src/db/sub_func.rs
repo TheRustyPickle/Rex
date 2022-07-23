@@ -110,7 +110,6 @@ fn get_last_month_balance(
             if checked_methods.contains(&tx_method[i].as_ref()) == false && final_balance[i] != 0.0
             {
                 *final_value.get_mut(&tx_method[i]).unwrap() = final_balance[i];
-                println!("{:?}", final_value);
                 checked_methods.push(&tx_method[i]);
             }
         }
