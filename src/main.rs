@@ -30,6 +30,7 @@ extern crate rex;
 // [x] allow cancelling adding transaction method
 // [ ] auto change add transaction page selected tab after enter
 // [ ] add edit transaction
+// [x] Fix expense income total if hovering txs
 
 /// The starting function checks for the local database location and creates a new database
 /// if not existing. Also checks if the user is trying to open the app via a terminal or the binary.
