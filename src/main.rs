@@ -29,7 +29,7 @@ extern crate rex;
 // [x] run on terminal when using the binary
 // [x] allow cancelling adding transaction method
 // [ ] auto change add transaction page selected tab after enter
-// [ ] add edit transaction
+// [x] add edit transaction
 // [x] Fix expense income total if hovering txs
 
 /// The starting function checks for the local database location and creates a new database

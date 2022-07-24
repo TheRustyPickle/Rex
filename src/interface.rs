@@ -395,8 +395,12 @@ Press Any Key to dismiss"
                                     KeyCode::Char('s') => {
                                         let status = data_for_tx.add_tx();
                                         if status == "".to_string() {
-                                            cu_page = CurrentUi::Home;
+                                            // reload home page and switch UI
+                                            selected_tab = SelectedTab::Months;
                                             data_for_tx = AddTxData::new();
+                                            all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
+                                            table = TableData::new(all_data.get_txs());
+                                            cu_page = CurrentUi::Home;
                                         } else {
                                             data_for_tx.add_tx_status(&status);
                                         }
