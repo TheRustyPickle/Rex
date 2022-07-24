@@ -169,6 +169,7 @@ impl AddTxData {
         );
 
         if self.editing_tx == true {
+            self.editing_tx = false;
             let status = delete_tx(self.id_num as usize, "data.sqlite");
             match status {
                 Ok(_) => {},
