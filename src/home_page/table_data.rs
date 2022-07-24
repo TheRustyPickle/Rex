@@ -97,6 +97,11 @@ impl TransactionData {
         changes_data
     }
 
+    /// Returns the id_num of the given index 
+    pub fn get_id_num(&self, index: usize) -> i32 {
+        self.all_id_num[index].parse::<i32>().unwrap().to_owned()
+    }
+
     /// gets the ID Number of the selected table row and calls the function to delete a transaction from the database
     pub fn del_tx(&self, index: usize) -> sqlResult<()> {
         let target_id = self.all_id_num[index].parse::<i32>().unwrap().to_owned();
