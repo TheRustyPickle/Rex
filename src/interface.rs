@@ -247,6 +247,21 @@ Press Any Key to dismiss"
                                 KeyCode::Char('a') => cu_page = CurrentUi::AddTx,
                                 KeyCode::Char('j') => return Ok("Change".to_string()),
                                 KeyCode::Char('h') => help_popup_on = true,
+                                KeyCode::Char('e') => {
+                                    if let Some(a) = cu_table_index {
+                                        let target_data = &all_data.get_txs()[a];
+                                        let target_id_num = all_data.get_id_num(a);
+                                        data_for_tx = AddTxData::custom(
+                                            &target_data[0],
+                                            &target_data[1],
+                                            &target_data[2],
+                                            &target_data[3],
+                                            &target_data[4], 
+                                            target_id_num
+                                        );
+                                        cu_page = CurrentUi::AddTx;
+                                    }
+                                }
                                 KeyCode::Char('d') => {
                                     if table.state.selected() != None {
                                         let status =
@@ -416,7 +431,7 @@ Press Any Key to dismiss"
                                         match status {
                                             Ok(a) => {
                                                 data_for_tx.add_tx_status(&a);
-                                                if a.contains("Accepted") {
+                                                if a.contains("Accepted") || a.contains("Nothing") {
                                                     cu_tx_page = TxTab::Nothing
                                                 }
                                             }

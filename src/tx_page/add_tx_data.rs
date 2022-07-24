@@ -1,4 +1,4 @@
-use crate::db::{add_new_tx, get_all_tx_methods};
+use crate::db::{add_new_tx, get_all_tx_methods, delete_tx};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::error::Error;
@@ -18,6 +18,8 @@ pub struct AddTxData {
     amount: String,
     tx_type: String,
     pub tx_status: Vec<String>,
+    editing_tx: bool,
+    id_num: i32,
 }
 
 impl AddTxData {
@@ -33,6 +35,32 @@ impl AddTxData {
             amount: "".to_string(),
             tx_type: "".to_string(),
             tx_status: Vec::new(),
+            editing_tx: false,
+            id_num: 0,
+        }
+    }
+
+    /// Used to adding custom pre-defined data inside the widgets of Add Transaction Page.
+    /// Currently used on Editing transaction.
+    pub fn custom(date: &str, details: &str, tx_method: &str, amount: &str, tx_type: &str, id_num: i32) -> Self {
+
+        let splitted = date.split("-");
+        let data = splitted.collect::<Vec<&str>>();
+        let year = data[2];
+        let month = data[1];
+        let day = data[0];
+
+        let new_date = format!("{}-{}-{}", year, month, day);
+
+        AddTxData {
+            date: new_date,
+            details: details.to_string(),
+            tx_method: tx_method.to_string(),
+            amount: amount.to_string(),
+            tx_type: tx_type.to_string(),
+            tx_status: Vec::new(),
+            editing_tx: true,
+            id_num: id_num,
         }
     }
 
@@ -139,6 +167,14 @@ impl AddTxData {
             &self.tx_type,
             "data.sqlite",
         );
+
+        if self.editing_tx == true {
+            let status = delete_tx(self.id_num as usize, "data.sqlite");
+            match status {
+                Ok(_) => {},
+                Err(e) => return format!("Edit Transaction: Something went wrong while editing transaction {}", e),
+            }
+        }
 
         match status {
             Ok(_) => return format!(""),
