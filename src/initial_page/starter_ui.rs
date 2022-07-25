@@ -101,6 +101,7 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
 'F' : Home Page
 'D' : Delete selected Transaction (Home Page)
 'J' : Add new Transaction Methods (Home Page)
+'E' : Edit Selected Transaction (Home Page)
 'H' : Open Hotkey Help
 'Q' : Quit
 

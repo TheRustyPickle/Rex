@@ -18,11 +18,6 @@ use tui::{backend::Backend, Terminal};
 /// incredibly fast to refresh the terminal and passes the provided data to ui modules to draw them.
 /// While the loop is running, the program executes, gets the data from the db and key presses to
 /// To keep on providing new data to the UI.
-/// What it does:
-/// - Sends relevant data to the UI creating modules
-/// - Stores the current UI data and states
-/// - Detects all key presses and directs the UI accordingly
-/// - Modifies UI data as needed
 pub fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     mut months: TimeData,
@@ -97,6 +92,7 @@ pub fn run_app<B: Backend>(
 'F' : Home Page
 'D' : Delete selected Transaction (Home Page)
 'J' : Add new Transaction Methods (Home Page)
+'E' : Edit Selected Transaction (Home Page)
 'H' : Open Hotkey Help
 'Q' : Quit
 
@@ -155,6 +151,7 @@ Press Any Key to dismiss"
                 balance.push(all_data.get_balance(a));
                 balance.push(all_data.get_changes(a));
             }
+            // if none selected, get empty changes + the absolute final balance
             None => {
                 balance.push(all_data.get_last_balance(&conn));
                 balance.push(get_empty_changes(&conn));
@@ -211,7 +208,6 @@ Press Any Key to dismiss"
         };
 
         // This is where the keyboard press tracking starts
-        // What is poll? This is something from crossterm lib.
         // There are two options, event or timer. Timer keeps the loop unblocked. Loops for
         // event checking each 40 milliseconds
         if poll(Duration::from_millis(40))? {
@@ -225,6 +221,7 @@ Press Any Key to dismiss"
                             // otherwise match key for the main interface
                             match key.code {
                                 KeyCode::Enter => {
+                                    // TODO update link once available
                                     match open::that("https://github.com/WaffleMixer/Rex") {
                                         Ok(_) => update_popup_on = false,
                                         // if it fails for any reason, break interface and print the link
