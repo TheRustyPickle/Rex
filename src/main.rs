@@ -22,13 +22,13 @@ extern crate rex;
 // [x] check for empty fields if S is pressed
 // [x] do not return to home if add tx is failed and show error on status section
 // [x] check amount that it is not negative
-// [ ] write tests
+// [x] write tests
 // [x] initial ui
 // [x] change database location (nothing to do for now)
 // [x] Need to update hotkey for the popup ui
 // [x] run on terminal when using the binary
 // [x] allow cancelling adding transaction method
-// [ ] auto change add transaction page selected tab after enter
+// [x] auto change add transaction page selected tab after enter
 // [x] add edit transaction
 // [x] Fix expense income total if hovering txs
 
