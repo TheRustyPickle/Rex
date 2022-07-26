@@ -97,7 +97,7 @@ impl TransactionData {
         changes_data
     }
 
-    /// Returns the id_num of the given index 
+    /// Returns the id_num of the given index
     pub fn get_id_num(&self, index: usize) -> i32 {
         self.all_id_num[index].parse::<i32>().unwrap().to_owned()
     }
@@ -132,8 +132,9 @@ impl TransactionData {
             }
             if stopping_index == 0 {
                 break;
+            } else {
+                stopping_index -= 1
             }
-            else{stopping_index -= 1}
         }
         final_income.push(format!("{:.2}", total_income));
         final_income
@@ -152,7 +153,7 @@ impl TransactionData {
         if let Some(a) = cu_index {
             stopping_index = a as i32;
         }
-        
+
         let mut total_expense = 0.0_f32;
         for tx in self.all_tx.iter() {
             let amount = &tx[3];
@@ -163,8 +164,9 @@ impl TransactionData {
             }
             if stopping_index == 0 {
                 break;
+            } else {
+                stopping_index -= 1
             }
-            else{stopping_index -= 1}
         }
         final_expense.push(format!("{:.2}", total_expense));
         final_expense
