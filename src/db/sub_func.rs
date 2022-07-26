@@ -270,7 +270,6 @@ pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<Stri
 
 /// Returns the last id_num recorded by tx_all table
 fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
-
     let last_id: sqlResult<i32> = conn.query_row(
         "SELECT id_num FROM tx_all ORDER BY id_num DESC LIMIT 1",
         [],
@@ -799,7 +798,6 @@ mod tests {
             &file_name,
         )
         .unwrap();
-
 
         let data = get_last_tx_id(&conn);
         let expected_data: sqlResult<i32> = Ok(1);

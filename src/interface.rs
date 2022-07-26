@@ -253,8 +253,8 @@ Press Any Key to dismiss"
                                             &target_data[1],
                                             &target_data[2],
                                             &target_data[3],
-                                            &target_data[4], 
-                                            target_id_num
+                                            &target_data[4],
+                                            target_id_num,
                                         );
                                         cu_page = CurrentUi::AddTx;
                                     }
@@ -395,7 +395,11 @@ Press Any Key to dismiss"
                                             // reload home page and switch UI
                                             selected_tab = SelectedTab::Months;
                                             data_for_tx = AddTxData::new();
-                                            all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
+                                            all_data = TransactionData::new(
+                                                &conn,
+                                                cu_month_index,
+                                                cu_year_index,
+                                            );
                                             table = TableData::new(all_data.get_txs());
                                             cu_page = CurrentUi::Home;
                                         } else {
