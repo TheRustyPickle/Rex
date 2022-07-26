@@ -97,11 +97,12 @@ pub fn run_app<B: Backend>(
 'Q' : Quit
 
 Add Transaction Page:
-'1': Edit Date          '4': Edit Amount
-'2': Edit TX details    '3': Edit TX Method
-'5': Edit TX Type
+'1' : Edit Date          '4': Edit Amount
+'2' : Edit TX details    '3': Edit TX Method
+'5' : Edit TX Type
 'S' : Save the data as a Transaction
-'Enter' or 'Esc': Submit/Stop editing field\n
+'Enter' : Submit field and continue
+'Esc' : Stop editing filed\n
 Press Any Key to dismiss"
             .to_string(),
     );
@@ -423,7 +424,7 @@ Press Any Key to dismiss"
                                             Ok(a) => {
                                                 data_for_tx.add_tx_status(&a);
                                                 if a.contains("Accepted") || a.contains("Nothing") {
-                                                    cu_tx_page = TxTab::Nothing
+                                                    cu_tx_page = TxTab::Details
                                                 }
                                             }
                                             Err(_) => data_for_tx.add_tx_status(
@@ -451,7 +452,7 @@ Press Any Key to dismiss"
                                 },
 
                                 TxTab::Details => match key.code {
-                                    KeyCode::Enter => cu_tx_page = TxTab::Nothing,
+                                    KeyCode::Enter => cu_tx_page = TxTab::TxMethod,
                                     KeyCode::Esc => cu_tx_page = TxTab::Nothing,
                                     KeyCode::Backspace => data_for_tx.edit_details('a', true),
                                     KeyCode::Char(a) => data_for_tx.edit_details(a, false),
@@ -464,7 +465,7 @@ Press Any Key to dismiss"
                                         data_for_tx.add_tx_status(&status);
                                         if status.contains("Accepted") || status.contains("Nothing")
                                         {
-                                            cu_tx_page = TxTab::Nothing
+                                            cu_tx_page = TxTab::Amount
                                         }
                                     }
                                     KeyCode::Esc => {
@@ -487,7 +488,7 @@ Press Any Key to dismiss"
                                                 data_for_tx.add_tx_status(&a);
                                                 if a.contains("zero") {
                                                 } else {
-                                                    cu_tx_page = TxTab::Nothing;
+                                                    cu_tx_page = TxTab::TxType;
                                                 }
                                             }
                                             Err(_) => data_for_tx

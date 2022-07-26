@@ -66,13 +66,14 @@ pub fn tx_ui<B: Backend>(
     // This is the details of the Help widget
     let help_text = vec![
         Spans::from("Press the respective keys to edit fields."),
-        Spans::from("'1': Date         Example: 2022-05-12, YYYY-MM-DD"),
-        Spans::from("'2': TX details   Example: For Grocery, Salary"),
-        Spans::from("'3': TX Method    Example: Cash, Bank, Card"),
-        Spans::from("'4': Amount       Example: 1000, 500"),
-        Spans::from("'5': TX Type      Example: Income/Expense/I/E"),
-        Spans::from("'S': Save the inputted data as a Transaction"),
-        Spans::from("'Enter' or 'Esc': Submit/Stop Editing Field"),
+        Spans::from("'1' : Date         Example: 2022-05-12, YYYY-MM-DD"),
+        Spans::from("'2' : TX details   Example: For Grocery, Salary"),
+        Spans::from("'3' : TX Method    Example: Cash, Bank, Card"),
+        Spans::from("'4' : Amount       Example: 1000, 500"),
+        Spans::from("'5' : TX Type      Example: Income/Expense/I/E"),
+        Spans::from("'S' : Save the inputted data as a Transaction"),
+        Spans::from("'Enter' : Submit field and continue"),
+        Spans::from("'Esc' : Stop editing filed"),
     ];
 
     let mut status_text = vec![];

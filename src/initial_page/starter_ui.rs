@@ -110,7 +110,8 @@ Add Transaction Page:
 '2': Edit TX details    '3': Edit TX Method
 '5': Edit TX Type
 'S' : Save the data as a Transaction
-'Enter' or 'Esc': Submit/Stop editing field
+'Enter' : Submit field and continue
+'Esc' : Stop editing filed
 ";
 
     let paragraph = Paragraph::new(new_text)
