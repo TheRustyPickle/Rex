@@ -62,7 +62,7 @@ fn get_sql_dates(month: usize, year: usize) -> (String, String) {
 /// that happened in the current month. So take the previous month balance and do the calculations.
 ///
 /// Return Value : `{"source_1": 10.50, "source_2": 100.0}`
-fn get_last_month_balance(
+fn get_last_time_balance(
     conn: &Connection,
     month: usize,
     year: usize,
@@ -175,7 +175,7 @@ pub fn get_all_txs(
     // current month's transactions to the related tx method. After each tx calculation, add whatever
     // balance for each tx method inside a vec for final return
 
-    let mut last_month_balance = get_last_month_balance(conn, month, year, &all_tx_methods);
+    let mut last_month_balance = get_last_time_balance(conn, month, year, &all_tx_methods);
 
     let (datetime_1, datetime_2) = get_sql_dates(month + 1, year);
     let mut statement = conn
@@ -270,6 +270,7 @@ pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<Stri
 
 /// Returns the last id_num recorded by tx_all table
 fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
+
     let last_id: sqlResult<i32> = conn.query_row(
         "SELECT id_num FROM tx_all ORDER BY id_num DESC LIMIT 1",
         [],
@@ -337,7 +338,7 @@ pub fn add_new_tx(
     let all_tx_methods = get_all_tx_methods(&sp);
     let last_balance = get_last_balances(&sp, &all_tx_methods);
     let mut cu_month_balance =
-        get_last_month_balance(&sp, month as usize, year as usize, &all_tx_methods);
+        get_last_time_balance(&sp, month as usize, year as usize, &all_tx_methods);
 
     let mut new_balance = 0.0;
     let int_amount = amount.parse::<f32>().unwrap();
@@ -686,7 +687,7 @@ mod tests {
         let conn = create_test_db(&file_name);
         let tx_methods = get_all_tx_methods(&conn);
 
-        let data = get_last_month_balance(&conn, 6, 1, &tx_methods);
+        let data = get_last_time_balance(&conn, 6, 1, &tx_methods);
         let expected_data =
             HashMap::from([("test1".to_string(), 0.0), ("test 2".to_string(), 0.0)]);
 
@@ -752,14 +753,14 @@ mod tests {
         )
         .unwrap();
 
-        let data_1 = get_last_month_balance(&conn, 8, 0, &tx_methods);
+        let data_1 = get_last_time_balance(&conn, 8, 0, &tx_methods);
         let expected_data_1 =
             HashMap::from([("test 2".to_string(), 100.0), ("test1".to_string(), 200.0)]);
 
         delete_tx(1, &file_name).unwrap();
         delete_tx(2, &file_name).unwrap();
 
-        let data_2 = get_last_month_balance(&conn, 10, 3, &tx_methods);
+        let data_2 = get_last_time_balance(&conn, 10, 3, &tx_methods);
         let expected_data_2 =
             HashMap::from([("test 2".to_string(), 0.0), ("test1".to_string(), 300.0)]);
 
@@ -768,5 +769,58 @@ mod tests {
 
         assert_eq!(data_1, expected_data_1);
         assert_eq!(data_2, expected_data_2);
+    }
+
+    #[test]
+    fn check_last_tx_id_1() {
+        let file_name = "last_tx_id_1.sqlite".to_string();
+        let conn = create_test_db(&file_name);
+
+        let data = get_last_tx_id(&conn);
+        let expected_data: sqlResult<i32> = Err(rusqlite::Error::QueryReturnedNoRows);
+
+        conn.close().unwrap();
+        fs::remove_file(file_name).unwrap();
+
+        assert_eq!(data, expected_data);
+    }
+
+    #[test]
+    fn check_last_tx_id_2() {
+        let file_name = "last_tx_id_2.sqlite".to_string();
+        let conn = create_test_db(&file_name);
+
+        add_new_tx(
+            "2022-09-19",
+            "Testing transaction",
+            "test1",
+            "100.00",
+            "Income",
+            &file_name,
+        )
+        .unwrap();
+
+
+        let data = get_last_tx_id(&conn);
+        let expected_data: sqlResult<i32> = Ok(1);
+
+        conn.close().unwrap();
+        fs::remove_file(file_name).unwrap();
+
+        assert_eq!(data, expected_data);
+    }
+
+    #[test]
+    fn check_last_balance_id() {
+        let file_name = "last_balance_id.sqlite".to_string();
+        let conn = create_test_db(&file_name);
+
+        let data = get_last_balance_id(&conn);
+        let expected_data: sqlResult<i32> = Ok(49);
+
+        conn.close().unwrap();
+        fs::remove_file(file_name).unwrap();
+
+        assert_eq!(data, expected_data);
     }
 }
