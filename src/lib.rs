@@ -10,18 +10,23 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+
 use db::get_user_tx_methods;
 use db::{add_new_tx_methods, create_db};
 use home_page::TimeData;
 use interface::run_app;
-use rusqlite::Result;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::process::Command;
 use std::{error::Error, io, process, thread, time::Duration};
 use tui::{backend::CrosstermBackend, Terminal};
+use serde::{Serialize, Deserialize};
 
+/// The starting function checks for the local database location and creates a new database
+/// if not existing. Also checks if the user is trying to open the app via a terminal or the binary.
+/// If trying to open using the binary, tries open the relevant terminal to execute the app.
+/// Lastly, starts a loop that keeps the interface running until exit command is given.
 pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn Error>> {
     // atty verifies whether a terminal is being used or not.
     if atty::is(Stream::Stdout) {
@@ -40,7 +45,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
         };
         // TODO add checking for common and most used terminal among different O
         // Windows cmd, Konsole, other to be found out.
-        if output.stderr != vec![] {
+        if output.stderr != Vec::<u8>::new() {
             let full_text = format!(
                 "Error while trying to run console/terminal. Output: \n\n{:?}",
                 output
@@ -73,16 +78,33 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
             }
         }
     }
-    loop {
+    check_version().unwrap();
+    //loop {
         // Continue to loop to the main interface until the ending command or "break" is given
-        let status = check_app(start_interface());
-        if &status == "break" {
-            break;
-        }
-    }
+    //    let status = check_app(start_interface());
+    //    if &status == "break" {
+    //        break;
+    //    }
+    //}
     Ok(())
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct Version {
+    name: String,
+}
+
+fn check_version() -> Result<(), reqwest::Error> {
+    static APP_USER_AGENT: &str = "Testing";
+    
+    let client = reqwest::blocking::Client::builder()
+        .user_agent(APP_USER_AGENT)
+        .build()?;
+
+    let caller: Version = client.get("https://api.github.com/repos/Sakib0194/Telecounter/releases/latest").send()?.json()?;
+    println!("{caller:?}");
+    Ok(())
+}
 /// The function to start run_app along with executing commands for switching to an alternate screen,
 /// mouse capturing and passing months and year data to the function and starts the interface
 fn start_interface() -> Result<String, Box<dyn Error>> {
