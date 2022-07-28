@@ -32,10 +32,6 @@ extern crate rex;
 // [x] add edit transaction
 // [x] Fix expense income total if hovering txs
 
-/// The starting function checks for the local database location and creates a new database
-/// if not existing. Also checks if the user is trying to open the app via a terminal or the binary.
-/// If trying to open using the binary, tries open the relevant terminal to execute the app.
-/// Lastly, starts a loop that keeps the interface running until exit command is given.
 fn main() {
     let mut is_windows = false;
     let mut verifying_path = "./data.sqlite";
