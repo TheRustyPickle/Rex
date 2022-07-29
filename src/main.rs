@@ -1,4 +1,4 @@
-extern crate rex;
+
 
 // [x] Check current path for the db, create new db if necessary
 // [x] create add transaction ui + editing box with inputs
