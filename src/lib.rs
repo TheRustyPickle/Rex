@@ -21,7 +21,7 @@ use std::io::prelude::*;
 use std::process::Command;
 use std::{error::Error, io, process, thread, time::Duration};
 use tui::{backend::CrosstermBackend, Terminal};
-use serde::{Serialize, Deserialize};
+
 
 /// The starting function checks for the local database location and creates a new database
 /// if not existing. Also checks if the user is trying to open the app via a terminal or the binary.
@@ -78,33 +78,16 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
             }
         }
     }
-    check_version().unwrap();
-    //loop {
+    loop {
         // Continue to loop to the main interface until the ending command or "break" is given
-    //    let status = check_app(start_interface());
-    //    if &status == "break" {
-    //        break;
-    //    }
-    //}
+        let status = check_app(start_interface());
+        if &status == "break" {
+            break;
+        }
+    }
     Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct Version {
-    name: String,
-}
-
-fn check_version() -> Result<(), reqwest::Error> {
-    static APP_USER_AGENT: &str = "Testing";
-    
-    let client = reqwest::blocking::Client::builder()
-        .user_agent(APP_USER_AGENT)
-        .build()?;
-
-    let caller: Version = client.get("https://api.github.com/repos/Sakib0194/Telecounter/releases/latest").send()?.json()?;
-    println!("{caller:?}");
-    Ok(())
-}
 /// The function to start run_app along with executing commands for switching to an alternate screen,
 /// mouse capturing and passing months and year data to the function and starts the interface
 fn start_interface() -> Result<String, Box<dyn Error>> {

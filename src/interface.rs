@@ -2,7 +2,7 @@ use crate::db::{get_all_tx_methods, get_empty_changes};
 use crate::home_page::ui;
 use crate::home_page::TransactionData;
 use crate::home_page::{CurrentUi, SelectedTab, TableData, TimeData, TxTab};
-use crate::initial_page::starter_ui;
+use crate::initial_page::{starter_ui, check_version};
 use crate::popup_page::create_popup;
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
@@ -47,8 +47,13 @@ pub fn run_app<B: Backend>(
     // total_income & total_expense : Contains the data of all incomes and expenses of the selected month and year,
     // calculated from the transaction saved in the database, it is needed for the Income and Expense section in the Home page.
     // Why is it a vector? Because the entire row has to be saved inside this to put in the UI.
+    //
     // starter_index : to keep track of the loop on each iteration on the initial page's animation.
-    // update_found : The variable to check if there is a new version of the app.
+    // version_checked : during the loop of the app, this variable is tracked so we don't keep opening the popup multiple times
+    // new_version_available : Calls the version checker and gives bool whether a new version is available
+    let mut version_checked = false;
+    let new_version_available = check_version();
+
     let mut selected_tab = SelectedTab::Months;
     let mut last_month_index = 99;
     let mut last_year_index = 99;
@@ -62,12 +67,11 @@ pub fn run_app<B: Backend>(
     let mut cu_tx_page = TxTab::Nothing;
     let mut data_for_tx = AddTxData::new();
     let mut starter_index = 0;
-
-    // TODO create a separate function in a different thread to check for latest release and update this variable
     // The next three variable will determine whether a certain pop is turned on or off.
     // Based on this, the popup is created/passed
     let mut update_popup_on = false;
     let mut help_popup_on = false;
+    // This one wil likely remain unused until one is messing with the database
     let mut delete_popup_on = false;
 
     // The next three vectors will store the lines that will be displayed on popup
@@ -163,6 +167,14 @@ Press Any Key to dismiss"
         // to the balance vector to align with the rows.
         balance.push(total_income.clone());
         balance.push(total_expense.clone());
+       
+        // check the version of current TUI and based on that, turn on the popup
+        if version_checked == false {
+            if let Ok(a) = new_version_available{
+                update_popup_on = a;
+            }
+            version_checked = true;
+        }
 
         // passing out relevant data to the ui function
         match cu_page {
@@ -217,21 +229,7 @@ Press Any Key to dismiss"
                     CurrentUi::Home => {
                         // we don't want to move the main UI while the popup is on
                         // so we verify that nothing is on and then check with the key presses.
-                        if update_popup_on == true {
-                            // Check if any popup is turned on and if yes, match key for the popup,
-                            // otherwise match key for the main interface
-                            match key.code {
-                                KeyCode::Enter => {
-                                    // TODO update link once available
-                                    match open::that("https://github.com/WaffleMixer/Rex") {
-                                        Ok(_) => update_popup_on = false,
-                                        // if it fails for any reason, break interface and print the link
-                                        Err(_) => return Ok("Link".to_string()),
-                                    }
-                                }
-                                _ => update_popup_on = false,
-                            }
-                        } else if help_popup_on == true {
+                        if help_popup_on == true {
                             match key.code {
                                 _ => help_popup_on = false,
                             }
@@ -537,7 +535,7 @@ Press Any Key to dismiss"
                         if update_popup_on == true {
                             match key.code {
                                 KeyCode::Enter => {
-                                    match open::that("https://github.com/WaffleMixer/Rex") {
+                                    match open::that("https://github.com/WaffleMixer/Rex/releases/latest") {
                                         Ok(_) => update_popup_on = false,
                                         // if it fails for any reason, break interface and print the link
                                         Err(_) => return Ok("Link".to_string()),
