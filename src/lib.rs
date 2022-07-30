@@ -10,9 +10,8 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-
-use db::get_user_tx_methods;
-use db::{add_new_tx_methods, create_db};
+use crate::initial_page::check_version;
+use db::{add_new_tx_methods, create_db, get_user_tx_methods};
 use home_page::TimeData;
 use interface::run_app;
 use std::fs;
@@ -91,6 +90,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
 /// The function to start run_app along with executing commands for switching to an alternate screen,
 /// mouse capturing and passing months and year data to the function and starts the interface
 fn start_interface() -> Result<String, Box<dyn Error>> {
+    let new_version_available = check_version();
     // TUI magic functions starts here with multiple calls
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -115,7 +115,7 @@ fn start_interface() -> Result<String, Box<dyn Error>> {
     let years = TimeData::new(vec!["2022", "2023", "2024", "2025"]);
 
     // pass a few data to the main function and loop forever or until quit/faced with an error
-    let res = run_app(&mut terminal, months, years)?;
+    let res = run_app(&mut terminal, months, years, new_version_available)?;
 
     Ok(res)
 }
