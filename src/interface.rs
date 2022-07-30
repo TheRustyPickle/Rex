@@ -2,7 +2,7 @@ use crate::db::{get_all_tx_methods, get_empty_changes};
 use crate::home_page::ui;
 use crate::home_page::TransactionData;
 use crate::home_page::{CurrentUi, SelectedTab, TableData, TimeData, TxTab};
-use crate::initial_page::{starter_ui, check_version};
+use crate::initial_page::{starter_ui};
 use crate::popup_page::create_popup;
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
@@ -22,6 +22,7 @@ pub fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     mut months: TimeData,
     mut years: TimeData,
+    new_version_available: Result<bool, reqwest::Error>
 ) -> io::Result<String> {
     // Setting up some default values. Let's go through all of them
     // selected_tab : Basically the current selected widget/field. Default set to the month selection/3rd widget
@@ -50,10 +51,8 @@ pub fn run_app<B: Backend>(
     //
     // starter_index : to keep track of the loop on each iteration on the initial page's animation.
     // version_checked : during the loop of the app, this variable is tracked so we don't keep opening the popup multiple times
-    // new_version_available : Calls the version checker and gives bool whether a new version is available
-    let mut version_checked = false;
-    let new_version_available = check_version();
 
+    let mut version_checked = false;
     let mut selected_tab = SelectedTab::Months;
     let mut last_month_index = 99;
     let mut last_year_index = 99;
