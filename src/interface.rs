@@ -100,8 +100,8 @@ pub fn run_app<B: Backend>(
 'Q' : Quit
 
 Add Transaction Page:
-'1' : Edit Date          '4': Edit Amount
-'2' : Edit TX details    '3': Edit TX Method
+'1' : Edit Date          '4' : Edit Amount
+'2' : Edit TX details    '3' : Edit TX Method
 '5' : Edit TX Type
 'S' : Save the data as a Transaction
 'Enter' : Submit field and continue
