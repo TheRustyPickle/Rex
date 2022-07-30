@@ -95,7 +95,7 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
     }
 
     new_text.push_str("\n    Press Any Key To Continue");
-    // TODO add hotkey changes here
+
     let second_text = "'Arrow Key' : Navigate
 'A' : Add Transaction Page
 'F' : Home Page
@@ -106,9 +106,9 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
 'Q' : Quit
 
 Add Transaction Page:
-'1': Edit Date          '4': Edit Amount
-'2': Edit TX details    '3': Edit TX Method
-'5': Edit TX Type
+'1' : Edit Date          '4' : Edit Amount
+'2' : Edit TX details    '3' : Edit TX Method
+'5' : Edit TX Type
 'S' : Save the data as a Transaction
 'Enter' : Submit field and continue
 'Esc' : Stop editing filed
