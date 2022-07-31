@@ -10,9 +10,9 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use crate::initial_page::check_version;
 use db::{add_new_tx_methods, create_db, get_user_tx_methods};
 use home_page::TimeData;
+use initial_page::check_version;
 use interface::run_app;
 use std::fs;
 use std::fs::File;
@@ -21,12 +21,19 @@ use std::process::Command;
 use std::{error::Error, io, process, thread, time::Duration};
 use tui::{backend::CrosstermBackend, Terminal};
 
-
 /// The starting function checks for the local database location and creates a new database
 /// if not existing. Also checks if the user is trying to open the app via a terminal or the binary.
 /// If trying to open using the binary, tries open the relevant terminal to execute the app.
 /// Lastly, starts a loop that keeps the interface running until exit command is given.
 pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn Error>> {
+
+    let version_status = check_version();
+    let mut new_version_available = false;
+
+    if let Ok(a) = version_status {
+        new_version_available = a;
+    }
+
     // atty verifies whether a terminal is being used or not.
     if atty::is(Stream::Stdout) {
     } else {
@@ -79,7 +86,9 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
     }
     loop {
         // Continue to loop to the main interface until the ending command or "break" is given
-        let status = check_app(start_interface());
+        let status = check_app(start_interface(new_version_available));
+        // turn it false here so if the interface restarts, it doesn't open the popup again.
+        new_version_available = false;
         if &status == "break" {
             break;
         }
@@ -89,8 +98,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
 
 /// The function to start run_app along with executing commands for switching to an alternate screen,
 /// mouse capturing and passing months and year data to the function and starts the interface
-fn start_interface() -> Result<String, Box<dyn Error>> {
-    let new_version_available = check_version();
+fn start_interface(new_version_available: bool) -> Result<String, Box<dyn Error>> {
     // TUI magic functions starts here with multiple calls
     enable_raw_mode()?;
     let mut stdout = io::stdout();
