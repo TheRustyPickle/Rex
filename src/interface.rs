@@ -2,7 +2,7 @@ use crate::db::{get_all_tx_methods, get_empty_changes};
 use crate::home_page::ui;
 use crate::home_page::TransactionData;
 use crate::home_page::{CurrentUi, SelectedTab, TableData, TimeData, TxTab};
-use crate::initial_page::{starter_ui};
+use crate::initial_page::starter_ui;
 use crate::popup_page::create_popup;
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
@@ -22,7 +22,7 @@ pub fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     mut months: TimeData,
     mut years: TimeData,
-    new_version_available: Result<bool, reqwest::Error>
+    new_version_available: bool,
 ) -> io::Result<String> {
     // Setting up some default values. Let's go through all of them
     // selected_tab : Basically the current selected widget/field. Default set to the month selection/3rd widget
@@ -166,11 +166,11 @@ Press Any Key to dismiss"
         // to the balance vector to align with the rows.
         balance.push(total_income.clone());
         balance.push(total_expense.clone());
-       
+
         // check the version of current TUI and based on that, turn on the popup
         if version_checked == false {
-            if let Ok(a) = new_version_available{
-                update_popup_on = a;
+            if new_version_available == true {
+                update_popup_on = true;
             }
             version_checked = true;
         }
@@ -534,7 +534,9 @@ Press Any Key to dismiss"
                         if update_popup_on == true {
                             match key.code {
                                 KeyCode::Enter => {
-                                    match open::that("https://github.com/WaffleMixer/Rex/releases/latest") {
+                                    match open::that(
+                                        "https://github.com/WaffleMixer/Rex/releases/latest",
+                                    ) {
                                         Ok(_) => update_popup_on = false,
                                         // if it fails for any reason, break interface and print the link
                                         Err(_) => return Ok("Link".to_string()),
