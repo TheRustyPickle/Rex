@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Version {
@@ -10,17 +10,20 @@ struct Version {
 pub fn check_version() -> Result<bool, reqwest::Error> {
     let cu_version = "v0.0".to_string();
     static APP_USER_AGENT: &str = "Rex";
-    
+
     let client = reqwest::blocking::Client::builder()
         .user_agent(APP_USER_AGENT)
         .connect_timeout(std::time::Duration::new(2, 0))
         .build()?;
 
-    let caller: Version = client.get("https://api.github.com/repos/WaffleMixer/Rex/releases/latest").send()?.json()?;
+    let caller: Version = client
+        .get("https://api.github.com/repos/WaffleMixer/Rex/releases/latest")
+        .send()?
+        .json()?;
     if cu_version != caller.name {
-        return Ok(true)}
-    else {
-        return Ok(false)
+        return Ok(true);
+    } else {
+        return Ok(false);
     }
 }
 
