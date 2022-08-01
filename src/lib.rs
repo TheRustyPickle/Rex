@@ -14,6 +14,7 @@ use db::{add_new_tx_methods, create_db, get_user_tx_methods};
 use home_page::TimeData;
 use initial_page::check_version;
 use interface::run_app;
+use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
@@ -26,39 +27,65 @@ use tui::{backend::CrosstermBackend, Terminal};
 /// If trying to open using the binary, tries open the relevant terminal to execute the app.
 /// Lastly, starts a loop that keeps the interface running until exit command is given.
 pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn Error>> {
-
     let version_status = check_version();
     let mut new_version_available = false;
 
     if let Ok(a) = version_status {
         new_version_available = a;
     }
-
+    
     // atty verifies whether a terminal is being used or not.
     if atty::is(Stream::Stdout) {
     } else {
         let cu_directory = std::env::current_dir()?.display().to_string();
         let output = if is_windows {
             // NOTE f*** windows. Unknown errors everywhere.
-            Command::new("cmd.exe").arg("start").arg("rex").output()?
+            Command::new("cmd.exe").arg("start").arg("rex").output()
         } else {
-            let linux_dir = format!("--working-directory={}", cu_directory);
-            Command::new("gnome-terminal")
-                .arg(linux_dir)
-                .arg("--")
-                .arg("./rex")
-                .output()?
+            let mut all_terminals = HashMap::new();
+            let gnome_dir = format!("--working-directory={}", cu_directory);
+
+            all_terminals.insert("konsole", vec![
+                "--new-tab".to_string(),
+                "--workdir".to_string(),
+                cu_directory,
+                "--./rex".to_string()
+            ]);
+
+            all_terminals.insert("gnome-terminal", vec![
+                gnome_dir, 
+                "--".to_string(), 
+                "./rex".to_string()]);
+
+            // start with any one of them so we have an output that we can return later, couldn't create an
+            // default output value thus this approach
+            let mut status = Command::new("konsole").args(&all_terminals["konsole"]).output();
+
+            // go through all the terminal commands added, until it's not an error
+            // continue iterating or just return an error
+            for (key, value) in all_terminals.iter() {
+                if let Err(_) = status  {
+                    if key != &"konsole" {
+                        status = Command::new(key).args(value).output();
+                    }
+                }
+                else {
+                    break;
+                }
+            }
+            status
         };
         // TODO add checking for common and most used terminal among different O
         // Windows cmd, Konsole, other to be found out.
-        if output.stderr != Vec::<u8>::new() {
-            let full_text = format!(
-                "Error while trying to run console/terminal. Output: \n\n{:?}",
-                output
-            );
-            let mut open = File::create("info.txt")?;
-            open.write_all(full_text.as_bytes())?;
-        }
+        // NOTE Konsole: konsole --new-tab --workdir /sys/power
+        //if output.stderr != Vec::<u8>::new() {
+        //    let full_text = format!(
+        //        "Error while trying to run console/terminal. Output: \n\n{:?}",
+        //        output
+        //    );
+        //    let mut open = File::create("info.txt")?;
+        //    open.write_all(full_text.as_bytes())?;
+        //}
         return Ok(());
     }
     // checks the local folder and searches for data.sqlite
