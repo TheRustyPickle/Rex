@@ -49,7 +49,8 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
                 "--new-tab".to_string(),
                 "--workdir".to_string(),
                 cu_directory,
-                "--./rex".to_string()
+                "-e".to_string(),
+                "./rex".to_string()
             ]);
 
             all_terminals.insert("gnome-terminal", vec![
@@ -75,17 +76,27 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
             }
             status
         };
-        // TODO add checking for common and most used terminal among different O
-        // Windows cmd, Konsole, other to be found out.
-        // NOTE Konsole: konsole --new-tab --workdir /sys/power
-        //if output.stderr != Vec::<u8>::new() {
-        //    let full_text = format!(
-        //        "Error while trying to run console/terminal. Output: \n\n{:?}",
-        //        output
-        //    );
-        //    let mut open = File::create("info.txt")?;
-        //    open.write_all(full_text.as_bytes())?;
-        //}
+
+        match output {
+            Ok(a) => {
+                if a.stderr == Vec::<u8>::new() {
+                    let full_text = format!(
+                        "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{:?}",
+                        a
+                    );
+                    let mut open = File::create("Error.txt")?;
+                    open.write_all(full_text.as_bytes())?;
+                };
+            }
+            Err(e) => {
+                let full_text = format!(
+                    "Error while processing commands. Use a terminal/console to run the app. Output:\n\n{:?}",
+                    e
+                );
+                let mut open = File::create("Error.txt")?;
+                open.write_all(full_text.as_bytes())?;
+            }
+        }
         return Ok(());
     }
     // checks the local folder and searches for data.sqlite
@@ -97,7 +108,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
             db_found = true;
         }
     }
-    // create a new db if not found. If there is an error, delete the failed data.sqlite file
+    // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
     if db_found != true {
         let db_tx_methods = get_user_tx_methods(false);
         println!("Creating New Database. It may take some time...");
@@ -155,7 +166,7 @@ fn start_interface(new_version_available: bool) -> Result<String, Box<dyn Error>
     Ok(res)
 }
 
-/// The function is used to exit out of the interface
+/// The function is used to exit out of the interface and alternate screen
 fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
@@ -202,7 +213,7 @@ fn check_app(res: Result<String, Box<dyn Error>>) -> String {
                 }
             } else if &a == "Link" {
                 println!(
-                    "Could not open new version link.\n\nLink: https://github.com/WaffleMixer/Rex"
+                    "Could not open the link to the latest version.\n\nLink: https://github.com/WaffleMixer/Rex/releases/latest"
                 );
                 return "break".to_string();
             } else {
