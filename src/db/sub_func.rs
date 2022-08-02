@@ -595,12 +595,14 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
 
         // take user input for transaction methods
         std::io::stdin().read_line(&mut line).unwrap();
+
+        line = line.trim().to_string();
+
         if line.to_lowercase().starts_with("cancel") && add_new_method == true {
             return vec!["".to_string()];
         }
 
         // remove the \n at the end, split them and remove duplicates
-        line.pop();
         let split = line.split(", ");
         let mut splitted = split.collect::<Vec<&str>>();
         let set: HashSet<_> = splitted.drain(..).collect();
@@ -640,6 +642,8 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
             println!("\n{verify_input}");
 
             std::io::stdin().read_line(&mut verify_line).unwrap();
+
+            verify_line = verify_line.trim().to_string();
 
             // until the answer is y/yes/cancel continue the loop
             if verify_line.to_lowercase().starts_with("y") {
