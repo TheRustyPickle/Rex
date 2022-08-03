@@ -1,7 +1,7 @@
 use rusqlite::{Connection, Result};
 
-/// If the local database is not found, this is executed to create the default
-/// database with a set of provided Transaction Methods.
+/// If the local database is not found, this is executed to create the initial database
+/// with the provided transaction methods.
 pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
     let months = vec![
         "January",
@@ -40,6 +40,7 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
         date TEXT,
         id_num INTEGER NOT NULL PRIMARY KEY,"
     );
+    // we don't know how many tx methods there are, so we have to loop through them
     for i in &tx_methods {
         query.push_str(&format!(r#""{i}" TEXT DEFAULT 0.00,"#))
     }
@@ -88,6 +89,7 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
         "INSERT INTO balance_all ({:?}) VALUES ({:?})",
         tx_methods, q_marks
     );
+    // We are using :? to keep the commas inside the string and remove the other unnecessary characters
     query = query.replace("[", "").replace("]", "");
 
     for _i in years {
