@@ -33,7 +33,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
     if let Ok(a) = version_status {
         new_version_available = a;
     }
-    
+
     // atty verifies whether a terminal is being used or not.
     if atty::is(Stream::Stdout) {
     } else {
@@ -45,32 +45,36 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
             let mut all_terminals = HashMap::new();
             let gnome_dir = format!("--working-directory={}", cu_directory);
 
-            all_terminals.insert("konsole", vec![
-                "--new-tab".to_string(),
-                "--workdir".to_string(),
-                cu_directory,
-                "-e".to_string(),
-                "./rex".to_string()
-            ]);
+            all_terminals.insert(
+                "konsole",
+                vec![
+                    "--new-tab".to_string(),
+                    "--workdir".to_string(),
+                    cu_directory,
+                    "-e".to_string(),
+                    "./rex".to_string(),
+                ],
+            );
 
-            all_terminals.insert("gnome-terminal", vec![
-                gnome_dir, 
-                "--".to_string(), 
-                "./rex".to_string()]);
+            all_terminals.insert(
+                "gnome-terminal",
+                vec![gnome_dir, "--".to_string(), "./rex".to_string()],
+            );
 
             // start with any one of them so we have an output that we can return later, couldn't create an
             // default output value thus this approach
-            let mut status = Command::new("konsole").args(&all_terminals["konsole"]).output();
+            let mut status = Command::new("konsole")
+                .args(&all_terminals["konsole"])
+                .output();
 
             // go through all the terminal commands added, until it's not an error
             // continue iterating or just return an error
             for (key, value) in all_terminals.iter() {
-                if let Err(_) = status  {
+                if let Err(_) = status {
                     if key != &"konsole" {
                         status = Command::new(key).args(value).output();
                     }
-                }
-                else {
+                } else {
                     break;
                 }
             }

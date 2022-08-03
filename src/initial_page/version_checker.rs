@@ -8,7 +8,7 @@ struct Version {
 /// Uses Github API to get the latest release version number to check if the current version matches with it.
 /// If not, we will start the new version pop up
 pub fn check_version() -> Result<bool, reqwest::Error> {
-    let cu_version = "v0.0".to_string();
+    let cu_version = "v0.1.0".to_string();
     static APP_USER_AGENT: &str = "Rex";
 
     let client = reqwest::blocking::Client::builder()
@@ -24,17 +24,5 @@ pub fn check_version() -> Result<bool, reqwest::Error> {
         return Ok(true);
     } else {
         return Ok(false);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::check_version;
-
-    #[test]
-    // fails as there is no release posted
-    fn version_checker_fails() {
-        let result = check_version().unwrap_err();
-        assert!(result.is_decode());
     }
 }
