@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 use std::io;
 
 // This file contains a number of functions that makes calls to the database
-// to fetch relevant data which is later users in various structs. I didn't
+// to fetch relevant data which is later used in various structs. I didn't
 // wanted to go around multiple files to find that one db call so just put them all together.
 // The file also contains non-db functions for generating data and for general utilization as well.
 // All the DB calls are created keeping in mind that the program does not know the amount of
@@ -15,10 +15,9 @@ use std::io;
 
 /// Makes a call to the database to find out all the columns in the balance_all section
 /// so we can determine the number of TX Methods that has been added.
-/// `["source_1", "source_2", "source_3"]`
+/// return example: `["source_1", "source_2", "source_3"]`
 pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
     // returns all transaction methods added to the database
-    // example bank, cash.
     let column_names = conn
         .prepare("SELECT * FROM balance_all")
         .expect("could not prepare statement");
@@ -34,7 +33,9 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
 }
 
 /// The function is used to create dates in the form of strings to use the WHERE statement
-/// based on the month and year that has been passed to it.
+/// based on the month and year that has been passed to it. Will return two dates to use in the
+/// WHERE statement. Will return the 1st and the 31st date of the given month and year.
+/// return example: `(2022-01-01, 2022-01-31)`
 fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     // returns dates from month and year to a format that is suitable for
     // database WHERE statement.
@@ -56,12 +57,9 @@ fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     (datetime_1, datetime_2)
 }
 
-/// A function that returns the balance that was saved in the database
-/// in the previous month from the current working month. This is necessary
-/// because the program tries to add or take away balance based on all the transactions
-/// that happened in the current month. So take the previous month balance and do the calculations.
-///
-/// Return Value : `{"source_1": 10.50, "source_2": 100.0}`
+/// Gathers all the balance of all sources from the previous month or from earlier months.
+/// If all the previous month's balances are 0, returns 0
+/// return example: `{"source_1": 10.50, "source_2": 100.0}`
 fn get_last_time_balance(
     conn: &Connection,
     month: usize,
@@ -87,6 +85,7 @@ fn get_last_time_balance(
     for _i in tx_method {
         breaking_vec.push(0.0)
     }
+    // we need to go till the first month or until the last balance of all tx methods are found
     loop {
         let mut query = format!("SELECT {:?} FROM balance_all WHERE id_num = ?", tx_method);
         query = query.replace("[", "");
