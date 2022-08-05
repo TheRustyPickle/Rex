@@ -3,11 +3,7 @@ A terminal based interface to keep track of income, expense and transactions, wr
 
 <img src="https://dl.dropboxusercontent.com/s/ecnixug3vus2bj7/Rex_1.png" alt="Rex_1" width="48%" > <img src="https://dl.dropboxusercontent.com/s/uzi0ft4aw5u68gf/Rex_2.png" alt="Rex_2" width="48%" >
 
-<h4>Requirements</h4>
-
-- Latest version of Rust
-
-<h4>How to run</h4>
+<h4>How to run Option 1</h4>
 
 - Clone the repository
 `
@@ -18,8 +14,19 @@ git clone https://github.com/WaffleMixer/Rex
 cargo run
 `
 
-<h4>Executables</h4>
+<h4>How to run Option 2</h4>
 
-To Be Released with version 0.10. Currently work in progress.
+- Download the latest executable from [Releases](https://github.com/WaffleMixer/Rex/releases).
+  - Open terminal/CMD and start the program by the command `./rex` or `rex` depending on the OS at the correct directory.
+  
+  or
+  
+  - Double click the executable which will try to open a terminal/CMD by itself. 
 
-Windows may not be supported due to various issues found while testing.
+<h4>Status</h4>
+
+Currently under development and more features are planned. The app works fully offline and is unlikely to change. The app is tested on Manjaro and Windows. Any bug reporting via issue is welcome.
+
+<h4>Logo</h4>
+
+There is no logo cause I'm not a designer. 
