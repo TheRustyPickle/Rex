@@ -93,6 +93,7 @@ fn check_last_balances_2() {
         "159.00",
         "Expense",
         &file_name,
+        None
     )
     .unwrap();
 
@@ -103,6 +104,7 @@ fn check_last_balances_2() {
         "159.19",
         "Income",
         &file_name,
+        None
     )
     .unwrap();
 
@@ -146,6 +148,7 @@ fn check_getting_all_changes_2() {
         "159.00",
         "Expense",
         &file_name,
+        None
     )
     .unwrap();
 
@@ -156,6 +159,7 @@ fn check_getting_all_changes_2() {
         "159.00",
         "Expense",
         &file_name,
+        None
     )
     .unwrap();
 
@@ -166,6 +170,7 @@ fn check_getting_all_changes_2() {
         "753.00",
         "Expense",
         &file_name,
+        None
     )
     .unwrap();
 
@@ -219,6 +224,7 @@ fn check_getting_all_tx_2() {
         "100.00",
         "Expense",
         &file_name,
+        None
     )
     .unwrap();
 
@@ -229,6 +235,7 @@ fn check_getting_all_tx_2() {
         "100.00",
         "Expense",
         &file_name,
+        None
     )
     .unwrap();
 
@@ -239,6 +246,7 @@ fn check_getting_all_tx_2() {
         "100.00",
         "Expense",
         &file_name,
+        None
     )
     .unwrap();
 
@@ -249,6 +257,7 @@ fn check_getting_all_tx_2() {
         "100.00",
         "Income",
         &file_name,
+        None
     )
     .unwrap();
 

@@ -172,6 +172,7 @@ impl AddTxData {
             &self.amount,
             &self.tx_type,
             "data.sqlite",
+            None
         );
 
         if self.editing_tx == true {
