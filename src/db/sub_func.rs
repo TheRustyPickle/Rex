@@ -300,14 +300,22 @@ pub fn add_new_tx(
     amount: &str,
     tx_type: &str,
     path: &str,
+    id_num: Option<&str>,
 ) -> sqlResult<()> {
     let mut conn = Connection::open(path)?;
     let sp = conn.savepoint()?;
 
-    sp.execute(
-        r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type) VALUES (?, ?, ?, ?, ?)"#,
-        [date, details, tx_method, amount, tx_type],
-    )?;
+    
+    
+    if let Some(id) = id_num {
+        let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type, id_num) VALUES (?, ?, ?, ?, ?, ?)"#;
+        sp.execute(&query, [date, details, tx_method, amount, tx_type, id])?;
+    }
+
+    else {
+        let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type) VALUES (?, ?, ?, ?, ?)"#;
+        sp.execute(&query, [date, details, tx_method, amount, tx_type])?;
+    }
 
     let split = date.split("-");
     let vec = split.collect::<Vec<&str>>();
@@ -712,6 +720,7 @@ mod tests {
             "100.00",
             "Income",
             &file_name,
+            None
         )
         .unwrap();
 
@@ -722,6 +731,7 @@ mod tests {
             "100.00",
             "Income",
             &file_name,
+            None
         )
         .unwrap();
 
@@ -732,6 +742,7 @@ mod tests {
             "100.00",
             "Income",
             &file_name,
+            None
         )
         .unwrap();
 
@@ -742,6 +753,7 @@ mod tests {
             "100.00",
             "Income",
             &file_name,
+            None
         )
         .unwrap();
 
@@ -752,6 +764,7 @@ mod tests {
             "100.00",
             "Income",
             &file_name,
+            None
         )
         .unwrap();
 
@@ -799,6 +812,7 @@ mod tests {
             "100.00",
             "Income",
             &file_name,
+            None
         )
         .unwrap();
 
