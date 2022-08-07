@@ -134,7 +134,7 @@ pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<
     let (datetime_1, datetime_2) = get_sql_dates(month + 1, year);
 
     let mut statement = conn
-        .prepare("SELECT * FROM changes_all Where date BETWEEN date(?) AND date(?) ORDER BY date")
+        .prepare("SELECT * FROM changes_all Where date BETWEEN date(?) AND date(?) ORDER BY date, id_num")
         .expect("could not prepare statement");
 
     let rows = statement
@@ -178,7 +178,7 @@ pub fn get_all_txs(
 
     let (datetime_1, datetime_2) = get_sql_dates(month + 1, year);
     let mut statement = conn
-        .prepare("SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY date")
+        .prepare("SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY date, id_num")
         .expect("could not prepare statement");
     let rows = statement
         .query_map([&datetime_1, &datetime_2], |row| {
@@ -330,7 +330,10 @@ pub fn add_new_tx(
 
     // This is necessary for the foreign key field in the changes_all table
     // and must align with the latest transaction id_num
-    let last_id = get_last_tx_id(&sp)?;
+    let mut last_id = get_last_tx_id(&sp)?;
+    if let Some(id) = id_num {
+        last_id = id.parse().unwrap();
+    }
     let last_balance_id = get_last_balance_id(&sp)?;
 
     // we have to get these following data to push to the database

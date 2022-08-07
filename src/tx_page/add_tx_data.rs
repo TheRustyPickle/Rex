@@ -165,16 +165,6 @@ impl AddTxData {
             return format!("Tx Type: Transaction Type cannot be empty");
         }
 
-        let status = add_new_tx(
-            &self.date,
-            &self.details,
-            &self.tx_method,
-            &self.amount,
-            &self.tx_type,
-            "data.sqlite",
-            None
-        );
-
         if self.editing_tx == true {
             self.editing_tx = false;
             let status = delete_tx(self.id_num as usize, "data.sqlite");
@@ -187,12 +177,39 @@ impl AddTxData {
                     )
                 }
             }
+
+            let status_add = add_new_tx(
+                &self.date,
+                &self.details,
+                &self.tx_method,
+                &self.amount,
+                &self.tx_type,
+                "data.sqlite",
+                Some(&self.id_num.to_string())
+            );
+
+            match status_add {
+                Ok(_) => return format!(""),
+                Err(e) => return format!("Edit Transaction: Something went wrong {}", e),
+            }
         }
 
-        match status {
-            Ok(_) => return format!(""),
-            Err(e) => return format!("Add Transaction: Something went wrong {}", e),
+        else {
+            let status = add_new_tx(
+                &self.date,
+                &self.details,
+                &self.tx_method,
+                &self.amount,
+                &self.tx_type,
+                "data.sqlite",
+                None
+            );
+            match status {
+                Ok(_) => return format!(""),
+                Err(e) => return format!("Add Transaction: Something went wrong {}", e),
+            }
         }
+        
     }
 
     /// Adds a status after a checking is complete. Used for the Status widget
