@@ -4,6 +4,7 @@ mod initial_page;
 mod interface;
 mod popup_page;
 pub mod tx_page;
+mod transfer_page;
 use atty::Stream;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
