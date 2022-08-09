@@ -84,7 +84,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
 
         match output {
             Ok(a) => {
-                if a.stderr == Vec::<u8>::new() {
+                if a.stderr.len() > 2 {
                     let full_text = format!(
                         "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{:?}",
                         a
