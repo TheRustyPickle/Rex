@@ -6,6 +6,7 @@ use crate::initial_page::starter_ui;
 use crate::popup_page::create_popup;
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
+use crate::transfer_page::transfer_ui_func;
 use crossterm::event::poll;
 use crossterm::event::{self, Event, KeyCode};
 use open;
@@ -215,6 +216,20 @@ Press Any Key to dismiss"
                 // based on the bool variable, start a new popup window
                 if update_popup_on == true {
                     create_popup(f, &popup_data_new_update);
+                }
+            })?,
+
+            // TODO change data here for transfer page
+            CurrentUi::Transfer => terminal.draw(|f| {
+                transfer_ui_func(
+                    f,
+                    data_for_tx.get_all_texts(),
+                    &cu_tx_page,
+                    &data_for_tx.tx_status,
+                );
+                // based on the bool variable, start a new popup window
+                if help_popup_on == true {
+                    create_popup(f, &popup_data_help)
                 }
             })?,
         };
@@ -459,19 +474,36 @@ Press Any Key to dismiss"
                                 TxTab::TxMethod => match key.code {
                                     KeyCode::Enter => {
                                         let status = data_for_tx.check_tx_method(&conn);
-                                        data_for_tx.add_tx_status(&status);
-                                        if status.contains("Accepted") || status.contains("Nothing")
-                                        {
-                                            cu_tx_page = TxTab::Amount
+
+                                        match status {
+                                            Ok(a) => {
+                                                data_for_tx.add_tx_status(&a);
+                                                if a.contains("Accepted") || a.contains("Nothing")
+                                                {
+                                                    cu_tx_page = TxTab::Amount
+                                                }
+                                            }
+                                            Err(_) => data_for_tx.add_tx_status(
+                                                "TX Method: Error acquired while checking."
+                                            )
                                         }
-                                    }
+                                    },
                                     KeyCode::Esc => {
                                         let status = data_for_tx.check_tx_method(&conn);
-                                        data_for_tx.add_tx_status(&status);
-                                        if status.contains("Accepted") {
-                                            cu_tx_page = TxTab::Nothing
+
+                                        match status {
+                                            Ok(a) => {
+                                                data_for_tx.add_tx_status(&a);
+                                                if a.contains("Accepted") || a.contains("Nothing")
+                                                {
+                                                    cu_tx_page = TxTab::Nothing
+                                                }
+                                            }
+                                            Err(_) => data_for_tx.add_tx_status(
+                                                "TX Method: Error acquired while checking."
+                                            )
                                         }
-                                    }
+                                    },
                                     KeyCode::Backspace => data_for_tx.edit_tx_method('a', true),
                                     KeyCode::Char(a) => data_for_tx.edit_tx_method(a, false),
                                     _ => {}
@@ -491,7 +523,7 @@ Press Any Key to dismiss"
                                             Err(_) => data_for_tx
                                                 .add_tx_status("Amount: Invalid Amount found"),
                                         }
-                                    }
+                                    },
                                     KeyCode::Esc => {
                                         let status = data_for_tx.check_amount();
                                         match status {
@@ -505,7 +537,7 @@ Press Any Key to dismiss"
                                             Err(_) => data_for_tx
                                                 .add_tx_status("Amount: Invalid Amount found"),
                                         }
-                                    }
+                                    },
                                     KeyCode::Backspace => data_for_tx.edit_amount('a', true),
                                     KeyCode::Char(a) => data_for_tx.edit_amount(a, false),
                                     _ => {}
@@ -514,13 +546,34 @@ Press Any Key to dismiss"
                                 TxTab::TxType => match key.code {
                                     KeyCode::Enter => {
                                         let status = data_for_tx.check_tx_type();
-                                        data_for_tx.add_tx_status(&status);
-                                        if status.contains("Accepted") || status.contains("Nothing")
-                                        {
-                                            cu_tx_page = TxTab::Nothing
+                                        match status {
+                                            Ok(a) => {
+                                                data_for_tx.add_tx_status(&a);
+                                                if a.contains("Accepted") || a.contains("Nothing")
+                                                {
+                                                    cu_tx_page = TxTab::Nothing
+                                                }
+                                            }
+                                            Err(_) => {
+                                                data_for_tx.add_tx_status("TX Type: Invalid Transaction Type Found")
+                                            }
                                         }
-                                    }
-                                    KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                                    },
+                                    KeyCode::Esc => {
+                                        let status = data_for_tx.check_tx_type();
+                                        match status {
+                                            Ok(a) => {
+                                                data_for_tx.add_tx_status(&a);
+                                                if a.contains("Accepted") || a.contains("Nothing")
+                                                {
+                                                    cu_tx_page = TxTab::Nothing
+                                                }
+                                            }
+                                            Err(_) => {
+                                                data_for_tx.add_tx_status("TX Type: Invalid Transaction Type Found")
+                                            }
+                                        }
+                                    },
                                     KeyCode::Backspace => data_for_tx.edit_tx_type('a', true),
                                     KeyCode::Char(a) => data_for_tx.edit_tx_type(a, false),
                                     _ => {}
@@ -550,7 +603,9 @@ Press Any Key to dismiss"
                                 _ => cu_page = CurrentUi::Home,
                             }
                         }
-                    }
+                    },
+                    // TODO change data here for transfer
+                    CurrentUi::Transfer => {},
                 }
             };
         } else {
