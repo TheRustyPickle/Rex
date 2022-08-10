@@ -140,4 +140,5 @@ pub enum CurrentUi {
     Initial,
     Home,
     AddTx,
+    Transfer
 }
