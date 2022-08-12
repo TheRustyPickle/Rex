@@ -142,3 +142,11 @@ pub enum CurrentUi {
     AddTx,
     Transfer
 }
+
+pub enum PopupState {
+    NewUpdate,
+    Helper,
+    DeleteFailed,
+    Nothing,
+
+}

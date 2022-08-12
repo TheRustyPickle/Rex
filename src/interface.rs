@@ -1,12 +1,13 @@
 use crate::db::{get_all_tx_methods, get_empty_changes};
 use crate::home_page::ui;
 use crate::home_page::TransactionData;
-use crate::home_page::{CurrentUi, SelectedTab, TableData, TimeData, TxTab};
+use crate::home_page::{CurrentUi, SelectedTab, TableData, TimeData, TxTab, PopupState};
 use crate::initial_page::starter_ui;
 use crate::popup_page::create_popup;
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
 use crate::transfer_page::transfer_ui_func;
+use crate::key_checker::{home_checker, initial_checker, add_tx_checker};
 use crossterm::event::poll;
 use crossterm::event::{self, Event, KeyCode};
 use open;
@@ -64,15 +65,13 @@ pub fn run_app<B: Backend>(
     let mut all_data = TransactionData::new(&conn, 0, 0);
     let mut table = TableData::new(all_data.get_txs());
     let mut cu_page = CurrentUi::Initial;
+    let mut cu_popup = PopupState::Nothing;
     let mut cu_tx_page = TxTab::Nothing;
     let mut data_for_tx = AddTxData::new();
     let mut starter_index = 0;
     // The next three variable will determine whether a certain pop is turned on or off.
     // Based on this, the popup is created/passed
-    let mut update_popup_on = false;
-    let mut help_popup_on = false;
     // This one wil likely remain unused until one is messing with the database
-    let mut delete_popup_on = false;
 
     // The next three vectors will store the lines that will be displayed on popup
     // The Vec contains popup title, text, x axis and y axis size.
@@ -171,7 +170,7 @@ Press Any Key to dismiss"
         // check the version of current TUI and based on that, turn on the popup
         if version_checked == false {
             if new_version_available == true {
-                update_popup_on = true;
+                cu_popup = PopupState::NewUpdate
             }
             version_checked = true;
         }
@@ -188,11 +187,11 @@ Press Any Key to dismiss"
                     &selected_tab,
                     &mut width_data,
                 );
-                // based on the bool variable, start a new popup window
-                if help_popup_on == true {
-                    create_popup(f, &popup_data_help)
-                } else if delete_popup_on == true {
-                    create_popup(f, &popup_data_delete_failed)
+
+                match cu_popup {
+                    PopupState::Helper => create_popup(f, &popup_data_help),
+                    PopupState::DeleteFailed => create_popup(f, &popup_data_delete_failed),
+                    _ => {}
                 }
             })?,
             CurrentUi::AddTx => terminal.draw(|f| {
@@ -202,9 +201,10 @@ Press Any Key to dismiss"
                     &cu_tx_page,
                     &data_for_tx.tx_status,
                 );
-                // based on the bool variable, start a new popup window
-                if help_popup_on == true {
-                    create_popup(f, &popup_data_help)
+
+                match cu_popup {
+                    PopupState::Helper => create_popup(f, &popup_data_help),
+                    _ => {}
                 }
             })?,
             CurrentUi::Initial => terminal.draw(|f| {
@@ -213,9 +213,10 @@ Press Any Key to dismiss"
                 if starter_index > 28 {
                     starter_index = 0;
                 }
-                // based on the bool variable, start a new popup window
-                if update_popup_on == true {
-                    create_popup(f, &popup_data_new_update);
+
+                match cu_popup {
+                    PopupState::NewUpdate => create_popup(f, &popup_data_new_update),
+                    _ => {}
                 }
             })?,
 
@@ -227,9 +228,10 @@ Press Any Key to dismiss"
                     &cu_tx_page,
                     &data_for_tx.tx_status,
                 );
-                // based on the bool variable, start a new popup window
-                if help_popup_on == true {
-                    create_popup(f, &popup_data_help)
+
+                match cu_popup {
+                    PopupState::Helper => create_popup(f, &popup_data_help),
+                    _ => {}
                 }
             })?,
         };
@@ -241,367 +243,367 @@ Press Any Key to dismiss"
             if let Event::Key(key) = event::read()? {
                 match cu_page {
                     CurrentUi::Home => {
-                        // we don't want to move the main UI while the popup is on
-                        // so we verify that nothing is on and then check with the key presses.
-                        if help_popup_on == true {
-                            match key.code {
-                                _ => help_popup_on = false,
-                            }
-                        } else if delete_popup_on == true {
-                            match key.code {
-                                _ => delete_popup_on = false,
-                            }
-                        } else {
-                            match key.code {
-                                KeyCode::Char('q') => return Ok("".to_string()),
-                                KeyCode::Char('a') => cu_page = CurrentUi::AddTx,
-                                KeyCode::Char('j') => return Ok("Change".to_string()),
-                                KeyCode::Char('h') => help_popup_on = true,
-                                KeyCode::Char('e') => {
-                                    if let Some(a) = cu_table_index {
-                                        let target_data = &all_data.get_txs()[a];
-                                        let target_id_num = all_data.get_id_num(a);
-                                        data_for_tx = AddTxData::custom(
-                                            &target_data[0],
-                                            &target_data[1],
-                                            &target_data[2],
-                                            &target_data[3],
-                                            &target_data[4],
-                                            target_id_num,
-                                        );
-                                        cu_page = CurrentUi::AddTx;
+                        match cu_popup {
+                            PopupState::Nothing => {
+                                match key.code {
+                                    KeyCode::Char('q') => return Ok("".to_string()),
+                                    KeyCode::Char('a') => cu_page = CurrentUi::AddTx,
+                                    KeyCode::Char('j') => return Ok("Change".to_string()),
+                                    KeyCode::Char('h') => cu_popup = PopupState::Helper,
+                                    KeyCode::Char('e') => {
+                                        if let Some(a) = cu_table_index {
+                                            let target_data = &all_data.get_txs()[a];
+                                            let target_id_num = all_data.get_id_num(a);
+                                            data_for_tx = AddTxData::custom(
+                                                &target_data[0],
+                                                &target_data[1],
+                                                &target_data[2],
+                                                &target_data[3],
+                                                &target_data[4],
+                                                target_id_num,
+                                            );
+                                            cu_page = CurrentUi::AddTx;
+                                        }
                                     }
+                                    KeyCode::Char('d') => {
+                                        if table.state.selected() != None {
+                                            let status =
+                                                all_data.del_tx(table.state.selected().unwrap());
+                                            match status {
+                                                Ok(_) => {
+                                                    // transaction deleted so reload the data again
+                                                    all_data = TransactionData::new(
+                                                        &conn,
+                                                        cu_month_index,
+                                                        cu_year_index,
+                                                    );
+                                                    table = TableData::new(all_data.get_txs());
+                                                    table.state.select(None);
+                                                    selected_tab = SelectedTab::Months;
+                                                }
+                                                Err(e) => {
+                                                    popup_data_delete_failed = vec![];
+                                                    popup_data_delete_failed
+                                                        .push("Delete Error".to_string());
+                                                    popup_data_delete_failed.push(format!(
+                                                        "Error while deleting transaction \
+                                                    \nError: {e:?}\n\nPress Any Key to dismiss"
+                                                    ));
+                                                    popup_data_delete_failed.push("50".to_string());
+                                                    popup_data_delete_failed.push("30".to_string());
+                                                    cu_popup = PopupState::DeleteFailed;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    KeyCode::Right => match &selected_tab {
+                                        SelectedTab::Months => months.next(),
+                                        SelectedTab::Years => {
+                                            years.next();
+                                            months.index = 0;
+                                        }
+                                        _ => {}
+                                    },
+                                    KeyCode::Left => match &selected_tab {
+                                        SelectedTab::Months => months.previous(),
+                                        SelectedTab::Years => {
+                                            years.previous();
+                                            months.index = 0;
+                                        }
+                                        _ => {}
+                                    },
+                                    KeyCode::Up => {
+                                        match &selected_tab {
+                                            SelectedTab::Table => {
+                                                // Do not select any table rows in the table section If
+                                                // there is no transaction
+                                                if all_data.all_tx.len() < 1 {
+                                                    selected_tab = selected_tab.change_tab_up();
+                                                }
+                                                // executes when going from first table row to month widget
+                                                else if table.state.selected() == Some(0) {
+                                                    selected_tab = SelectedTab::Months;
+                                                    table.state.select(None);
+                                                } else {
+                                                    if all_data.all_tx.len() > 0 {
+                                                        table.previous();
+                                                    }
+                                                }
+                                            }
+                                            SelectedTab::Years => {
+                                                // Do not select any table rows in the table section If
+                                                // there is no transaction
+                                                if all_data.all_tx.len() < 1 {
+                                                    selected_tab = selected_tab.change_tab_up();
+                                                } else {
+                                                    // Move to the selected value on table/Transaction widget
+                                                    // to the last row if pressed up on Year section
+                                                    table.state.select(Some(table.items.len() - 1));
+                                                    selected_tab = selected_tab.change_tab_up();
+                                                    if all_data.all_tx.len() < 1 {
+                                                        selected_tab = selected_tab.change_tab_up();
+                                                    }
+                                                }
+                                            }
+                                            _ => selected_tab = selected_tab.change_tab_up(),
+                                        }
+                                    }
+                                    KeyCode::Down => {
+                                        match &selected_tab {
+                                            SelectedTab::Table => {
+                                                // Do not proceed to the table section If
+                                                // there is no transaction
+                                                if all_data.all_tx.len() < 1 {
+                                                    selected_tab = selected_tab.change_tab_down();
+                                                }
+                                                // executes when pressed on last row of the table
+                                                // moves to the year widget
+                                                else if table.state.selected()
+                                                    == Some(table.items.len() - 1)
+                                                {
+                                                    selected_tab = SelectedTab::Years;
+                                                    table.state.select(None);
+                                                } else {
+                                                    if all_data.all_tx.len() > 0 {
+                                                        table.next();
+                                                    }
+                                                }
+                                            }
+                                            _ => selected_tab = selected_tab.change_tab_down(),
+                                        }
+                                    }
+                                    _ => {}
                                 }
-                                KeyCode::Char('d') => {
-                                    if table.state.selected() != None {
-                                        let status =
-                                            all_data.del_tx(table.state.selected().unwrap());
-                                        match status {
-                                            Ok(_) => {
-                                                // transaction deleted so reload the data again
+                            }
+                            _ => {
+                                match key.code {
+                                    _ => cu_popup = PopupState::Nothing
+                                }
+                            }
+                        }
+                    }
+                    CurrentUi::AddTx => {
+                        match cu_popup {
+                            PopupState::Nothing => {
+                                match cu_tx_page {
+                                    // start matching key pressed based on which widget is selected.
+                                    // current state tracked with enums
+                                    TxTab::Nothing => match key.code {
+                                        KeyCode::Char('q') => return Ok("".to_string()),
+                                        KeyCode::Char('f') => {
+                                            cu_page = CurrentUi::Home;
+                                            cu_tx_page = TxTab::Nothing;
+                                            data_for_tx = AddTxData::new();
+                                        }
+                                        KeyCode::Char('h') => cu_popup = PopupState::Helper,
+                                        KeyCode::Char('s') => {
+                                            let status = data_for_tx.add_tx();
+                                            if status == "".to_string() {
+                                                // reload home page and switch UI
+                                                selected_tab = SelectedTab::Months;
+                                                data_for_tx = AddTxData::new();
                                                 all_data = TransactionData::new(
                                                     &conn,
                                                     cu_month_index,
                                                     cu_year_index,
                                                 );
                                                 table = TableData::new(all_data.get_txs());
-                                                table.state.select(None);
-                                                selected_tab = SelectedTab::Months;
-                                            }
-                                            Err(e) => {
-                                                popup_data_delete_failed = vec![];
-                                                popup_data_delete_failed
-                                                    .push("Delete Error".to_string());
-                                                popup_data_delete_failed.push(format!(
-                                                    "Error while deleting transaction \
-                                                \nError: {e:?}\n\nPress Any Key to dismiss"
-                                                ));
-                                                popup_data_delete_failed.push("50".to_string());
-                                                popup_data_delete_failed.push("30".to_string());
-                                                delete_popup_on = true;
+                                                cu_page = CurrentUi::Home;
+                                            } else {
+                                                data_for_tx.add_tx_status(&status);
                                             }
                                         }
-                                    }
-                                }
-                                KeyCode::Right => match &selected_tab {
-                                    SelectedTab::Months => months.next(),
-                                    SelectedTab::Years => {
-                                        years.next();
-                                        months.index = 0;
-                                    }
-                                    _ => {}
-                                },
-                                KeyCode::Left => match &selected_tab {
-                                    SelectedTab::Months => months.previous(),
-                                    SelectedTab::Years => {
-                                        years.previous();
-                                        months.index = 0;
-                                    }
-                                    _ => {}
-                                },
-                                KeyCode::Up => {
-                                    match &selected_tab {
-                                        SelectedTab::Table => {
-                                            // Do not select any table rows in the table section If
-                                            // there is no transaction
-                                            if all_data.all_tx.len() < 1 {
-                                                selected_tab = selected_tab.change_tab_up();
+                                        KeyCode::Char('1') => cu_tx_page = TxTab::Date,
+                                        KeyCode::Char('2') => cu_tx_page = TxTab::Details,
+                                        KeyCode::Char('3') => cu_tx_page = TxTab::TxMethod,
+                                        KeyCode::Char('4') => cu_tx_page = TxTab::Amount,
+                                        KeyCode::Char('5') => cu_tx_page = TxTab::TxType,
+                                        KeyCode::Enter => cu_tx_page = TxTab::Nothing,
+                                        KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                                        _ => {}
+                                    },
+
+                                    TxTab::Date => match key.code {
+                                        KeyCode::Enter => {
+                                            let status = data_for_tx.check_date();
+                                            match status {
+                                                Ok(a) => {
+                                                    data_for_tx.add_tx_status(&a);
+                                                    if a.contains("Accepted") || a.contains("Nothing") {
+                                                        cu_tx_page = TxTab::Details
+                                                    }
+                                                }
+                                                Err(_) => data_for_tx.add_tx_status(
+                                                    "Date: Error acquired or Date not acceptable.",
+                                                ),
                                             }
-                                            // executes when going from first table row to month widget
-                                            else if table.state.selected() == Some(0) {
-                                                selected_tab = SelectedTab::Months;
-                                                table.state.select(None);
-                                            } else {
-                                                if all_data.all_tx.len() > 0 {
-                                                    table.previous();
+                                        }
+                                        KeyCode::Esc => {
+                                            let status = data_for_tx.check_date();
+                                            match status {
+                                                Ok(a) => {
+                                                    data_for_tx.add_tx_status(&a);
+                                                    if a.contains("Accepted") || a.contains("Nothing") {
+                                                        cu_tx_page = TxTab::Nothing
+                                                    }
+                                                }
+                                                Err(_) => data_for_tx.add_tx_status(
+                                                    "Date: Error acquired or Date not acceptable.",
+                                                ),
+                                            }
+                                        }
+                                        KeyCode::Backspace => data_for_tx.edit_date('a', true),
+                                        KeyCode::Char(a) => data_for_tx.edit_date(a, false),
+                                        _ => {}
+                                    },
+
+                                    TxTab::Details => match key.code {
+                                        KeyCode::Enter => cu_tx_page = TxTab::TxMethod,
+                                        KeyCode::Esc => cu_tx_page = TxTab::Nothing,
+                                        KeyCode::Backspace => data_for_tx.edit_details('a', true),
+                                        KeyCode::Char(a) => data_for_tx.edit_details(a, false),
+                                        _ => {}
+                                    },
+
+                                    TxTab::TxMethod => match key.code {
+                                        KeyCode::Enter => {
+                                            let status = data_for_tx.check_tx_method(&conn);
+
+                                            match status {
+                                                Ok(a) => {
+                                                    data_for_tx.add_tx_status(&a);
+                                                    if a.contains("Accepted") || a.contains("Nothing")
+                                                    {
+                                                        cu_tx_page = TxTab::Amount
+                                                    }
+                                                }
+                                                Err(_) => data_for_tx.add_tx_status(
+                                                    "TX Method: Error acquired while checking."
+                                                )
+                                            }
+                                        },
+                                        KeyCode::Esc => {
+                                            let status = data_for_tx.check_tx_method(&conn);
+
+                                            match status {
+                                                Ok(a) => {
+                                                    data_for_tx.add_tx_status(&a);
+                                                    if a.contains("Accepted") || a.contains("Nothing")
+                                                    {
+                                                        cu_tx_page = TxTab::Nothing
+                                                    }
+                                                }
+                                                Err(_) => data_for_tx.add_tx_status(
+                                                    "TX Method: Error acquired while checking."
+                                                )
+                                            }
+                                        },
+                                        KeyCode::Backspace => data_for_tx.edit_tx_method('a', true),
+                                        KeyCode::Char(a) => data_for_tx.edit_tx_method(a, false),
+                                        _ => {}
+                                    },
+
+                                    TxTab::Amount => match key.code {
+                                        KeyCode::Enter => {
+                                            let status = data_for_tx.check_amount();
+                                            match status {
+                                                Ok(a) => {
+                                                    data_for_tx.add_tx_status(&a);
+                                                    if a.contains("zero") {
+                                                    } else {
+                                                        cu_tx_page = TxTab::TxType;
+                                                    }
+                                                }
+                                                Err(_) => data_for_tx
+                                                    .add_tx_status("Amount: Invalid Amount found"),
+                                            }
+                                        },
+                                        KeyCode::Esc => {
+                                            let status = data_for_tx.check_amount();
+                                            match status {
+                                                Ok(a) => {
+                                                    data_for_tx.add_tx_status(&a);
+                                                    if a.contains("zero") {
+                                                    } else {
+                                                        cu_tx_page = TxTab::Nothing;
+                                                    }
+                                                }
+                                                Err(_) => data_for_tx
+                                                    .add_tx_status("Amount: Invalid Amount found"),
+                                            }
+                                        },
+                                        KeyCode::Backspace => data_for_tx.edit_amount('a', true),
+                                        KeyCode::Char(a) => data_for_tx.edit_amount(a, false),
+                                        _ => {}
+                                    },
+
+                                    TxTab::TxType => match key.code {
+                                        KeyCode::Enter => {
+                                            let status = data_for_tx.check_tx_type();
+                                            match status {
+                                                Ok(a) => {
+                                                    data_for_tx.add_tx_status(&a);
+                                                    if a.contains("Accepted") || a.contains("Nothing")
+                                                    {
+                                                        cu_tx_page = TxTab::Nothing
+                                                    }
+                                                }
+                                                Err(_) => {
+                                                    data_for_tx.add_tx_status("TX Type: Invalid Transaction Type Found")
                                                 }
                                             }
-                                        }
-                                        SelectedTab::Years => {
-                                            // Do not select any table rows in the table section If
-                                            // there is no transaction
-                                            if all_data.all_tx.len() < 1 {
-                                                selected_tab = selected_tab.change_tab_up();
-                                            } else {
-                                                // Move to the selected value on table/Transaction widget
-                                                // to the last row if pressed up on Year section
-                                                table.state.select(Some(table.items.len() - 1));
-                                                selected_tab = selected_tab.change_tab_up();
-                                                if all_data.all_tx.len() < 1 {
-                                                    selected_tab = selected_tab.change_tab_up();
+                                        },
+                                        KeyCode::Esc => {
+                                            let status = data_for_tx.check_tx_type();
+                                            match status {
+                                                Ok(a) => {
+                                                    data_for_tx.add_tx_status(&a);
+                                                    if a.contains("Accepted") || a.contains("Nothing")
+                                                    {
+                                                        cu_tx_page = TxTab::Nothing
+                                                    }
+                                                }
+                                                Err(_) => {
+                                                    data_for_tx.add_tx_status("TX Type: Invalid Transaction Type Found")
                                                 }
                                             }
-                                        }
-                                        _ => selected_tab = selected_tab.change_tab_up(),
-                                    }
+                                        },
+                                        KeyCode::Backspace => data_for_tx.edit_tx_type('a', true),
+                                        KeyCode::Char(a) => data_for_tx.edit_tx_type(a, false),
+                                        _ => {}
+                                    },
                                 }
-                                KeyCode::Down => {
-                                    match &selected_tab {
-                                        SelectedTab::Table => {
-                                            // Do not proceed to the table section If
-                                            // there is no transaction
-                                            if all_data.all_tx.len() < 1 {
-                                                selected_tab = selected_tab.change_tab_down();
-                                            }
-                                            // executes when pressed on last row of the table
-                                            // moves to the year widget
-                                            else if table.state.selected()
-                                                == Some(table.items.len() - 1)
-                                            {
-                                                selected_tab = SelectedTab::Years;
-                                                table.state.select(None);
-                                            } else {
-                                                if all_data.all_tx.len() > 0 {
-                                                    table.next();
-                                                }
-                                            }
-                                        }
-                                        _ => selected_tab = selected_tab.change_tab_down(),
-                                    }
-                                }
-                                _ => {}
                             }
-                        }
-                    }
-                    CurrentUi::AddTx => {
-                        // Check if any popup is turned on and if yes, match key for the popup,
-                        // otherwise match key for the main interface
-                        if help_popup_on == true {
-                            match key.code {
-                                _ => help_popup_on = false,
-                            }
-                        } else {
-                            match cu_tx_page {
-                                // start matching key pressed based on which widget is selected.
-                                // current state tracked with enums
-                                TxTab::Nothing => match key.code {
-                                    KeyCode::Char('q') => return Ok("".to_string()),
-                                    KeyCode::Char('f') => {
-                                        cu_page = CurrentUi::Home;
-                                        cu_tx_page = TxTab::Nothing;
-                                        data_for_tx = AddTxData::new();
-                                    }
-                                    KeyCode::Char('h') => help_popup_on = true,
-                                    KeyCode::Char('s') => {
-                                        let status = data_for_tx.add_tx();
-                                        if status == "".to_string() {
-                                            // reload home page and switch UI
-                                            selected_tab = SelectedTab::Months;
-                                            data_for_tx = AddTxData::new();
-                                            all_data = TransactionData::new(
-                                                &conn,
-                                                cu_month_index,
-                                                cu_year_index,
-                                            );
-                                            table = TableData::new(all_data.get_txs());
-                                            cu_page = CurrentUi::Home;
-                                        } else {
-                                            data_for_tx.add_tx_status(&status);
-                                        }
-                                    }
-                                    KeyCode::Char('1') => cu_tx_page = TxTab::Date,
-                                    KeyCode::Char('2') => cu_tx_page = TxTab::Details,
-                                    KeyCode::Char('3') => cu_tx_page = TxTab::TxMethod,
-                                    KeyCode::Char('4') => cu_tx_page = TxTab::Amount,
-                                    KeyCode::Char('5') => cu_tx_page = TxTab::TxType,
-                                    KeyCode::Enter => cu_tx_page = TxTab::Nothing,
-                                    KeyCode::Esc => cu_tx_page = TxTab::Nothing,
-                                    _ => {}
-                                },
-
-                                TxTab::Date => match key.code {
-                                    KeyCode::Enter => {
-                                        let status = data_for_tx.check_date();
-                                        match status {
-                                            Ok(a) => {
-                                                data_for_tx.add_tx_status(&a);
-                                                if a.contains("Accepted") || a.contains("Nothing") {
-                                                    cu_tx_page = TxTab::Details
-                                                }
-                                            }
-                                            Err(_) => data_for_tx.add_tx_status(
-                                                "Date: Error acquired or Date not acceptable.",
-                                            ),
-                                        }
-                                    }
-                                    KeyCode::Esc => {
-                                        let status = data_for_tx.check_date();
-                                        match status {
-                                            Ok(a) => {
-                                                data_for_tx.add_tx_status(&a);
-                                                if a.contains("Accepted") || a.contains("Nothing") {
-                                                    cu_tx_page = TxTab::Nothing
-                                                }
-                                            }
-                                            Err(_) => data_for_tx.add_tx_status(
-                                                "Date: Error acquired or Date not acceptable.",
-                                            ),
-                                        }
-                                    }
-                                    KeyCode::Backspace => data_for_tx.edit_date('a', true),
-                                    KeyCode::Char(a) => data_for_tx.edit_date(a, false),
-                                    _ => {}
-                                },
-
-                                TxTab::Details => match key.code {
-                                    KeyCode::Enter => cu_tx_page = TxTab::TxMethod,
-                                    KeyCode::Esc => cu_tx_page = TxTab::Nothing,
-                                    KeyCode::Backspace => data_for_tx.edit_details('a', true),
-                                    KeyCode::Char(a) => data_for_tx.edit_details(a, false),
-                                    _ => {}
-                                },
-
-                                TxTab::TxMethod => match key.code {
-                                    KeyCode::Enter => {
-                                        let status = data_for_tx.check_tx_method(&conn);
-
-                                        match status {
-                                            Ok(a) => {
-                                                data_for_tx.add_tx_status(&a);
-                                                if a.contains("Accepted") || a.contains("Nothing")
-                                                {
-                                                    cu_tx_page = TxTab::Amount
-                                                }
-                                            }
-                                            Err(_) => data_for_tx.add_tx_status(
-                                                "TX Method: Error acquired while checking."
-                                            )
-                                        }
-                                    },
-                                    KeyCode::Esc => {
-                                        let status = data_for_tx.check_tx_method(&conn);
-
-                                        match status {
-                                            Ok(a) => {
-                                                data_for_tx.add_tx_status(&a);
-                                                if a.contains("Accepted") || a.contains("Nothing")
-                                                {
-                                                    cu_tx_page = TxTab::Nothing
-                                                }
-                                            }
-                                            Err(_) => data_for_tx.add_tx_status(
-                                                "TX Method: Error acquired while checking."
-                                            )
-                                        }
-                                    },
-                                    KeyCode::Backspace => data_for_tx.edit_tx_method('a', true),
-                                    KeyCode::Char(a) => data_for_tx.edit_tx_method(a, false),
-                                    _ => {}
-                                },
-
-                                TxTab::Amount => match key.code {
-                                    KeyCode::Enter => {
-                                        let status = data_for_tx.check_amount();
-                                        match status {
-                                            Ok(a) => {
-                                                data_for_tx.add_tx_status(&a);
-                                                if a.contains("zero") {
-                                                } else {
-                                                    cu_tx_page = TxTab::TxType;
-                                                }
-                                            }
-                                            Err(_) => data_for_tx
-                                                .add_tx_status("Amount: Invalid Amount found"),
-                                        }
-                                    },
-                                    KeyCode::Esc => {
-                                        let status = data_for_tx.check_amount();
-                                        match status {
-                                            Ok(a) => {
-                                                data_for_tx.add_tx_status(&a);
-                                                if a.contains("zero") {
-                                                } else {
-                                                    cu_tx_page = TxTab::Nothing;
-                                                }
-                                            }
-                                            Err(_) => data_for_tx
-                                                .add_tx_status("Amount: Invalid Amount found"),
-                                        }
-                                    },
-                                    KeyCode::Backspace => data_for_tx.edit_amount('a', true),
-                                    KeyCode::Char(a) => data_for_tx.edit_amount(a, false),
-                                    _ => {}
-                                },
-
-                                TxTab::TxType => match key.code {
-                                    KeyCode::Enter => {
-                                        let status = data_for_tx.check_tx_type();
-                                        match status {
-                                            Ok(a) => {
-                                                data_for_tx.add_tx_status(&a);
-                                                if a.contains("Accepted") || a.contains("Nothing")
-                                                {
-                                                    cu_tx_page = TxTab::Nothing
-                                                }
-                                            }
-                                            Err(_) => {
-                                                data_for_tx.add_tx_status("TX Type: Invalid Transaction Type Found")
-                                            }
-                                        }
-                                    },
-                                    KeyCode::Esc => {
-                                        let status = data_for_tx.check_tx_type();
-                                        match status {
-                                            Ok(a) => {
-                                                data_for_tx.add_tx_status(&a);
-                                                if a.contains("Accepted") || a.contains("Nothing")
-                                                {
-                                                    cu_tx_page = TxTab::Nothing
-                                                }
-                                            }
-                                            Err(_) => {
-                                                data_for_tx.add_tx_status("TX Type: Invalid Transaction Type Found")
-                                            }
-                                        }
-                                    },
-                                    KeyCode::Backspace => data_for_tx.edit_tx_type('a', true),
-                                    KeyCode::Char(a) => data_for_tx.edit_tx_type(a, false),
-                                    _ => {}
-                                },
+                            _ => {
+                                match key.code {
+                                    _ => cu_popup = PopupState::Nothing
+                                }
                             }
                         }
                     }
                     CurrentUi::Initial => {
-                        // Check if any popup is turned on and if yes, match key for the popup,
-                        // otherwise match key for the main interface
-                        if update_popup_on == true {
-                            match key.code {
-                                KeyCode::Enter => {
-                                    match open::that(
-                                        "https://github.com/WaffleMixer/Rex/releases/latest",
-                                    ) {
-                                        Ok(_) => update_popup_on = false,
-                                        // if it fails for any reason, break interface and print the link
-                                        Err(_) => return Ok("Link".to_string()),
-                                    }
+                        match cu_popup {
+                            PopupState::Nothing => { 
+                                match key.code {
+                                    KeyCode::Char('q') => return Ok("".to_string()),
+                                    _ => cu_page = CurrentUi::Home,
                                 }
-                                _ => update_popup_on = false,
                             }
-                        } else {
-                            match key.code {
-                                KeyCode::Char('q') => return Ok("".to_string()),
-                                _ => cu_page = CurrentUi::Home,
+                            PopupState::NewUpdate => {
+                                match key.code {
+                                    KeyCode::Enter => {
+                                        match open::that(
+                                            "https://github.com/WaffleMixer/Rex/releases/latest",
+                                        ) {
+                                            Ok(_) => cu_popup = PopupState::Nothing,
+                                            // if it fails for any reason, break interface and print the link
+                                            Err(_) => return Ok("Link".to_string()),
+                                        }
+                                    }
+                                    _ => cu_popup = PopupState::Nothing
+                                }
                             }
+                            _ => cu_popup = PopupState::Nothing
                         }
                     },
                     // TODO change data here for transfer
