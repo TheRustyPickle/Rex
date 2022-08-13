@@ -4,12 +4,12 @@ use crate::home_page::TransactionData;
 use crate::home_page::{CurrentUi, PopupState, SelectedTab, TableData, TimeData, TxTab};
 use crate::initial_page::starter_ui;
 use crate::key_checker::{add_tx_checker, home_checker, initial_checker};
-use crate::popup_page::create_popup;
+use crate::popup_page::add_popup;
 use crate::transfer_page::transfer_ui_func;
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
 use crossterm::event::poll;
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, Event};
 use rusqlite::Connection;
 use std::{error::Error, time::Duration};
 use tui::layout::Constraint;
@@ -74,42 +74,6 @@ pub fn run_app<B: Backend>(
 
     // The next three vectors will store the lines that will be displayed on popup
     // The Vec contains popup title, text, x axis and y axis size.
-    let mut popup_data_delete_failed = vec![];
-
-    let mut popup_data_new_update = vec![];
-    popup_data_new_update.push("New Update".to_string());
-    popup_data_new_update.push(
-        "There is a new version available\n
-'Enter' : Redirect to the new version\n\nPress Any Key to dismiss"
-            .to_string(),
-    );
-    popup_data_new_update.push("50".to_string());
-    popup_data_new_update.push("30".to_string());
-
-    let mut popup_data_help = vec![];
-    popup_data_help.push("Help".to_string());
-    popup_data_help.push(
-        "'Arrow Key' : Navigate
-'A' : Add Transaction Page
-'F' : Home Page
-'D' : Delete selected Transaction (Home Page)
-'J' : Add new Transaction Methods (Home Page)
-'E' : Edit Selected Transaction (Home Page)
-'H' : Open Hotkey Help
-'Q' : Quit
-
-Add Transaction Page:
-'1' : Edit Date          '4' : Edit Amount
-'2' : Edit TX details    '3' : Edit TX Method
-'5' : Edit TX Type
-'S' : Save the data as a Transaction
-'Enter' : Submit field and continue
-'Esc' : Stop editing filed\n
-Press Any Key to dismiss"
-            .to_string(),
-    );
-    popup_data_help.push("50".to_string());
-    popup_data_help.push("65".to_string());
 
     // The loop begins at this point and before the loop starts, multiple variables are initiated
     // with the default values which will quickly be changing once the loop starts.
@@ -188,8 +152,8 @@ Press Any Key to dismiss"
                 );
 
                 match cu_popup {
-                    PopupState::Helper => create_popup(f, &popup_data_help),
-                    PopupState::DeleteFailed => create_popup(f, &popup_data_delete_failed),
+                    PopupState::Helper => add_popup(f, 1),
+                    PopupState::DeleteFailed => add_popup(f, 2),
                     _ => {}
                 }
             })?,
@@ -202,7 +166,7 @@ Press Any Key to dismiss"
                 );
 
                 match cu_popup {
-                    PopupState::Helper => create_popup(f, &popup_data_help),
+                    PopupState::Helper => add_popup(f, 1),
                     _ => {}
                 }
             })?,
@@ -214,7 +178,7 @@ Press Any Key to dismiss"
                 }
 
                 match cu_popup {
-                    PopupState::NewUpdate => create_popup(f, &popup_data_new_update),
+                    PopupState::NewUpdate => add_popup(f, 0),
                     _ => {}
                 }
             })?,
@@ -229,7 +193,7 @@ Press Any Key to dismiss"
                 );
 
                 match cu_popup {
-                    PopupState::Helper => create_popup(f, &popup_data_help),
+                    PopupState::Helper => add_popup(f, 1),
                     _ => {}
                 }
             })?,
@@ -242,141 +206,23 @@ Press Any Key to dismiss"
             if let Event::Key(key) = event::read()? {
                 match cu_page {
                     CurrentUi::Home => {
-                        match cu_popup {
-                            PopupState::Nothing => {
-                                match key.code {
-                                    KeyCode::Char('q') => return Ok("".to_string()),
-                                    KeyCode::Char('a') => cu_page = CurrentUi::AddTx,
-                                    KeyCode::Char('j') => return Ok("Change".to_string()),
-                                    KeyCode::Char('h') => cu_popup = PopupState::Helper,
-                                    KeyCode::Char('e') => {
-                                        if let Some(a) = cu_table_index {
-                                            let target_data = &all_data.get_txs()[a];
-                                            let target_id_num = all_data.get_id_num(a);
-                                            data_for_tx = AddTxData::custom(
-                                                &target_data[0],
-                                                &target_data[1],
-                                                &target_data[2],
-                                                &target_data[3],
-                                                &target_data[4],
-                                                target_id_num,
-                                            );
-                                            cu_page = CurrentUi::AddTx;
-                                        }
-                                    }
-                                    KeyCode::Char('d') => {
-                                        if table.state.selected() != None {
-                                            let status =
-                                                all_data.del_tx(table.state.selected().unwrap());
-                                            match status {
-                                                Ok(_) => {
-                                                    // transaction deleted so reload the data again
-                                                    all_data = TransactionData::new(
-                                                        &conn,
-                                                        cu_month_index,
-                                                        cu_year_index,
-                                                    );
-                                                    table = TableData::new(all_data.get_txs());
-                                                    table.state.select(None);
-                                                    selected_tab = SelectedTab::Months;
-                                                }
-                                                Err(e) => {
-                                                    popup_data_delete_failed = vec![];
-                                                    popup_data_delete_failed
-                                                        .push("Delete Error".to_string());
-                                                    popup_data_delete_failed.push(format!(
-                                                        "Error while deleting transaction \
-                                                    \nError: {e:?}\n\nPress Any Key to dismiss"
-                                                    ));
-                                                    popup_data_delete_failed.push("50".to_string());
-                                                    popup_data_delete_failed.push("30".to_string());
-                                                    cu_popup = PopupState::DeleteFailed;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    KeyCode::Right => match &selected_tab {
-                                        SelectedTab::Months => months.next(),
-                                        SelectedTab::Years => {
-                                            years.next();
-                                            months.index = 0;
-                                        }
-                                        _ => {}
-                                    },
-                                    KeyCode::Left => match &selected_tab {
-                                        SelectedTab::Months => months.previous(),
-                                        SelectedTab::Years => {
-                                            years.previous();
-                                            months.index = 0;
-                                        }
-                                        _ => {}
-                                    },
-                                    KeyCode::Up => {
-                                        match &selected_tab {
-                                            SelectedTab::Table => {
-                                                // Do not select any table rows in the table section If
-                                                // there is no transaction
-                                                if all_data.all_tx.len() < 1 {
-                                                    selected_tab = selected_tab.change_tab_up();
-                                                }
-                                                // executes when going from first table row to month widget
-                                                else if table.state.selected() == Some(0) {
-                                                    selected_tab = SelectedTab::Months;
-                                                    table.state.select(None);
-                                                } else {
-                                                    if all_data.all_tx.len() > 0 {
-                                                        table.previous();
-                                                    }
-                                                }
-                                            }
-                                            SelectedTab::Years => {
-                                                // Do not select any table rows in the table section If
-                                                // there is no transaction
-                                                if all_data.all_tx.len() < 1 {
-                                                    selected_tab = selected_tab.change_tab_up();
-                                                } else {
-                                                    // Move to the selected value on table/Transaction widget
-                                                    // to the last row if pressed up on Year section
-                                                    table.state.select(Some(table.items.len() - 1));
-                                                    selected_tab = selected_tab.change_tab_up();
-                                                    if all_data.all_tx.len() < 1 {
-                                                        selected_tab = selected_tab.change_tab_up();
-                                                    }
-                                                }
-                                            }
-                                            _ => selected_tab = selected_tab.change_tab_up(),
-                                        }
-                                    }
-                                    KeyCode::Down => {
-                                        match &selected_tab {
-                                            SelectedTab::Table => {
-                                                // Do not proceed to the table section If
-                                                // there is no transaction
-                                                if all_data.all_tx.len() < 1 {
-                                                    selected_tab = selected_tab.change_tab_down();
-                                                }
-                                                // executes when pressed on last row of the table
-                                                // moves to the year widget
-                                                else if table.state.selected()
-                                                    == Some(table.items.len() - 1)
-                                                {
-                                                    selected_tab = SelectedTab::Years;
-                                                    table.state.select(None);
-                                                } else {
-                                                    if all_data.all_tx.len() > 0 {
-                                                        table.next();
-                                                    }
-                                                }
-                                            }
-                                            _ => selected_tab = selected_tab.change_tab_down(),
-                                        }
-                                    }
-                                    _ => {}
-                                }
-                            }
-                            _ => match key.code {
-                                _ => cu_popup = PopupState::Nothing,
-                            },
+                        let status = home_checker(
+                            key,
+                            &mut cu_page,
+                            &mut cu_popup,
+                            &mut data_for_tx,
+                            &mut all_data,
+                            &mut table,
+                            &mut selected_tab,
+                            cu_table_index,
+                            cu_month_index,
+                            cu_year_index,
+                            &mut months,
+                            &mut years,
+                            &conn
+                        )?;
+                        if status != "0" {
+                            return Ok(status);
                         }
                     }
                     CurrentUi::AddTx => {
