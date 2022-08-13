@@ -140,7 +140,7 @@ pub enum CurrentUi {
     Initial,
     Home,
     AddTx,
-    Transfer
+    Transfer,
 }
 
 pub enum PopupState {
@@ -148,5 +148,4 @@ pub enum PopupState {
     Helper,
     DeleteFailed,
     Nothing,
-
 }
