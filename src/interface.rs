@@ -10,9 +10,8 @@ use crate::transfer_page::transfer_ui_func;
 use crate::key_checker::{home_checker, initial_checker, add_tx_checker};
 use crossterm::event::poll;
 use crossterm::event::{self, Event, KeyCode};
-use open;
 use rusqlite::Connection;
-use std::{io, time::Duration};
+use std::{time::Duration, error::Error};
 use tui::layout::Constraint;
 use tui::{backend::Backend, Terminal};
 
@@ -25,7 +24,7 @@ pub fn run_app<B: Backend>(
     mut months: TimeData,
     mut years: TimeData,
     new_version_available: bool,
-) -> io::Result<String> {
+) -> Result<String, Box<dyn Error>> {
     // Setting up some default values. Let's go through all of them
     // selected_tab : Basically the current selected widget/field. Default set to the month selection/3rd widget
     //
@@ -582,35 +581,15 @@ Press Any Key to dismiss"
                         }
                     }
                     CurrentUi::Initial => {
-                        match cu_popup {
-                            PopupState::Nothing => { 
-                                match key.code {
-                                    KeyCode::Char('q') => return Ok("".to_string()),
-                                    _ => cu_page = CurrentUi::Home,
-                                }
-                            }
-                            PopupState::NewUpdate => {
-                                match key.code {
-                                    KeyCode::Enter => {
-                                        match open::that(
-                                            "https://github.com/WaffleMixer/Rex/releases/latest",
-                                        ) {
-                                            Ok(_) => cu_popup = PopupState::Nothing,
-                                            // if it fails for any reason, break interface and print the link
-                                            Err(_) => return Ok("Link".to_string()),
-                                        }
-                                    }
-                                    _ => cu_popup = PopupState::Nothing
-                                }
-                            }
-                            _ => cu_popup = PopupState::Nothing
+                        let status = initial_checker(key, &mut cu_page, &mut cu_popup)?;
+                        if status != "0" {
+                            return Ok(status)
                         }
                     },
                     // TODO change data here for transfer
                     CurrentUi::Transfer => {},
                 }
             };
-        } else {
         }
     }
 }
