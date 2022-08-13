@@ -2,10 +2,10 @@ pub mod db;
 pub mod home_page;
 mod initial_page;
 mod interface;
-mod popup_page;
-pub mod tx_page;
-mod transfer_page;
 mod key_checker;
+mod popup_page;
+mod transfer_page;
+pub mod tx_page;
 use atty::Stream;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},

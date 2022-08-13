@@ -178,7 +178,9 @@ pub fn get_all_txs(
 
     let (datetime_1, datetime_2) = get_sql_dates(month + 1, year);
     let mut statement = conn
-        .prepare("SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY date, id_num")
+        .prepare(
+            "SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY date, id_num",
+        )
         .expect("could not prepare statement");
     let rows = statement
         .query_map([&datetime_1, &datetime_2], |row| {
@@ -305,14 +307,10 @@ pub fn add_new_tx(
     let mut conn = Connection::open(path)?;
     let sp = conn.savepoint()?;
 
-    
-    
     if let Some(id) = id_num {
         let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type, id_num) VALUES (?, ?, ?, ?, ?, ?)"#;
         sp.execute(&query, [date, details, tx_method, amount, tx_type, id])?;
-    }
-
-    else {
+    } else {
         let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type) VALUES (?, ?, ?, ?, ?)"#;
         sp.execute(&query, [date, details, tx_method, amount, tx_type])?;
     }
@@ -723,7 +721,7 @@ mod tests {
             "100.00",
             "Income",
             &file_name,
-            None
+            None,
         )
         .unwrap();
 
@@ -734,7 +732,7 @@ mod tests {
             "100.00",
             "Income",
             &file_name,
-            None
+            None,
         )
         .unwrap();
 
@@ -745,7 +743,7 @@ mod tests {
             "100.00",
             "Income",
             &file_name,
-            None
+            None,
         )
         .unwrap();
 
@@ -756,7 +754,7 @@ mod tests {
             "100.00",
             "Income",
             &file_name,
-            None
+            None,
         )
         .unwrap();
 
@@ -767,7 +765,7 @@ mod tests {
             "100.00",
             "Income",
             &file_name,
-            None
+            None,
         )
         .unwrap();
 
@@ -815,7 +813,7 @@ mod tests {
             "100.00",
             "Income",
             &file_name,
-            None
+            None,
         )
         .unwrap();
 

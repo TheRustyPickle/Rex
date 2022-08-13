@@ -1,8 +1,8 @@
+use crate::db::StatusChecker;
 use crate::db::{add_new_tx, delete_tx};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::error::Error;
-use crate::db::StatusChecker;
 
 /// The struct maintains the data that has been entered by the
 /// user to the relevant field in order to create a new transaction and push it
@@ -188,16 +188,14 @@ impl AddTxData {
                 &self.amount,
                 &self.tx_type,
                 "data.sqlite",
-                Some(&self.id_num.to_string())
+                Some(&self.id_num.to_string()),
             );
 
             match status_add {
                 Ok(_) => return format!(""),
                 Err(e) => return format!("Edit Transaction: Something went wrong {}", e),
             }
-        }
-
-        else {
+        } else {
             let status = add_new_tx(
                 &self.date,
                 &self.details,
@@ -205,14 +203,13 @@ impl AddTxData {
                 &self.amount,
                 &self.tx_type,
                 "data.sqlite",
-                None
+                None,
             );
             match status {
                 Ok(_) => return format!(""),
                 Err(e) => return format!("Add Transaction: Something went wrong {}", e),
             }
         }
-        
     }
 
     /// Adds a status after a checking is complete. Used for the Status widget
@@ -225,39 +222,43 @@ impl AddTxData {
         self.tx_status.push(data.to_string());
     }
 
-    /// Checks the inputted Date by the user upon pressing Enter/Esc for various error. 
+    /// Checks the inputted Date by the user upon pressing Enter/Esc for various error.
     pub fn check_date(&mut self) -> Result<String, Box<dyn Error>> {
-        let user_date = self.date.clone();
-        
-        let (new_date, status) = self.verify_date(user_date)?;
+        let mut user_date = self.date.clone();
 
-        self.date = new_date;
+        let status = self.verify_date(&mut user_date)?;
+
+        self.date = user_date;
         Ok(status)
     }
 
     /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
     pub fn check_tx_method(&mut self, conn: &Connection) -> Result<String, Box<dyn Error>> {
-        let cu_method = self.tx_method.clone();
+        let mut cu_method = self.tx_method.clone();
 
-        let (new_method, status) = self.verify_tx_method(cu_method, conn)?;
+        let status = self.verify_tx_method(&mut cu_method, conn)?;
 
-        self.tx_method = new_method;
+        self.tx_method = cu_method;
         Ok(status)
     }
 
     /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
     pub fn check_amount(&mut self) -> Result<String, Box<dyn Error>> {
-        let user_amount = self.amount.clone();
-        let (new_amount, status) = self.verify_amount(user_amount)?;
-        self.amount = new_amount;
+        let mut user_amount = self.amount.clone();
+
+        let status = self.verify_amount(&mut user_amount)?;
+
+        self.amount = user_amount;
         Ok(status)
     }
 
     /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
     pub fn check_tx_type(&mut self) -> Result<String, Box<dyn Error>> {
-        let tx_type = self.tx_type.clone();
-        let (new_tx_type, status) = self.verify_tx_type(tx_type)?;
-        self.tx_type = new_tx_type;
+        let mut tx_type = self.tx_type.clone();
+
+        let status = self.verify_tx_type(&mut tx_type)?;
+
+        self.tx_type = tx_type;
         Ok(status)
     }
 }
