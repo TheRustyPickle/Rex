@@ -5,6 +5,7 @@ mod interface;
 mod popup_page;
 pub mod tx_page;
 mod transfer_page;
+mod key_checker;
 use atty::Stream;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
@@ -40,7 +41,6 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
     } else {
         let cu_directory = std::env::current_dir()?.display().to_string();
         let output = if is_windows {
-            // NOTE f*** windows. Unknown errors everywhere.
             Command::new("cmd.exe").arg("start").arg("rex").output()
         } else {
             let mut all_terminals = HashMap::new();
