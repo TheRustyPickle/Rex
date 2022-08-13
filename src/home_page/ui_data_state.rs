@@ -98,7 +98,7 @@ pub enum SelectedTab {
 impl SelectedTab {
     /// Movies the current selected tab to the upper value. If at the 1st value, the
     /// the final value is selected.
-    pub fn change_tab_up(self) -> Self {
+    pub fn change_tab_up(&mut self) -> Self {
         let to_return;
         match &self {
             SelectedTab::Years => to_return = SelectedTab::Table,
@@ -110,7 +110,7 @@ impl SelectedTab {
 
     /// Movies the current selected tab to the bottom value. If at the last value, the
     /// the 1st value is selected.
-    pub fn change_tab_down(self) -> Self {
+    pub fn change_tab_down(&mut self) -> Self {
         let to_return;
         match &self {
             SelectedTab::Years => to_return = SelectedTab::Months,
