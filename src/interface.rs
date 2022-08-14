@@ -68,12 +68,6 @@ pub fn run_app<B: Backend>(
     let mut cu_tx_page = TxTab::Nothing;
     let mut data_for_tx = AddTxData::new();
     let mut starter_index = 0;
-    // The next three variable will determine whether a certain pop is turned on or off.
-    // Based on this, the popup is created/passed
-    // This one wil likely remain unused until one is messing with the database
-
-    // The next three vectors will store the lines that will be displayed on popup
-    // The Vec contains popup title, text, x axis and y axis size.
 
     // The loop begins at this point and before the loop starts, multiple variables are initiated
     // with the default values which will quickly be changing once the loop starts.
@@ -219,7 +213,7 @@ pub fn run_app<B: Backend>(
                             cu_year_index,
                             &mut months,
                             &mut years,
-                            &conn
+                            &conn,
                         )?;
                         if status != "0" {
                             return Ok(status);
