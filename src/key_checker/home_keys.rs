@@ -24,6 +24,7 @@ pub fn home_checker(
             match key.code {
                 KeyCode::Char('q') => return Ok("".to_string()),
                 KeyCode::Char('a') => *cu_page = CurrentUi::AddTx,
+                KeyCode::Char('t') => *cu_page = CurrentUi::Transfer,
                 KeyCode::Char('j') => return Ok("Change".to_string()),
                 KeyCode::Char('h') => *cu_popup = PopupState::Helper,
                 KeyCode::Char('e') => {

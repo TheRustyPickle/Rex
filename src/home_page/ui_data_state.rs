@@ -134,6 +134,16 @@ pub enum TxTab {
     Nothing,
 }
 
+//TODO comment this
+pub enum TransferTab {
+    Date,
+    Details,
+    From,
+    To,
+    Amount,
+    Nothing,
+}
+
 /// Shows the currently active page in the terminal. Used to properly
 /// direct key presses to the relevant structs and widget selection.
 pub enum CurrentUi {

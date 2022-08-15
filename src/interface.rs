@@ -1,9 +1,11 @@
 use crate::db::{get_all_tx_methods, get_empty_changes};
 use crate::home_page::ui;
 use crate::home_page::TransactionData;
-use crate::home_page::{CurrentUi, PopupState, SelectedTab, TableData, TimeData, TxTab};
+use crate::home_page::{
+    CurrentUi, PopupState, SelectedTab, TableData, TimeData, TransferTab, TxTab,
+};
 use crate::initial_page::starter_ui;
-use crate::key_checker::{add_tx_checker, home_checker, initial_checker};
+use crate::key_checker::{add_tx_checker, home_checker, initial_checker, transfer_checker};
 use crate::popup_page::add_popup;
 use crate::transfer_page::transfer_ui_func;
 use crate::tx_page::tx_ui;
@@ -66,6 +68,7 @@ pub fn run_app<B: Backend>(
     let mut cu_page = CurrentUi::Initial;
     let mut cu_popup = PopupState::Nothing;
     let mut cu_tx_page = TxTab::Nothing;
+    let mut cu_transfer_page = TransferTab::Nothing;
     let mut data_for_tx = AddTxData::new();
     let mut starter_index = 0;
 
@@ -182,7 +185,7 @@ pub fn run_app<B: Backend>(
                 transfer_ui_func(
                     f,
                     data_for_tx.get_all_texts(),
-                    &cu_tx_page,
+                    &cu_transfer_page,
                     &data_for_tx.tx_status,
                 );
 
@@ -244,7 +247,24 @@ pub fn run_app<B: Backend>(
                         }
                     }
                     // TODO change data here for transfer
-                    CurrentUi::Transfer => {}
+                    CurrentUi::Transfer => {
+                        let status = transfer_checker(
+                            key,
+                            &mut cu_page,
+                            &mut cu_popup,
+                            &mut cu_transfer_page,
+                            &mut data_for_tx,
+                            &mut all_data,
+                            &mut table,
+                            &mut selected_tab,
+                            cu_month_index,
+                            cu_year_index,
+                            &conn,
+                        )?;
+                        if status != "0" {
+                            return Ok(status);
+                        }
+                    }
                 }
             };
         }
