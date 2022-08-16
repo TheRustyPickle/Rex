@@ -7,7 +7,7 @@ use crate::home_page::{
 use crate::initial_page::starter_ui;
 use crate::key_checker::{add_tx_checker, home_checker, initial_checker, transfer_checker};
 use crate::popup_page::add_popup;
-use crate::transfer_page::transfer_ui_func;
+use crate::transfer_page::{transfer_ui_func, TransferData};
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
 use crossterm::event::poll;
@@ -70,6 +70,7 @@ pub fn run_app<B: Backend>(
     let mut cu_tx_page = TxTab::Nothing;
     let mut cu_transfer_page = TransferTab::Nothing;
     let mut data_for_tx = AddTxData::new();
+    let mut data_for_transfer = TransferData::new();
     let mut starter_index = 0;
 
     // The loop begins at this point and before the loop starts, multiple variables are initiated
@@ -184,9 +185,9 @@ pub fn run_app<B: Backend>(
             CurrentUi::Transfer => terminal.draw(|f| {
                 transfer_ui_func(
                     f,
-                    data_for_tx.get_all_texts(),
+                    data_for_transfer.get_all_texts(),
                     &cu_transfer_page,
-                    &data_for_tx.tx_status,
+                    &data_for_transfer.tx_status,
                 );
 
                 match cu_popup {
@@ -208,6 +209,7 @@ pub fn run_app<B: Backend>(
                             &mut cu_page,
                             &mut cu_popup,
                             &mut data_for_tx,
+                            &mut data_for_transfer,
                             &mut all_data,
                             &mut table,
                             &mut selected_tab,
@@ -253,7 +255,7 @@ pub fn run_app<B: Backend>(
                             &mut cu_page,
                             &mut cu_popup,
                             &mut cu_transfer_page,
-                            &mut data_for_tx,
+                            &mut data_for_transfer,
                             &mut all_data,
                             &mut table,
                             &mut selected_tab,
