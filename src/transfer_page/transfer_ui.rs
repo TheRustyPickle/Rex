@@ -106,11 +106,11 @@ pub fn transfer_ui_func<B: Backend>(
 
     let details_text = vec![Spans::from(input_data[1])];
 
-    let amount_text = vec![Spans::from(input_data[3])];
+    let from_text = vec![Spans::from(input_data[2])];
 
-    let from_text = vec![Spans::from(input_data[4])];
+    let to_text = vec![Spans::from(input_data[3])];
 
-    let to_text = vec![Spans::from(input_data[4])];
+    let amount_text = vec![Spans::from(input_data[4])];
 
     let arrow_text = vec![Spans::from(""), Spans::from("➞ ➞ ➞")];
 
@@ -219,10 +219,7 @@ pub fn transfer_ui_func<B: Backend>(
             second_chunk[2].x + input_data[3].len() as u16 + 1,
             second_chunk[2].y + 1,
         ),
-        TransferTab::Amount => f.set_cursor(
-            third_chunk[1].x + input_data[4].len() as u16 + 1,
-            third_chunk[1].y + 1,
-        ),
+        TransferTab::Amount => f.set_cursor(third_chunk[1].x + 1, third_chunk[1].y + 1),
         TransferTab::Nothing => {}
     }
 
