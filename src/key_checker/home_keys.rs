@@ -1,5 +1,6 @@
 use crate::home_page::{CurrentUi, PopupState, SelectedTab, TableData, TimeData, TransactionData};
 use crate::tx_page::AddTxData;
+use crate::transfer_page::TransferData;
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::error::Error;
@@ -9,6 +10,7 @@ pub fn home_checker(
     cu_page: &mut CurrentUi,
     cu_popup: &mut PopupState,
     data_for_tx: &mut AddTxData,
+    data_for_transfer: &mut TransferData,
     all_data: &mut TransactionData,
     table: &mut TableData,
     selected_tab: &mut SelectedTab,
@@ -31,6 +33,7 @@ pub fn home_checker(
                     if let Some(a) = cu_table_index {
                         let target_data = &all_data.get_txs()[a];
                         let target_id_num = all_data.get_id_num(a);
+                        //TODO for editing transfer tx
                         *data_for_tx = AddTxData::custom(
                             &target_data[0],
                             &target_data[1],
