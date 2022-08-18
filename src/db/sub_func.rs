@@ -219,16 +219,35 @@ pub fn get_all_txs(
         let tx_type = &i[4];
         let amount = &i[3].to_string().parse::<f32>().unwrap();
         let tx_method = &i[2];
-        let mut new_balance: f32 = 0.0;
+        let mut new_balance_from: f32 = 0.0;
+        let mut new_balance_to: f32 = 0.0;
+
+        let mut from_method = "".to_string();
+        let mut to_method = "".to_string();
 
         if tx_type == "Expense" {
-            new_balance = last_month_balance[tx_method] - amount;
+            new_balance_from = last_month_balance[tx_method] - amount;
         } else if tx_type == "Income" {
-            new_balance = last_month_balance[tx_method] + amount;
+            new_balance_from = last_month_balance[tx_method] + amount;
+        }
+        else if tx_type == "Transfer" {
+            let split = tx_method.split(" to ");
+            let vec = split.collect::<Vec<&str>>();
+            from_method = vec[0].to_string();
+            to_method = vec[1].to_string();
+            new_balance_from = last_month_balance[&from_method] - amount;
+            new_balance_to = last_month_balance[&to_method] + amount;
         }
 
         // make changes to the balance map based on the tx
-        *last_month_balance.get_mut(tx_method).unwrap() = new_balance;
+        
+        if new_balance_to != 0.0 {
+            *last_month_balance.get_mut(&from_method).unwrap() = new_balance_from;
+            *last_month_balance.get_mut(&to_method).unwrap() = new_balance_to;
+        }
+        else {
+            *last_month_balance.get_mut(tx_method).unwrap() = new_balance_from;
+        }
 
         let mut to_push = vec![];
         for i in &all_tx_methods {
@@ -419,6 +438,135 @@ pub fn add_new_tx(
     sp.commit()?;
     Ok(())
 }
+
+pub fn add_new_transfer(
+    date: &str,
+    details: &str,
+    tx_method: &str,
+    amount: &str,
+    tx_type: &str,
+    path: &str,
+    id_num: Option<&str>,
+) -> sqlResult<()> {
+    let mut conn = Connection::open(path)?;
+    let sp = conn.savepoint()?;
+
+    if let Some(id) = id_num {
+        let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type, id_num) VALUES (?, ?, ?, ?, ?, ?)"#;
+        sp.execute(&query, [date, details, tx_method, amount, tx_type, id])?;
+    } else {
+        let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type) VALUES (?, ?, ?, ?, ?)"#;
+        sp.execute(&query, [date, details, tx_method, amount, tx_type])?;
+    }
+
+    let split = date.split("-");
+    let vec = split.collect::<Vec<&str>>();
+    let mut mnth = vec[1].to_string();
+    if &mnth[0..0] == "0" {
+        mnth = mnth.replace("0", "");
+    }
+    let month = mnth.parse::<i32>().unwrap();
+    let year = vec[0][2..].parse::<i32>().unwrap() - 22;
+
+    let target_id_num = month as i32 + (year as i32 * 12);
+
+    let split = tx_method.split(" to ");
+    let vec = split.collect::<Vec<&str>>();
+    let from_method = vec[0].to_string();
+    let to_method = vec[1].to_string();
+
+    // This is necessary for the foreign key field in the changes_all table
+    // and must align with the latest transaction id_num
+    let mut last_id = get_last_tx_id(&sp)?;
+    if let Some(id) = id_num {
+        last_id = id.parse().unwrap();
+    }
+    let last_balance_id = get_last_balance_id(&sp)?;
+
+    // we have to get these following data to push to the database
+    // new_balance_data : the current month balance after the transaction
+    // new_changes_data : the new changes data to push to the database
+    // last_balance_data : the absolute final balance after all transaction
+    let mut new_balance_data = Vec::new();
+    let mut new_changes_data = Vec::new();
+    let mut last_balance_data = HashMap::new();
+
+    let all_tx_methods = get_all_tx_methods(&sp);
+    let last_balance = get_last_balances(&sp, &all_tx_methods);
+    let mut cu_month_balance =
+        get_last_time_balance(&sp, month as usize, year as usize, &all_tx_methods);
+
+    let int_amount = amount.parse::<f32>().unwrap();
+
+    // makes changes to the current month balance and push them to vector
+    let new_balance_from = cu_month_balance[&from_method] - int_amount;
+    let new_balance_to = cu_month_balance[&to_method] + int_amount;
+
+    *cu_month_balance.get_mut(&from_method).unwrap() = new_balance_from;
+    *cu_month_balance.get_mut(&to_method).unwrap() = new_balance_to;
+
+    for i in &all_tx_methods {
+        new_balance_data.push(format!("{:.2}", cu_month_balance[i]))
+    }
+
+    for i in 0..all_tx_methods.len() {
+        // the variable to keep track whether any changes were made to the tx method
+        let cu_last_balance = last_balance[i].parse::<f32>().unwrap();
+        let mut default_change = format!("{:.2}", 0.0);
+
+        // we could have just used the tx_method from the argument but adding the default values
+        // manually after that would make it tricky because have to maintain the tx method balance order
+        // and the Changes order
+
+        if &all_tx_methods[i] == &from_method {
+            default_change = format!("↓{}", &amount);
+            let edited_balance = cu_last_balance - int_amount;
+            last_balance_data.insert(&from_method, format!("{edited_balance:.2}"));
+        } 
+        else if &all_tx_methods[i] == &to_method {
+            default_change = format!("↑{}", &amount);
+            let edited_balance = cu_last_balance + int_amount;
+            last_balance_data.insert(&to_method, format!("{edited_balance:.2}"));
+            
+        }
+        new_changes_data.push(default_change);
+    }
+
+    // the query kept on breaking for a single comma so had to follow this ugly way to do this.
+    // loop and add a comma until the last index and ignore it in the last time
+    let mut balance_query = format!("UPDATE balance_all SET ");
+    for i in 0..new_balance_data.len() {
+        if i != new_balance_data.len() - 1 {
+            balance_query.push_str(&format!(
+                r#""{}" = "{}", "#,
+                all_tx_methods[i], new_balance_data[i]
+            ))
+        } else {
+            balance_query.push_str(&format!(
+                r#""{}" = "{}" "#,
+                all_tx_methods[i], new_balance_data[i]
+            ))
+        }
+    }
+    balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
+
+    let last_balance_query = format!(
+        r#"UPDATE balance_all SET "{from_method}" = "{}", "{to_method}" = "{}" WHERE id_num = {}"#,
+        last_balance_data[&from_method], last_balance_data[&to_method], last_balance_id
+    );
+
+    let mut changes_query = format!("INSERT INTO changes_all (id_num, date, {all_tx_methods:?}) VALUES ({last_id}, ?, {new_changes_data:?})");
+    changes_query = changes_query.replace("[", "");
+    changes_query = changes_query.replace("]", "");
+
+    sp.execute(&balance_query, [])?;
+    sp.execute(&last_balance_query, [])?;
+    sp.execute(&changes_query, [date])?;
+    sp.commit()?;
+    Ok(())
+}
+
+
 
 /// Updates the absolute final balance, balance data and deletes the selected transaction.
 /// Foreign key cascade takes care of the Changes data in the database.
