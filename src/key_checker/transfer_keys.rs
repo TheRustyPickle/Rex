@@ -33,19 +33,19 @@ pub fn transfer_checker(
                     }
                     KeyCode::Char('h') => *cu_popup = PopupState::Helper,
                     //TODO fix saving transfer tx
-                    //KeyCode::Char('s') => {
-                    //    let status = data_for_transfer.add_tx();
-                    //    if status == "".to_string() {
-                    //        // reload home page and switch UI
-                    //        *selected_tab = SelectedTab::Months;
-                    //        *data_for_transfer = TransferData::new();
-                    //        *all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
-                    //       *table = TableData::new(all_data.get_txs());
-                    //        *cu_page = CurrentUi::Home;
-                    //    } else {
-                    //        data_for_transfer.add_tx_status(&status);
-                    //    }
-                    //}
+                    KeyCode::Char('s') => {
+                        let status = data_for_transfer.add_tx();
+                        if status == "".to_string() {
+                            // reload home page and switch UI
+                            *selected_tab = SelectedTab::Months;
+                            *data_for_transfer = TransferData::new();
+                            *all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
+                           *table = TableData::new(all_data.get_txs());
+                            *cu_page = CurrentUi::Home;
+                        } else {
+                            data_for_transfer.add_tx_status(&status);
+                        }
+                    }
                     KeyCode::Char('1') => *cu_tx_page = TransferTab::Date,
                     KeyCode::Char('2') => *cu_tx_page = TransferTab::Details,
                     KeyCode::Char('3') => *cu_tx_page = TransferTab::From,
