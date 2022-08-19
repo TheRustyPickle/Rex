@@ -1,7 +1,7 @@
-pub mod add_tx_keys;
-pub mod home_keys;
-pub mod initial_keys;
-pub mod transfer_keys;
+mod add_tx_keys;
+mod home_keys;
+mod initial_keys;
+mod transfer_keys;
 
 pub use add_tx_keys::add_tx_checker;
 pub use home_keys::home_checker;
