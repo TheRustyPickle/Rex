@@ -32,6 +32,10 @@ pub fn ui<B: Backend>(
         .fg(Color::Red)
         .add_modifier(Modifier::REVERSED);
 
+    let selected_style_gray = Style::default()
+        .fg(Color::DarkGray)
+        .add_modifier(Modifier::REVERSED);
+
     let normal_style = Style::default().bg(Color::LightBlue);
 
     // Transaction widget's top row/header to highlight what each data will mean
@@ -190,6 +194,10 @@ pub fn ui<B: Backend>(
                 } else if table.items[a][4] == "Income" {
                     table_area = table_area
                         .highlight_style(selected_style_blue)
+                        .highlight_symbol(">> ")
+                } else if table.items[a][4] == "Transfer" {
+                    table_area = table_area
+                        .highlight_style(selected_style_gray)
                         .highlight_symbol(">> ")
                 }
             }
