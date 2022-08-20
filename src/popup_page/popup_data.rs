@@ -39,10 +39,10 @@ Press Any Key to dismiss"
     } else {
         data.push("Delete Error".to_string());
         data.push(format!(
-            "Error while deleting the transaction\nPress Any Key to dismiss"
+            "Error while deleting the transaction\n\nPress Any Key to dismiss"
         ));
-        data.push("50".to_string());
-        data.push("30".to_string());
+        data.push("40".to_string());
+        data.push("25".to_string());
     }
     create_popup(f, &data);
 }
