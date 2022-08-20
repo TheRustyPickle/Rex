@@ -32,7 +32,6 @@ pub fn transfer_checker(
                         *data_for_transfer = TransferData::new();
                     }
                     KeyCode::Char('h') => *cu_popup = PopupState::Helper,
-                    //TODO fix saving transfer tx
                     KeyCode::Char('s') => {
                         let status = data_for_transfer.add_tx();
                         if status == "".to_string() {
@@ -40,7 +39,7 @@ pub fn transfer_checker(
                             *selected_tab = SelectedTab::Months;
                             *data_for_transfer = TransferData::new();
                             *all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
-                           *table = TableData::new(all_data.get_txs());
+                            *table = TableData::new(all_data.get_txs());
                             *cu_page = CurrentUi::Home;
                         } else {
                             data_for_transfer.add_tx_status(&status);

@@ -1,5 +1,5 @@
 use crate::db::StatusChecker;
-use crate::db::{add_new_transfer, delete_tx};
+use crate::db::{add_new_transfer, delete_transfer_tx};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::error::Error;
@@ -53,7 +53,6 @@ impl TransferData {
         from: &str,
         to: &str,
         amount: &str,
-        tx_type: &str,
         id_num: i32,
     ) -> Self {
         let splitted = date.split("-");
@@ -70,7 +69,7 @@ impl TransferData {
             from: from.to_string(),
             to: to.to_string(),
             amount: amount.to_string(),
-            tx_type: tx_type.to_string(),
+            tx_type: "Transfer".to_string(),
             tx_status: Vec::new(),
             editing_tx: true,
             id_num: id_num,
@@ -155,7 +154,7 @@ impl TransferData {
             }
         }
     }
-    //TODO fix saving transfer tx
+
     /// Collects all the data for the transaction and calls the function
     /// that pushes them to the database.
     pub fn add_tx(&mut self) -> String {
@@ -179,7 +178,7 @@ impl TransferData {
 
         if self.editing_tx == true {
             self.editing_tx = false;
-            let status = delete_tx(self.id_num as usize, "data.sqlite");
+            let status = delete_transfer_tx(self.id_num as usize, "data.sqlite");
             match status {
                 Ok(_) => {}
                 Err(e) => {
@@ -244,7 +243,14 @@ impl TransferData {
     pub fn check_from(&mut self, conn: &Connection) -> Result<String, Box<dyn Error>> {
         let mut cu_method = self.from.clone();
 
-        let status = self.verify_tx_method(&mut cu_method, conn)?;
+        let mut status = self.verify_tx_method(&mut cu_method, conn)?;
+        if cu_method == self.to {
+            return Ok(
+                "From TX Method: To and From Transaction Methods cannot be the same".to_string(),
+            );
+        }
+
+        status = status.replace("TX Method", "From TX Method");
 
         self.from = cu_method;
         Ok(status)
@@ -253,7 +259,14 @@ impl TransferData {
     pub fn check_to(&mut self, conn: &Connection) -> Result<String, Box<dyn Error>> {
         let mut cu_method = self.to.clone();
 
-        let status = self.verify_tx_method(&mut cu_method, conn)?;
+        let mut status = self.verify_tx_method(&mut cu_method, conn)?;
+        if cu_method == self.from {
+            return Ok(
+                "To TX Method: To and From Transaction Methods cannot be the same".to_string(),
+            );
+        }
+
+        status = status.replace("TX Method", "To TX Method");
 
         self.to = cu_method;
         Ok(status)
