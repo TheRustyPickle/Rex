@@ -181,7 +181,6 @@ pub fn run_app<B: Backend>(
                 }
             })?,
 
-            // TODO change data here for transfer page
             CurrentUi::Transfer => terminal.draw(|f| {
                 transfer_ui_func(
                     f,
@@ -248,7 +247,6 @@ pub fn run_app<B: Backend>(
                             return Ok(status);
                         }
                     }
-                    // TODO change data here for transfer
                     CurrentUi::Transfer => {
                         let status = transfer_checker(
                             key,
