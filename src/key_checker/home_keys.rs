@@ -1,6 +1,6 @@
 use crate::home_page::{CurrentUi, PopupState, SelectedTab, TableData, TimeData, TransactionData};
-use crate::tx_page::AddTxData;
 use crate::transfer_page::TransferData;
+use crate::tx_page::AddTxData;
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::error::Error;
@@ -33,21 +33,39 @@ pub fn home_checker(
                     if let Some(a) = cu_table_index {
                         let target_data = &all_data.get_txs()[a];
                         let target_id_num = all_data.get_id_num(a);
-                        //TODO for editing transfer tx
-                        *data_for_tx = AddTxData::custom(
-                            &target_data[0],
-                            &target_data[1],
-                            &target_data[2],
-                            &target_data[3],
-                            &target_data[4],
-                            target_id_num,
-                        );
-                        *cu_page = CurrentUi::AddTx;
+                        let tx_type = &target_data[4];
+
+                        if tx_type != "Transfer" {
+                            *data_for_tx = AddTxData::custom(
+                                &target_data[0],
+                                &target_data[1],
+                                &target_data[2],
+                                &target_data[3],
+                                &target_data[4],
+                                target_id_num,
+                            );
+                            *cu_page = CurrentUi::AddTx;
+                        }
+                        else {
+                            let from_to = target_data[2].split(" to ").collect::<Vec<&str>>();
+                            let from_method = from_to[0];
+                            let to_method = from_to[1];
+                            *data_for_transfer = TransferData::custom(
+                                &target_data[0],
+                                &target_data[1],
+                                from_method,
+                                to_method,
+                                &target_data[3],
+                                target_id_num,
+                            );
+                            *cu_page = CurrentUi::Transfer;
+                        }
                     }
                 }
                 KeyCode::Char('d') => {
                     if table.state.selected() != None {
-                        let status = all_data.del_tx(table.state.selected().unwrap());
+                        let target_data = &all_data.get_txs()[cu_table_index.unwrap()];
+                        let status = all_data.del_tx(table.state.selected().unwrap(), &target_data[4]);
                         match status {
                             Ok(_) => {
                                 // transaction deleted so reload the data again
