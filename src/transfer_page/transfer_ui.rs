@@ -8,7 +8,7 @@ use tui::{
     Frame,
 };
 
-/// The UI functions that draws the Add Transaction page of the interface.
+/// The UI functions that draws the Transfer page of the interface.
 /// Takes arguments for user inputted data, status page data to process the details and turns them into
 /// the the interface.
 ///
@@ -26,7 +26,7 @@ pub fn transfer_ui_func<B: Backend>(
 ) {
     let size = f.size();
 
-    // divide the terminal into various chunks to draw the interface.
+    // divide the terminal into various chunks to draw the interface. This is a vertical chunk
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -42,8 +42,7 @@ pub fn transfer_ui_func<B: Backend>(
         )
         .split(size);
 
-    // This is a vertical chunk. We will basically be using this to divide the chunk[1]
-    // into another 4 chunks or 4 widgets
+    // We will now cut down a single vertical chunk into multiple horizontal chunk.
     let first_chunk = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Length(15), Constraint::Percentage(50)].as_ref())
@@ -88,6 +87,7 @@ pub fn transfer_ui_func<B: Backend>(
     // iter through the data in reverse mode because we want the latest status text
     // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
+        // we will color the status text based on whether it was an error or if the value was accepted
         if i.contains("Accepted") == false && i.contains("Nothing") == false {
             status_text.push(Spans::from(Span::styled(
                 i,
@@ -165,6 +165,15 @@ pub fn transfer_ui_func<B: Backend>(
         .block(create_block("From"))
         .alignment(Alignment::Left);
 
+    let to_sec = Paragraph::new(to_text)
+    .style(
+        Style::default()
+            .bg(Color::Rgb(255, 255, 255))
+            .fg(Color::Rgb(50, 205, 50)),
+    )
+    .block(create_block("To"))
+    .alignment(Alignment::Left);
+
     let arrow_sec = Paragraph::new(arrow_text)
         .style(
             Style::default()
@@ -172,15 +181,6 @@ pub fn transfer_ui_func<B: Backend>(
                 .fg(Color::Rgb(50, 205, 50)),
         )
         .alignment(Alignment::Center);
-
-    let to_sec = Paragraph::new(to_text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
-        .block(create_block("To"))
-        .alignment(Alignment::Left);
 
     let amount_sec = Paragraph::new(amount_text)
         .style(
@@ -219,6 +219,7 @@ pub fn transfer_ui_func<B: Backend>(
             second_chunk[2].x + input_data[3].len() as u16 + 1,
             second_chunk[2].y + 1,
         ),
+        // The text of this goes into the middle so couldn't find a better place to insert the input box
         TransferTab::Amount => f.set_cursor(third_chunk[1].x + 1, third_chunk[1].y + 1),
         TransferTab::Nothing => {}
     }
