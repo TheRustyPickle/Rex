@@ -85,11 +85,12 @@ pub fn get_last_time_balance(
     for _i in tx_method {
         breaking_vec.push(0.0)
     }
-    // we need to go till the first month or until the last balance of all tx methods are found
+    // we need to go till the first month of 2022 or until the last balance of all tx methods are found
     loop {
         let mut query = format!("SELECT {:?} FROM balance_all WHERE id_num = ?", tx_method);
         query = query.replace("[", "");
         query = query.replace("]", "");
+
         let final_balance = conn
             .query_row(&query, [target_id_num], |row| {
                 let mut final_data: Vec<f32> = Vec::new();
@@ -103,6 +104,7 @@ pub fn get_last_time_balance(
                 Ok(final_data)
             })
             .unwrap();
+
         target_id_num -= 1;
 
         for i in 0..tx_method.len() {
@@ -172,18 +174,22 @@ pub fn get_all_txs(
 
     // we will go through the last month balances and add/subtract
     // current month's transactions to the related tx method. After each tx calculation, add whatever
-    // balance for each tx method inside a vec for final return
+    // balance for each tx method inside a vec to finally return them
 
     let mut last_month_balance = get_last_time_balance(conn, month, year, &all_tx_methods);
 
     let (datetime_1, datetime_2) = get_sql_dates(month + 1, year);
+
+    // preparing the query for db
     let mut statement = conn
         .prepare(
             "SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY date, id_num",
         )
         .expect("could not prepare statement");
+
     let rows = statement
         .query_map([&datetime_1, &datetime_2], |row| {
+            // collect the row data and put them in a vec
             let date: String = row.get(0).unwrap();
             let id_num: i32 = row.get(5).unwrap();
             let splitted_date = date.split('-');
@@ -216,9 +222,14 @@ pub fn get_all_txs(
         // look at the tx type, tx method and add/subtract the amount on last month balance which was fetched earlier
         // while adding the balance data after each calculation is done inside a vector.
 
+        // collect data inside variables
         let tx_type = &i[4];
         let amount = &i[3].to_string().parse::<f32>().unwrap();
         let tx_method = &i[2];
+
+        // If the transaction is not a transfer, default balance goes to new_balance_from
+        // and new_balance_to remains empty. On transfer TX both of them are used
+
         let mut new_balance_from: f32 = 0.0;
         let mut new_balance_to: f32 = 0.0;
 
@@ -227,8 +238,10 @@ pub fn get_all_txs(
 
         if tx_type == "Expense" {
             new_balance_from = last_month_balance[tx_method] - amount;
+
         } else if tx_type == "Income" {
             new_balance_from = last_month_balance[tx_method] + amount;
+
         } else if tx_type == "Transfer" {
             let split = tx_method.split(" to ");
             let vec = split.collect::<Vec<&str>>();
@@ -240,6 +253,7 @@ pub fn get_all_txs(
 
         // make changes to the balance map based on the tx
 
+        // for transfer TX first block executes
         if new_balance_to != 0.0 {
             *last_month_balance.get_mut(&from_method).unwrap() = new_balance_from;
             *last_month_balance.get_mut(&to_method).unwrap() = new_balance_to;
@@ -268,7 +282,8 @@ pub fn get_empty_changes(conn: &Connection) -> Vec<String> {
     changes
 }
 
-/// Returns the absolute final balance which is the balance saved after each transaction was counted.
+/// Returns the absolute final balance which is the balance saved after each transaction was counted 
+/// or the last row on balance_all table.
 pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<String> {
     let mut query = format!(
         "SELECT {:?} FROM balance_all ORDER BY id_num DESC LIMIT 1",
@@ -276,6 +291,7 @@ pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<Stri
     );
     query = query.replace("[", "");
     query = query.replace("]", "");
+
     let final_balance = conn.query_row(&query, [], |row| {
         let mut final_data: Vec<String> = Vec::new();
         for i in 0..tx_method.len() {
@@ -352,15 +368,18 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
         // take user input for transaction methods
         std::io::stdin().read_line(&mut line).unwrap();
 
+        // extremely important to prevent crashes on Windows
         line = line.trim().to_string();
 
         if line.to_lowercase().starts_with("cancel") && add_new_method == true {
             return vec!["".to_string()];
         }
 
-        // remove the \n at the end, split them and remove duplicates
+        // split them and remove duplicates
         let split = line.split(", ");
         let mut splitted = split.collect::<Vec<&str>>();
+
+        // Unknown how it works. Taken from somewhere in the internet
         let set: HashSet<_> = splitted.drain(..).collect();
         splitted.extend(set.into_iter());
 
