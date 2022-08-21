@@ -1,4 +1,4 @@
-use crate::db::{delete_tx, get_all_changes, get_all_tx_methods, get_all_txs, get_last_balances, delete_transfer_tx};
+use crate::db::{delete_tx, get_all_changes, get_all_tx_methods, get_all_txs, get_last_balances};
 use rusqlite::{Connection, Result as sqlResult};
 
 /// This struct stores the transaction data, balance, changes and the id num
@@ -106,7 +106,7 @@ impl TransactionData {
     pub fn del_tx(&self, index: usize, tx_type: &str) -> sqlResult<()> {
         let target_id = self.all_id_num[index].parse::<i32>().unwrap().to_owned();
         if tx_type == "Transfer" {
-            return delete_transfer_tx(target_id as usize, "data.sqlite")
+            return delete_tx(target_id as usize, "data.sqlite")
         }
         delete_tx(target_id as usize, "data.sqlite")
     }
