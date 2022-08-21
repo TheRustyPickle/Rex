@@ -1,5 +1,5 @@
 use crate::db::StatusChecker;
-use crate::db::{add_new_transfer, delete_transfer_tx};
+use crate::db::{add_new_tx, delete_tx,};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::error::Error;
@@ -158,6 +158,7 @@ impl TransferData {
     /// Collects all the data for the transaction and calls the function
     /// that pushes them to the database.
     pub fn add_tx(&mut self) -> String {
+        // Checks that none of the ui fields are not empty
         if &self.date == "" {
             return format!("Date: Date cannot be empty");
         } else if &self.details == "" {
@@ -166,7 +167,7 @@ impl TransferData {
             return format!("From TX Method: Transaction method cannot be empty");
         } else if &self.to == "" {
             return format!("To TX Method: Transaction method cannot be empty");
-        } else if &self.from == &self.to {
+        } else if &self.from == &self.to && &self.from != "" && &self.to != "" {
             return format!("Tx Method: Transaction method From and To cannot be the same");
         } else if &self.amount == "" {
             return format!("Amount: Amount cannot be empty");
@@ -177,8 +178,10 @@ impl TransferData {
         let tx_method = format!("{} to {}", self.from, self.to);
 
         if self.editing_tx == true {
+            // if we are editing a tx delete the selected transaction so we can create it again
+            // with the new details
             self.editing_tx = false;
-            let status = delete_transfer_tx(self.id_num as usize, "data.sqlite");
+            let status = delete_tx(self.id_num as usize, "data.sqlite");
             match status {
                 Ok(_) => {}
                 Err(e) => {
@@ -188,7 +191,7 @@ impl TransferData {
                     )
                 }
             }
-            let status_add = add_new_transfer(
+            let status_add = add_new_tx(
                 &self.date,
                 &self.details,
                 &tx_method,
@@ -203,7 +206,7 @@ impl TransferData {
                 Err(e) => return format!("Edit Transfer: Something went wrong {}", e),
             }
         } else {
-            let status = add_new_transfer(
+            let status = add_new_tx(
                 &self.date,
                 &self.details,
                 &tx_method,
@@ -220,7 +223,7 @@ impl TransferData {
     }
 
     /// Adds a status after a checking is complete. Used for the Status widget
-    /// on Add Transaction page and called upon on Enter/Esc presses.
+    /// on Add Transaction/Transfer page and called upon on Enter/Esc presses.
     /// Removes the earliest status if total status number passes 20.
     pub fn add_tx_status(&mut self, data: &str) {
         if self.tx_status.len() == 20 {
@@ -256,6 +259,7 @@ impl TransferData {
         Ok(status)
     }
 
+    /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
     pub fn check_to(&mut self, conn: &Connection) -> Result<String, Box<dyn Error>> {
         let mut cu_method = self.to.clone();
 
@@ -272,7 +276,7 @@ impl TransferData {
         Ok(status)
     }
 
-    /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
+    /// Checks the inputted amount by the user upon pressing Enter/Esc for various error.
     pub fn check_amount(&mut self) -> Result<String, Box<dyn Error>> {
         let mut user_amount = self.amount.clone();
 
