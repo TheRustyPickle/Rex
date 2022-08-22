@@ -45,12 +45,12 @@ impl TransactionData {
     pub fn get_balance(&self, index: usize) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
         for i in self.all_balance[index].iter() {
-            balance_data.push(format!("{:.2}", i.parse::<f32>().unwrap()));
+            balance_data.push(format!("{:.2}", i.parse::<f64>().unwrap()));
         }
 
-        let mut total_balance: f32 = 0.0;
+        let mut total_balance: f64 = 0.0;
         for i in balance_data.iter().skip(1) {
-            let int_bal = i.parse::<f32>().unwrap();
+            let int_bal = i.parse::<f64>().unwrap();
             total_balance += int_bal;
         }
         let formatted_total_balance = format!("{:.2}", total_balance);
@@ -64,12 +64,12 @@ impl TransactionData {
         let mut balance_data = vec!["Balance".to_string()];
         let db_data = get_last_balances(conn, &get_all_tx_methods(conn));
         for i in db_data.iter() {
-            balance_data.push(format!("{:.2}", i.parse::<f32>().unwrap()));
+            balance_data.push(format!("{:.2}", i.parse::<f64>().unwrap()));
         }
 
-        let mut total_balance: f32 = 0.0;
+        let mut total_balance: f64 = 0.0;
         for i in balance_data.iter().skip(1) {
-            let int_bal = i.parse::<f32>().unwrap();
+            let int_bal = i.parse::<f64>().unwrap();
             total_balance += int_bal;
         }
         let formatted_total_balance = format!("{:.2}", total_balance);
@@ -87,7 +87,7 @@ impl TransactionData {
 
             // the splitting and checking is necessary to make sure all strings are
             // properly ending with 2 values after dot. it's a string with ↓ or ↑
-            // so format!("{:.2}", parse to f32) won't work.
+            // so format!("{:.2}", parse to f64) won't work.
 
             if splitted[1].len() == 1 {
                 new_value = format!("{}0", i)
@@ -125,13 +125,13 @@ impl TransactionData {
             stopping_index = a as i32;
         }
 
-        let mut total_income = 0.0_f32;
+        let mut total_income = 0.0_f64;
         for tx in self.all_tx.iter() {
             let amount = &tx[3];
             let tx_type = &tx[4];
 
             if tx_type == "Income" {
-                total_income += amount.parse::<f32>().unwrap();
+                total_income += amount.parse::<f64>().unwrap();
             }
             if stopping_index == 0 {
                 break;
@@ -157,13 +157,13 @@ impl TransactionData {
             stopping_index = a as i32;
         }
 
-        let mut total_expense = 0.0_f32;
+        let mut total_expense = 0.0_f64;
         for tx in self.all_tx.iter() {
             let amount = &tx[3];
             let tx_type = &tx[4];
 
             if tx_type == "Expense" {
-                total_expense += amount.parse::<f32>().unwrap();
+                total_expense += amount.parse::<f64>().unwrap();
             }
             if stopping_index == 0 {
                 break;

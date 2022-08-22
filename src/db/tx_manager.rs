@@ -5,8 +5,6 @@ use crate::db::{
 use rusqlite::{Connection, Result as sqlResult};
 use std::collections::HashMap;
 
-// TODO Join transfer and normal tx func into one for adding and deleting
-
 /// Adds a transaction to the database with the given info. The flow of this goes like this:
 /// - Add the new transaction to the database
 /// - Calculate the changes that happened to the Tx Method
@@ -76,7 +74,7 @@ pub fn add_new_tx(
         get_last_time_balance(&sp, month as usize, year as usize, &all_tx_methods);
 
     let mut new_balance = 0.0;
-    let int_amount = amount.parse::<f32>().unwrap();
+    let int_amount = amount.parse::<f64>().unwrap();
 
     if tx_type == "Transfer" {
         let new_balance_from = cu_month_balance[&from_method] - int_amount;
@@ -101,7 +99,7 @@ pub fn add_new_tx(
 
     for i in 0..all_tx_methods.len() {
         // the variable to keep track whether any changes were made to the tx method
-        let cu_last_balance = last_balance[i].parse::<f32>().unwrap();
+        let cu_last_balance = last_balance[i].parse::<f64>().unwrap();
         let mut default_change = format!("{:.2}", 0.0);
 
         // we could have just used the tx_method from the argument but adding the default values
@@ -109,20 +107,20 @@ pub fn add_new_tx(
         // and the Changes order
 
         if tx_type == "Transfer" && &all_tx_methods[i] == &from_method {
-            default_change = format!("↓{}", &amount);
+            default_change = format!("↓{}", &int_amount);
             let edited_balance = cu_last_balance - int_amount;
             last_balance_data.insert(&from_method, format!("{edited_balance:.2}"));
         } else if tx_type == "Transfer" && &all_tx_methods[i] == &to_method {
-            default_change = format!("↑{}", &amount);
+            default_change = format!("↑{}", &int_amount);
             let edited_balance = cu_last_balance + int_amount;
             last_balance_data.insert(&to_method, format!("{edited_balance:.2}"));
         } else if tx_type != "Transfer" && &all_tx_methods[i] == &tx_method {
             if tx_type == "Expense" {
-                default_change = format!("↓{}", &amount);
+                default_change = format!("↓{}", &int_amount);
                 let edited_balance = cu_last_balance - int_amount;
                 last_balance_data.insert(&all_tx_methods[i], format!("{edited_balance:.2}"));
             } else if tx_type == "Income" {
-                default_change = format!("↑{}", &amount);
+                default_change = format!("↑{}", &int_amount);
                 let edited_balance = cu_last_balance + int_amount;
                 last_balance_data.insert(&all_tx_methods[i], format!("{edited_balance:.2}"));
             }
@@ -219,7 +217,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
         to_method = from_to[1]; 
     }
 
-    let amount = &data[2].parse::<f32>().unwrap();
+    let amount = &data[2].parse::<f64>().unwrap();
     let tx_type: &str = &data[3];
 
     // loop through all rows in the balance_all table from the deletion point and update balance
@@ -245,7 +243,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
         // reverse that amount that was previously added and commit them to db
         for i in 0..tx_methods.len() {
             if &tx_methods[i] == source && cu_month_balance[i] != "0.00" {
-                let mut cu_int_amount = cu_month_balance[i].parse::<f32>().unwrap();
+                let mut cu_int_amount = cu_month_balance[i].parse::<f64>().unwrap();
                 if tx_type == "Expense" {
                     cu_int_amount += amount;
                 } else if tx_type == "Income" {
@@ -254,19 +252,19 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
                 updated_month_balance.push(format!("{:.2}", cu_int_amount));
             
             } else if &tx_methods[i] == from_method && cu_month_balance[i] != "0.00" {
-                let mut cu_int_amount = cu_month_balance[i].parse::<f32>().unwrap();
+                let mut cu_int_amount = cu_month_balance[i].parse::<f64>().unwrap();
                 cu_int_amount += amount;
                 updated_month_balance.push(format!("{:.2}", cu_int_amount));
             
             } else if &tx_methods[i] == to_method && cu_month_balance[i] != "0.00" {
-                let mut cu_int_amount = cu_month_balance[i].parse::<f32>().unwrap();
+                let mut cu_int_amount = cu_month_balance[i].parse::<f64>().unwrap();
                 cu_int_amount -= amount;
                 updated_month_balance.push(format!("{:.2}", cu_int_amount));
             
             } else {
                 updated_month_balance.push(format!(
                     "{:.2}",
-                    cu_month_balance[i].parse::<f32>().unwrap()
+                    cu_month_balance[i].parse::<f64>().unwrap()
                 ));
             }
         }
@@ -299,7 +297,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
     // we are deleting 1 transaction, so loop through all tx methods, and whichever method matches
     // with the one we are deleting, add/subtract from the amount.
     for i in 0..tx_methods.len() {
-        let mut cu_balance = last_balance[i].parse::<f32>().unwrap();
+        let mut cu_balance = last_balance[i].parse::<f64>().unwrap();
         if &tx_methods[i] == source && tx_type != "Transfer" {
             match tx_type {
                 "Expense" => cu_balance += amount,
