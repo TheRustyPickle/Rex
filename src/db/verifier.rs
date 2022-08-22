@@ -126,7 +126,7 @@ pub trait StatusChecker {
         }
 
         // If the amount contains non-number character, make it fail
-        let int_amount: f32 = amount.parse()?;
+        let int_amount: f64 = amount.parse()?;
 
         if int_amount <= 0.0 {
             return Ok("Amount: Value must be bigger than zero".to_string());

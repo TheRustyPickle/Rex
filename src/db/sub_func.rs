@@ -65,7 +65,7 @@ pub fn get_last_time_balance(
     month: usize,
     year: usize,
     tx_method: &Vec<String>,
-) -> HashMap<String, f32> {
+) -> HashMap<String, f64> {
     // We can get the id_num of the month which is saved in the database based on the
     // month and year index there is passed.
     let mut target_id_num = month as i32 + (year as i32 * 12);
@@ -93,12 +93,12 @@ pub fn get_last_time_balance(
 
         let final_balance = conn
             .query_row(&query, [target_id_num], |row| {
-                let mut final_data: Vec<f32> = Vec::new();
+                let mut final_data: Vec<f64> = Vec::new();
 
                 // We don't know the amount of tx method so we need to loop
                 for i in 0..tx_method.len() {
                     let to_push: String = row.get(i).unwrap();
-                    let final_value = to_push.parse::<f32>().unwrap();
+                    let final_value = to_push.parse::<f64>().unwrap();
                     final_data.push(final_value);
                 }
                 Ok(final_data)
@@ -224,14 +224,14 @@ pub fn get_all_txs(
 
         // collect data inside variables
         let tx_type = &i[4];
-        let amount = &i[3].to_string().parse::<f32>().unwrap();
+        let amount = &i[3].to_string().parse::<f64>().unwrap();
         let tx_method = &i[2];
 
         // If the transaction is not a transfer, default balance goes to new_balance_from
         // and new_balance_to remains empty. On transfer TX both of them are used
 
-        let mut new_balance_from: f32 = 0.0;
-        let mut new_balance_to: f32 = 0.0;
+        let mut new_balance_from: f64 = 0.0;
+        let mut new_balance_to: f64 = 0.0;
 
         let mut from_method = "".to_string();
         let mut to_method = "".to_string();
