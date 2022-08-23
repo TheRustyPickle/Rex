@@ -107,20 +107,20 @@ pub fn add_new_tx(
         // and the Changes order
 
         if tx_type == "Transfer" && &all_tx_methods[i] == &from_method {
-            default_change = format!("↓{}", &int_amount);
+            default_change = format!("↓{:.2}", &int_amount);
             let edited_balance = cu_last_balance - int_amount;
             last_balance_data.insert(&from_method, format!("{edited_balance:.2}"));
         } else if tx_type == "Transfer" && &all_tx_methods[i] == &to_method {
-            default_change = format!("↑{}", &int_amount);
+            default_change = format!("↑{:.2}", &int_amount);
             let edited_balance = cu_last_balance + int_amount;
             last_balance_data.insert(&to_method, format!("{edited_balance:.2}"));
         } else if tx_type != "Transfer" && &all_tx_methods[i] == &tx_method {
             if tx_type == "Expense" {
-                default_change = format!("↓{}", &int_amount);
+                default_change = format!("↓{:.2}", &int_amount);
                 let edited_balance = cu_last_balance - int_amount;
                 last_balance_data.insert(&all_tx_methods[i], format!("{edited_balance:.2}"));
             } else if tx_type == "Income" {
-                default_change = format!("↑{}", &int_amount);
+                default_change = format!("↑{:.2}", &int_amount);
                 let edited_balance = cu_last_balance + int_amount;
                 last_balance_data.insert(&all_tx_methods[i], format!("{edited_balance:.2}"));
             }
