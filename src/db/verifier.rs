@@ -117,6 +117,26 @@ pub trait StatusChecker {
             return Ok("Amount: Nothing to check".to_string());
         }
 
+        let calc_symbols = vec!["*", "+", "-", "/"];
+
+        for i in calc_symbols {
+            if amount.contains(i) {
+                let data = amount.split(i).collect::<Vec<&str>>();
+                //println!("{:?}", data);
+                let first_amount: f64 = data[0].trim().parse()?;
+                let second_amount: f64 = data[1].trim().parse()?;
+                
+                match i {
+                    "*" => *amount = (first_amount * second_amount).to_string(),
+                    "/" => *amount = (first_amount / second_amount).to_string(),
+                    "+" => *amount = (first_amount + second_amount).to_string(),
+                    "-" => *amount = (first_amount - second_amount).to_string(),
+                    _ => {}
+                }
+                break;
+            }
+        }
+
         if amount.contains(".") {
             let state = amount.split(".");
             let splitted = state.collect::<Vec<&str>>();
@@ -156,7 +176,7 @@ pub trait StatusChecker {
             *amount = format!("{}.{}", &splitted_data[0][..10], splitted_data[1]);
         }
 
-        Ok("Date: Date Accepted".to_string())
+        Ok("Amount: Amount Accepted".to_string())
     }
 
     /// Checks if:
