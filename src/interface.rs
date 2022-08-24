@@ -7,9 +7,10 @@ use crate::home_page::{
 use crate::initial_page::starter_ui;
 use crate::key_checker::{add_tx_checker, home_checker, initial_checker, transfer_checker};
 use crate::popup_page::add_popup;
-use crate::transfer_page::{transfer_ui_func, TransferData};
+use crate::transfer_page::{transfer_ui, TransferData};
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
+use crate::chart_page::chart_ui;
 use crossterm::event::poll;
 use crossterm::event::{self, Event};
 use rusqlite::Connection;
@@ -182,11 +183,21 @@ pub fn run_app<B: Backend>(
             })?,
 
             CurrentUi::Transfer => terminal.draw(|f| {
-                transfer_ui_func(
+                transfer_ui(
                     f,
                     data_for_transfer.get_all_texts(),
                     &cu_transfer_page,
                     &data_for_transfer.tx_status,
+                );
+
+                match cu_popup {
+                    PopupState::Helper => add_popup(f, 1),
+                    _ => {}
+                }
+            })?,
+            CurrentUi::Chart => terminal.draw(|f| {
+                chart_ui(
+                    f,
                 );
 
                 match cu_popup {
@@ -264,7 +275,8 @@ pub fn run_app<B: Backend>(
                         if status != "0" {
                             return Ok(status);
                         }
-                    }
+                    },
+                    CurrentUi::Chart => {}
                 }
             };
         }

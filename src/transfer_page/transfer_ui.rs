@@ -18,7 +18,7 @@ use tui::{
 /// - cu_selected : For verifying the current selected widget to add a block box
 /// - status_data : Contains all the String to push into the Status widget
 
-pub fn transfer_ui_func<B: Backend>(
+pub fn transfer_ui<B: Backend>(
     f: &mut Frame<B>,
     input_data: Vec<&str>,
     cu_selected: &TransferTab,
