@@ -151,6 +151,7 @@ pub enum CurrentUi {
     Home,
     AddTx,
     Transfer,
+    Chart,
 }
 
 pub enum PopupState {
