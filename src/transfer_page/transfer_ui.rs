@@ -166,13 +166,13 @@ pub fn transfer_ui<B: Backend>(
         .alignment(Alignment::Left);
 
     let to_sec = Paragraph::new(to_text)
-    .style(
-        Style::default()
-            .bg(Color::Rgb(255, 255, 255))
-            .fg(Color::Rgb(50, 205, 50)),
-    )
-    .block(create_block("To"))
-    .alignment(Alignment::Left);
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
+        .block(create_block("To"))
+        .alignment(Alignment::Left);
 
     let arrow_sec = Paragraph::new(arrow_text)
         .style(

@@ -1,5 +1,5 @@
 use crate::db::StatusChecker;
-use crate::db::{add_new_tx, delete_tx,};
+use crate::db::{add_new_tx, delete_tx};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::error::Error;
