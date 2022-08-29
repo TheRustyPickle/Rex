@@ -1,3 +1,4 @@
+use crate::chart_page::{chart_ui, ChartData};
 use crate::db::{get_all_tx_methods, get_empty_changes};
 use crate::home_page::ui;
 use crate::home_page::TransactionData;
@@ -10,7 +11,6 @@ use crate::popup_page::add_popup;
 use crate::transfer_page::{transfer_ui, TransferData};
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
-use crate::chart_page::chart_ui;
 use crossterm::event::poll;
 use crossterm::event::{self, Event};
 use rusqlite::Connection;
@@ -195,16 +195,17 @@ pub fn run_app<B: Backend>(
                     _ => {}
                 }
             })?,
-            CurrentUi::Chart => terminal.draw(|f| {
-                chart_ui(
-                    f,
-                );
+            CurrentUi::Chart => {
+                let data_for_chart = ChartData::set(cu_year_index);
+                terminal.draw(|f| {
+                    chart_ui(f, data_for_chart);
 
-                match cu_popup {
-                    PopupState::Helper => add_popup(f, 1),
-                    _ => {}
-                }
-            })?,
+                    match cu_popup {
+                        PopupState::Helper => add_popup(f, 1),
+                        _ => {}
+                    }
+                })?
+            }
         };
 
         // This is where the keyboard press tracking starts
@@ -275,7 +276,7 @@ pub fn run_app<B: Backend>(
                         if status != "0" {
                             return Ok(status);
                         }
-                    },
+                    }
                     CurrentUi::Chart => {}
                 }
             };
