@@ -125,7 +125,7 @@ pub trait StatusChecker {
                 //println!("{:?}", data);
                 let first_amount: f64 = data[0].trim().parse()?;
                 let second_amount: f64 = data[1].trim().parse()?;
-                
+
                 match i {
                     "*" => *amount = (first_amount * second_amount).to_string(),
                     "/" => *amount = (first_amount / second_amount).to_string(),

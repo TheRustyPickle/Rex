@@ -106,7 +106,7 @@ impl TransactionData {
     pub fn del_tx(&self, index: usize, tx_type: &str) -> sqlResult<()> {
         let target_id = self.all_id_num[index].parse::<i32>().unwrap().to_owned();
         if tx_type == "Transfer" {
-            return delete_tx(target_id as usize, "data.sqlite")
+            return delete_tx(target_id as usize, "data.sqlite");
         }
         delete_tx(target_id as usize, "data.sqlite")
     }

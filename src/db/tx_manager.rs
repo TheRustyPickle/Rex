@@ -81,8 +81,7 @@ pub fn add_new_tx(
         let new_balance_to = cu_month_balance[&to_method] + int_amount;
         *cu_month_balance.get_mut(&from_method).unwrap() = new_balance_from;
         *cu_month_balance.get_mut(&to_method).unwrap() = new_balance_to;
-    }
-    else {
+    } else {
         // makes changes to the current month balance and push them to vector
         if tx_type == "Expense" {
             new_balance = cu_month_balance[tx_method] - int_amount;
@@ -145,7 +144,7 @@ pub fn add_new_tx(
         }
     }
     balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
-    
+
     let last_balance_query: String;
     // there is only 1 value in the last_balance_data, we already know on which tx method the changes happened
     if tx_type == "Transfer" {
@@ -153,11 +152,11 @@ pub fn add_new_tx(
             r#"UPDATE balance_all SET "{from_method}" = "{}", "{to_method}" = "{}" WHERE id_num = {}"#,
             last_balance_data[&from_method], last_balance_data[&to_method], last_balance_id
         );
-    }
-    else {
+    } else {
         last_balance_query = format!(
             r#"UPDATE balance_all SET "{tx_method}" = "{}" WHERE id_num = {}"#,
-            last_balance_data[&tx_method.to_string()], last_balance_id
+            last_balance_data[&tx_method.to_string()],
+            last_balance_id
         );
     }
 
@@ -214,7 +213,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
         let from_to = data[1].split(" to ").collect::<Vec<&str>>();
 
         from_method = from_to[0];
-        to_method = from_to[1]; 
+        to_method = from_to[1];
     }
 
     let amount = &data[2].parse::<f64>().unwrap();
@@ -250,17 +249,14 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
                     cu_int_amount -= amount;
                 }
                 updated_month_balance.push(format!("{:.2}", cu_int_amount));
-            
             } else if &tx_methods[i] == from_method && cu_month_balance[i] != "0.00" {
                 let mut cu_int_amount = cu_month_balance[i].parse::<f64>().unwrap();
                 cu_int_amount += amount;
                 updated_month_balance.push(format!("{:.2}", cu_int_amount));
-            
             } else if &tx_methods[i] == to_method && cu_month_balance[i] != "0.00" {
                 let mut cu_int_amount = cu_month_balance[i].parse::<f64>().unwrap();
                 cu_int_amount -= amount;
                 updated_month_balance.push(format!("{:.2}", cu_int_amount));
-            
             } else {
                 updated_month_balance.push(format!(
                     "{:.2}",
@@ -306,8 +302,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
             }
         } else if &tx_methods[i] == from_method && tx_type == "Transfer" {
             cu_balance += amount;
-        }
-        else if &tx_methods[i] == to_method && tx_type == "Transfer" {
+        } else if &tx_methods[i] == to_method && tx_type == "Transfer" {
             cu_balance -= amount;
         }
         final_last_balance.push(format!("{:.2}", cu_balance));

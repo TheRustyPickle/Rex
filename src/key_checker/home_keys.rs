@@ -46,8 +46,7 @@ pub fn home_checker(
                                 target_id_num,
                             );
                             *cu_page = CurrentUi::AddTx;
-                        }
-                        else {
+                        } else {
                             let from_to = target_data[2].split(" to ").collect::<Vec<&str>>();
                             let from_method = from_to[0];
                             let to_method = from_to[1];
@@ -66,7 +65,8 @@ pub fn home_checker(
                 KeyCode::Char('d') => {
                     if table.state.selected() != None {
                         let target_data = &all_data.get_txs()[cu_table_index.unwrap()];
-                        let status = all_data.del_tx(table.state.selected().unwrap(), &target_data[4]);
+                        let status =
+                            all_data.del_tx(table.state.selected().unwrap(), &target_data[4]);
                         match status {
                             Ok(_) => {
                                 // transaction deleted so reload the data again
