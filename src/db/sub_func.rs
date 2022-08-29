@@ -238,10 +238,8 @@ pub fn get_all_txs(
 
         if tx_type == "Expense" {
             new_balance_from = last_month_balance[tx_method] - amount;
-
         } else if tx_type == "Income" {
             new_balance_from = last_month_balance[tx_method] + amount;
-
         } else if tx_type == "Transfer" {
             let split = tx_method.split(" to ");
             let vec = split.collect::<Vec<&str>>();
@@ -268,6 +266,30 @@ pub fn get_all_txs(
 
         final_all_balances.push(to_push);
     }
+
+    if final_all_balances.len() > 0 {
+        let final_index = final_all_balances.len() - 1;
+
+        let mut balance_query = format!("UPDATE balance_all SET ");
+        for i in 0..final_all_balances[final_index].len() {
+            if i != final_all_balances[final_index].len() - 1 {
+                balance_query.push_str(&format!(
+                    r#""{}" = "{}", "#,
+                    all_tx_methods[i], final_all_balances[final_index][i]
+                ))
+            } else {
+                balance_query.push_str(&format!(
+                    r#""{}" = "{}" "#,
+                    all_tx_methods[i], final_all_balances[final_index][i]
+                ))
+            }
+        }
+        let target_id_num = month as i32 + 1 + (year as i32 * 12);
+        balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
+        conn.execute(&balance_query, [])
+            .expect("Error updating balance query");
+    }
+
     (final_all_txs, final_all_balances, all_id_num)
 }
 
@@ -282,7 +304,7 @@ pub fn get_empty_changes(conn: &Connection) -> Vec<String> {
     changes
 }
 
-/// Returns the absolute final balance which is the balance saved after each transaction was counted 
+/// Returns the absolute final balance which is the balance saved after each transaction was counted
 /// or the last row on balance_all table.
 pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<String> {
     let mut query = format!(
