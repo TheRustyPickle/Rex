@@ -1,3 +1,4 @@
+mod chart_page;
 pub mod db;
 pub mod home_page;
 mod initial_page;
