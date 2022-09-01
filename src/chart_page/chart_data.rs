@@ -1,12 +1,17 @@
 use crate::db::get_all_txs;
 use chrono::naive::NaiveDate;
 use rusqlite::Connection;
+
+/// Stores relevant data to create a chart from the transaction and balance changes
+/// all_txs contains all the transaction
+/// all_balance contains all the balance changes after each transaction happened
 pub struct ChartData {
     pub all_txs: Vec<Vec<String>>,
     pub all_balance: Vec<Vec<String>>,
 }
 
 impl ChartData {
+    /// Gets all the transaction of the given year and saves them in the struct
     pub fn set(year: usize) -> Self {
         let mut all_txs = vec![];
         let mut all_balance = vec![];
@@ -22,6 +27,7 @@ impl ChartData {
         }
     }
 
+    /// Returns all dates of the transactions that were collected in the struct
     pub fn get_all_dates(&self) -> Vec<NaiveDate> {
         let mut to_return = vec![];
 
@@ -29,17 +35,5 @@ impl ChartData {
             to_return.push(NaiveDate::parse_from_str(&i[0], "%d-%m-%Y").unwrap());
         }
         to_return
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    #[ignore]
-    fn test_chart_data() {
-        let data = ChartData::set(0);
-        assert_eq!(vec![vec!["1".to_string()]], data.all_txs);
     }
 }
