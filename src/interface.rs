@@ -6,7 +6,7 @@ use crate::home_page::{
     CurrentUi, PopupState, SelectedTab, TableData, TimeData, TransferTab, TxTab,
 };
 use crate::initial_page::starter_ui;
-use crate::key_checker::{add_tx_checker, home_checker, initial_checker, transfer_checker};
+use crate::key_checker::{add_tx_keys, chart_keys, home_keys, initial_keys, transfer_keys};
 use crate::popup_page::add_popup;
 use crate::transfer_page::{transfer_ui, TransferData};
 use crate::tx_page::tx_ui;
@@ -215,7 +215,7 @@ pub fn run_app<B: Backend>(
             if let Event::Key(key) = event::read()? {
                 match cu_page {
                     CurrentUi::Home => {
-                        let status = home_checker(
+                        let status = home_keys(
                             key,
                             &mut cu_page,
                             &mut cu_popup,
@@ -236,7 +236,7 @@ pub fn run_app<B: Backend>(
                         }
                     }
                     CurrentUi::AddTx => {
-                        let status = add_tx_checker(
+                        let status = add_tx_keys(
                             key,
                             &mut cu_page,
                             &mut cu_popup,
@@ -254,13 +254,13 @@ pub fn run_app<B: Backend>(
                         }
                     }
                     CurrentUi::Initial => {
-                        let status = initial_checker(key, &mut cu_page, &mut cu_popup)?;
+                        let status = initial_keys(key, &mut cu_page, &mut cu_popup)?;
                         if status != "0" {
                             return Ok(status);
                         }
                     }
                     CurrentUi::Transfer => {
-                        let status = transfer_checker(
+                        let status = transfer_keys(
                             key,
                             &mut cu_page,
                             &mut cu_popup,
@@ -277,7 +277,18 @@ pub fn run_app<B: Backend>(
                             return Ok(status);
                         }
                     }
-                    CurrentUi::Chart => {}
+                    CurrentUi::Chart => {
+                        let status = chart_keys(
+                            key,
+                            &mut cu_page,
+                            &mut cu_popup,
+                            &mut cu_tx_page,
+                            &mut data_for_tx,
+                        )?;
+                        if status != "0" {
+                            return Ok(status);
+                        }
+                    }
                 }
             };
         }
