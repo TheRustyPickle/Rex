@@ -108,6 +108,7 @@ pub trait StatusChecker {
     ///
     /// - Amount is empty
     /// - Amount is zero or below
+    /// - Amount text contains a calculation symbol
     ///
     /// if the value is not float, tries to make it float ending with double zero
 

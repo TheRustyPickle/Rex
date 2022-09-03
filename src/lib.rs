@@ -60,7 +60,12 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
 
             all_terminals.insert(
                 "gnome-terminal",
-                vec![gnome_dir, "--".to_string(), "./rex".to_string()],
+                vec![
+                    gnome_dir,
+                    "--maximize".to_string(),
+                    "--".to_string(),
+                    "./rex".to_string(),
+                ],
             );
 
             // start with any one of them so we have an output that we can return later, couldn't create an
@@ -87,8 +92,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
             Ok(a) => {
                 if a.stderr.len() > 2 {
                     let full_text = format!(
-                        "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{:?}",
-                        a
+                        "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{a:?}",
                     );
                     let mut open = File::create("Error.txt")?;
                     open.write_all(full_text.as_bytes())?;

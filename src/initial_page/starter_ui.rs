@@ -76,6 +76,7 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
         // after each loop we keep track of the loop index and the text index we want to add for rendering.
         let mut cu_index = 0;
         let mut target_index = index;
+        
         for char in line.chars() {
             if cu_index == target_index && total_to_add != 0 && target_index < line.len() {
                 new_text.push(char);

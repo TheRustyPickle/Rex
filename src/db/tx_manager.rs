@@ -20,6 +20,7 @@ pub fn add_new_tx(
     path: &str,
     id_num: Option<&str>,
 ) -> sqlResult<()> {
+    // create a connection and a savepoint
     let mut conn = Connection::open(path)?;
     let sp = conn.savepoint()?;
 
@@ -105,6 +106,7 @@ pub fn add_new_tx(
         // manually after that would make it tricky because have to maintain the tx method balance order
         // and the Changes order
 
+        // add the proper values and changes based on the tx type
         if tx_type == "Transfer" && &all_tx_methods[i] == &from_method {
             default_change = format!("↓{:.2}", &int_amount);
             let edited_balance = cu_last_balance - int_amount;
@@ -146,7 +148,7 @@ pub fn add_new_tx(
     balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
 
     let last_balance_query: String;
-    // there is only 1 value in the last_balance_data, we already know on which tx method the changes happened
+
     if tx_type == "Transfer" {
         last_balance_query = format!(
             r#"UPDATE balance_all SET "{from_method}" = "{}", "{to_method}" = "{}" WHERE id_num = {}"#,
@@ -183,6 +185,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
 
     let mut final_last_balance = Vec::new();
 
+    // get the deletion tx data
     let query = format!("SELECT * FROM tx_all Where id_num = {}", id_num);
     let data = sp.query_row(&query, [], |row| {
         let mut final_data: Vec<String> = Vec::new();
@@ -204,11 +207,14 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
 
     let mut target_id_num = month as i32 + (year as i32 * 12);
 
+    //
     let mut from_method = "";
     let mut to_method = "";
 
+    // the tx_method of the tx
     let source = &data[1];
 
+    // execute this block to get block tx method if the tx type is a Transfer
     if source.contains(" to ") {
         let from_to = data[1].split(" to ").collect::<Vec<&str>>();
 
@@ -220,7 +226,6 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
     let tx_type: &str = &data[3];
 
     // loop through all rows in the balance_all table from the deletion point and update balance
-
     loop {
         let mut query = format!(
             "SELECT {:?} FROM balance_all WHERE id_num = {}",
@@ -240,6 +245,10 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
         let mut updated_month_balance = vec![];
 
         // reverse that amount that was previously added and commit them to db
+        // add or subtract based on the tx type to the relevant method
+
+        // check the month balance as not zero because if it is 0, there was never any transaction
+        // done on that month
         for i in 0..tx_methods.len() {
             if &tx_methods[i] == source && cu_month_balance[i] != "0.00" {
                 let mut cu_int_amount = cu_month_balance[i].parse::<f64>().unwrap();
@@ -284,6 +293,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
         balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
         sp.execute(&balance_query, [])?;
 
+        // 49 is the absolute final balance which we don't need to modify
         target_id_num += 1;
         if target_id_num == 49 {
             break;
@@ -292,6 +302,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
 
     // we are deleting 1 transaction, so loop through all tx methods, and whichever method matches
     // with the one we are deleting, add/subtract from the amount.
+    // Calculate the balance/s for the absolute final balance and create the query
     for i in 0..tx_methods.len() {
         let mut cu_balance = last_balance[i].parse::<f64>().unwrap();
         if &tx_methods[i] == source && tx_type != "Transfer" {

@@ -85,7 +85,7 @@ impl AddTxData {
         ]
     }
 
-    /// Used to add a new character to the date value being inputted by the
+    /// Used to add a new character to the date value that is being inputted by the
     /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_date(&mut self, text: char, pop_last: bool) {
         match pop_last {
@@ -98,7 +98,7 @@ impl AddTxData {
         }
     }
 
-    /// Used to add a new character to the details value being inputted by the
+    /// Used to add a new character to the details value that is being inputted by the
     /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_details(&mut self, text: char, pop_last: bool) {
         match pop_last {
@@ -111,7 +111,7 @@ impl AddTxData {
         }
     }
 
-    /// Used to add a new character to the tx method value being inputted by the
+    /// Used to add a new character to the tx method value that is being inputted by the
     /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_tx_method(&mut self, text: char, pop_last: bool) {
         match pop_last {
@@ -124,7 +124,7 @@ impl AddTxData {
         }
     }
 
-    /// Used to add a new character to the amount value being inputted by the
+    /// Used to add a new character to the amount value that is being inputted by the
     /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_amount(&mut self, text: char, pop_last: bool) {
         match pop_last {
@@ -140,7 +140,7 @@ impl AddTxData {
         }
     }
 
-    /// Used to add a new character to the tx type value being inputted by the
+    /// Used to add a new character to the tx type value that is being inputted by the
     /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_tx_type(&mut self, text: char, pop_last: bool) {
         match pop_last {

@@ -2,7 +2,7 @@ use crate::home_page::{CurrentUi, PopupState};
 use crossterm::event::{KeyCode, KeyEvent};
 use std::error::Error;
 
-pub fn initial_checker(
+pub fn initial_keys(
     key: KeyEvent,
     cu_page: &mut CurrentUi,
     cu_popup: &mut PopupState,
@@ -15,6 +15,7 @@ pub fn initial_checker(
         PopupState::NewUpdate => {
             match key.code {
                 KeyCode::Enter => {
+                    // If there is a new version, Enter will try to open the default browser with this link
                     match open::that("https://github.com/WaffleMixer/Rex/releases/latest") {
                         Ok(_) => *cu_popup = PopupState::Nothing,
 

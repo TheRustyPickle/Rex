@@ -6,7 +6,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::error::Error;
 
-pub fn transfer_checker(
+pub fn transfer_keys(
     key: KeyEvent,
     cu_page: &mut CurrentUi,
     cu_popup: &mut PopupState,
