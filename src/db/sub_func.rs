@@ -57,7 +57,7 @@ fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     (datetime_1, datetime_2)
 }
 
-/// Gathers all the balance of all sources from the previous month or from earlier months.
+/// Gathers all the balance of all sources from the previous month or from earlier.
 /// If all the previous month's balances are 0, returns 0
 /// return example: `{"source_1": 10.50, "source_2": 100.0}`
 pub fn get_last_time_balance(
@@ -79,6 +79,8 @@ pub fn get_last_time_balance(
         return final_value;
     }
 
+    // keep track of how many method's balances were discovered.
+    // If all of them are found, break the loop
     let mut checked_methods: Vec<&str> = vec![];
 
     let mut breaking_vec = vec![];
@@ -107,6 +109,7 @@ pub fn get_last_time_balance(
 
         target_id_num -= 1;
 
+        // add the data in the return variable only if the value is not 0 and has not been previously discovered
         for i in 0..tx_method.len() {
             if checked_methods.contains(&tx_method[i].as_ref()) == false && final_balance[i] != 0.0
             {
@@ -116,9 +119,7 @@ pub fn get_last_time_balance(
         }
 
         // We will keep the loop ongoing until we hit a non-zero balance for all tx method or
-        // the id number goes to zero. Why? Example: current working month is 6th month. So we did the last
-        // transaction on January and only consider the balance of the 5th month, that is a false balance
-        // and is not the balance we are supposed to doing the calculations on.
+        // the id number goes to zero.
         if target_id_num == 0 || checked_methods.len() == tx_method.len() {
             break;
         }
@@ -156,7 +157,7 @@ pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<
     final_result
 }
 
-/// This is a multi-use function used to retrieving all Transaction within a given date and the id_num related to them.
+/// This is a multi-use function used to retrieving all Transaction within a given date, balance and the id_num related to them.
 /// Once the transactions are fetched, we immediately start calculating the current balance values after each transaction happened
 /// and finally return all of them in a tuple
 pub fn get_all_txs(
@@ -180,7 +181,7 @@ pub fn get_all_txs(
 
     let (datetime_1, datetime_2) = get_sql_dates(month + 1, year);
 
-    // preparing the query for db
+    // preparing the query for db, getting current month's all transactions
     let mut statement = conn
         .prepare(
             "SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY date, id_num",
@@ -211,6 +212,7 @@ pub fn get_all_txs(
         .expect("Error");
 
     for i in rows {
+        // data contains all tx data of a transaction
         let mut data = i.unwrap();
         let id_num = &data.pop().unwrap();
         all_id_num.push(id_num.to_string());
@@ -236,6 +238,7 @@ pub fn get_all_txs(
         let mut from_method = "".to_string();
         let mut to_method = "".to_string();
 
+        // add or subtract the amount based on the tx type
         if tx_type == "Expense" {
             new_balance_from = last_month_balance[tx_method] - amount;
         } else if tx_type == "Income" {
@@ -250,7 +253,6 @@ pub fn get_all_txs(
         }
 
         // make changes to the balance map based on the tx
-
         // for transfer TX first block executes
         if new_balance_to != 0.0 {
             *last_month_balance.get_mut(&from_method).unwrap() = new_balance_from;
@@ -259,6 +261,7 @@ pub fn get_all_txs(
             *last_month_balance.get_mut(tx_method).unwrap() = new_balance_from;
         }
 
+        // push all the changes gathered to the return variable
         let mut to_push = vec![];
         for i in &all_tx_methods {
             to_push.push(format!("{:.2}", last_month_balance[i]))
@@ -267,10 +270,14 @@ pub fn get_all_txs(
         final_all_balances.push(to_push);
     }
 
+    // This one here is added as an insurance. If somehow the balance table is corrupted,
+    // this will correct the balance amount on that month's balance row. This checks the final index balance
+    // in the previously generated vector and pushes it to the db on the relevant row
     if final_all_balances.len() > 0 {
         let final_index = final_all_balances.len() - 1;
 
         let mut balance_query = format!("UPDATE balance_all SET ");
+
         for i in 0..final_all_balances[final_index].len() {
             if i != final_all_balances[final_index].len() - 1 {
                 balance_query.push_str(&format!(
@@ -334,7 +341,7 @@ pub fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
     last_id
 }
 
-/// Returns the last id_num recorded by balance_all table
+/// Returns the last id_num recorded by balance_all table or the id_num of the absolute final balance
 pub fn get_last_balance_id(conn: &Connection) -> sqlResult<i32> {
     let last_id: sqlResult<i32> = conn.query_row(
         "SELECT id_num FROM balance_all ORDER BY id_num DESC LIMIT 1",
@@ -380,7 +387,7 @@ pub fn get_user_tx_methods(add_new_method: bool) -> Vec<String> {
         if add_new_method == true {
             println!("{method_line}\n");
             println!("\nUser input required for Transaction Methods. Must be separated by one comma and one space \
-or ', '. Example: Bank, Cash, PayPal. \n\nInput 'Cancel' to cancel the operation\n\nEnter Transaction Methods:");
+or ', '. Example: Bank, Cash, PayPal.\n\nInput 'Cancel' to cancel the operation\n\nEnter Transaction Methods:");
         } else {
             println!("Database not found. Follow the guide below to start the app.");
             println!("\nUser input required for Transaction Methods. Must be separated by one comma and one space \

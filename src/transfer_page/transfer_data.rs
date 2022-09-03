@@ -77,7 +77,7 @@ impl TransferData {
     }
 
     /// Sends out all the collected data that has been inputted into the Add Transaction widgets
-    ///  that is going to be used for creating a new transaction
+    /// that is going to be used for creating a new transaction
     pub fn get_all_texts(&self) -> Vec<&str> {
         vec![
             &self.date,
@@ -89,7 +89,7 @@ impl TransferData {
         ]
     }
 
-    /// Used to add a new character to the date value being inputted by the
+    /// Used to add a new character to the date value that is being inputted by the
     /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_date(&mut self, text: char, pop_last: bool) {
         match pop_last {
@@ -102,7 +102,7 @@ impl TransferData {
         }
     }
 
-    /// Used to add a new character to the details value being inputted by the
+    /// Used to add a new character to the details value that is being inputted by the
     /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_details(&mut self, text: char, pop_last: bool) {
         match pop_last {
@@ -115,7 +115,7 @@ impl TransferData {
         }
     }
 
-    /// Used to add a new character to the tx method value being inputted by the
+    /// Used to add a new character to the From TX Method value that is being inputted by the
     /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_from(&mut self, text: char, pop_last: bool) {
         match pop_last {
@@ -128,6 +128,8 @@ impl TransferData {
         }
     }
 
+    /// Used to add a new character to the To TX Method value that is being inputted by the
+    /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_to(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
@@ -139,7 +141,7 @@ impl TransferData {
         }
     }
 
-    /// Used to add a new character to the amount value being inputted by the
+    /// Used to add a new character to the amount value that is being inputted by the
     /// user following each key press. Takes a bool value to represent backspace pressing.
     pub fn edit_amount(&mut self, text: char, pop_last: bool) {
         match pop_last {
@@ -155,7 +157,7 @@ impl TransferData {
         }
     }
 
-    /// Collects all the data for the transaction and calls the function
+    /// Collects all the data, verifies that all fields are complete for the transaction and calls the function
     /// that pushes them to the database.
     pub fn add_tx(&mut self) -> String {
         // Checks that none of the ui fields are not empty

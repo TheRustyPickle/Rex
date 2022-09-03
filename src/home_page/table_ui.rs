@@ -28,6 +28,7 @@ pub fn ui<B: Backend>(
     let selected_style_blue = Style::default()
         .fg(Color::Blue)
         .add_modifier(Modifier::REVERSED);
+
     let selected_style_red = Style::default()
         .fg(Color::Red)
         .add_modifier(Modifier::REVERSED);
@@ -59,6 +60,13 @@ pub fn ui<B: Backend>(
     // Each constraint creates an empty space in the terminal with the given
     // length. The final one was given 0 as minimum value which is the Transaction
     // field to keep it expanding.
+
+    // chunks are used in this format respectively
+    // - The Balance tab
+    // - The year tab
+    // - The month tab
+    // - The transaction list/Table
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -80,7 +88,7 @@ pub fn ui<B: Backend>(
     );
     f.render_widget(block, size);
 
-    //color the first three letters of the month to blue
+    // color the first three letters of the month to blue
     let month_titles = months
         .titles
         .iter()
@@ -93,7 +101,7 @@ pub fn ui<B: Backend>(
         })
         .collect();
 
-    //color the first letter of the year to blue
+    //color the first two letters of the year to blue
     let year_titles = years
         .titles
         .iter()

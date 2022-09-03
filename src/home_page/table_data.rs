@@ -20,7 +20,8 @@ pub struct TransactionData {
 }
 
 impl TransactionData {
-    /// Calls the db to fetch transaction data, transaction changes, balances and id numbers
+    /// Calls the db to fetch transaction data, transaction changes, balances and id numbers 
+    /// from the given month and year index
     pub fn new(conn: &Connection, month: usize, year: usize) -> Self {
         let (all_tx, all_balance, all_id_num) = get_all_txs(conn, month, year);
         let all_changes = get_all_changes(conn, month, year);
@@ -32,7 +33,8 @@ impl TransactionData {
         }
     }
 
-    /// returns all the Transaction data that is saved inside the struct for the current selected month
+    /// returns all the Transaction data that is saved inside the struct for the 
+    /// current selected month inside a vector for easier manipulation
     pub fn get_txs(&self) -> Vec<Vec<String>> {
         let mut table_data = Vec::new();
         for i in self.all_tx.iter() {
@@ -87,27 +89,26 @@ impl TransactionData {
 
             // the splitting and checking is necessary to make sure all strings are
             // properly ending with 2 values after dot. it's a string with ↓ or ↑
-            // so format!("{:.2}", parse to f64) won't work.
+            // so format!("{:.2}", parse to f64 won't work for the symbol.
 
             if splitted[1].len() == 1 {
                 new_value = format!("{}0", i)
+            } else if splitted[1].len() == 0 {
+                new_value = format!("{}.00", i)
             }
             changes_data.push(new_value);
         }
         changes_data
     }
 
-    /// Returns the id_num of the given index
+    /// Returns the id_num of the tx of the given index
     pub fn get_id_num(&self, index: usize) -> i32 {
         self.all_id_num[index].parse::<i32>().unwrap().to_owned()
     }
 
     /// gets the ID Number of the selected table row and calls the function to delete a transaction from the database
-    pub fn del_tx(&self, index: usize, tx_type: &str) -> sqlResult<()> {
-        let target_id = self.all_id_num[index].parse::<i32>().unwrap().to_owned();
-        if tx_type == "Transfer" {
-            return delete_tx(target_id as usize, "data.sqlite");
-        }
+    pub fn del_tx(&self, index: usize) -> sqlResult<()> {
+        let target_id = self.get_id_num(index);
         delete_tx(target_id as usize, "data.sqlite")
     }
 

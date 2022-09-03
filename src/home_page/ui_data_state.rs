@@ -4,6 +4,7 @@ use tui::widgets::TableState;
 /// and creates an index to keep track of which transactions row is selected
 /// if any. Each vec inside the vec of items contains 1 full transaction.
 ///
+/// state : `None` or an index
 /// items : `[["2022-05-01", "test", "source_1", "15.50", Expense], ]`
 pub struct TableData {
     pub state: TableState,
@@ -96,7 +97,7 @@ pub enum SelectedTab {
 }
 
 impl SelectedTab {
-    /// Movies the current selected tab to the upper value. If at the 1st value, the
+    /// Moves the current selected tab to the upper value. If at the 1st value, the
     /// the final value is selected.
     pub fn change_tab_up(&mut self) -> Self {
         let to_return;
@@ -108,7 +109,7 @@ impl SelectedTab {
         to_return
     }
 
-    /// Movies the current selected tab to the bottom value. If at the last value, the
+    /// Moves the current selected tab to the bottom value. If at the last value, the
     /// the 1st value is selected.
     pub fn change_tab_down(&mut self) -> Self {
         let to_return;
@@ -121,7 +122,7 @@ impl SelectedTab {
     }
 }
 
-/// This enum is used inside the Add Transaction page instead of the Home page.
+/// This enum is used inside the Add Transaction page.
 /// This is targeted to be used to keep track which field of the Add Transaction widgets
 /// is currently being interacted with. Based on which one is selected, each keypress is
 /// recorded and added to the relevant struct.
@@ -134,7 +135,10 @@ pub enum TxTab {
     Nothing,
 }
 
-//TODO comment this
+/// This enum is used inside the Transfer page.
+/// This is targeted to be used to keep track which field of the Transfer widgets
+/// is currently being interacted with. Based on which one is selected, each keypress is
+/// recorded and added to the relevant struct.
 pub enum TransferTab {
     Date,
     Details,
@@ -154,6 +158,7 @@ pub enum CurrentUi {
     Chart,
 }
 
+/// Indicates which popup is currently on and is being shown in the screen
 pub enum PopupState {
     NewUpdate,
     Helper,

@@ -4,7 +4,10 @@ use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::error::Error;
 
-pub fn add_tx_checker(
+
+/// Tracks the keys once interacting with the Add Transaction interface. Based on the key pressed,
+/// calls functions and passes them to a struct
+pub fn add_tx_keys(
     key: KeyEvent,
     cu_page: &mut CurrentUi,
     cu_popup: &mut PopupState,
@@ -18,6 +21,7 @@ pub fn add_tx_checker(
     conn: &Connection,
 ) -> Result<String, Box<dyn Error>> {
     match cu_popup {
+        // we don't want to move this interface while the popup is one
         PopupState::Nothing => {
             match cu_tx_page {
                 // start matching key pressed based on which widget is selected.
@@ -25,6 +29,7 @@ pub fn add_tx_checker(
                 TxTab::Nothing => match key.code {
                     KeyCode::Char('q') => return Ok("".to_string()),
                     KeyCode::Char('f') => {
+                        // returns to home page and reloads data
                         *cu_page = CurrentUi::Home;
                         *cu_tx_page = TxTab::Nothing;
                         *data_for_tx = AddTxData::new();

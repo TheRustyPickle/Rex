@@ -5,7 +5,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::error::Error;
 
-pub fn home_checker(
+pub fn home_keys(
     key: KeyEvent,
     cu_page: &mut CurrentUi,
     cu_popup: &mut PopupState,
@@ -36,6 +36,8 @@ pub fn home_checker(
                         let target_id_num = all_data.get_id_num(a);
                         let tx_type = &target_data[4];
 
+                        // based on what kind of transaction is selected, passes the tx data to the struct
+                        // and changes the current interface
                         if tx_type != "Transfer" {
                             *data_for_tx = AddTxData::custom(
                                 &target_data[0],
@@ -64,9 +66,8 @@ pub fn home_checker(
                 }
                 KeyCode::Char('d') => {
                     if table.state.selected() != None {
-                        let target_data = &all_data.get_txs()[cu_table_index.unwrap()];
                         let status =
-                            all_data.del_tx(table.state.selected().unwrap(), &target_data[4]);
+                            all_data.del_tx(table.state.selected().unwrap());
                         match status {
                             Ok(_) => {
                                 // transaction deleted so reload the data again
