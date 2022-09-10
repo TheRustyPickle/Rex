@@ -36,7 +36,7 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
 /// based on the month and year that has been passed to it. Will return two dates to use in the
 /// WHERE statement. Will return the 1st and the 31st date of the given month and year.
 /// return example: `(2022-01-01, 2022-01-31)`
-fn get_sql_dates(month: usize, year: usize) -> (String, String) {
+pub fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     // returns dates from month and year to a format that is suitable for
     // database WHERE statement.
 
@@ -468,67 +468,4 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
         }
     }
     db_tx_methods
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::db::create_db;
-    use std::fs;
-
-    fn create_test_db(file_name: &str) -> Connection {
-        create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
-        return Connection::open(file_name).unwrap();
-    }
-
-    #[test]
-    fn check_sql_dates() {
-        let data = get_sql_dates(11, 2);
-        let expected_data = ("2024-11-01".to_string(), "2024-11-31".to_string());
-        assert_eq!(data, expected_data);
-    }
-
-    #[test]
-    fn check_last_month_balance_1() {
-        let file_name = "last_month_balance_1.sqlite".to_string();
-        let conn = create_test_db(&file_name);
-        let tx_methods = get_all_tx_methods(&conn);
-
-        let data = get_last_time_balance(&conn, 6, 1, &tx_methods);
-        let expected_data =
-            HashMap::from([("test1".to_string(), 0.0), ("test 2".to_string(), 0.0)]);
-
-        conn.close().unwrap();
-        fs::remove_file(file_name).unwrap();
-
-        assert_eq!(data, expected_data);
-    }
-
-    #[test]
-    fn check_last_tx_id_1() {
-        let file_name = "last_tx_id_1.sqlite".to_string();
-        let conn = create_test_db(&file_name);
-
-        let data = get_last_tx_id(&conn);
-        let expected_data: sqlResult<i32> = Err(rusqlite::Error::QueryReturnedNoRows);
-
-        conn.close().unwrap();
-        fs::remove_file(file_name).unwrap();
-
-        assert_eq!(data, expected_data);
-    }
-
-    #[test]
-    fn check_last_balance_id() {
-        let file_name = "last_balance_id.sqlite".to_string();
-        let conn = create_test_db(&file_name);
-
-        let data = get_last_balance_id(&conn);
-        let expected_data: sqlResult<i32> = Ok(49);
-
-        conn.close().unwrap();
-        fs::remove_file(file_name).unwrap();
-
-        assert_eq!(data, expected_data);
-    }
 }
