@@ -47,8 +47,9 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
     let mut highest_balance = 0.0;
 
     let mut date_labels: Vec<String> = vec![];
-    let mut data_num = 0;
-    
+
+    let mut current_axis = 1.0;
+
     // if there are no transactions, we will create an empty chart
     if chart_data.all_txs.len() > 0 {
         // contains all dates of the transactions
@@ -79,14 +80,12 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
         }
         date_labels.push(final_date.to_string());
 
-        let mut current_axis = 1.0;
-
         // data_num represents which index to check out all all the txs and balances data
         // to_add_again will become true in cases where two or more transactions shares the same date.
         // So same date transactions will be combined together for one day
         
         let mut to_add_again = false;
-
+        let mut data_num = 0;
         loop {
             if all_dates.contains(&checking_date) {
                 let current_balances = &chart_data.all_balance[data_num];
@@ -206,7 +205,7 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
                     Style::default().fg(Color::LightGreen),
                 ))
                 .style(Style::default().fg(Color::White))
-                .bounds([0.0, data_num as f64])
+                .bounds([0.0, current_axis])
                 .labels(date_labels.iter().cloned().map(Span::from).collect()),
         )
         .y_axis(
