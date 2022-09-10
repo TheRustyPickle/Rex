@@ -9,7 +9,6 @@ mod transfer_page;
 pub mod tx_page;
 use atty::Stream;
 use crossterm::{
-    event::{DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -150,7 +149,7 @@ fn start_interface(new_version_available: bool) -> Result<String, Box<dyn Error>
     // TUI magic functions starts here with multiple calls
     enable_raw_mode()?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
@@ -184,8 +183,7 @@ fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
 
     execute!(
         terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
+        LeaveAlternateScreen       
     )?;
     terminal.show_cursor()?;
     disable_raw_mode()?;
