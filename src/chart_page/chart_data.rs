@@ -16,7 +16,7 @@ impl ChartData {
         let mut all_txs = vec![];
         let mut all_balance = vec![];
         let conn = Connection::open("data.sqlite").expect("Could not connect to database");
-        for month in 1..13 {
+        for month in 0..12 {
             let (txs, balances, _id_num) = get_all_txs(&conn, month, year);
             all_txs.extend(txs);
             all_balance.extend(balances);
