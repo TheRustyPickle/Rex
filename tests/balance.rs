@@ -7,7 +7,7 @@ use chrono::{naive::NaiveDate, Duration};
 
 fn create_test_db(file_name: &str) -> Connection {
     create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
-    return Connection::open(file_name).unwrap();
+    Connection::open(file_name).unwrap()
 }
 
 #[test]
@@ -36,7 +36,7 @@ fn check_last_balances_2() {
         "test1",
         "159.00",
         "Expense",
-        &file_name,
+        file_name,
         None,
     )
     .unwrap();
@@ -47,7 +47,7 @@ fn check_last_balances_2() {
         "test 2",
         "159.19",
         "Income",
-        &file_name,
+        file_name,
         None,
     )
     .unwrap();
@@ -55,7 +55,7 @@ fn check_last_balances_2() {
     let data = get_last_balances(&conn, &tx_methods);
     let expected_data = vec!["-159.00".to_string(), "159.19".to_string()];
 
-    delete_tx(1, &file_name).unwrap();
+    delete_tx(1, file_name).unwrap();
 
     let data_2 = get_last_balances(&conn, &tx_methods);
     let expected_data_2 = vec!["0.00".to_string(), "159.19".to_string()];

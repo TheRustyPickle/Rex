@@ -19,7 +19,7 @@ fn check_db_creation() {
     }
     fs::remove_file("test_data_1.sqlite").unwrap();
 
-    if db_found != true {
+    if !db_found {
         panic!("db_creation failed!")
     }
 }
