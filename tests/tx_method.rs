@@ -6,7 +6,7 @@ use std::fs;
 
 fn create_test_db(file_name: &str) -> Connection {
     create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
-    return Connection::open(file_name).unwrap();
+    Connection::open(file_name).unwrap()
 }
 
 #[test]
