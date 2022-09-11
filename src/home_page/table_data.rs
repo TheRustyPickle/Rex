@@ -20,7 +20,7 @@ pub struct TransactionData {
 }
 
 impl TransactionData {
-    /// Calls the db to fetch transaction data, transaction changes, balances and id numbers 
+    /// Calls the db to fetch transaction data, transaction changes, balances and id numbers
     /// from the given month and year index
     pub fn new(conn: &Connection, month: usize, year: usize) -> Self {
         let (all_tx, all_balance, all_id_num) = get_all_txs(conn, month, year);
@@ -33,7 +33,7 @@ impl TransactionData {
         }
     }
 
-    /// returns all the Transaction data that is saved inside the struct for the 
+    /// returns all the Transaction data that is saved inside the struct for the
     /// current selected month inside a vector for easier manipulation
     pub fn get_txs(&self) -> Vec<Vec<String>> {
         let mut table_data = Vec::new();

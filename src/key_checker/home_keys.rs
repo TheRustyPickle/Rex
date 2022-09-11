@@ -66,13 +66,12 @@ pub fn home_keys(
                 }
                 KeyCode::Char('d') => {
                     if table.state.selected() != None {
-                        let status =
-                            all_data.del_tx(table.state.selected().unwrap());
+                        let status = all_data.del_tx(table.state.selected().unwrap());
                         match status {
                             Ok(_) => {
                                 // transaction deleted so reload the data again
                                 *all_data =
-                                    TransactionData::new(&conn, cu_month_index, cu_year_index);
+                                    TransactionData::new(conn, cu_month_index, cu_year_index);
                                 *table = TableData::new(all_data.get_txs());
                                 table.state.select(None);
                                 *selected_tab = SelectedTab::Months;
@@ -104,7 +103,7 @@ pub fn home_keys(
                         SelectedTab::Table => {
                             // Do not select any table rows in the table section If
                             // there is no transaction
-                            if all_data.all_tx.len() < 1 {
+                            if all_data.all_tx.is_empty() {
                                 *selected_tab = selected_tab.change_tab_up();
                             }
                             // executes when going from first table row to month widget
@@ -112,7 +111,7 @@ pub fn home_keys(
                                 *selected_tab = SelectedTab::Months;
                                 table.state.select(None);
                             } else {
-                                if all_data.all_tx.len() > 0 {
+                                if !all_data.all_tx.is_empty() {
                                     table.previous();
                                 }
                             }
@@ -120,14 +119,14 @@ pub fn home_keys(
                         SelectedTab::Years => {
                             // Do not select any table rows in the table section If
                             // there is no transaction
-                            if all_data.all_tx.len() < 1 {
+                            if all_data.all_tx.is_empty() {
                                 *selected_tab = selected_tab.change_tab_up();
                             } else {
                                 // Move to the selected value on table/Transaction widget
                                 // to the last row if pressed up on Year section
                                 table.state.select(Some(table.items.len() - 1));
                                 *selected_tab = selected_tab.change_tab_up();
-                                if all_data.all_tx.len() < 1 {
+                                if all_data.all_tx.is_empty() {
                                     *selected_tab = selected_tab.change_tab_up();
                                 }
                             }
@@ -140,7 +139,7 @@ pub fn home_keys(
                         SelectedTab::Table => {
                             // Do not proceed to the table section If
                             // there is no transaction
-                            if all_data.all_tx.len() < 1 {
+                            if all_data.all_tx.is_empty() {
                                 *selected_tab = selected_tab.change_tab_down();
                             }
                             // executes when pressed on last row of the table
@@ -149,7 +148,7 @@ pub fn home_keys(
                                 *selected_tab = SelectedTab::Years;
                                 table.state.select(None);
                             } else {
-                                if all_data.all_tx.len() > 0 {
+                                if !all_data.all_tx.is_empty() {
                                     table.next();
                                 }
                             }
@@ -160,9 +159,7 @@ pub fn home_keys(
                 _ => {}
             }
         }
-        _ => match key.code {
-            _ => *cu_popup = PopupState::Nothing,
-        },
+        _ => *cu_popup = PopupState::Nothing,
     }
     Ok("0".to_string())
 }

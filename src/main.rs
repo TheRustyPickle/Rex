@@ -22,5 +22,5 @@ fn main() {
 // [x] Find how to add transaction for transfer
 // [x] find how to delete transaction for transfer
 // [x] Allow editing for transfer tx
-// [ ] move tests to tests folder
+// [x] move tests to tests folder
 // [x] slight bug on total amount field and total balance calculation

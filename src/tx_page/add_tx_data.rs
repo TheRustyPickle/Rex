@@ -53,7 +53,7 @@ impl AddTxData {
         tx_type: &str,
         id_num: i32,
     ) -> Self {
-        let splitted = date.split("-");
+        let splitted = date.split('-');
         let data = splitted.collect::<Vec<&str>>();
         let year = data[2];
         let month = data[1];
@@ -90,7 +90,7 @@ impl AddTxData {
     pub fn edit_date(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
-                if self.date.len() > 0 {
+                if !self.date.is_empty() {
                     self.date.pop().unwrap();
                 }
             }
@@ -103,7 +103,7 @@ impl AddTxData {
     pub fn edit_details(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
-                if self.details.len() > 0 {
+                if !self.details.is_empty() {
                     self.details.pop().unwrap();
                 }
             }
@@ -116,7 +116,7 @@ impl AddTxData {
     pub fn edit_tx_method(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
-                if self.tx_method.len() > 0 {
+                if !self.tx_method.is_empty() {
                     self.tx_method.pop().unwrap();
                 }
             }
@@ -129,7 +129,7 @@ impl AddTxData {
     pub fn edit_amount(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
-                if self.amount.len() > 0 {
+                if !self.amount.is_empty() {
                     self.amount.pop().unwrap();
                 }
             }
@@ -145,7 +145,7 @@ impl AddTxData {
     pub fn edit_tx_type(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
-                if self.tx_type.len() > 0 {
+                if !self.tx_type.is_empty() {
                     self.tx_type.pop().unwrap();
                 }
             }
@@ -156,19 +156,19 @@ impl AddTxData {
     /// Collects all the data for the transaction and calls the function
     /// that pushes them to the database.
     pub fn add_tx(&mut self) -> String {
-        if &self.date == "" {
-            return format!("Date: Date cannot be empty");
-        } else if &self.details == "" {
-            return format!("Details: Details cannot be empty");
-        } else if &self.tx_method == "" {
-            return format!("Tx Method: Transaction method cannot be empty");
-        } else if &self.amount == "" {
-            return format!("Amount: Amount cannot be empty");
-        } else if &self.tx_type == "" {
-            return format!("Tx Type: Transaction Type cannot be empty");
+        if self.date.is_empty() {
+            return "Date: Date cannot be empty".to_string();
+        } else if self.details.is_empty() {
+            return "Details: Details cannot be empty".to_string();
+        } else if self.tx_method.is_empty() {
+            return "Tx Method: Transaction method cannot be empty".to_string();
+        } else if self.amount.is_empty() {
+            return "Amount: Amount cannot be empty".to_string();
+        } else if self.tx_type.is_empty() {
+            return "Tx Type: Transaction Type cannot be empty".to_string();
         }
 
-        if self.editing_tx == true {
+        if self.editing_tx {
             self.editing_tx = false;
             let status = delete_tx(self.id_num as usize, "data.sqlite");
             match status {
@@ -192,8 +192,8 @@ impl AddTxData {
             );
 
             match status_add {
-                Ok(_) => return format!(""),
-                Err(e) => return format!("Edit Transaction: Something went wrong {}", e),
+                Ok(_) => String::new(),
+                Err(e) => format!("Edit Transaction: Something went wrong {}", e),
             }
         } else {
             let status = add_new_tx(
@@ -206,8 +206,8 @@ impl AddTxData {
                 None,
             );
             match status {
-                Ok(_) => return format!(""),
-                Err(e) => return format!("Add Transaction: Something went wrong {}", e),
+                Ok(_) => String::new(),
+                Err(e) => format!("Add Transaction: Something went wrong {}", e),
             }
         }
     }

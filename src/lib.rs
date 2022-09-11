@@ -76,7 +76,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
             // go through all the terminal commands added, until it's not an error
             // continue iterating or just return an error
             for (key, value) in all_terminals.iter() {
-                if let Err(_) = status {
+                if status.is_err() {
                     if key != &"konsole" {
                         status = Command::new(key).args(value).output();
                     }
@@ -118,7 +118,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
         }
     }
     // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
-    if db_found != true {
+    if !db_found {
         let db_tx_methods = get_user_tx_methods(false);
         println!("Creating New Database. It may take some time...");
         let status = create_db("data.sqlite", db_tx_methods);
@@ -181,10 +181,7 @@ fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen       
-    )?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     terminal.show_cursor()?;
     disable_raw_mode()?;
     Ok(())
@@ -229,5 +226,5 @@ fn check_app(res: Result<String, Box<dyn Error>>) -> String {
             }
         }
     }
-    return "".to_string();
+    "".to_string()
 }

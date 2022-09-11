@@ -22,7 +22,7 @@ pub fn tx_ui<B: Backend>(
     f: &mut Frame<B>,
     input_data: Vec<&str>,
     cu_selected: &TxTab,
-    status_data: &Vec<String>,
+    status_data: &[String],
 ) {
     let size = f.size();
 
@@ -81,7 +81,7 @@ pub fn tx_ui<B: Backend>(
     // iter through the data in reverse mode because we want the latest status text
     // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
-        if i.contains("Accepted") == false && i.contains("Nothing") == false {
+        if !i.contains("Accepted") && !i.contains("Nothing") {
             status_text.push(Spans::from(Span::styled(
                 i,
                 Style::default().fg(Color::Red),

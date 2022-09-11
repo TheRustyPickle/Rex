@@ -1,9 +1,9 @@
 extern crate rex;
+use chrono::{naive::NaiveDate, Duration};
 use rex::db::*;
 use rusqlite::{Connection, Result as sqlResult};
-use std::fs;
 use std::collections::HashMap;
-use chrono::{naive::NaiveDate, Duration};
+use std::fs;
 
 fn create_test_db(file_name: &str) -> Connection {
     create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
@@ -74,8 +74,7 @@ fn check_last_month_balance_1() {
     let tx_methods = get_all_tx_methods(&conn);
 
     let data = get_last_time_balance(&conn, 6, 1, &tx_methods);
-    let expected_data =
-        HashMap::from([("test1".to_string(), 0.0), ("test 2".to_string(), 0.0)]);
+    let expected_data = HashMap::from([("test1".to_string(), 0.0), ("test 2".to_string(), 0.0)]);
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
@@ -195,28 +194,30 @@ fn check_balance_all_day() {
 
     loop {
         if current_date == ending_date + Duration::days(1) {
-            break
+            break;
         }
         add_new_tx(
             &current_date.to_string(),
             details,
             tx_method,
-            amount, 
-            tx_type, 
-            &file_name, None
-        ).unwrap();
+            amount,
+            tx_type,
+            &file_name,
+            None,
+        )
+        .unwrap();
         current_date += Duration::days(1)
     }
-    
+
     let data = get_last_balances(&conn, &tx_methods);
     let expected = vec![format!("{total_days:.2}"), "0.00".to_string()];
     assert_eq!(data, expected);
 
     let mut delete_id_num = total_days as usize;
 
-    loop { 
+    loop {
         if delete_id_num == 0 {
-            break
+            break;
         }
         delete_tx(delete_id_num, &file_name).unwrap();
         delete_id_num -= 1;
@@ -235,6 +236,4 @@ fn check_balance_all_day() {
 
     assert_eq!(data_1, expected_data_1);
     assert_eq!(data_2, expected_data_2);
-    
-
 }

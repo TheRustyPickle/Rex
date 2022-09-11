@@ -38,9 +38,7 @@ Press Any Key to dismiss"
         data.push("65".to_string());
     } else {
         data.push("Delete Error".to_string());
-        data.push(format!(
-            "Error while deleting the transaction\n\nPress Any Key to dismiss"
-        ));
+        data.push("Error while deleting the transaction\n\nPress Any Key to dismiss".to_string());
         data.push("40".to_string());
         data.push("25".to_string());
     }

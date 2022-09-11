@@ -55,7 +55,7 @@ impl TransferData {
         amount: &str,
         id_num: i32,
     ) -> Self {
-        let splitted = date.split("-");
+        let splitted = date.split('-');
         let data = splitted.collect::<Vec<&str>>();
         let year = data[2];
         let month = data[1];
@@ -94,7 +94,7 @@ impl TransferData {
     pub fn edit_date(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
-                if self.date.len() > 0 {
+                if !self.date.is_empty() {
                     self.date.pop().unwrap();
                 }
             }
@@ -107,7 +107,7 @@ impl TransferData {
     pub fn edit_details(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
-                if self.details.len() > 0 {
+                if !self.details.is_empty() {
                     self.details.pop().unwrap();
                 }
             }
@@ -120,7 +120,7 @@ impl TransferData {
     pub fn edit_from(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
-                if self.from.len() > 0 {
+                if !self.from.is_empty() {
                     self.from.pop().unwrap();
                 }
             }
@@ -133,7 +133,7 @@ impl TransferData {
     pub fn edit_to(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
-                if self.to.len() > 0 {
+                if !self.to.is_empty() {
                     self.to.pop().unwrap();
                 }
             }
@@ -146,7 +146,7 @@ impl TransferData {
     pub fn edit_amount(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
-                if self.amount.len() > 0 {
+                if !self.amount.is_empty() {
                     self.amount.pop().unwrap();
                 }
             }
@@ -161,25 +161,25 @@ impl TransferData {
     /// that pushes them to the database.
     pub fn add_tx(&mut self) -> String {
         // Checks that none of the ui fields are not empty
-        if &self.date == "" {
-            return format!("Date: Date cannot be empty");
-        } else if &self.details == "" {
-            return format!("Details: Details cannot be empty");
-        } else if &self.from == "" {
-            return format!("From TX Method: Transaction method cannot be empty");
-        } else if &self.to == "" {
-            return format!("To TX Method: Transaction method cannot be empty");
-        } else if &self.from == &self.to && &self.from != "" && &self.to != "" {
-            return format!("Tx Method: Transaction method From and To cannot be the same");
-        } else if &self.amount == "" {
-            return format!("Amount: Amount cannot be empty");
-        } else if &self.tx_type == "" {
-            return format!("Tx Type: Transaction Type cannot be empty");
+        if self.date.is_empty() {
+            return "Date: Date cannot be empty".to_string();
+        } else if self.details.is_empty() {
+            return "Details: Details cannot be empty".to_string();
+        } else if self.from.is_empty() {
+            return "From TX Method: Transaction method cannot be empty".to_string();
+        } else if self.to.is_empty() {
+            return "To TX Method: Transaction method cannot be empty".to_string();
+        } else if self.from == self.to && !&self.from.is_empty() && !&self.to.is_empty() {
+            return "Tx Method: Transaction method From and To cannot be the same".to_string();
+        } else if self.amount.is_empty() {
+            return "Amount: Amount cannot be empty".to_string();
+        } else if self.tx_type.is_empty() {
+            return "Tx Type: Transaction Type cannot be empty".to_string();
         }
 
         let tx_method = format!("{} to {}", self.from, self.to);
 
-        if self.editing_tx == true {
+        if self.editing_tx {
             // if we are editing a tx delete the selected transaction so we can create it again
             // with the new details
             self.editing_tx = false;
@@ -204,8 +204,8 @@ impl TransferData {
             );
 
             match status_add {
-                Ok(_) => return format!(""),
-                Err(e) => return format!("Edit Transfer: Something went wrong {}", e),
+                Ok(_) => String::new(),
+                Err(e) => format!("Edit Transfer: Something went wrong {}", e),
             }
         } else {
             let status = add_new_tx(
@@ -218,8 +218,8 @@ impl TransferData {
                 None,
             );
             match status {
-                Ok(_) => return format!(""),
-                Err(e) => return format!("Add Transfer: Something went wrong {}", e),
+                Ok(_) => String::new(),
+                Err(e) => format!("Add Transfer: Something went wrong {}", e),
             }
         }
     }
