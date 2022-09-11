@@ -186,7 +186,7 @@ fn check_balance_all_day() {
     let mut current_date = NaiveDate::parse_from_str("2022-01-01", "%Y-%m-%d").unwrap();
     let ending_date = NaiveDate::parse_from_str("2025-12-31", "%Y-%m-%d").unwrap();
 
-    let total_days: f64 = (ending_date - current_date).num_days() as f64;
+    let total_days: f64 = (ending_date - current_date).num_days() as f64 + 1.0;
 
     let details = "Test Transaction";
     let amount = "1.0";
@@ -194,7 +194,7 @@ fn check_balance_all_day() {
     let tx_type = "Income";
 
     loop {
-        if current_date == ending_date {
+        if current_date == ending_date + Duration::days(1) {
             break
         }
         add_new_tx(
@@ -207,8 +207,34 @@ fn check_balance_all_day() {
         ).unwrap();
         current_date += Duration::days(1)
     }
-
+    
     let data = get_last_balances(&conn, &tx_methods);
-    let expected = vec![total_days.to_string(), "0.0".to_string()];
-    assert_eq!(data, expected)
+    let expected = vec![format!("{total_days:.2}"), "0.00".to_string()];
+    assert_eq!(data, expected);
+
+    let mut delete_id_num = total_days as usize;
+
+    loop { 
+        if delete_id_num == 0 {
+            break
+        }
+        delete_tx(delete_id_num, &file_name).unwrap();
+        delete_id_num -= 1;
+    }
+
+    let data_1 = get_last_balances(&conn, &tx_methods);
+    let data_2 = get_last_time_balance(&conn, 12, 3, &tx_methods);
+
+    let expected_data_1 = vec!["0.00".to_string(), "0.00".to_string()];
+    let mut expected_data_2 = HashMap::new();
+    for (i, _x) in &data_2 {
+        expected_data_2.insert(i.to_string(), 0.0);
+    }
+
+    fs::remove_file(file_name).unwrap();
+
+    assert_eq!(data_1, expected_data_1);
+    assert_eq!(data_2, expected_data_2);
+    
+
 }
