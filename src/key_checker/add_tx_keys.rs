@@ -4,7 +4,6 @@ use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::error::Error;
 
-
 /// Tracks the keys once interacting with the Add Transaction interface. Based on the key pressed,
 /// calls functions and passes them to a struct
 pub fn add_tx_keys(
@@ -37,7 +36,7 @@ pub fn add_tx_keys(
                     KeyCode::Char('h') => *cu_popup = PopupState::Helper,
                     KeyCode::Char('s') => {
                         let status = data_for_tx.add_tx();
-                        if status == "".to_string() {
+                        if status == *"" {
                             // reload home page and switch UI
                             *selected_tab = SelectedTab::Months;
                             *data_for_tx = AddTxData::new();
@@ -100,7 +99,7 @@ pub fn add_tx_keys(
 
                 TxTab::TxMethod => match key.code {
                     KeyCode::Enter => {
-                        let status = data_for_tx.check_tx_method(&conn);
+                        let status = data_for_tx.check_tx_method(conn);
 
                         match status {
                             Ok(a) => {
@@ -114,7 +113,7 @@ pub fn add_tx_keys(
                         }
                     }
                     KeyCode::Esc => {
-                        let status = data_for_tx.check_tx_method(&conn);
+                        let status = data_for_tx.check_tx_method(conn);
 
                         match status {
                             Ok(a) => {
@@ -199,9 +198,7 @@ pub fn add_tx_keys(
                 }
             }
         }
-        _ => match key.code {
-            _ => *cu_popup = PopupState::Nothing,
-        },
+        _ => *cu_popup = PopupState::Nothing,
     }
 
     Ok("0".to_string())

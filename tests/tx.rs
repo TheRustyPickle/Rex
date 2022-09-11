@@ -168,4 +168,3 @@ fn check_getting_all_tx_2() {
     assert_eq!(data, expected_data);
     assert_eq!(data_2, expected_data_2);
 }
-

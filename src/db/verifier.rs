@@ -1,7 +1,7 @@
 use crate::db::get_all_tx_methods;
+use chrono::naive::NaiveDate;
 use rusqlite::Connection;
 use std::error::Error;
-use chrono::{naive::NaiveDate};
 
 /// A trait for verifying date, tx_method, tx_type and amount fields
 /// from the ui. Turned into a trait for reusability
@@ -102,11 +102,15 @@ pub trait StatusChecker {
             return Ok("Date: Day must be between 01-31".to_string());
         }
 
-        // We will check if the date actually exists otherwise 
+        // We will check if the date actually exists otherwise
         let naive_date = NaiveDate::parse_from_str(&user_date, "%Y-%m-%d");
         match naive_date {
-            Ok(_) => {},
-            Err(e) => return Ok(format!("Date: Date not acceptable and possibly non-existing. Error: {e}"))
+            Ok(_) => {}
+            Err(e) => {
+                return Ok(format!(
+                    "Date: Date not acceptable and possibly non-existing. Error: {e}"
+                ))
+            }
         }
 
         Ok("Date: Date Accepted".to_string())

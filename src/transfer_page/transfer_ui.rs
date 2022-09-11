@@ -22,7 +22,7 @@ pub fn transfer_ui<B: Backend>(
     f: &mut Frame<B>,
     input_data: Vec<&str>,
     cu_selected: &TransferTab,
-    status_data: &Vec<String>,
+    status_data: &[String],
 ) {
     let size = f.size();
 
@@ -88,7 +88,7 @@ pub fn transfer_ui<B: Backend>(
     // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
         // we will color the status text based on whether it was an error or if the value was accepted
-        if i.contains("Accepted") == false && i.contains("Nothing") == false {
+        if !i.contains("Accepted") && !i.contains("Nothing") {
             status_text.push(Spans::from(Span::styled(
                 i,
                 Style::default().fg(Color::Red),

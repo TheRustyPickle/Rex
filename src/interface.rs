@@ -130,8 +130,8 @@ pub fn run_app<B: Backend>(
         balance.push(total_expense.clone());
 
         // check the version of current TUI and based on that, turn on the popup
-        if version_checked == false {
-            if new_version_available == true {
+        if !version_checked {
+            if new_version_available {
                 cu_popup = PopupState::NewUpdate
             }
             version_checked = true;
@@ -164,9 +164,8 @@ pub fn run_app<B: Backend>(
                     &data_for_tx.tx_status,
                 );
 
-                match cu_popup {
-                    PopupState::Helper => add_popup(f, 1),
-                    _ => {}
+                if let PopupState::Helper = cu_popup {
+                    add_popup(f, 1)
                 }
             })?,
             CurrentUi::Initial => terminal.draw(|f| {
@@ -176,9 +175,8 @@ pub fn run_app<B: Backend>(
                     starter_index = 0;
                 }
 
-                match cu_popup {
-                    PopupState::NewUpdate => add_popup(f, 0),
-                    _ => {}
+                if let PopupState::NewUpdate = cu_popup {
+                    add_popup(f, 0)
                 }
             })?,
 
@@ -190,9 +188,8 @@ pub fn run_app<B: Backend>(
                     &data_for_transfer.tx_status,
                 );
 
-                match cu_popup {
-                    PopupState::Helper => add_popup(f, 1),
-                    _ => {}
+                if let PopupState::Helper = cu_popup {
+                    add_popup(f, 1)
                 }
             })?,
             CurrentUi::Chart => {
@@ -200,9 +197,8 @@ pub fn run_app<B: Backend>(
                 terminal.draw(|f| {
                     chart_ui(f, data_for_chart);
 
-                    match cu_popup {
-                        PopupState::Helper => add_popup(f, 1),
-                        _ => {}
+                    if let PopupState::Helper = cu_popup {
+                        add_popup(f, 1)
                     }
                 })?
             }

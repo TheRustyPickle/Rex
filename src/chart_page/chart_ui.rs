@@ -83,7 +83,7 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
         // data_num represents which index to check out all all the txs and balances data
         // to_add_again will become true in cases where two or more transactions shares the same date.
         // So same date transactions will be combined together for one day
-        
+
         let mut to_add_again = false;
         let mut data_num = 0;
         loop {

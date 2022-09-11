@@ -7,7 +7,7 @@ use tui::{
 };
 
 /// Creates a popup on top of a window with the given size, title and text attributes
-pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &Vec<String>) {
+pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &[String]) {
     let size = f.size();
     let title = popup_data[0].to_string();
     let text = popup_data[1].to_string();

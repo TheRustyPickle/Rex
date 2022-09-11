@@ -34,11 +34,11 @@ pub fn transfer_keys(
                     KeyCode::Char('h') => *cu_popup = PopupState::Helper,
                     KeyCode::Char('s') => {
                         let status = data_for_transfer.add_tx();
-                        if status == "".to_string() {
+                        if status == *"" {
                             // reload home page and switch UI
                             *selected_tab = SelectedTab::Months;
                             *data_for_transfer = TransferData::new();
-                            *all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
+                            *all_data = TransactionData::new(conn, cu_month_index, cu_year_index);
                             *table = TableData::new(all_data.get_txs());
                             *cu_page = CurrentUi::Home;
                         } else {
@@ -97,7 +97,7 @@ pub fn transfer_keys(
 
                 TransferTab::From => match key.code {
                     KeyCode::Enter => {
-                        let status = data_for_transfer.check_from(&conn);
+                        let status = data_for_transfer.check_from(conn);
 
                         match status {
                             Ok(a) => {
@@ -111,7 +111,7 @@ pub fn transfer_keys(
                         }
                     }
                     KeyCode::Esc => {
-                        let status = data_for_transfer.check_from(&conn);
+                        let status = data_for_transfer.check_from(conn);
 
                         match status {
                             Ok(a) => {
@@ -131,7 +131,7 @@ pub fn transfer_keys(
 
                 TransferTab::To => match key.code {
                     KeyCode::Enter => {
-                        let status = data_for_transfer.check_to(&conn);
+                        let status = data_for_transfer.check_to(conn);
 
                         match status {
                             Ok(a) => {
@@ -145,7 +145,7 @@ pub fn transfer_keys(
                         }
                     }
                     KeyCode::Esc => {
-                        let status = data_for_transfer.check_to(&conn);
+                        let status = data_for_transfer.check_to(conn);
 
                         match status {
                             Ok(a) => {
@@ -200,9 +200,7 @@ pub fn transfer_keys(
                 },
             }
         }
-        _ => match key.code {
-            _ => *cu_popup = PopupState::Nothing,
-        },
+        _ => *cu_popup = PopupState::Nothing,
     }
 
     Ok("0".to_string())

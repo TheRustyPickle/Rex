@@ -100,11 +100,10 @@ impl SelectedTab {
     /// Moves the current selected tab to the upper value. If at the 1st value, the
     /// the final value is selected.
     pub fn change_tab_up(&mut self) -> Self {
-        let to_return;
-        match &self {
-            SelectedTab::Years => to_return = SelectedTab::Table,
-            SelectedTab::Months => to_return = SelectedTab::Years,
-            SelectedTab::Table => to_return = SelectedTab::Months,
+        let to_return = match &self {
+            SelectedTab::Years => SelectedTab::Table,
+            SelectedTab::Months => SelectedTab::Years,
+            SelectedTab::Table => SelectedTab::Months,
         };
         to_return
     }
@@ -112,11 +111,10 @@ impl SelectedTab {
     /// Moves the current selected tab to the bottom value. If at the last value, the
     /// the 1st value is selected.
     pub fn change_tab_down(&mut self) -> Self {
-        let to_return;
-        match &self {
-            SelectedTab::Years => to_return = SelectedTab::Months,
-            SelectedTab::Months => to_return = SelectedTab::Table,
-            SelectedTab::Table => to_return = SelectedTab::Years,
+        let to_return = match &self {
+            SelectedTab::Years => SelectedTab::Months,
+            SelectedTab::Months => SelectedTab::Table,
+            SelectedTab::Table => SelectedTab::Years,
         };
         to_return
     }

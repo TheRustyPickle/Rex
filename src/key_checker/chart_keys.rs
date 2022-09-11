@@ -22,9 +22,7 @@ pub fn chart_keys(
             KeyCode::Char('h') => *cu_popup = PopupState::Helper,
             _ => {}
         },
-        _ => match key.code {
-            _ => *cu_popup = PopupState::Nothing,
-        },
+        _ => *cu_popup = PopupState::Nothing,
     }
     Ok("0".to_string())
 }

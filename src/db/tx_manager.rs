@@ -342,4 +342,3 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
     sp.commit()?;
     Ok(())
 }
-
