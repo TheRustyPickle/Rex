@@ -35,9 +35,9 @@ pub trait StatusChecker {
             return Ok("Date: Unknown date".to_string());
         }
 
-        let int_year: u32 = data[0].parse()?;
-        let int_month: u32 = data[1].parse()?;
-        let int_day: u32 = data[2].parse()?;
+        let int_year: u32 = data[0].trim().parse()?;
+        let int_month: u32 = data[1].trim().parse()?;
+        let int_day: u32 = data[2].trim().parse()?;
 
         // checks if the year part length is 4. If not 4, turn the year to 2022 + the other character entered by the user
         // and return the new date
@@ -135,18 +135,23 @@ pub trait StatusChecker {
         for i in calc_symbols {
             if amount.contains(i) {
                 let data = amount.split(i).collect::<Vec<&str>>();
-                //println!("{:?}", data);
-                let first_amount: f64 = data[0].trim().parse()?;
-                let second_amount: f64 = data[1].trim().parse()?;
+                if !data[0].trim().is_empty() && !data[1].trim().is_empty() {
+                    let first_amount: f64 = data[0].trim().parse()?;
+                    let second_amount: f64 = data[1].trim().parse()?;
 
-                match i {
-                    "*" => *amount = format!("{:.2}", (first_amount * second_amount)),
-                    "/" => *amount = format!("{:.2}", (first_amount / second_amount)),
-                    "+" => *amount = format!("{:.2}", (first_amount + second_amount)),
-                    "-" => *amount = format!("{:.2}", (first_amount - second_amount)),
-                    _ => {}
+                    match i {
+                        "*" => *amount = format!("{:.2}", (first_amount * second_amount)),
+                        "/" => *amount = format!("{:.2}", (first_amount / second_amount)),
+                        "+" => *amount = format!("{:.2}", (first_amount + second_amount)),
+                        "-" => *amount = format!("{:.2}", (first_amount - second_amount)),
+                        _ => {}
+                    }
+                    break;
                 }
-                break;
+                else {
+                    *amount = amount.replace(i, "").trim().to_string();
+                }
+                
             }
         }
 
@@ -159,9 +164,10 @@ pub trait StatusChecker {
         }
 
         // If the amount contains non-number character, make it fail
-        let int_amount: f64 = amount.parse()?;
+        let int_amount: f64 = amount.trim().parse()?;
 
         if int_amount <= 0.0 {
+            *amount = format!("{:.2}", (int_amount - (int_amount * 2.0)));
             return Ok("Amount: Value must be bigger than zero".to_string());
         }
 
@@ -186,7 +192,7 @@ pub trait StatusChecker {
 
         // limit max character to 10
         if splitted_data[0].len() > 10 {
-            *amount = format!("{}.{}", &splitted_data[0][..10], splitted_data[1]);
+            *amount = format!("{}.{}", &splitted_data[0].trim()[..10], splitted_data[1].trim());
         }
 
         Ok("Amount: Amount Accepted".to_string())
@@ -254,10 +260,10 @@ pub trait StatusChecker {
         if tx_type.is_empty() {
             return Ok("TX Type: Nothing to check".to_string());
         }
-        if tx_type.to_lowercase().starts_with('e') {
+        if tx_type.to_lowercase().trim().starts_with('e') {
             *tx_type = "Expense".to_string();
             Ok("TX Type: Transaction Type Accepted".to_string())
-        } else if tx_type.to_lowercase().starts_with('i') {
+        } else if tx_type.to_lowercase().trim().starts_with('i') {
             *tx_type = "Income".to_string();
             Ok("TX Type: Transaction Type Accepted".to_string())
         } else {
