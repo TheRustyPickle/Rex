@@ -51,7 +51,7 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
     let mut current_axis = 1.0;
 
     // if there are no transactions, we will create an empty chart
-    if chart_data.all_txs.len() > 0 {
+    if !chart_data.all_txs.is_empty() {
         // contains all dates of the transactions
         let all_dates = chart_data.get_all_dates();
 
@@ -75,7 +75,7 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
         let mut starting_point = checking_date;
 
         for _i in 0..3 {
-            starting_point = starting_point + Duration::days(date_difference);
+            starting_point += Duration::days(date_difference);
             date_labels.push(starting_point.to_string())
         }
         date_labels.push(final_date.to_string());
@@ -111,7 +111,7 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
                         lowest_balance = cu_bal
                     }
 
-                    if to_add_again == true {
+                    if to_add_again {
                         // if the next date matches with the current date, we will remove the previous data point
                         // and replace it with the current balance
 
@@ -183,7 +183,7 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
 
     // loop through the data that was added for each tx_method  and turn them into chart data
     for i in 0..all_tx_methods.len() {
-        if color_list.len() == 0 {
+        if color_list.is_empty() {
             color_list.push(Color::Cyan)
         }
         final_dataset.push(

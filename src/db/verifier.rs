@@ -21,12 +21,12 @@ pub trait StatusChecker {
 
     fn verify_date(&self, user_date: &mut String) -> Result<String, Box<dyn Error>> {
         // cancel other verification if there is no text
-        if user_date.len() == 0 {
+        if user_date.is_empty() {
             return Ok("Date: Nothing to check".to_string());
         }
 
         // we will be splitting them into 3 parts to verify each part of the date
-        let splitted = user_date.split("-");
+        let splitted = user_date.split('-');
         let data = splitted.collect::<Vec<&str>>();
 
         // if one part of the date is missing, return unknown date
@@ -72,7 +72,7 @@ pub trait StatusChecker {
             return Ok("Date: Day length not acceptable. Example Date: 2022-05-01".to_string());
 
         // checks if the year value is between 2022 and 2025
-        } else if int_year < 2022 || int_year > 2025 {
+        } else if !(2022..=2025).contains(&int_year) {
             if int_year < 2022 {
                 *user_date = format!("2022-{}-{}", data[1], data[2]);
             } else if int_year > 2025 {
@@ -82,7 +82,7 @@ pub trait StatusChecker {
             return Ok("Date: Year must be between 2022-2025".to_string());
 
         // checks if the month value is between 1 and 12
-        } else if int_month < 1 || int_month > 12 {
+        } else if !(1..=12).contains(&int_month) {
             if int_month < 1 {
                 *user_date = format!("{}-01-{}", data[0], data[2]);
             } else if int_month > 12 {
@@ -92,7 +92,7 @@ pub trait StatusChecker {
             return Ok("Date: Month must be between 01-12".to_string());
 
         // checks if the day value is between 1 and 31
-        } else if int_day < 1 || int_day > 31 {
+        } else if !(1..=31).contains(&int_day) {
             if int_day < 1 {
                 *user_date = format!("{}-{}-01", data[0], data[1]);
             } else if int_day > 31 {
@@ -103,7 +103,7 @@ pub trait StatusChecker {
         }
 
         // We will check if the date actually exists otherwise
-        let naive_date = NaiveDate::parse_from_str(&user_date, "%Y-%m-%d");
+        let naive_date = NaiveDate::parse_from_str(user_date, "%Y-%m-%d");
         match naive_date {
             Ok(_) => {}
             Err(e) => {
@@ -126,7 +126,7 @@ pub trait StatusChecker {
 
     fn verify_amount(&self, amount: &mut String) -> Result<String, Box<dyn Error>> {
         // cancel all verification if the amount is empty
-        if amount.len() == 0 {
+        if amount.is_empty() {
             return Ok("Amount: Nothing to check".to_string());
         }
 
@@ -150,10 +150,10 @@ pub trait StatusChecker {
             }
         }
 
-        if amount.contains(".") {
-            let state = amount.split(".");
+        if amount.contains('.') {
+            let state = amount.split('.');
             let splitted = state.collect::<Vec<&str>>();
-            if splitted[1].len() == 0 {
+            if splitted[1].is_empty() {
                 *amount += "00"
             }
         }
@@ -166,8 +166,8 @@ pub trait StatusChecker {
         }
 
         // checks if there double zero after the dot else add double zero
-        if amount.contains(".") {
-            let splitted = amount.split(".");
+        if amount.contains('.') {
+            let splitted = amount.split('.');
             let splitted_data = splitted.collect::<Vec<&str>>();
 
             if splitted_data[1].len() < 2 {
@@ -181,7 +181,7 @@ pub trait StatusChecker {
 
         // we can safely split now as previously we just added a dot + 2 numbers with the amount
         // and create the final value for the amount
-        let splitted = amount.split(".");
+        let splitted = amount.split('.');
         let splitted_data = splitted.collect::<Vec<&str>>();
 
         // limit max character to 10
@@ -209,14 +209,14 @@ pub trait StatusChecker {
         let all_tx_methods = get_all_tx_methods(conn);
 
         // cancel all verification if the text is empty
-        if cu_method.len() == 0 {
+        if cu_method.is_empty() {
             return Ok("TX Method: Nothing to check".to_string());
         }
 
         // loops through all tx methods and matches each character
         // of the tx method with the current inputted text. Based on matches
         // selects the best matching one if text is not any exact match.
-        if all_tx_methods.contains(&cu_method) {
+        if all_tx_methods.contains(cu_method) {
             return Ok("TX Method: Transaction Method Accepted".to_string());
         } else {
             let mut current_match = all_tx_methods[0].clone();
@@ -227,7 +227,7 @@ pub trait StatusChecker {
                 for i in method.chars() {
                     if cu_method
                         .to_lowercase()
-                        .contains(&format!("{}", i.to_string().to_lowercase()))
+                        .contains(&i.to_string().to_lowercase().to_string())
                     {
                         total_match += 1;
                     }
@@ -251,19 +251,17 @@ pub trait StatusChecker {
     ///
     /// Auto expands E to Expense and I to Income.
     fn verify_tx_type(&self, tx_type: &mut String) -> Result<String, Box<dyn Error>> {
-        if tx_type.len() == 0 {
+        if tx_type.is_empty() {
             return Ok("TX Type: Nothing to check".to_string());
         }
-        if tx_type.to_lowercase().starts_with("e") {
+        if tx_type.to_lowercase().starts_with('e') {
             *tx_type = "Expense".to_string();
-            return Ok("TX Type: Transaction Type Accepted".to_string());
-        } else if tx_type.to_lowercase().starts_with("i") {
+            Ok("TX Type: Transaction Type Accepted".to_string())
+        } else if tx_type.to_lowercase().starts_with('i') {
             *tx_type = "Income".to_string();
-            return Ok("TX Type: Transaction Type Accepted".to_string());
+            Ok("TX Type: Transaction Type Accepted".to_string())
         } else {
-            return Ok(
-                "TX Type: Transaction Type not acceptable. Values: Expense/Income/E/I".to_string(),
-            );
+            Ok("TX Type: Transaction Type not acceptable. Values: Expense/Income/E/I".to_string())
         }
     }
 }

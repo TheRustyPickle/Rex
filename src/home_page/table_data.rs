@@ -84,7 +84,7 @@ impl TransactionData {
         let mut changes_data = vec!["Changes".to_string()];
         for i in self.all_changes[index].iter() {
             let mut new_value = i.to_string();
-            let split = i.split(".");
+            let split = i.split('.');
             let splitted = split.collect::<Vec<&str>>();
 
             // the splitting and checking is necessary to make sure all strings are
@@ -93,7 +93,7 @@ impl TransactionData {
 
             if splitted[1].len() == 1 {
                 new_value = format!("{}0", i)
-            } else if splitted[1].len() == 0 {
+            } else if splitted[1].is_empty() {
                 new_value = format!("{}.00", i)
             }
             changes_data.push(new_value);

@@ -69,7 +69,7 @@ impl AddTxData {
             tx_type: tx_type.to_string(),
             tx_status: Vec::new(),
             editing_tx: true,
-            id_num: id_num,
+            id_num,
         }
     }
 
