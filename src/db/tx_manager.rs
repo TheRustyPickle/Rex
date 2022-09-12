@@ -26,17 +26,17 @@ pub fn add_new_tx(
 
     if let Some(id) = id_num {
         let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type, id_num) VALUES (?, ?, ?, ?, ?, ?)"#;
-        sp.execute(&query, [date, details, tx_method, amount, tx_type, id])?;
+        sp.execute(query, [date, details, tx_method, amount, tx_type, id])?;
     } else {
         let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type) VALUES (?, ?, ?, ?, ?)"#;
-        sp.execute(&query, [date, details, tx_method, amount, tx_type])?;
+        sp.execute(query, [date, details, tx_method, amount, tx_type])?;
     }
 
-    let split = date.split("-");
+    let split = date.split('-');
     let vec = split.collect::<Vec<&str>>();
     let mut mnth = vec[1].to_string();
     if &mnth[0..0] == "0" {
-        mnth = mnth.replace("0", "");
+        mnth = mnth.replace('0', "");
     }
     let month = mnth.parse::<i32>().unwrap();
     let year = vec[0][2..].parse::<i32>().unwrap() - 22;
@@ -107,15 +107,15 @@ pub fn add_new_tx(
         // and the Changes order
 
         // add the proper values and changes based on the tx type
-        if tx_type == "Transfer" && &all_tx_methods[i] == &from_method {
+        if tx_type == "Transfer" && all_tx_methods[i] == from_method {
             default_change = format!("↓{:.2}", &int_amount);
             let edited_balance = cu_last_balance - int_amount;
             last_balance_data.insert(&from_method, format!("{edited_balance:.2}"));
-        } else if tx_type == "Transfer" && &all_tx_methods[i] == &to_method {
+        } else if tx_type == "Transfer" && all_tx_methods[i] == to_method {
             default_change = format!("↑{:.2}", &int_amount);
             let edited_balance = cu_last_balance + int_amount;
             last_balance_data.insert(&to_method, format!("{edited_balance:.2}"));
-        } else if tx_type != "Transfer" && &all_tx_methods[i] == &tx_method {
+        } else if tx_type != "Transfer" && all_tx_methods[i] == tx_method {
             if tx_type == "Expense" {
                 default_change = format!("↓{:.2}", &int_amount);
                 let edited_balance = cu_last_balance - int_amount;
@@ -131,7 +131,7 @@ pub fn add_new_tx(
 
     // the query kept on breaking for a single comma so had to follow this ugly way to do this.
     // loop and add a comma until the last index and ignore it in the last time
-    let mut balance_query = format!("UPDATE balance_all SET ");
+    let mut balance_query = "UPDATE balance_all SET ".to_string();
     for i in 0..new_balance_data.len() {
         if i != new_balance_data.len() - 1 {
             balance_query.push_str(&format!(
@@ -147,24 +147,22 @@ pub fn add_new_tx(
     }
     balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
 
-    let last_balance_query: String;
-
-    if tx_type == "Transfer" {
-        last_balance_query = format!(
+    let last_balance_query: String = if tx_type == "Transfer" {
+        format!(
             r#"UPDATE balance_all SET "{from_method}" = "{}", "{to_method}" = "{}" WHERE id_num = {}"#,
             last_balance_data[&from_method], last_balance_data[&to_method], last_balance_id
-        );
+        )
     } else {
-        last_balance_query = format!(
+        format!(
             r#"UPDATE balance_all SET "{tx_method}" = "{}" WHERE id_num = {}"#,
             last_balance_data[&tx_method.to_string()],
             last_balance_id
-        );
-    }
+        )
+    };
 
     let mut changes_query = format!("INSERT INTO changes_all (id_num, date, {all_tx_methods:?}) VALUES ({last_id}, ?, {new_changes_data:?})");
-    changes_query = changes_query.replace("[", "");
-    changes_query = changes_query.replace("]", "");
+    changes_query = changes_query.replace('[', "");
+    changes_query = changes_query.replace(']', "");
 
     sp.execute(&balance_query, [])?;
     sp.execute(&last_balance_query, [])?;
@@ -196,7 +194,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
         Ok(final_data)
     })?;
 
-    let split = data[0].split("-");
+    let split = data[0].split('-');
     let splitted = split.collect::<Vec<&str>>();
     let (year, month) = (
         splitted[0].parse::<i32>().unwrap(),
@@ -231,8 +229,8 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
             "SELECT {:?} FROM balance_all WHERE id_num = {}",
             tx_methods, target_id_num
         );
-        query = query.replace("[", "");
-        query = query.replace("]", "");
+        query = query.replace('[', "");
+        query = query.replace(']', "");
 
         let cu_month_balance = sp.query_row(&query, [], |row| {
             let mut final_data: Vec<String> = Vec::new();
@@ -258,11 +256,11 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
                     cu_int_amount -= amount;
                 }
                 updated_month_balance.push(format!("{:.2}", cu_int_amount));
-            } else if &tx_methods[i] == from_method && cu_month_balance[i] != "0.00" {
+            } else if tx_methods[i] == from_method && cu_month_balance[i] != "0.00" {
                 let mut cu_int_amount = cu_month_balance[i].parse::<f64>().unwrap();
                 cu_int_amount += amount;
                 updated_month_balance.push(format!("{:.2}", cu_int_amount));
-            } else if &tx_methods[i] == to_method && cu_month_balance[i] != "0.00" {
+            } else if tx_methods[i] == to_method && cu_month_balance[i] != "0.00" {
                 let mut cu_int_amount = cu_month_balance[i].parse::<f64>().unwrap();
                 cu_int_amount -= amount;
                 updated_month_balance.push(format!("{:.2}", cu_int_amount));
@@ -276,7 +274,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
 
         // the query kept on breaking for a single comma so had to follow this ugly way to do this.
         // loop and add a comma until the last index and ignore it in the last time
-        let mut balance_query = format!("UPDATE balance_all SET ");
+        let mut balance_query = "UPDATE balance_all SET ".to_string();
         for i in 0..updated_month_balance.len() {
             if i != updated_month_balance.len() - 1 {
                 balance_query.push_str(&format!(
@@ -311,9 +309,9 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
                 "Income" => cu_balance -= amount,
                 _ => {}
             }
-        } else if &tx_methods[i] == from_method && tx_type == "Transfer" {
+        } else if tx_methods[i] == from_method && tx_type == "Transfer" {
             cu_balance += amount;
-        } else if &tx_methods[i] == to_method && tx_type == "Transfer" {
+        } else if tx_methods[i] == to_method && tx_type == "Transfer" {
             cu_balance -= amount;
         }
         final_last_balance.push(format!("{:.2}", cu_balance));
@@ -321,7 +319,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
 
     let del_query = format!("DELETE FROM tx_all WHERE id_num = {id_num}");
 
-    let mut last_balance_query = format!("UPDATE balance_all SET ");
+    let mut last_balance_query = "UPDATE balance_all SET ".to_string();
     for i in 0..final_last_balance.len() {
         if i != final_last_balance.len() - 1 {
             last_balance_query.push_str(&format!(

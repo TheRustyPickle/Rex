@@ -40,14 +40,12 @@ pub fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     // returns dates from month and year to a format that is suitable for
     // database WHERE statement.
 
-    let new_month: String;
-    let mut new_year = year.to_string();
-
-    if month < 10 {
-        new_month = format!("0{}", month);
+    let new_month: String = if month < 10 {
+        format!("0{}", month)
     } else {
-        new_month = format!("{}", month);
-    }
+        format!("{}", month)
+    };
+    let mut new_year = year.to_string();
 
     if year + 1 < 10 {
         new_year = format!("202{}", year + 2);
@@ -90,8 +88,8 @@ pub fn get_last_time_balance(
     // we need to go till the first month of 2022 or until the last balance of all tx methods are found
     loop {
         let mut query = format!("SELECT {:?} FROM balance_all WHERE id_num = ?", tx_method);
-        query = query.replace("[", "");
-        query = query.replace("]", "");
+        query = query.replace('[', "");
+        query = query.replace(']', "");
 
         let final_balance = conn
             .query_row(&query, [target_id_num], |row| {
@@ -111,8 +109,7 @@ pub fn get_last_time_balance(
 
         // add the data in the return variable only if the value is not 0 and has not been previously discovered
         for i in 0..tx_method.len() {
-            if checked_methods.contains(&tx_method[i].as_ref()) == false && final_balance[i] != 0.0
-            {
+            if !checked_methods.contains(&tx_method[i].as_ref()) && final_balance[i] != 0.0 {
                 *final_value.get_mut(&tx_method[i]).unwrap() = final_balance[i];
                 checked_methods.push(&tx_method[i]);
             }
@@ -273,10 +270,10 @@ pub fn get_all_txs(
     // This one here is added as an insurance. If somehow the balance table is corrupted,
     // this will correct the balance amount on that month's balance row. This checks the final index balance
     // in the previously generated vector and pushes it to the db on the relevant row
-    if final_all_balances.len() > 0 {
+    if !final_all_balances.is_empty() {
         let final_index = final_all_balances.len() - 1;
 
-        let mut balance_query = format!("UPDATE balance_all SET ");
+        let mut balance_query = "UPDATE balance_all SET ".to_string();
 
         for i in 0..final_all_balances[final_index].len() {
             if i != final_all_balances[final_index].len() - 1 {
@@ -318,8 +315,8 @@ pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<Stri
         "SELECT {:?} FROM balance_all ORDER BY id_num DESC LIMIT 1",
         tx_method
     );
-    query = query.replace("[", "");
-    query = query.replace("]", "");
+    query = query.replace('[', "");
+    query = query.replace(']', "");
 
     let final_balance = conn.query_row(&query, [], |row| {
         let mut final_data: Vec<String> = Vec::new();
@@ -369,7 +366,7 @@ pub fn get_user_tx_methods(add_new_method: bool) -> Vec<String> {
 
     // if we are adding more tx methods to an existing database, we need to
     // to get the existing columns to prevent duplicates/error.
-    if add_new_method == true {
+    if add_new_method {
         let conn = Connection::open("data.sqlite").expect("Could not connect to database");
         cu_tx_methods = get_all_tx_methods(&conn);
         for i in &cu_tx_methods {
@@ -384,7 +381,7 @@ pub fn get_user_tx_methods(add_new_method: bool) -> Vec<String> {
         let mut verify_line = String::new();
         let mut verify_input = "Inserted Transaction Methods:\n".to_string();
 
-        if add_new_method == true {
+        if add_new_method {
             println!("{method_line}\n");
             println!("\nUser input required for Transaction Methods. Must be separated by one comma and one space \
 or ', '. Example: Bank, Cash, PayPal.\n\nInput 'Cancel' to cancel the operation\n\nEnter Transaction Methods:");
@@ -400,7 +397,7 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
         // extremely important to prevent crashes on Windows
         line = line.trim().to_string();
 
-        if line.to_lowercase().starts_with("cancel") && add_new_method == true {
+        if line.to_lowercase().starts_with("cancel") && add_new_method {
             return vec!["".to_string()];
         }
 
@@ -416,24 +413,24 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
 
         // If adding new transactions methods, remove the existing methods
         // from in the inputted data
-        if add_new_method == true {
-            for i in 0..splitted.len() {
-                let user_tx_method = splitted[i].to_string();
-                if cu_tx_methods.contains(&user_tx_method) == false {
+        if add_new_method {
+            for i in &splitted {
+                let user_tx_method = i.to_string();
+                if !cu_tx_methods.contains(&user_tx_method) {
                     filtered_splitted.push(user_tx_method)
                 }
             }
         }
         // Check if the input is not empty. If yes, start from the beginning
-        if (splitted == vec!["".to_string()] && add_new_method == false)
-            || (filtered_splitted == vec!["".to_string()] && add_new_method == true)
-            || (add_new_method == false && splitted.len() == 0)
-            || (add_new_method == true && filtered_splitted.len() == 0)
+        if (splitted == vec!["".to_string()] && !add_new_method)
+            || (filtered_splitted == vec!["".to_string()] && add_new_method)
+            || (!add_new_method && splitted.is_empty())
+            || (add_new_method && filtered_splitted.is_empty())
         {
             execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
             println!("\nTransaction Method input cannot be empty and existing Transaction Methods cannot be used twice");
         } else {
-            if add_new_method == true {
+            if add_new_method {
                 for i in &filtered_splitted {
                     verify_input.push_str(&format!("- {i}\n"));
                 }
@@ -450,8 +447,8 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
             verify_line = verify_line.trim().to_string();
 
             // until the answer is y/yes/cancel continue the loop
-            if verify_line.to_lowercase().starts_with("y") {
-                if add_new_method == true {
+            if verify_line.to_lowercase().starts_with('y') {
+                if add_new_method {
                     for i in filtered_splitted {
                         db_tx_methods.push(i);
                     }

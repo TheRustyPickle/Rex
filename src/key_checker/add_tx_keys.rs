@@ -40,7 +40,7 @@ pub fn add_tx_keys(
                             // reload home page and switch UI
                             *selected_tab = SelectedTab::Months;
                             *data_for_tx = AddTxData::new();
-                            *all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
+                            *all_data = TransactionData::new(conn, cu_month_index, cu_year_index);
                             *table = TableData::new(all_data.get_txs());
                             *cu_page = CurrentUi::Home;
                         } else {

@@ -17,9 +17,9 @@ pub fn ui<B: Backend>(
     months: &TimeData,
     years: &TimeData,
     table: &mut TableData,
-    balance: &mut Vec<Vec<String>>,
+    balance: &mut [Vec<String>],
     cu_tab: &SelectedTab,
-    width_data: &mut Vec<Constraint>,
+    width_data: &mut [Constraint],
 ) {
     let size = f.size();
 
@@ -157,9 +157,9 @@ pub fn ui<B: Backend>(
     let bal_data = balance.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| {
-            if c.contains("↑") {
+            if c.contains('↑') {
                 Cell::from(c.to_string()).style(Style::default().fg(Color::Blue))
-            } else if c.contains("↓") {
+            } else if c.contains('↓') {
                 Cell::from(c.to_string()).style(Style::default().fg(Color::Red))
             } else {
                 Cell::from(c.to_string())
@@ -172,7 +172,7 @@ pub fn ui<B: Backend>(
     // between columns on Balance widget.
     let balance_area = Table::new(bal_data)
         .block(Block::default().borders(Borders::ALL).title("Balance"))
-        .widths(&width_data);
+        .widths(width_data);
 
     match cu_tab {
         // previously added a black block to year and month widget if a value is not selected

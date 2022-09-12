@@ -110,10 +110,8 @@ pub fn home_keys(
                             else if table.state.selected() == Some(0) {
                                 *selected_tab = SelectedTab::Months;
                                 table.state.select(None);
-                            } else {
-                                if !all_data.all_tx.is_empty() {
-                                    table.previous();
-                                }
+                            } else if !all_data.all_tx.is_empty() {
+                                table.previous();
                             }
                         }
                         SelectedTab::Years => {
@@ -147,10 +145,8 @@ pub fn home_keys(
                             else if table.state.selected() == Some(table.items.len() - 1) {
                                 *selected_tab = SelectedTab::Years;
                                 table.state.select(None);
-                            } else {
-                                if !all_data.all_tx.is_empty() {
-                                    table.next();
-                                }
+                            } else if !all_data.all_tx.is_empty() {
+                                table.next();
                             }
                         }
                         _ => *selected_tab = selected_tab.change_tab_down(),
