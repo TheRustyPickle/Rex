@@ -68,6 +68,50 @@ fn check_last_balances_2() {
 }
 
 #[test]
+fn check_last_balances_3() {
+    let file_name = "last_balances_3.sqlite";
+    let conn = create_test_db(file_name);
+    let tx_methods = get_all_tx_methods(&conn);
+
+    add_new_tx(
+        "2022-07-19",
+        "Testing transaction",
+        "test1 to test 2",
+        "159.00",
+        "Transfer",
+        file_name,
+        None,
+    )
+    .unwrap();
+
+    add_new_tx(
+        "2022-07-19",
+        "Testing transaction",
+        "test 2 to test1",
+        "159.00",
+        "Transfer",
+        file_name,
+        None,
+    )
+    .unwrap();
+
+    let data = get_last_balances(&conn, &tx_methods);
+    let expected_data = vec!["0.00".to_string(), "0.00".to_string()];
+
+    delete_tx(1, file_name).unwrap();
+
+    let data_2 = get_last_balances(&conn, &tx_methods);
+    let expected_data_2 = vec!["159.00".to_string(), "-159.00".to_string()];
+
+    conn.close().unwrap();
+    fs::remove_file(file_name).unwrap();
+
+    assert_eq!(data, expected_data);
+    assert_eq!(data_2, expected_data_2);
+}
+
+
+#[test]
 fn check_last_month_balance_1() {
     let file_name = "last_month_balance_1.sqlite".to_string();
     let conn = create_test_db(&file_name);
@@ -233,6 +277,7 @@ fn check_balance_all_day() {
     }
 
     fs::remove_file(file_name).unwrap();
+    conn.close().unwrap();
 
     assert_eq!(data_1, expected_data_1);
     assert_eq!(data_2, expected_data_2);
