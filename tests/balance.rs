@@ -110,7 +110,6 @@ fn check_last_balances_3() {
     assert_eq!(data_2, expected_data_2);
 }
 
-
 #[test]
 fn check_last_month_balance_1() {
     let file_name = "last_month_balance_1.sqlite".to_string();

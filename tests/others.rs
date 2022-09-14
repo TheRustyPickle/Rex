@@ -1,6 +1,6 @@
 extern crate rex;
 use rex::db::*;
-use rusqlite::{Connection};
+use rusqlite::Connection;
 use std::fs;
 //use std::collections::HashMap;
 
@@ -18,7 +18,6 @@ fn create_test_db(file_name: &str) -> Connection {
     create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
     Connection::open(file_name).unwrap()
 }
-
 
 #[test]
 fn check_sql_dates() {
@@ -48,7 +47,6 @@ fn check_verifier_date_1() {
     assert_eq!(result, expected_data);
     assert_eq!(to_verify, "2022-01-01".to_string());
 
-
     let test_struct = Testing {
         data: "  2022  -  01  -  01  ".to_string(),
     };
@@ -59,7 +57,6 @@ fn check_verifier_date_1() {
     assert_eq!(result, expected_data);
     assert_eq!(to_verify, "2022-01-01".to_string());
 
-
     let test_struct = Testing {
         data: "  2022-01-01  ".to_string(),
     };
@@ -69,7 +66,6 @@ fn check_verifier_date_1() {
     let expected_data = "Date: Date Accepted".to_string();
     assert_eq!(result, expected_data);
     assert_eq!(to_verify, "2022-01-01".to_string());
-
 
     let test_struct = Testing {
         data: "2022-01".to_string(),
@@ -248,8 +244,6 @@ fn check_verifier_amount_2() {
     let expected_data = "Amount: Amount Accepted".to_string();
     assert_eq!(result, expected_data);
     assert_eq!(to_verify, "100.00".to_string());
-
-
 }
 
 #[test]
@@ -341,7 +335,6 @@ fn check_verifier_amount_5() {
 
 #[test]
 fn check_verifier_tx_method() {
-
     let test_struct = Testing {
         data: "".to_string(),
     };
@@ -427,7 +420,8 @@ fn check_verifier_tx_type() {
     let mut to_verify = test_struct.data.clone();
 
     let result = test_struct.verify_tx_type(&mut to_verify).unwrap();
-    let expected_data = "TX Type: Transaction Type not acceptable. Values: Expense/Income/E/I".to_string();
+    let expected_data =
+        "TX Type: Transaction Type not acceptable. Values: Expense/Income/E/I".to_string();
     assert_eq!(result, expected_data);
 
     let test_struct = Testing {

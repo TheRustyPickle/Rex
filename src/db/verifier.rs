@@ -29,7 +29,7 @@ pub trait StatusChecker {
         // we will be splitting them into 3 parts to verify each part of the date
         let splitted = user_date.split('-');
         let split = splitted.collect::<Vec<&str>>();
-        
+
         // to prevent any extra spaces passing, recreate the vec again
         let mut data = vec![];
 
@@ -132,7 +132,7 @@ pub trait StatusChecker {
     /// - Amount is zero or below
     /// - Amount text contains a calculation symbol
     /// - contains any extra spaces
-    /// 
+    ///
     /// if the value is not float, tries to make it float ending with double zero
 
     fn verify_amount(&self, amount: &mut String) -> Result<String, Box<dyn Error>> {
@@ -158,11 +158,9 @@ pub trait StatusChecker {
                         _ => {}
                     }
                     break;
-                }
-                else {
+                } else {
                     *amount = amount.replace(i, "").trim().to_string();
                 }
-                
             }
         }
 
@@ -203,7 +201,11 @@ pub trait StatusChecker {
 
         // limit max character to 10
         if splitted_data[0].len() > 10 {
-            *amount = format!("{}.{}", &splitted_data[0].trim()[..10], splitted_data[1].trim());
+            *amount = format!(
+                "{}.{}",
+                &splitted_data[0].trim()[..10],
+                splitted_data[1].trim()
+            );
         }
 
         Ok("Amount: Amount Accepted".to_string())
