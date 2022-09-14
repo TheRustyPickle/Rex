@@ -13,6 +13,7 @@ pub trait StatusChecker {
     /// - the inputted month is between 01 to 12
     /// - the inputted date is between 01 to 31
     /// - the inputted date is empty
+    /// - contains any extra spaces
     ///
     /// Finally, tries to correct the date if it was not accepted by
     /// adding 0 if the beginning if the length is smaller than necessary
@@ -29,6 +30,7 @@ pub trait StatusChecker {
         let splitted = user_date.split('-');
         let split = splitted.collect::<Vec<&str>>();
         
+        // to prevent any extra spaces passing, recreate the vec again
         let mut data = vec![];
 
         for i in split {
@@ -40,7 +42,7 @@ pub trait StatusChecker {
             *user_date = "2022-01-01".to_string();
             return Ok("Date: Unknown date".to_string());
         }
-
+        // rewrite the original date in case of extra spaces
         *user_date = format!("{}-{}-{}", data[0], data[1], data[2]);
 
         let int_year: u32 = data[0].trim().parse()?;
@@ -129,7 +131,8 @@ pub trait StatusChecker {
     /// - Amount is empty
     /// - Amount is zero or below
     /// - Amount text contains a calculation symbol
-    ///
+    /// - contains any extra spaces
+    /// 
     /// if the value is not float, tries to make it float ending with double zero
 
     fn verify_amount(&self, amount: &mut String) -> Result<String, Box<dyn Error>> {
@@ -210,7 +213,7 @@ pub trait StatusChecker {
     ///
     /// - The Transaction method exists on the database.
     /// - The Transaction method is empty
-    ///
+    /// - contains any extra spaces
     /// if the Transaction is not found, matches each character with the available
     /// Transaction Methods and corrects to the best matching one.
 
@@ -269,7 +272,7 @@ pub trait StatusChecker {
     /// Auto expands E to Expense and I to Income.
     fn verify_tx_type(&self, tx_type: &mut String) -> Result<String, Box<dyn Error>> {
         *tx_type = tx_type.trim().to_string();
-        
+
         if tx_type.is_empty() {
             return Ok("TX Type: Nothing to check".to_string());
         }
