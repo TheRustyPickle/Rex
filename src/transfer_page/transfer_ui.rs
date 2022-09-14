@@ -1,4 +1,4 @@
-use crate::home_page::TxTab;
+use crate::home_page::TransferTab;
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -8,7 +8,7 @@ use tui::{
     Frame,
 };
 
-/// The UI functions that draws the Add Transaction page of the interface.
+/// The UI functions that draws the Transfer page of the interface.
 /// Takes arguments for user inputted data, status page data to process the details and turns them into
 /// the the interface.
 ///
@@ -18,15 +18,15 @@ use tui::{
 /// - cu_selected : For verifying the current selected widget to add a block box
 /// - status_data : Contains all the String to push into the Status widget
 
-pub fn tx_ui<B: Backend>(
+pub fn transfer_ui<B: Backend>(
     f: &mut Frame<B>,
     input_data: Vec<&str>,
-    cu_selected: &TxTab,
+    cu_selected: &TransferTab,
     status_data: &[String],
 ) {
     let size = f.size();
 
-    // divide the terminal into various chunks to draw the interface.
+    // divide the terminal into various chunks to draw the interface. This is a vertical chunk
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -35,26 +35,42 @@ pub fn tx_ui<B: Backend>(
                 Constraint::Length(12),
                 Constraint::Length(3),
                 Constraint::Length(3),
+                Constraint::Length(3),
                 Constraint::Percentage(25),
             ]
             .as_ref(),
         )
         .split(size);
 
-    // This is a vertical chunk. We will basically be using this to divide the chunk[1]
-    // into another 4 chunks or 4 widgets
-    let another_chunk = Layout::default()
+    // We will now cut down a single vertical chunk into multiple horizontal chunk.
+    let first_chunk = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(15), Constraint::Percentage(50)].as_ref())
+        .split(chunks[1]);
+
+    let second_chunk = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(
             [
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
+                Constraint::Percentage(40),
+                Constraint::Percentage(20),
+                Constraint::Percentage(40),
             ]
             .as_ref(),
         )
-        .split(chunks[1]);
+        .split(chunks[2]);
+
+    let third_chunk = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(
+            [
+                Constraint::Percentage(30),
+                Constraint::Percentage(40),
+                Constraint::Percentage(30),
+            ]
+            .as_ref(),
+        )
+        .split(chunks[3]);
 
     let block = Block::default().style(
         Style::default()
@@ -64,17 +80,16 @@ pub fn tx_ui<B: Backend>(
     f.render_widget(block, size);
 
     // This is the details of the Help widget
-    let help_text = vec![
-        Spans::from("Press the respective keys to edit fields."),
-        Spans::from("'1' : Date         Example: 2022-05-12, YYYY-MM-DD"),
-        Spans::from("'2' : TX details   Example: For Grocery, Salary"),
-        Spans::from("'3' : TX Method    Example: Cash, Bank, Card"),
-        Spans::from("'4' : Amount       Example: 1000, 100+50"),
-        Spans::from("'5' : TX Type      Example: Income/Expense/I/E"),
-        Spans::from("'S' : Save the inputted data as a Transaction"),
-        Spans::from("'Enter' : Submit field and continue"),
-        Spans::from("'Esc' : Stop editing filed"),
-        Spans::from("Amount Field supports simple calculation using '+' '-' '*' '/'"),
+    let help_text = vec![Spans::from("Press the respective keys to edit fields."),
+    Spans::from("'1' : Date         Example: 2022-05-12, YYYY-MM-DD"),
+    Spans::from("'2' : TX details   Example: For Grocery, Salary"),
+    Spans::from("'3' : From Method  Example: Cash, Bank, Card"),
+    Spans::from("'4' : To Method    Example: Cash, Bank, Card"),
+    Spans::from("'5' : Amount       Example: 1000, 100+50"),
+    Spans::from("'S' : Save the inputted data as a Transaction"),
+    Spans::from("'Enter' : Submit field and continue"),
+    Spans::from("'Esc' : Stop editing filed"),
+    Spans::from("Amount Field supports simple calculation using '+' '-' '*' '/'"),
     ];
 
     let mut status_text = vec![];
@@ -82,6 +97,7 @@ pub fn tx_ui<B: Backend>(
     // iter through the data in reverse mode because we want the latest status text
     // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
+        // we will color the status text based on whether it was an error or if the value was accepted
         if !i.contains("Accepted") && !i.contains("Nothing") {
             status_text.push(Spans::from(Span::styled(
                 i,
@@ -100,11 +116,13 @@ pub fn tx_ui<B: Backend>(
 
     let details_text = vec![Spans::from(input_data[1])];
 
-    let tx_method_text = vec![Spans::from(input_data[2])];
+    let from_text = vec![Spans::from(input_data[2])];
 
-    let amount_text = vec![Spans::from(input_data[3])];
+    let to_text = vec![Spans::from(input_data[3])];
 
-    let tx_type_text = vec![Spans::from(input_data[4])];
+    let amount_text = vec![Spans::from(input_data[4])];
+
+    let arrow_text = vec![Spans::from(""), Spans::from("➞ ➞ ➞")];
 
     let create_block = |title| {
         Block::default()
@@ -121,7 +139,7 @@ pub fn tx_ui<B: Backend>(
     };
 
     // creates the widgets to ready it for rendering
-    let help_sec = Paragraph::new(help_text.clone())
+    let help_sec = Paragraph::new(help_text)
         .style(
             Style::default()
                 .bg(Color::Rgb(255, 255, 255))
@@ -130,7 +148,7 @@ pub fn tx_ui<B: Backend>(
         .block(create_block("Help"))
         .alignment(Alignment::Left);
 
-    let status_sec = Paragraph::new(status_text.clone())
+    let status_sec = Paragraph::new(status_text)
         .style(
             Style::default()
                 .bg(Color::Rgb(255, 255, 255))
@@ -139,7 +157,7 @@ pub fn tx_ui<B: Backend>(
         .block(create_block("Status"))
         .alignment(Alignment::Left);
 
-    let date_sec = Paragraph::new(date_text.clone())
+    let date_sec = Paragraph::new(date_text)
         .style(
             Style::default()
                 .bg(Color::Rgb(255, 255, 255))
@@ -148,34 +166,42 @@ pub fn tx_ui<B: Backend>(
         .block(create_block("Date"))
         .alignment(Alignment::Left);
 
-    let tx_method_sec = Paragraph::new(tx_method_text.clone())
+    let from_sec = Paragraph::new(from_text)
         .style(
             Style::default()
                 .bg(Color::Rgb(255, 255, 255))
                 .fg(Color::Rgb(50, 205, 50)),
         )
-        .block(create_block("TX Method"))
+        .block(create_block("From"))
         .alignment(Alignment::Left);
 
-    let amount_sec = Paragraph::new(amount_text.clone())
+    let to_sec = Paragraph::new(to_text)
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
+        .block(create_block("To"))
+        .alignment(Alignment::Left);
+
+    let arrow_sec = Paragraph::new(arrow_text)
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
+        .alignment(Alignment::Center);
+
+    let amount_sec = Paragraph::new(amount_text)
         .style(
             Style::default()
                 .bg(Color::Rgb(255, 255, 255))
                 .fg(Color::Rgb(50, 205, 50)),
         )
         .block(create_block("Amount"))
-        .alignment(Alignment::Left);
+        .alignment(Alignment::Center);
 
-    let tx_type_sec = Paragraph::new(tx_type_text.clone())
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
-        .block(create_block("TX Type"))
-        .alignment(Alignment::Left);
-
-    let details_sec = Paragraph::new(details_text.clone())
+    let details_sec = Paragraph::new(details_text)
         .style(
             Style::default()
                 .bg(Color::Rgb(255, 255, 255))
@@ -187,35 +213,34 @@ pub fn tx_ui<B: Backend>(
     // We will be adding a cursor/box based on which tab is selected.
     // This was created utilizing the tui-rs example named user_input.rs
     match cu_selected {
-        TxTab::Date => f.set_cursor(
-            another_chunk[0].x + input_data[0].len() as u16 + 1,
-            another_chunk[0].y + 1,
+        TransferTab::Date => f.set_cursor(
+            first_chunk[0].x + input_data[0].len() as u16 + 1,
+            first_chunk[0].y + 1,
         ),
-        TxTab::Details => f.set_cursor(
-            chunks[2].x + input_data[1].len() as u16 + 1,
-            chunks[2].y + 1,
+        TransferTab::Details => f.set_cursor(
+            first_chunk[1].x + input_data[1].len() as u16 + 1,
+            first_chunk[1].y + 1,
         ),
-        TxTab::TxMethod => f.set_cursor(
-            another_chunk[1].x + input_data[2].len() as u16 + 1,
-            another_chunk[1].y + 1,
+        TransferTab::From => f.set_cursor(
+            second_chunk[0].x + input_data[2].len() as u16 + 1,
+            second_chunk[0].y + 1,
         ),
-        TxTab::Amount => f.set_cursor(
-            another_chunk[2].x + input_data[3].len() as u16 + 1,
-            another_chunk[2].y + 1,
+        TransferTab::To => f.set_cursor(
+            second_chunk[2].x + input_data[3].len() as u16 + 1,
+            second_chunk[2].y + 1,
         ),
-        TxTab::TxType => f.set_cursor(
-            another_chunk[3].x + input_data[4].len() as u16 + 1,
-            another_chunk[3].y + 1,
-        ),
-        TxTab::Nothing => {}
+        // The text of this goes into the middle so couldn't find a better place to insert the input box
+        TransferTab::Amount => f.set_cursor(third_chunk[1].x + 1, third_chunk[1].y + 1),
+        TransferTab::Nothing => {}
     }
 
     // render the previously generated data into an interface
-    f.render_widget(details_sec, chunks[2]);
-    f.render_widget(status_sec, chunks[3]);
+    f.render_widget(details_sec, first_chunk[1]);
+    f.render_widget(status_sec, chunks[4]);
     f.render_widget(help_sec, chunks[0]);
-    f.render_widget(date_sec, another_chunk[0]);
-    f.render_widget(tx_method_sec, another_chunk[1]);
-    f.render_widget(amount_sec, another_chunk[2]);
-    f.render_widget(tx_type_sec, another_chunk[3]);
+    f.render_widget(date_sec, first_chunk[0]);
+    f.render_widget(from_sec, second_chunk[0]);
+    f.render_widget(to_sec, second_chunk[2]);
+    f.render_widget(arrow_sec, second_chunk[1]);
+    f.render_widget(amount_sec, third_chunk[1]);
 }

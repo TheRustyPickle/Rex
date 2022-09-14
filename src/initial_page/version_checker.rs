@@ -21,8 +21,8 @@ pub fn check_version() -> Result<bool, reqwest::Error> {
         .send()?
         .json()?;
     if cu_version != caller.name {
-        return Ok(true);
+        Ok(true)
     } else {
-        return Ok(false);
+        Ok(false)
     }
 }

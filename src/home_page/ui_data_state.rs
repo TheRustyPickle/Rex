@@ -4,6 +4,7 @@ use tui::widgets::TableState;
 /// and creates an index to keep track of which transactions row is selected
 /// if any. Each vec inside the vec of items contains 1 full transaction.
 ///
+/// state : `None` or an index
 /// items : `[["2022-05-01", "test", "source_1", "15.50", Expense], ]`
 pub struct TableData {
     pub state: TableState,
@@ -96,32 +97,28 @@ pub enum SelectedTab {
 }
 
 impl SelectedTab {
-    /// Movies the current selected tab to the upper value. If at the 1st value, the
+    /// Moves the current selected tab to the upper value. If at the 1st value, the
     /// the final value is selected.
-    pub fn change_tab_up(self) -> Self {
-        let to_return;
+    pub fn change_tab_up(&mut self) -> Self {
         match &self {
-            SelectedTab::Years => to_return = SelectedTab::Table,
-            SelectedTab::Months => to_return = SelectedTab::Years,
-            SelectedTab::Table => to_return = SelectedTab::Months,
-        };
-        to_return
+            SelectedTab::Years => SelectedTab::Table,
+            SelectedTab::Months => SelectedTab::Years,
+            SelectedTab::Table => SelectedTab::Months,
+        }
     }
 
-    /// Movies the current selected tab to the bottom value. If at the last value, the
+    /// Moves the current selected tab to the bottom value. If at the last value, the
     /// the 1st value is selected.
-    pub fn change_tab_down(self) -> Self {
-        let to_return;
+    pub fn change_tab_down(&mut self) -> Self {
         match &self {
-            SelectedTab::Years => to_return = SelectedTab::Months,
-            SelectedTab::Months => to_return = SelectedTab::Table,
-            SelectedTab::Table => to_return = SelectedTab::Years,
-        };
-        to_return
+            SelectedTab::Years => SelectedTab::Months,
+            SelectedTab::Months => SelectedTab::Table,
+            SelectedTab::Table => SelectedTab::Years,
+        }
     }
 }
 
-/// This enum is used inside the Add Transaction page instead of the Home page.
+/// This enum is used inside the Add Transaction page.
 /// This is targeted to be used to keep track which field of the Add Transaction widgets
 /// is currently being interacted with. Based on which one is selected, each keypress is
 /// recorded and added to the relevant struct.
@@ -134,10 +131,33 @@ pub enum TxTab {
     Nothing,
 }
 
+/// This enum is used inside the Transfer page.
+/// This is targeted to be used to keep track which field of the Transfer widgets
+/// is currently being interacted with. Based on which one is selected, each keypress is
+/// recorded and added to the relevant struct.
+pub enum TransferTab {
+    Date,
+    Details,
+    From,
+    To,
+    Amount,
+    Nothing,
+}
+
 /// Shows the currently active page in the terminal. Used to properly
 /// direct key presses to the relevant structs and widget selection.
 pub enum CurrentUi {
     Initial,
     Home,
     AddTx,
+    Transfer,
+    Chart,
+}
+
+/// Indicates which popup is currently on and is being shown in the screen
+pub enum PopupState {
+    NewUpdate,
+    Helper,
+    DeleteFailed,
+    Nothing,
 }

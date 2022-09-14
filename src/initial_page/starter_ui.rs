@@ -49,7 +49,7 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
 
     // To work with this and add a slight touch of animation, we will split the entire
     // text by \n. Once it is done, we will loop through each line and add the chars in a string for rendering.
-    let state = text.split("\n");
+    let state = text.split('\n');
     let splitted = state.collect::<Vec<&str>>();
     let mut new_text = String::new();
 
@@ -76,6 +76,7 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
         // after each loop we keep track of the loop index and the text index we want to add for rendering.
         let mut cu_index = 0;
         let mut target_index = index;
+
         for char in line.chars() {
             if cu_index == target_index && total_to_add != 0 && target_index < line.len() {
                 new_text.push(char);
@@ -87,17 +88,19 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
                 cu_index += 1;
                 total_initial_to_add -= 1;
             } else {
-                new_text.push_str(" ");
+                new_text.push(' ');
                 cu_index += 1;
             }
         }
-        new_text.push_str("\n");
+        new_text.push('\n');
     }
 
     new_text.push_str("\n    Press Any Key To Continue");
 
     let second_text = "'Arrow Key' : Navigate
 'A' : Add Transaction Page
+'T' : Add Transfer Page
+'R' : Balance Chart (Follows your selected year)
 'F' : Home Page
 'D' : Delete selected Transaction (Home Page)
 'J' : Add new Transaction Methods (Home Page)
@@ -105,10 +108,11 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
 'H' : Open Hotkey Help
 'Q' : Quit
 
-Add Transaction Page:
-'1' : Edit Date          '4' : Edit Amount
-'2' : Edit TX details    '3' : Edit TX Method
-'5' : Edit TX Type
+Add Transaction/Transfer Page:
+'1' : Edit Date        '4' : Edit Amount/To Method
+'2' : Edit TX details  '5' : Edit TX Type/Amount
+'3' : Edit TX/From Method    
+
 'S' : Save the data as a Transaction
 'Enter' : Submit field and continue
 'Esc' : Stop editing filed

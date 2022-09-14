@@ -35,11 +35,10 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
         [],
     )?;
 
-    let mut query = format!(
-        "CREATE TABLE changes_all (
+    let mut query = "CREATE TABLE changes_all (
         date TEXT,
         id_num INTEGER NOT NULL PRIMARY KEY,"
-    );
+        .to_string();
     // we don't know how many tx methods there are, so we have to loop through them
     for i in &tx_methods {
         query.push_str(&format!(r#""{i}" TEXT DEFAULT 0.00,"#))
@@ -51,10 +50,9 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
 
     sp.execute(&query, [])?;
 
-    let mut query = format!(
-        "CREATE TABLE balance_all (
+    let mut query = "CREATE TABLE balance_all (
         id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT"
-    );
+        .to_string();
     for i in &tx_methods {
         query.push_str(&format!(r#","{i}" TEXT DEFAULT 0.00"#))
     }
@@ -90,7 +88,7 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
         tx_methods, q_marks
     );
     // We are using :? to keep the commas inside the string and remove the other unnecessary characters
-    query = query.replace("[", "").replace("]", "");
+    query = query.replace('[', "").replace(']', "");
 
     for _i in years {
         for _a in 0..months.len() {
