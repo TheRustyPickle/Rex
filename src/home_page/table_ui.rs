@@ -17,9 +17,9 @@ pub fn ui<B: Backend>(
     months: &TimeData,
     years: &TimeData,
     table: &mut TableData,
-    balance: &mut Vec<Vec<String>>,
+    balance: &mut [Vec<String>],
     cu_tab: &SelectedTab,
-    width_data: &mut Vec<Constraint>,
+    width_data: &mut [Constraint],
 ) {
     let size = f.size();
 
@@ -28,8 +28,13 @@ pub fn ui<B: Backend>(
     let selected_style_blue = Style::default()
         .fg(Color::Blue)
         .add_modifier(Modifier::REVERSED);
+
     let selected_style_red = Style::default()
         .fg(Color::Red)
+        .add_modifier(Modifier::REVERSED);
+
+    let selected_style_gray = Style::default()
+        .fg(Color::DarkGray)
         .add_modifier(Modifier::REVERSED);
 
     let normal_style = Style::default().bg(Color::LightBlue);
@@ -55,6 +60,13 @@ pub fn ui<B: Backend>(
     // Each constraint creates an empty space in the terminal with the given
     // length. The final one was given 0 as minimum value which is the Transaction
     // field to keep it expanding.
+
+    // chunks are used in this format respectively
+    // - The Balance tab
+    // - The year tab
+    // - The month tab
+    // - The transaction list/Table
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -76,7 +88,7 @@ pub fn ui<B: Backend>(
     );
     f.render_widget(block, size);
 
-    //color the first three letters of the month to blue
+    // color the first three letters of the month to blue
     let month_titles = months
         .titles
         .iter()
@@ -89,7 +101,7 @@ pub fn ui<B: Backend>(
         })
         .collect();
 
-    //color the first letter of the year to blue
+    //color the first two letters of the year to blue
     let year_titles = years
         .titles
         .iter()
@@ -145,9 +157,9 @@ pub fn ui<B: Backend>(
     let bal_data = balance.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| {
-            if c.contains("↑") {
+            if c.contains('↑') {
                 Cell::from(c.to_string()).style(Style::default().fg(Color::Blue))
-            } else if c.contains("↓") {
+            } else if c.contains('↓') {
                 Cell::from(c.to_string()).style(Style::default().fg(Color::Red))
             } else {
                 Cell::from(c.to_string())
@@ -160,7 +172,7 @@ pub fn ui<B: Backend>(
     // between columns on Balance widget.
     let balance_area = Table::new(bal_data)
         .block(Block::default().borders(Borders::ALL).title("Balance"))
-        .widths(&width_data);
+        .widths(width_data);
 
     match cu_tab {
         // previously added a black block to year and month widget if a value is not selected
@@ -190,6 +202,10 @@ pub fn ui<B: Backend>(
                 } else if table.items[a][4] == "Income" {
                     table_area = table_area
                         .highlight_style(selected_style_blue)
+                        .highlight_symbol(">> ")
+                } else if table.items[a][4] == "Transfer" {
+                    table_area = table_area
+                        .highlight_style(selected_style_gray)
                         .highlight_symbol(">> ")
                 }
             }

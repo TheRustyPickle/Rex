@@ -1,12 +1,14 @@
+mod chart_page;
 pub mod db;
 pub mod home_page;
 mod initial_page;
 mod interface;
+mod key_checker;
 mod popup_page;
+mod transfer_page;
 pub mod tx_page;
 use atty::Stream;
 use crossterm::{
-    event::{DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -39,7 +41,6 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
     } else {
         let cu_directory = std::env::current_dir()?.display().to_string();
         let output = if is_windows {
-            // NOTE f*** windows. Unknown errors everywhere.
             Command::new("cmd.exe").arg("start").arg("rex").output()
         } else {
             let mut all_terminals = HashMap::new();
@@ -58,7 +59,12 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
 
             all_terminals.insert(
                 "gnome-terminal",
-                vec![gnome_dir, "--".to_string(), "./rex".to_string()],
+                vec![
+                    gnome_dir,
+                    "--maximize".to_string(),
+                    "--".to_string(),
+                    "./rex".to_string(),
+                ],
             );
 
             // start with any one of them so we have an output that we can return later, couldn't create an
@@ -70,7 +76,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
             // go through all the terminal commands added, until it's not an error
             // continue iterating or just return an error
             for (key, value) in all_terminals.iter() {
-                if let Err(_) = status {
+                if status.is_err() {
                     if key != &"konsole" {
                         status = Command::new(key).args(value).output();
                     }
@@ -83,10 +89,9 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
 
         match output {
             Ok(a) => {
-                if a.stderr == Vec::<u8>::new() {
+                if a.stderr.len() > 2 {
                     let full_text = format!(
-                        "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{:?}",
-                        a
+                        "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{a:?}",
                     );
                     let mut open = File::create("Error.txt")?;
                     open.write_all(full_text.as_bytes())?;
@@ -113,7 +118,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
         }
     }
     // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
-    if db_found != true {
+    if !db_found {
         let db_tx_methods = get_user_tx_methods(false);
         println!("Creating New Database. It may take some time...");
         let status = create_db("data.sqlite", db_tx_methods);
@@ -144,7 +149,7 @@ fn start_interface(new_version_available: bool) -> Result<String, Box<dyn Error>
     // TUI magic functions starts here with multiple calls
     enable_raw_mode()?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
@@ -176,11 +181,7 @@ fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     terminal.show_cursor()?;
     disable_raw_mode()?;
     Ok(())
@@ -225,5 +226,5 @@ fn check_app(res: Result<String, Box<dyn Error>>) -> String {
             }
         }
     }
-    return "".to_string();
+    "".to_string()
 }

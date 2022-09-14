@@ -19,9 +19,7 @@ fn check_db_creation() {
     }
     fs::remove_file("test_data_1.sqlite").unwrap();
 
-    if db_found != true {
-        panic!("db_creation failed!")
-    }
+    assert!(db_found)
 }
 
 #[test]
@@ -37,8 +35,5 @@ fn check_adding_new_tx_method() {
     );
     fs::remove_file("test_data_2.sqlite").unwrap();
 
-    match status {
-        Ok(_) => {}
-        Err(e) => panic!("Failed adding new tx methods {e}"),
-    }
+    assert_eq!(status, Ok(()))
 }
