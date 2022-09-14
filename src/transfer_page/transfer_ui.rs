@@ -32,7 +32,7 @@ pub fn transfer_ui<B: Backend>(
         .margin(2)
         .constraints(
             [
-                Constraint::Length(5),
+                Constraint::Length(12),
                 Constraint::Length(3),
                 Constraint::Length(3),
                 Constraint::Length(3),
@@ -80,7 +80,17 @@ pub fn transfer_ui<B: Backend>(
     f.render_widget(block, size);
 
     // This is the details of the Help widget
-    let help_text = vec![Spans::from("To Be Added")];
+    let help_text = vec![Spans::from("Press the respective keys to edit fields."),
+    Spans::from("'1' : Date         Example: 2022-05-12, YYYY-MM-DD"),
+    Spans::from("'2' : TX details   Example: For Grocery, Salary"),
+    Spans::from("'3' : From Method  Example: Cash, Bank, Card"),
+    Spans::from("'4' : To Method    Example: Cash, Bank, Card"),
+    Spans::from("'5' : Amount       Example: 1000, 100+50"),
+    Spans::from("'S' : Save the inputted data as a Transaction"),
+    Spans::from("'Enter' : Submit field and continue"),
+    Spans::from("'Esc' : Stop editing filed"),
+    Spans::from("Amount Field supports simple calculation using '+' '-' '*' '/'"),
+    ];
 
     let mut status_text = vec![];
 

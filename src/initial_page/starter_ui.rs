@@ -99,6 +99,8 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
 
     let second_text = "'Arrow Key' : Navigate
 'A' : Add Transaction Page
+'T' : Add Transfer Page
+'R' : Balance Chart (Follows your selected year)
 'F' : Home Page
 'D' : Delete selected Transaction (Home Page)
 'J' : Add new Transaction Methods (Home Page)
@@ -106,10 +108,11 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
 'H' : Open Hotkey Help
 'Q' : Quit
 
-Add Transaction Page:
-'1' : Edit Date          '4' : Edit Amount
-'2' : Edit TX details    '3' : Edit TX Method
-'5' : Edit TX Type
+Add Transaction/Transfer Page:
+'1' : Edit Date        '4' : Edit Amount/To Method
+'2' : Edit TX details  '5' : Edit TX Type/Amount
+'3' : Edit TX/From Method    
+
 'S' : Save the data as a Transaction
 'Enter' : Submit field and continue
 'Esc' : Stop editing filed
