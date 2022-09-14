@@ -25,6 +25,7 @@ pub fn transfer_keys(
                 // start matching key pressed based on which widget is selected.
                 // current state tracked with enums
                 TransferTab::Nothing => match key.code {
+                    KeyCode::Char('a') => *cu_page = CurrentUi::AddTx,
                     KeyCode::Char('q') => return Ok("".to_string()),
                     KeyCode::Char('f') => {
                         *cu_page = CurrentUi::Home;

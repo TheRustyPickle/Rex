@@ -26,6 +26,7 @@ pub fn add_tx_keys(
                 // start matching key pressed based on which widget is selected.
                 // current state tracked with enums
                 TxTab::Nothing => match key.code {
+                    KeyCode::Char('t') => *cu_page = CurrentUi::Transfer,
                     KeyCode::Char('q') => return Ok("".to_string()),
                     KeyCode::Char('f') => {
                         // returns to home page and reloads data
