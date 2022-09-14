@@ -27,13 +27,21 @@ pub trait StatusChecker {
 
         // we will be splitting them into 3 parts to verify each part of the date
         let splitted = user_date.split('-');
-        let data = splitted.collect::<Vec<&str>>();
+        let split = splitted.collect::<Vec<&str>>();
+        
+        let mut data = vec![];
+
+        for i in split {
+            data.push(i.trim().to_string());
+        }
 
         // if one part of the date is missing, return unknown date
         if data.len() != 3 {
             *user_date = "2022-01-01".to_string();
             return Ok("Date: Unknown date".to_string());
         }
+
+        *user_date = format!("{}-{}-{}", data[0], data[1], data[2]);
 
         let int_year: u32 = data[0].trim().parse()?;
         let int_month: u32 = data[1].trim().parse()?;
@@ -214,6 +222,8 @@ pub trait StatusChecker {
         // get all currently added tx methods
         let all_tx_methods = get_all_tx_methods(conn);
 
+        *cu_method = cu_method.trim().to_string();
+
         // cancel all verification if the text is empty
         if cu_method.is_empty() {
             return Ok("TX Method: Nothing to check".to_string());
@@ -228,8 +238,9 @@ pub trait StatusChecker {
             let mut current_match = all_tx_methods[0].clone();
             let mut current_chance = 0;
 
-            for method in all_tx_methods {
+            for i in all_tx_methods {
                 let mut total_match = 0;
+                let method = i.trim().to_string();
                 for i in method.chars() {
                     if cu_method
                         .to_lowercase()
@@ -257,6 +268,8 @@ pub trait StatusChecker {
     ///
     /// Auto expands E to Expense and I to Income.
     fn verify_tx_type(&self, tx_type: &mut String) -> Result<String, Box<dyn Error>> {
+        *tx_type = tx_type.trim().to_string();
+        
         if tx_type.is_empty() {
             return Ok("TX Type: Nothing to check".to_string());
         }

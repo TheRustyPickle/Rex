@@ -48,6 +48,29 @@ fn check_verifier_date_1() {
     assert_eq!(result, expected_data);
     assert_eq!(to_verify, "2022-01-01".to_string());
 
+
+    let test_struct = Testing {
+        data: "  2022  -  01  -  01  ".to_string(),
+    };
+    let mut to_verify = test_struct.data.clone();
+
+    let result = test_struct.verify_date(&mut to_verify).unwrap();
+    let expected_data = "Date: Date Accepted".to_string();
+    assert_eq!(result, expected_data);
+    assert_eq!(to_verify, "2022-01-01".to_string());
+
+
+    let test_struct = Testing {
+        data: "  2022-01-01  ".to_string(),
+    };
+    let mut to_verify = test_struct.data.clone();
+
+    let result = test_struct.verify_date(&mut to_verify).unwrap();
+    let expected_data = "Date: Date Accepted".to_string();
+    assert_eq!(result, expected_data);
+    assert_eq!(to_verify, "2022-01-01".to_string());
+
+
     let test_struct = Testing {
         data: "2022-01".to_string(),
     };
@@ -351,6 +374,17 @@ fn check_verifier_tx_method() {
     let expected_data = "TX Method: Transaction Method not found".to_string();
     assert_eq!(result, expected_data);
     assert_eq!(to_verify, "test1".to_string());
+
+    let test_struct = Testing {
+        data: "  test 2  ".to_string(),
+    };
+
+    let mut to_verify = test_struct.data.clone();
+
+    let result = test_struct.verify_tx_method(&mut to_verify, &conn).unwrap();
+    let expected_data = "TX Method: Transaction Method Accepted".to_string();
+    assert_eq!(result, expected_data);
+    assert_eq!(to_verify, "test 2".to_string());
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
