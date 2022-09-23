@@ -1,5 +1,5 @@
 # Rex
-A terminal based interface to keep track of income, expense and transactions, written in Rust and uses tui-rs. Stores the data in a local sqlite database and shows the changes that was made to the balance for each transaction on selection.
+A terminal based interface to keep track of income, expense and transactions, written in Rust and uses tui-rs for the interface. Stores the data in a local sqlite database and works fully offline.
 
 <img src="https://dl.dropboxusercontent.com/s/ecnixug3vus2bj7/Rex_1.png" alt="Rex_1" width="48%" > <img src="https://dl.dropboxusercontent.com/s/uzi0ft4aw5u68gf/Rex_2.png" alt="Rex_2" width="48%" >
 
@@ -25,8 +25,6 @@ cargo run
 
 <h4>Status</h4>
 
-Currently under development and more features are planned. The app works fully offline and is unlikely to change. The app is tested on Manjaro and Windows. Any bug reporting via issue is welcome.
+More features are unlikely to be added unless something useful is suggested. 
 
-<h4>Logo</h4>
-
-There is no logo cause I'm not a designer. 
+Still no logo cause I'm not a designer. 
