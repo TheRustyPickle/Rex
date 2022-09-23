@@ -1,7 +1,11 @@
-# Rex
+<div align="center"><h1>Rex</h1></div>
+<p align=center><a href="https://wakatime.com/badge/github/WaffleMixer/Rex"><img src="https://wakatime.com/badge/github/WaffleMixer/Rex.svg" alt="wakatime"></a></p>
+
 A terminal based interface to keep track of income, expense and transactions, written in Rust and uses tui-rs for the interface. Stores the data in a local sqlite database and works fully offline.
 
 <img src="https://dl.dropboxusercontent.com/s/ecnixug3vus2bj7/Rex_1.png" alt="Rex_1" width="48%" > <img src="https://dl.dropboxusercontent.com/s/uzi0ft4aw5u68gf/Rex_2.png" alt="Rex_2" width="48%" >
+
+
 
 <h4>How to run Option 1</h4>
 
