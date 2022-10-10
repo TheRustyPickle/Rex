@@ -47,10 +47,11 @@ pub fn tx_ui<B: Backend>(
         .direction(Direction::Horizontal)
         .constraints(
             [
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
             ]
             .as_ref(),
         )
@@ -184,6 +185,15 @@ pub fn tx_ui<B: Backend>(
         .block(create_block("Details"))
         .alignment(Alignment::Left);
 
+    let tags_sec = Paragraph::new(details_text.clone())
+    .style(
+        Style::default()
+            .bg(Color::Rgb(255, 255, 255))
+            .fg(Color::Rgb(50, 205, 50)),
+    )
+    .block(create_block("Tags"))
+    .alignment(Alignment::Left);
+
     // We will be adding a cursor/box based on which tab is selected.
     // This was created utilizing the tui-rs example named user_input.rs
     match cu_selected {
@@ -211,11 +221,13 @@ pub fn tx_ui<B: Backend>(
     }
 
     // render the previously generated data into an interface
+    f.render_widget(help_sec, chunks[0]);
     f.render_widget(details_sec, chunks[2]);
     f.render_widget(status_sec, chunks[3]);
-    f.render_widget(help_sec, chunks[0]);
+    
     f.render_widget(date_sec, another_chunk[0]);
     f.render_widget(tx_method_sec, another_chunk[1]);
     f.render_widget(amount_sec, another_chunk[2]);
     f.render_widget(tx_type_sec, another_chunk[3]);
+    f.render_widget(tags_sec, another_chunk[4]);
 }

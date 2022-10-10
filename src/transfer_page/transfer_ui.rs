@@ -45,7 +45,7 @@ pub fn transfer_ui<B: Backend>(
     // We will now cut down a single vertical chunk into multiple horizontal chunk.
     let first_chunk = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(15), Constraint::Percentage(50)].as_ref())
+        .constraints([Constraint::Length(15), Constraint::Percentage(60), Constraint::Length(10)].as_ref())
         .split(chunks[1]);
 
     let second_chunk = Layout::default()
@@ -122,7 +122,11 @@ pub fn transfer_ui<B: Backend>(
 
     let amount_text = vec![Spans::from(input_data[4])];
 
+    // TODO correct it to input_data
+    let tags_text = vec![Spans::from("")];
+
     let arrow_text = vec![Spans::from(""), Spans::from("➞ ➞ ➞")];
+    
 
     let create_block = |title| {
         Block::default()
@@ -210,6 +214,14 @@ pub fn transfer_ui<B: Backend>(
         .block(create_block("Details"))
         .alignment(Alignment::Left);
 
+    let tags_sec = Paragraph::new(tags_text).style(
+        Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
+        .block(create_block("Tags"))
+        .alignment(Alignment::Left);
+
     // We will be adding a cursor/box based on which tab is selected.
     // This was created utilizing the tui-rs example named user_input.rs
     match cu_selected {
@@ -235,12 +247,16 @@ pub fn transfer_ui<B: Backend>(
     }
 
     // render the previously generated data into an interface
-    f.render_widget(details_sec, first_chunk[1]);
-    f.render_widget(status_sec, chunks[4]);
-    f.render_widget(help_sec, chunks[0]);
     f.render_widget(date_sec, first_chunk[0]);
+    f.render_widget(details_sec, first_chunk[1]);
+    f.render_widget(tags_sec, first_chunk[2]);
+
+    f.render_widget(help_sec, chunks[0]);
+    f.render_widget(status_sec, chunks[4]);
+    
     f.render_widget(from_sec, second_chunk[0]);
-    f.render_widget(to_sec, second_chunk[2]);
     f.render_widget(arrow_sec, second_chunk[1]);
+    f.render_widget(to_sec, second_chunk[2]);
+    
     f.render_widget(amount_sec, third_chunk[1]);
 }

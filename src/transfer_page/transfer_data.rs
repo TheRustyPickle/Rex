@@ -249,7 +249,7 @@ impl TransferData {
         let mut cu_method = self.from.clone();
 
         let mut status = self.verify_tx_method(&mut cu_method, conn)?;
-        if cu_method == self.to {
+        if cu_method == self.to && !self.to.is_empty() && !self.from.is_empty() {
             return Ok(
                 "From TX Method: To and From Transaction Methods cannot be the same".to_string(),
             );
@@ -266,7 +266,7 @@ impl TransferData {
         let mut cu_method = self.to.clone();
 
         let mut status = self.verify_tx_method(&mut cu_method, conn)?;
-        if cu_method == self.from {
+        if cu_method == self.from && !self.to.is_empty() && !self.from.is_empty() {
             return Ok(
                 "To TX Method: To and From Transaction Methods cannot be the same".to_string(),
             );
