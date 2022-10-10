@@ -27,6 +27,10 @@ cargo run
   
   - Double click the executable which will try to open a terminal/CMD by itself. 
 
+<h4>Option 3</h4>
+- Run `cargo install https://github.com/WaffleMixer/Rex.git`
+- Make sure `~/.cargo/bin` is on path if you're on linux
+
 <h4>Status</h4>
 
 More features are unlikely to be added unless something useful is suggested. 
