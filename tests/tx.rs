@@ -34,6 +34,7 @@ fn check_last_tx_id_2() {
         "test1",
         "100.00",
         "Income",
+        "Unknown",
         &file_name,
         None,
     )
@@ -73,6 +74,7 @@ fn check_getting_all_tx_2() {
         "test1",
         "100.00",
         "Expense",
+        "Unknown",
         &file_name,
         None,
     )
@@ -84,6 +86,7 @@ fn check_getting_all_tx_2() {
         "test 2",
         "100.00",
         "Expense",
+        "Unknown",
         &file_name,
         None,
     )
@@ -95,6 +98,7 @@ fn check_getting_all_tx_2() {
         "test 2",
         "100.00",
         "Expense",
+        "Unknown",
         &file_name,
         None,
     )
@@ -106,6 +110,7 @@ fn check_getting_all_tx_2() {
         "test 2",
         "100.00",
         "Income",
+        "Unknown",
         &file_name,
         None,
     )
@@ -122,6 +127,7 @@ fn check_getting_all_tx_2() {
                 "test1".to_string(),
                 "100.00".to_string(),
                 "Expense".to_string(),
+                "Unknown".to_string(),
             ],
             vec![
                 "19-07-2022".to_string(),
@@ -129,6 +135,7 @@ fn check_getting_all_tx_2() {
                 "test 2".to_string(),
                 "100.00".to_string(),
                 "Expense".to_string(),
+                "Unknown".to_string(),
             ],
         ],
         vec![
@@ -146,6 +153,7 @@ fn check_getting_all_tx_2() {
                 "test 2".to_string(),
                 "100.00".to_string(),
                 "Expense".to_string(),
+                "Unknown".to_string(),
             ],
             vec![
                 "20-05-2022".to_string(),
@@ -153,6 +161,7 @@ fn check_getting_all_tx_2() {
                 "test 2".to_string(),
                 "100.00".to_string(),
                 "Income".to_string(),
+                "Unknown".to_string(),
             ],
         ],
         vec![
