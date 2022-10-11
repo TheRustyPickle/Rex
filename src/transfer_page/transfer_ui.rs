@@ -122,8 +122,8 @@ pub fn transfer_ui<B: Backend>(
 
     let amount_text = vec![Spans::from(input_data[4])];
 
-    // TODO correct it to input_data
-    let tags_text = vec![Spans::from("")];
+    // * 5th index is the tx type which is not necessary for the transfer ui 
+    let tags_text = vec![Spans::from(input_data[6])];
 
     let arrow_text = vec![Spans::from(""), Spans::from("➞ ➞ ➞")];
     
@@ -243,6 +243,10 @@ pub fn transfer_ui<B: Backend>(
         ),
         // The text of this goes into the middle so couldn't find a better place to insert the input box
         TransferTab::Amount => f.set_cursor(third_chunk[1].x + 1, third_chunk[1].y + 1),
+        TransferTab::Tags => f.set_cursor(
+            first_chunk[2].x + input_data[6].len() as u16 + 1,
+            first_chunk[2].y + 1,
+        ),
         TransferTab::Nothing => {}
     }
 

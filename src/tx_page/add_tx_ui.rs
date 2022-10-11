@@ -107,6 +107,8 @@ pub fn tx_ui<B: Backend>(
 
     let tx_type_text = vec![Spans::from(input_data[4])];
 
+    let tags_text = vec![Spans::from(input_data[5])];
+
     let create_block = |title| {
         Block::default()
             .borders(Borders::ALL)
@@ -185,7 +187,7 @@ pub fn tx_ui<B: Backend>(
         .block(create_block("Details"))
         .alignment(Alignment::Left);
 
-    let tags_sec = Paragraph::new(details_text.clone())
+    let tags_sec = Paragraph::new(tags_text.clone())
     .style(
         Style::default()
             .bg(Color::Rgb(255, 255, 255))
@@ -216,6 +218,10 @@ pub fn tx_ui<B: Backend>(
         TxTab::TxType => f.set_cursor(
             another_chunk[3].x + input_data[4].len() as u16 + 1,
             another_chunk[3].y + 1,
+        ),
+        TxTab::Tags => f.set_cursor(
+            another_chunk[4].x + input_data[5].len() as u16 + 1,
+            another_chunk[4].y + 1,
         ),
         TxTab::Nothing => {}
     }

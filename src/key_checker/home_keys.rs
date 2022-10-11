@@ -45,6 +45,7 @@ pub fn home_keys(
                                 &target_data[2],
                                 &target_data[3],
                                 &target_data[4],
+                                &target_data[5],
                                 target_id_num,
                             );
                             *cu_page = CurrentUi::AddTx;
@@ -52,12 +53,14 @@ pub fn home_keys(
                             let from_to = target_data[2].split(" to ").collect::<Vec<&str>>();
                             let from_method = from_to[0];
                             let to_method = from_to[1];
+
                             *data_for_transfer = TransferData::custom(
                                 &target_data[0],
                                 &target_data[1],
                                 from_method,
                                 to_method,
                                 &target_data[3],
+                                &target_data[5],
                                 target_id_num,
                             );
                             *cu_page = CurrentUi::Transfer;

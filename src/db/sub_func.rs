@@ -203,6 +203,7 @@ pub fn get_all_txs(
                 row.get(2).unwrap(),
                 row.get(3).unwrap(),
                 row.get(4).unwrap(),
+                row.get(6).unwrap(),
                 id_num.to_string(),
             ])
         })
