@@ -18,6 +18,7 @@ pub struct AddTxData {
     tx_method: String,
     amount: String,
     tx_type: String,
+    tags: String,
     pub tx_status: Vec<String>,
     editing_tx: bool,
     id_num: i32,
@@ -37,6 +38,7 @@ impl AddTxData {
             tx_method: "".to_string(),
             amount: "".to_string(),
             tx_type: "".to_string(),
+            tags: "".to_string(),
             tx_status: Vec::new(),
             editing_tx: false,
             id_num: 0,
@@ -51,6 +53,7 @@ impl AddTxData {
         tx_method: &str,
         amount: &str,
         tx_type: &str,
+        tags: &str,
         id_num: i32,
     ) -> Self {
         let splitted = date.split('-');
@@ -60,13 +63,13 @@ impl AddTxData {
         let day = data[0];
 
         let new_date = format!("{}-{}-{}", year, month, day);
-
         AddTxData {
             date: new_date,
             details: details.to_string(),
             tx_method: tx_method.to_string(),
             amount: amount.to_string(),
             tx_type: tx_type.to_string(),
+            tags: tags.to_string(),
             tx_status: Vec::new(),
             editing_tx: true,
             id_num,
@@ -82,6 +85,7 @@ impl AddTxData {
             &self.tx_method,
             &self.amount,
             &self.tx_type,
+            &self.tags,
         ]
     }
 
@@ -150,6 +154,17 @@ impl AddTxData {
                 }
             }
             false => self.tx_type = format!("{}{text}", self.tx_type),
+        }
+    }
+
+    pub fn edit_tags(&mut self, text: char, pop_last: bool) {
+        match pop_last {
+            true => {
+                if !self.tags.is_empty() {
+                    self.tags.pop().unwrap();
+                }
+            }
+            false => self.tags = format!("{}{text}", self.tags),
         }
     }
 

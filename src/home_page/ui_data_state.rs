@@ -128,6 +128,7 @@ pub enum TxTab {
     TxMethod,
     Amount,
     TxType,
+    Tags,
     Nothing,
 }
 
@@ -141,6 +142,7 @@ pub enum TransferTab {
     From,
     To,
     Amount,
+    Tags,
     Nothing,
 }
 

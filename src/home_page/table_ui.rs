@@ -147,11 +147,11 @@ pub fn ui<B: Backend>(
         .block(Block::default().borders(Borders::ALL).title("Transactions"))
         .widths(&[
             Constraint::Percentage(10),
-            Constraint::Percentage(40),
+            Constraint::Percentage(37),
             Constraint::Percentage(13),
             Constraint::Percentage(13),
-            Constraint::Percentage(13),
-            Constraint::Percentage(10),
+            Constraint::Percentage(8),
+            Constraint::Percentage(18),
         ]);
 
     // This is what makes the Changes row in the Balance widget red or blue based on

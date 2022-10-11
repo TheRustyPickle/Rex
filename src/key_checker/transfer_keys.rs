@@ -51,6 +51,7 @@ pub fn transfer_keys(
                     KeyCode::Char('3') => *cu_tx_page = TransferTab::From,
                     KeyCode::Char('4') => *cu_tx_page = TransferTab::To,
                     KeyCode::Char('5') => *cu_tx_page = TransferTab::Amount,
+                    KeyCode::Char('6') => *cu_tx_page = TransferTab::Tags,
                     KeyCode::Enter => *cu_tx_page = TransferTab::Nothing,
                     KeyCode::Esc => *cu_tx_page = TransferTab::Nothing,
                     _ => {}
@@ -172,7 +173,7 @@ pub fn transfer_keys(
                                 data_for_transfer.add_tx_status(&a);
                                 if a.contains("zero") {
                                 } else {
-                                    *cu_tx_page = TransferTab::Nothing;
+                                    *cu_tx_page = TransferTab::Tags;
                                 }
                             }
                             Err(_) => {
@@ -197,6 +198,14 @@ pub fn transfer_keys(
                     }
                     KeyCode::Backspace => data_for_transfer.edit_amount('a', true),
                     KeyCode::Char(a) => data_for_transfer.edit_amount(a, false),
+                    _ => {}
+                },
+
+                TransferTab::Tags => match key.code {
+                    KeyCode::Enter => *cu_tx_page = TransferTab::Nothing,
+                    KeyCode::Esc => *cu_tx_page = TransferTab::Nothing,
+                    KeyCode::Backspace => data_for_transfer.edit_tags('a', true),
+                    KeyCode::Char(a) => data_for_transfer.edit_tags(a, false),
                     _ => {}
                 },
             }
