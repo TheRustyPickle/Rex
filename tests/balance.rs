@@ -36,6 +36,7 @@ fn check_last_balances_2() {
         "test1",
         "159.00",
         "Expense",
+        "Unknown",
         file_name,
         None,
     )
@@ -47,6 +48,7 @@ fn check_last_balances_2() {
         "test 2",
         "159.19",
         "Income",
+        "Unknown",
         file_name,
         None,
     )
@@ -79,6 +81,7 @@ fn check_last_balances_3() {
         "test1 to test 2",
         "159.00",
         "Transfer",
+        "Unknown",
         file_name,
         None,
     )
@@ -90,6 +93,7 @@ fn check_last_balances_3() {
         "test 2 to test1",
         "159.00",
         "Transfer",
+        "Unknown",
         file_name,
         None,
     )
@@ -151,6 +155,7 @@ fn check_last_month_balance_2() {
         "test1",
         "100.00",
         "Income",
+        "Unknown",
         &file_name,
         None,
     )
@@ -162,6 +167,7 @@ fn check_last_month_balance_2() {
         "test 2",
         "100.00",
         "Income",
+        "Unknown",
         &file_name,
         None,
     )
@@ -173,6 +179,7 @@ fn check_last_month_balance_2() {
         "test1",
         "100.00",
         "Income",
+        "Unknown",
         &file_name,
         None,
     )
@@ -184,6 +191,7 @@ fn check_last_month_balance_2() {
         "test1",
         "100.00",
         "Income",
+        "Unknown",
         &file_name,
         None,
     )
@@ -195,6 +203,7 @@ fn check_last_month_balance_2() {
         "test1",
         "100.00",
         "Income",
+        "Unknown",
         &file_name,
         None,
     )
@@ -245,6 +254,7 @@ fn check_balance_all_day() {
             tx_method,
             amount,
             tx_type,
+            "Unknown",
             &file_name,
             None,
         )
