@@ -30,7 +30,8 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
         tx_method TEXT,
         amount TEXT,
         tx_type TEXT,
-        id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT
+        id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        tags TEXT
     );",
         [],
     )?;
