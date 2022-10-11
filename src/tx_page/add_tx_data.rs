@@ -202,6 +202,7 @@ impl AddTxData {
                 &self.tx_method,
                 &self.amount,
                 &self.tx_type,
+                &self.tags,
                 "data.sqlite",
                 Some(&self.id_num.to_string()),
             );
@@ -217,6 +218,7 @@ impl AddTxData {
                 &self.tx_method,
                 &self.amount,
                 &self.tx_type,
+                &self.tags,
                 "data.sqlite",
                 None,
             );
