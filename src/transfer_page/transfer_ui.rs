@@ -45,7 +45,14 @@ pub fn transfer_ui<B: Backend>(
     // We will now cut down a single vertical chunk into multiple horizontal chunk.
     let first_chunk = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(15), Constraint::Percentage(60), Constraint::Length(10)].as_ref())
+        .constraints(
+            [
+                Constraint::Length(15),
+                Constraint::Percentage(60),
+                Constraint::Length(10),
+            ]
+            .as_ref(),
+        )
         .split(chunks[1]);
 
     let second_chunk = Layout::default()
@@ -80,16 +87,17 @@ pub fn transfer_ui<B: Backend>(
     f.render_widget(block, size);
 
     // This is the details of the Help widget
-    let help_text = vec![Spans::from("Press the respective keys to edit fields."),
-    Spans::from("'1' : Date         Example: 2022-05-12, YYYY-MM-DD"),
-    Spans::from("'2' : TX details   Example: For Grocery, Salary"),
-    Spans::from("'3' : From Method  Example: Cash, Bank, Card"),
-    Spans::from("'4' : To Method    Example: Cash, Bank, Card"),
-    Spans::from("'5' : Amount       Example: 1000, 100+50"),
-    Spans::from("'S' : Save the inputted data as a Transaction"),
-    Spans::from("'Enter' : Submit field and continue"),
-    Spans::from("'Esc' : Stop editing filed"),
-    Spans::from("Amount Field supports simple calculation using '+' '-' '*' '/'"),
+    let help_text = vec![
+        Spans::from("Press the respective keys to edit fields."),
+        Spans::from("'1' : Date         Example: 2022-05-12, YYYY-MM-DD"),
+        Spans::from("'2' : TX details   Example: For Grocery, Salary"),
+        Spans::from("'3' : From Method  Example: Cash, Bank, Card"),
+        Spans::from("'4' : To Method    Example: Cash, Bank, Card"),
+        Spans::from("'5' : Amount       Example: 1000, 100+50"),
+        Spans::from("'S' : Save the inputted data as a Transaction"),
+        Spans::from("'Enter' : Submit field and continue"),
+        Spans::from("'Esc' : Stop editing filed"),
+        Spans::from("Amount Field supports simple calculation using '+' '-' '*' '/'"),
     ];
 
     let mut status_text = vec![];
@@ -122,11 +130,10 @@ pub fn transfer_ui<B: Backend>(
 
     let amount_text = vec![Spans::from(input_data[4])];
 
-    // * 5th index is the tx type which is not necessary for the transfer ui 
+    // * 5th index is the tx type which is not necessary for the transfer ui
     let tags_text = vec![Spans::from(input_data[6])];
 
     let arrow_text = vec![Spans::from(""), Spans::from("➞ ➞ ➞")];
-    
 
     let create_block = |title| {
         Block::default()
@@ -214,8 +221,9 @@ pub fn transfer_ui<B: Backend>(
         .block(create_block("Details"))
         .alignment(Alignment::Left);
 
-    let tags_sec = Paragraph::new(tags_text).style(
-        Style::default()
+    let tags_sec = Paragraph::new(tags_text)
+        .style(
+            Style::default()
                 .bg(Color::Rgb(255, 255, 255))
                 .fg(Color::Rgb(50, 205, 50)),
         )
@@ -257,10 +265,10 @@ pub fn transfer_ui<B: Backend>(
 
     f.render_widget(help_sec, chunks[0]);
     f.render_widget(status_sec, chunks[4]);
-    
+
     f.render_widget(from_sec, second_chunk[0]);
     f.render_widget(arrow_sec, second_chunk[1]);
     f.render_widget(to_sec, second_chunk[2]);
-    
+
     f.render_widget(amount_sec, third_chunk[1]);
 }

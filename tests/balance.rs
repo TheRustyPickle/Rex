@@ -284,10 +284,9 @@ fn check_balance_all_day() {
     for (i, _x) in &data_2 {
         expected_data_2.insert(i.to_string(), 0.0);
     }
-    
+
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
-    
 
     assert_eq!(data_1, expected_data_1);
     assert_eq!(data_2, expected_data_2);

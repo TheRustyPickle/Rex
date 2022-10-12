@@ -197,14 +197,14 @@ pub fn add_tx_keys(
                         KeyCode::Char(a) => data_for_tx.edit_tx_type(a, false),
                         _ => {}
                     }
-                },
+                }
                 TxTab::Tags => match key.code {
                     KeyCode::Enter => *cu_tx_page = TxTab::Nothing,
                     KeyCode::Esc => *cu_tx_page = TxTab::Nothing,
                     KeyCode::Backspace => data_for_tx.edit_tags('a', true),
                     KeyCode::Char(a) => data_for_tx.edit_tags(a, false),
                     _ => {}
-                }
+                },
             }
         }
         _ => *cu_popup = PopupState::Nothing,
