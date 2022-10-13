@@ -5,6 +5,7 @@ mod initial_page;
 mod interface;
 mod key_checker;
 mod popup_page;
+mod summary_page;
 mod transfer_page;
 pub mod tx_page;
 use atty::Stream;

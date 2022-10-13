@@ -154,6 +154,7 @@ pub enum CurrentUi {
     AddTx,
     Transfer,
     Chart,
+    Summary,
 }
 
 /// Indicates which popup is currently on and is being shown in the screen

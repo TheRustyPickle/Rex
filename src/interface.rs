@@ -8,6 +8,7 @@ use crate::home_page::{
 use crate::initial_page::starter_ui;
 use crate::key_checker::{add_tx_keys, chart_keys, home_keys, initial_keys, transfer_keys};
 use crate::popup_page::add_popup;
+use crate::summary_page::summary_ui;
 use crate::transfer_page::{transfer_ui, TransferData};
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
@@ -202,6 +203,13 @@ pub fn run_app<B: Backend>(
                     }
                 })?
             }
+            CurrentUi::Summary => terminal.draw(|f| {
+                summary_ui(f);
+
+                if let PopupState::Helper = cu_popup {
+                    add_popup(f, 1)
+                }
+            })?,
         };
 
         // This is where the keyboard press tracking starts
@@ -285,6 +293,7 @@ pub fn run_app<B: Backend>(
                             return Ok(status);
                         }
                     }
+                    CurrentUi::Summary => {}
                 }
             };
         }

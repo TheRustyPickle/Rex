@@ -30,6 +30,7 @@ pub fn home_keys(
                 KeyCode::Char('r') => *cu_page = CurrentUi::Chart,
                 KeyCode::Char('j') => return Ok("Change".to_string()),
                 KeyCode::Char('h') => *cu_popup = PopupState::Helper,
+                KeyCode::Char('z') => *cu_page = CurrentUi::Summary,
                 KeyCode::Char('e') => {
                     if let Some(a) = cu_table_index {
                         let target_data = &all_data.get_txs()[a];
