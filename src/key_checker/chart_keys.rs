@@ -14,7 +14,7 @@ pub fn chart_keys(
         PopupState::Nothing => match key.code {
             KeyCode::Char('q') => return Ok("".to_string()),
             KeyCode::Char('f') => {
-                // returns to home page and reloads data
+                // * returns to home page and reloads data
                 *cu_page = CurrentUi::Home;
                 *cu_tx_page = TxTab::Nothing;
                 *data_for_tx = AddTxData::new();
