@@ -157,6 +157,8 @@ pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<
 /// This is a multi-use function used to retrieving all Transaction within a given date, balance and the id_num related to them.
 /// Once the transactions are fetched, we immediately start calculating the current balance values after each transaction happened
 /// and finally return all of them in a tuple
+
+// * month and year starts from 0
 pub fn get_all_txs(
     conn: &Connection,
     month: usize,
@@ -466,4 +468,28 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
         }
     }
     db_tx_methods
+}
+
+pub fn get_month_name(month_index: usize, year_index: usize) -> (String, String) {
+    let month_names = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ];
+
+    let years = ["2022", "2023", "2024", "2025"];
+
+    (
+        month_names[month_index].to_string(),
+        years[year_index].to_string(),
+    )
 }
