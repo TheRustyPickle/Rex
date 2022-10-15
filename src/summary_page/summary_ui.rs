@@ -3,7 +3,7 @@ use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table, Tabs},
+    widgets::{Block, Borders, Cell, Paragraph, Row, Table},
     Frame,
 };
 
@@ -14,7 +14,11 @@ use crate::home_page::TableData;
 // TODO the month with the most income and expense
 // TODO show total expense and income
 
-pub fn summary_ui<B: Backend>(f: &mut Frame<B>, table_data: &mut TableData) {
+pub fn summary_ui<B: Backend>(
+    f: &mut Frame<B>,
+    table_data: &mut TableData,
+    text_data: &Vec<(f64, String)>,
+) {
     let size = f.size();
     // TODO change to a different color
     let normal_style = Style::default().bg(Color::LightBlue);
@@ -33,7 +37,7 @@ pub fn summary_ui<B: Backend>(f: &mut Frame<B>, table_data: &mut TableData) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints([Constraint::Length(8), Constraint::Min(5)].as_ref())
+        .constraints([Constraint::Length(7), Constraint::Min(5)].as_ref())
         .split(size);
 
     let block = Block::default().style(
@@ -44,15 +48,70 @@ pub fn summary_ui<B: Backend>(f: &mut Frame<B>, table_data: &mut TableData) {
 
     f.render_widget(block, size);
 
-    let text = String::from(
-        "The biggest expense transaction happened on 01-01-2022 using Bank with the amount: 99999
-
-The biggest income transaction happened on 01-01-2022 using Bank with the amount: 99999
-    
-The month with the highest expense was January of 2022
-
-The month with the highest income was January of 2022",
-    );
+    let text = vec![
+        Spans::from(Span::styled(
+            format!("{} {:.2}", text_data[0].1, text_data[0].0),
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .fg(Color::Blue),
+        )),
+        Spans::from(Span::styled(
+            format!("{} {:.2}", text_data[1].1, text_data[1].0),
+            Style::default().add_modifier(Modifier::BOLD).fg(Color::Red),
+        )),
+        Spans::from(vec![
+            Span::styled(
+                format!("Largest Income: {:.2}, ", text_data[2].0),
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .fg(Color::Blue),
+            ),
+            Span::styled(
+                format!("Method: {}", text_data[2].1),
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .fg(Color::Rgb(205, 133, 63)),
+            ),
+        ]),
+        Spans::from(vec![
+            Span::styled(
+                format!("Largest Expense: {:.2}, ", text_data[3].0),
+                Style::default().add_modifier(Modifier::BOLD).fg(Color::Red),
+            ),
+            Span::styled(
+                format!("Method: {}", text_data[3].1),
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .fg(Color::Rgb(205, 133, 63)),
+            ),
+        ]),
+        Spans::from(vec![
+            Span::styled(
+                format!("Most Earning Month: {}, ", text_data[4].1),
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .fg(Color::Rgb(100, 149, 237)),
+            ),
+            Span::styled(
+                format!("Income: {:.2}", text_data[4].0),
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .fg(Color::Blue),
+            ),
+        ]),
+        Spans::from(vec![
+            Span::styled(
+                format!("Most Expensive Month: {}, ", text_data[5].1),
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .fg(Color::Rgb(205, 92, 92)),
+            ),
+            Span::styled(
+                format!("Expense: {:.2}", text_data[5].0),
+                Style::default().add_modifier(Modifier::BOLD).fg(Color::Red),
+            ),
+        ]),
+    ];
 
     let rows = table_data.items.iter().map(|item| {
         let height = 1;
@@ -62,7 +121,7 @@ The month with the highest income was January of 2022",
 
     let table_area = Table::new(rows)
         .header(header)
-        .block(Block::default().borders(Borders::ALL).title("Transactions"))
+        .block(Block::default().borders(Borders::ALL).title("Tags"))
         .widths(&[
             Constraint::Percentage(33),
             Constraint::Percentage(33),
