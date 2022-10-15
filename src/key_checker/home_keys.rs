@@ -153,6 +153,14 @@ pub fn home_keys(
                                 table.next();
                             }
                         }
+                        SelectedTab::Months => {
+                            if all_data.all_tx.is_empty() {
+                                *selected_tab = selected_tab.change_tab_up();
+                            } else {
+                                *selected_tab = selected_tab.change_tab_down();
+                                table.state.select(Some(0));
+                            };
+                        }
                         _ => *selected_tab = selected_tab.change_tab_down(),
                     }
                 }
