@@ -23,17 +23,25 @@ pub fn summary_keys(
             }
             KeyCode::Char('h') => *cu_popup = PopupState::Helper,
             KeyCode::Up => {
-                if summary_table.state.selected() == Some(0) {
-                    summary_table.state.select(Some(total_index - 1));
+                if total_index > 0 {
+                    if summary_table.state.selected() == Some(0) {
+                        summary_table.state.select(Some(total_index - 1));
+                    } else {
+                        summary_table.previous();
+                    }
                 } else {
-                    summary_table.previous();
+                    summary_table.state.select(None)
                 }
             }
             KeyCode::Down => {
-                if summary_table.state.selected() == Some(total_index - 1) {
-                    summary_table.state.select(Some(0));
+                if total_index > 0 {
+                    if summary_table.state.selected() == Some(total_index - 1) {
+                        summary_table.state.select(Some(0));
+                    } else {
+                        summary_table.next();
+                    }
                 } else {
-                    summary_table.next();
+                    summary_table.state.select(None)
                 }
             }
             _ => {}
