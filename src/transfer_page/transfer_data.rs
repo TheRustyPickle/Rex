@@ -191,6 +191,9 @@ impl TransferData {
         } else if self.tx_type.is_empty() {
             return "Tx Type: Transaction Type cannot be empty".to_string();
         }
+        if self.tags == "" {
+            self.tags = "Unknown".to_string();
+        }
 
         let tx_method = format!("{} to {}", self.from, self.to);
 
