@@ -45,7 +45,7 @@ impl SummaryData {
         for (key, value) in &self.tags_income {
             let mut to_push = vec![key.to_string(), format!("{:.2}", value)];
             if self.tags_expense.contains_key(key) {
-                to_push.push(self.tags_expense[key].to_string());
+                to_push.push(format!("{:.2}", self.tags_expense[key]));
             } else {
                 to_push.push("0".to_string())
             }
