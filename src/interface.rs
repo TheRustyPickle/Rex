@@ -78,6 +78,7 @@ pub fn run_app<B: Backend>(
     let mut summary_data = SummaryData::new(&conn);
     let mut total_tags = summary_data.get_table_data().len();
     let mut summary_table = TableData::new(summary_data.get_table_data());
+    let mut summary_texts = summary_data.get_tx_data();
     if total_tags > 0 {
         summary_table.state.select(Some(0));
     }
@@ -218,10 +219,15 @@ pub fn run_app<B: Backend>(
                     summary_data = SummaryData::new(&conn);
                     total_tags = summary_data.get_table_data().len();
                     summary_table = TableData::new(summary_data.get_table_data());
+                    summary_texts = summary_data.get_tx_data();
+                    if total_tags > 0 {
+                        summary_table.state.select(Some(0));
+                    }
+
                     summary_reloaded = true;
                 }
                 terminal.draw(|f| {
-                    summary_ui(f, &mut summary_table);
+                    summary_ui(f, &mut summary_table, &summary_texts);
 
                     if let PopupState::Helper = cu_popup {
                         add_popup(f, 1)
