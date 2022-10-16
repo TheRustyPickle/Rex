@@ -13,7 +13,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use db::{add_new_tx_methods, create_db, get_user_tx_methods};
+use db::{add_new_tx_methods, add_tags_column, create_db, get_all_tx_columns, get_user_tx_methods};
 use home_page::TimeData;
 use initial_page::check_version;
 use interface::run_app;
@@ -132,6 +132,23 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
             }
         }
     }
+
+    if !get_all_tx_columns("data.sqlite").contains(&"tags".to_string()) {
+        println!("Old database detected. Starting migration...");
+        let status = add_tags_column("data.sqlite");
+        match status {
+            Ok(_) => {
+                println!("Database migration successfully complete. Restarting in 5 seconds...");
+                thread::sleep(Duration::from_millis(5000));
+            }
+            Err(e) => {
+                println!("Database migration failed. Try again. Error: {}", e);
+                println!("Commits reversed. Exiting...");
+                process::exit(1);
+            }
+        }
+    }
+
     loop {
         // Continue to loop to the main interface until the ending command or "break" is given
         let status = check_app(start_interface(new_version_available));
