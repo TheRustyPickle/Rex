@@ -3,7 +3,7 @@ use crossterm::{
     terminal::{Clear, ClearType},
 };
 use rusqlite::{Connection, Result as sqlResult};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io;
 
 // This file contains a number of functions that makes calls to the database
@@ -21,15 +21,28 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
     let column_names = conn
         .prepare("SELECT * FROM balance_all")
         .expect("could not prepare statement");
-    let mut tx_methods = vec![];
-    for i in 1..99 {
-        let column = column_names.column_name(i);
-        match column {
-            Ok(c) => tx_methods.push(c.to_string()),
-            Err(_) => break,
-        }
-    }
-    tx_methods
+
+    let mut data: Vec<String> = column_names
+        .column_names()
+        .iter()
+        .map(|c| c.to_string())
+        .collect();
+    data.remove(0);
+    data
+}
+
+pub fn get_all_tx_columns(file_name: &str) -> Vec<String> {
+    let conn = Connection::open(file_name).expect("Could not connect to database");
+
+    let column_names = conn
+        .prepare("SELECT * FROM tx_all")
+        .expect("could not prepare statement");
+
+    column_names
+        .column_names()
+        .iter()
+        .map(|c| c.to_string())
+        .collect()
 }
 
 /// The function is used to create dates in the form of strings to use the WHERE statement
@@ -407,10 +420,16 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
         // split them and remove duplicates
         let split = line.split(", ");
         let mut splitted = split.collect::<Vec<&str>>();
+        let splitted_copy = splitted.clone();
 
-        // Unknown how it works. Taken from somewhere in the internet
-        let set: HashSet<_> = splitted.drain(..).collect();
-        splitted.extend(set.into_iter());
+        // remove duplicates from the splitted vec
+        // index in reverse so even after removing an index, it won't panic because the index is only going down
+        for x in splitted_copy.len()..0 {
+            let index_value = splitted_copy[x];
+            if splitted.contains(&index_value) {
+                splitted.remove(x);
+            }
+        }
 
         let mut filtered_splitted = vec![];
 
