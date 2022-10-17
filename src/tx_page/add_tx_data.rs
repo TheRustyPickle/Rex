@@ -1,5 +1,5 @@
-use crate::db::StatusChecker;
 use crate::db::{add_new_tx, delete_tx};
+use crate::db::{get_all_tx_methods, get_last_balances, StatusChecker};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::error::Error;
@@ -263,8 +263,31 @@ impl AddTxData {
     }
 
     /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
-    pub fn check_amount(&mut self) -> Result<String, Box<dyn Error>> {
-        let mut user_amount = self.amount.clone();
+    pub fn check_amount(&mut self, conn: &Connection) -> Result<String, Box<dyn Error>> {
+        let mut user_amount = self.amount.clone().to_lowercase();
+        if user_amount.contains("b") && !self.tx_method.is_empty() {
+            let all_methods = get_all_tx_methods(&conn);
+
+            if !all_methods.contains(&self.tx_method) {
+                return Ok(String::from(
+                    "Amount: TX Method not found. B value cannot be accepted",
+                ));
+            }
+
+            let last_balances = get_last_balances(&conn, &all_methods);
+
+            for x in 0..all_methods.len() {
+                if all_methods[x] == self.tx_method {
+                    user_amount = user_amount.replace("b", &last_balances[x]);
+                    self.amount = self.amount.replace("b", &last_balances[x]);
+                    break;
+                }
+            }
+        } else if user_amount.contains("b") && self.tx_method.is_empty() {
+            return Ok(String::from(
+                "Amount: TX Method cannot be empty. Value of B cannot be determined",
+            ));
+        }
 
         let status = self.verify_amount(&mut user_amount)?;
 
