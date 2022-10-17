@@ -9,18 +9,13 @@ use tui::{
 
 use crate::home_page::TableData;
 
-// TODO show expense, income summary based on tags
-// TODO show Biggest income and expense transaction
-// TODO the month with the most income and expense
-// TODO show total expense and income
-
 pub fn summary_ui<B: Backend>(
     f: &mut Frame<B>,
     table_data: &mut TableData,
     text_data: &Vec<(f64, String)>,
 ) {
     let size = f.size();
-    // TODO change to a different color
+
     let normal_style = Style::default().bg(Color::LightBlue);
     let selected_style = Style::default().bg(Color::Rgb(255, 245, 238));
 
@@ -33,7 +28,6 @@ pub fn summary_ui<B: Backend>(
         .height(1)
         .bottom_margin(0);
 
-    // TODO chunk length
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
