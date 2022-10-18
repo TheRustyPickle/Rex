@@ -63,7 +63,7 @@ pub fn run_app<B: Backend>(
     //
     // summary_reloaded: The interface is a loop so we don't want to keep reloading same data over and over again
     // which can be expensive. Makes sure it iters only one time but keeps the loop running.
-    // 
+    //
     // total_income & total_expense : Contains the data of all incomes and expenses of the selected month and year,
     // calculated from the transaction saved in the database, it is needed for the Income and Expense section in the Home page.
     // Why is it a vector? Because the entire row has to be saved inside this to put in the UI.
