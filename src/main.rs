@@ -9,13 +9,15 @@ fn main() {
     rex::initializer(is_windows, verifying_path).unwrap();
 }
 
-// TODO consider b as current balance when doing calculation in the UI
-// TODO create a separate page that collects all tags and shows total incomes or expenses
-// TODO Auto upgrade DB if using the old version
-// TODO update UI with the tag input field
-// TODO Update functions that breaks
-// TODO pass exiting tests and add new ones if necessary
-// TODO check if version checker can be done in thread
-// TODO edit initial page, popup
-// TODO edit add tx and transfer page help text
-// [ ] add this ALTER TABLE tx_all ADD tags TEXT DEFAULT Unknown;
+// [x] consider b as current balance when doing calculation in the UI
+// [x] create a separate page that collects all tags and shows total incomes or expenses
+// [x] Auto upgrade DB if using the old version
+// [x] update UI with the tag input field
+// [x] Update functions that breaks
+// [x] pass existing tests and add new ones if necessary
+// [x] check if version checker can be done in thread not worth it
+// [x] edit initial page, popup
+// [x] edit add tx and transfer page help text
+// [x] add this ALTER TABLE tx_all ADD tags TEXT DEFAULT Unknown;
+// [x] maintain tx method order during db creation
+// TODO find how to use cargo install

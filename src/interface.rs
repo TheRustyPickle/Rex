@@ -46,12 +46,24 @@ pub fn run_app<B: Backend>(
     //
     // table : I am calling the spreadsheet like widget the table. It contains the selected month and year's all transactions
     // cu_page : Opening UI page which is selected as the Home page
-    // cu_tx_page : To make sure random key presses are not registered, selected as Nothing
+    // cu_tx_page : To make sure random key presses are not registered for the Transaction UI, selected as Nothing
+    // cu_transfer_page : To make sure random key presses are not registered for the Transfer Transaction UI, selected as Nothing
+    // cu_popup : Contains the current state of popups. Defaults as Nothing
     //
     // data_for_tx : This is the struct for storing data which is to be stored as the transaction in the database.
     // It also contains all the texts for the Status widget in the transaction adding ui. For each key presses when
     // selected adds a character to the relevant struct field.
     //
+    // data_for_transfer: Contains data to create a Transfer Transaction, handles key presses and saving the transaction.
+    //
+    // summary_data: Creates a struct that contains all information to create the Summary UI
+    // total_tags: Highlights how many tags the DB contains
+    // summary_table: Contains the vector to create Summary UI Table section
+    // summary_texts: Contains relevant texts inside a vector to create the upper section of the Summary UI
+    //
+    // summary_reloaded: The interface is a loop so we don't want to keep reloading same data over and over again
+    // which can be expensive. Makes sure it iters only one time but keeps the loop running.
+    // 
     // total_income & total_expense : Contains the data of all incomes and expenses of the selected month and year,
     // calculated from the transaction saved in the database, it is needed for the Income and Expense section in the Home page.
     // Why is it a vector? Because the entire row has to be saved inside this to put in the UI.
@@ -79,9 +91,6 @@ pub fn run_app<B: Backend>(
     let mut total_tags = summary_data.get_table_data().len();
     let mut summary_table = TableData::new(summary_data.get_table_data());
     let mut summary_texts = summary_data.get_tx_data();
-    if total_tags > 0 {
-        summary_table.state.select(Some(0));
-    }
     let mut summary_reloaded = false;
     let mut starter_index = 0;
 

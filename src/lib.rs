@@ -5,7 +5,7 @@ mod initial_page;
 mod interface;
 mod key_checker;
 mod popup_page;
-mod summary_page;
+pub mod summary_page;
 mod transfer_page;
 pub mod tx_page;
 use atty::Stream;
@@ -133,6 +133,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
         }
     }
 
+    // * initiates migration if old database is detected.
     if !get_all_tx_columns("data.sqlite").contains(&"tags".to_string()) {
         println!("Old database detected. Starting migration...");
         let status = add_tags_column("data.sqlite");

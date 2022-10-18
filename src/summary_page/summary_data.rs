@@ -3,9 +3,6 @@ use rusqlite::Connection;
 use std::collections::HashMap;
 /// Contains the necessary information to construct the Summary Page highlighting
 /// tag based expense and income information, biggest expense and income
-
-// TODO add some tests for this struct
-// TODO add comments
 pub struct SummaryData {
     tags_income: HashMap<String, f64>,
     tags_expense: HashMap<String, f64>,
@@ -18,7 +15,9 @@ pub struct SummaryData {
 }
 
 impl SummaryData {
+    /// Goes through all transactions to collect data for the summary
     pub fn new(conn: &Connection) -> Self {
+        // * create a default value in case of no data available
         let mut default = SummaryData {
             tags_income: HashMap::new(),
             tags_expense: HashMap::new(),
@@ -30,6 +29,7 @@ impl SummaryData {
             total_expense: 0.0,
         };
 
+        // * start collecting transaction based on month
         for year in 0..4 {
             for month in 0..12 {
                 default.collect_data(conn, month, year);
@@ -39,6 +39,8 @@ impl SummaryData {
         default
     }
 
+    /// Returns a vector that will be used to creating table in the Summary UI
+    /// The vector contains tags and their income and expense data
     pub fn get_table_data(&self) -> Vec<Vec<String>> {
         let mut to_return = Vec::new();
 
@@ -47,7 +49,7 @@ impl SummaryData {
             if self.tags_expense.contains_key(key) {
                 to_push.push(format!("{:.2}", self.tags_expense[key]));
             } else {
-                to_push.push("0".to_string())
+                to_push.push("0.00".to_string())
             }
             to_return.push(to_push);
         }
@@ -56,14 +58,17 @@ impl SummaryData {
             if !self.tags_income.contains_key(key) {
                 to_return.push(vec![
                     key.to_string(),
-                    "0".to_string(),
+                    "0.00".to_string(),
                     format!("{:.2}", value),
                 ])
             }
         }
+        to_return.sort();
         to_return
     }
 
+    /// Returns a vector that will be used to highlight points such as largest transaction,
+    /// biggest income etc
     pub fn get_tx_data(&self) -> Vec<(f64, String)> {
         vec![
             (self.total_income, "Total Income:".to_string()),
@@ -75,6 +80,7 @@ impl SummaryData {
         ]
     }
 
+    /// Collects data from the given month and year, updates SummaryData with relevant information
     fn collect_data(&mut self, conn: &Connection, month: usize, year: usize) {
         let mut total_income = 0.0;
         let mut total_expense = 0.0;

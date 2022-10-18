@@ -9,6 +9,8 @@ use tui::{
 
 use crate::home_page::TableData;
 
+
+/// Renders the Summary UI page
 pub fn summary_ui<B: Backend>(
     f: &mut Frame<B>,
     table_data: &mut TableData,
@@ -42,6 +44,7 @@ pub fn summary_ui<B: Backend>(
 
     f.render_widget(block, size);
 
+    // * contains the text for the upper side of the Summary UI
     let text = vec![
         Spans::from(Span::styled(
             format!("{} {:.2}", text_data[0].1, text_data[0].0),
@@ -107,6 +110,7 @@ pub fn summary_ui<B: Backend>(
         ]),
     ];
 
+    // * Goes through all tags provided and creates row for the table
     let rows = table_data.items.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| Cell::from(c.to_string()));
