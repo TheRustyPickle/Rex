@@ -55,8 +55,8 @@ fn check_summary_data() {
     let my_summary_text_2 = my_summary.get_tx_data();
 
     let expected_data_1 = vec![
-        vec!["Food".to_string(), "318.38".to_string(), "0.00".to_string()],
         vec!["Car".to_string(), "0.00".to_string(), "159.00".to_string()],
+        vec!["Food".to_string(), "318.38".to_string(), "0.00".to_string()],
     ];
 
     let expected_data_2 = vec![
