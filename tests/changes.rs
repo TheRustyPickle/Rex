@@ -43,7 +43,7 @@ fn check_getting_all_changes() {
 
 #[test]
 fn check_getting_all_changes_2() {
-    let file_name = "getting_changes_2.sqlite".to_string();
+    let file_name = "getting_changes_2.sqlite";
     let conn = create_test_db(&file_name);
 
     add_new_tx(

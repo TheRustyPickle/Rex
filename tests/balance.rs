@@ -116,7 +116,7 @@ fn check_last_balances_3() {
 
 #[test]
 fn check_last_month_balance_1() {
-    let file_name = "last_month_balance_1.sqlite".to_string();
+    let file_name = "last_month_balance_1.sqlite";
     let conn = create_test_db(&file_name);
     let tx_methods = get_all_tx_methods(&conn);
 
@@ -131,7 +131,7 @@ fn check_last_month_balance_1() {
 
 #[test]
 fn check_last_balance_id() {
-    let file_name = "last_balance_id.sqlite".to_string();
+    let file_name = "last_balance_id.sqlite";
     let conn = create_test_db(&file_name);
 
     let data = get_last_balance_id(&conn);
@@ -145,7 +145,7 @@ fn check_last_balance_id() {
 
 #[test]
 fn check_last_month_balance_2() {
-    let file_name = "last_month_balance_2.sqlite".to_string();
+    let file_name = "last_month_balance_2.sqlite";
     let conn = create_test_db(&file_name);
     let tx_methods = get_all_tx_methods(&conn);
 
@@ -230,7 +230,7 @@ fn check_last_month_balance_2() {
 #[test]
 #[ignore]
 fn check_balance_all_day() {
-    let file_name = "check_balance_all_day.sqlite".to_string();
+    let file_name = "check_balance_all_day.sqlite";
     let conn = create_test_db(&file_name);
     let tx_methods = get_all_tx_methods(&conn);
 

@@ -2,7 +2,6 @@ extern crate rex;
 use rex::db::*;
 use rusqlite::{Connection, Result as sqlResult};
 use std::fs;
-//use std::collections::HashMap;
 
 fn create_test_db(file_name: &str) -> Connection {
     create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
@@ -11,7 +10,7 @@ fn create_test_db(file_name: &str) -> Connection {
 
 #[test]
 fn check_last_tx_id_1() {
-    let file_name = "last_tx_id_1.sqlite".to_string();
+    let file_name = "last_tx_id_1.sqlite";
     let conn = create_test_db(&file_name);
 
     let data = get_last_tx_id(&conn);
@@ -25,7 +24,7 @@ fn check_last_tx_id_1() {
 
 #[test]
 fn check_last_tx_id_2() {
-    let file_name = "last_tx_id_2.sqlite".to_string();
+    let file_name = "last_tx_id_2.sqlite";
     let conn = create_test_db(&file_name);
 
     add_new_tx(
@@ -51,7 +50,7 @@ fn check_last_tx_id_2() {
 
 #[test]
 fn check_getting_all_tx_1() {
-    let file_name = "getting_tx_1.sqlite".to_string();
+    let file_name = "getting_tx_1.sqlite";
     let conn = create_test_db(&file_name);
 
     let data = get_all_txs(&conn, 6, 0);
@@ -65,7 +64,7 @@ fn check_getting_all_tx_1() {
 
 #[test]
 fn check_getting_all_tx_2() {
-    let file_name = "getting_tx_2.sqlite".to_string();
+    let file_name = "getting_tx_2.sqlite";
     let conn = create_test_db(&file_name);
 
     add_new_tx(
@@ -176,4 +175,27 @@ fn check_getting_all_tx_2() {
 
     assert_eq!(data, expected_data);
     assert_eq!(data_2, expected_data_2);
+}
+
+#[test]
+
+fn check_tx_columns() {
+    let file_name = "tx_columns.sqlite";
+    create_test_db(&file_name);
+
+    let columns = get_all_tx_columns("tx_columns.sqlite");
+    let expected_data = vec![
+        "date".to_string(),
+        "details".to_string(),
+        "tx_method".to_string(),
+        "amount".to_string(),
+        "tx_type".to_string(),
+        "id_num".to_string(),
+        "tags".to_string(),
+    ];
+
+    fs::remove_file(file_name).unwrap();
+
+    assert_eq!(columns, expected_data);
+    assert_eq!(columns.len(), 7);
 }
