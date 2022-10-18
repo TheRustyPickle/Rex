@@ -9,7 +9,7 @@ struct Version {
 /// If not, we will start the new version pop up
 pub fn check_version() -> Result<bool, reqwest::Error> {
     // TODO update version
-    let cu_version = "v0.1.1".to_string();
+    let cu_version = "v0.1.2".to_string();
     static APP_USER_AGENT: &str = "Rex";
 
     let client = reqwest::blocking::Client::builder()
