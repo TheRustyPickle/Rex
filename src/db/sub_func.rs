@@ -31,6 +31,7 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
     data
 }
 
+/// Gets all columns inside the tx_all table. Used to determine if the database needs to be migrated
 pub fn get_all_tx_columns(file_name: &str) -> Vec<String> {
     let conn = Connection::open(file_name).expect("Could not connect to database");
 
@@ -489,6 +490,7 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
     db_tx_methods
 }
 
+/// Gives the month and year name by index
 pub fn get_month_name(month_index: usize, year_index: usize) -> (String, String) {
     let month_names = [
         "January",

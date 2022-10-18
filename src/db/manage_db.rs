@@ -121,6 +121,7 @@ pub fn add_new_tx_methods(file_name: &str, tx_methods: Vec<String>) -> Result<()
     Ok(())
 }
 
+/// Adds the tags column inside the database. Used when the old database without the tags column is detected
 pub fn add_tags_column(file_name: &str) -> Result<()> {
     let mut conn = Connection::open(file_name)?;
     let sp = conn.savepoint().unwrap();

@@ -94,6 +94,7 @@ pub fn transfer_ui<B: Backend>(
         Spans::from("'3' : From Method  Example: Cash, Bank, Card"),
         Spans::from("'4' : To Method    Example: Cash, Bank, Card"),
         Spans::from("'5' : Amount       Example: 1000, 100+50"),
+        Spans::from("'6' : TX Tags      Example: Empty, Food, Car"),
         Spans::from("'S' : Save the inputted data as a Transaction"),
         Spans::from("'Enter' : Submit field and continue"),
         Spans::from("'Esc' : Stop editing filed"),

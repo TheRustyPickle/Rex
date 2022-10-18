@@ -218,7 +218,7 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
         .x_axis(
             Axis::default()
                 .title(Span::styled(
-                    "X Axis",
+                    "",
                     Style::default()
                         .bg(Color::Rgb(255, 255, 255))
                         .fg(Color::Rgb(50, 205, 50)),
@@ -234,7 +234,7 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
         .y_axis(
             Axis::default()
                 .title(Span::styled(
-                    "Y Axis",
+                    "",
                     Style::default()
                         .bg(Color::Rgb(255, 255, 255))
                         .fg(Color::Rgb(50, 205, 50)),
