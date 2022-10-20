@@ -101,6 +101,7 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
 'A' : Add Transaction Page
 'T' : Add Transfer Page
 'R' : Balance Chart (Follows your selected year)
+'Z' : Get Transaction Summary
 'F' : Home Page
 'D' : Delete selected Transaction (Home Page)
 'J' : Add new Transaction Methods (Home Page)
@@ -109,9 +110,9 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, index: usize) {
 'Q' : Quit
 
 Add Transaction/Transfer Page:
-'1' : Edit Date        '4' : Edit Amount/To Method
-'2' : Edit TX details  '5' : Edit TX Type/Amount
-'3' : Edit TX/From Method    
+'1' : Edit Date           '4' : Edit Amount/To Method
+'2' : Edit TX details     '5' : Edit TX Type/Amount
+'3' : Edit TX/From Method '6' : Edit Tags  
 
 'S' : Save the data as a Transaction
 'Enter' : Submit field and continue

@@ -32,7 +32,7 @@ pub fn tx_ui<B: Backend>(
         .margin(2)
         .constraints(
             [
-                Constraint::Length(12),
+                Constraint::Length(13),
                 Constraint::Length(3),
                 Constraint::Length(3),
                 Constraint::Percentage(25),
@@ -47,10 +47,11 @@ pub fn tx_ui<B: Backend>(
         .direction(Direction::Horizontal)
         .constraints(
             [
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
             ]
             .as_ref(),
         )
@@ -69,12 +70,14 @@ pub fn tx_ui<B: Backend>(
         Spans::from("'1' : Date         Example: 2022-05-12, YYYY-MM-DD"),
         Spans::from("'2' : TX details   Example: For Grocery, Salary"),
         Spans::from("'3' : TX Method    Example: Cash, Bank, Card"),
-        Spans::from("'4' : Amount       Example: 1000, 100+50"),
+        Spans::from("'4' : Amount       Example: 1000, 100+50, b - 100"),
         Spans::from("'5' : TX Type      Example: Income/Expense/I/E"),
+        Spans::from("'6' : TX Tags      Example: Empty, Food, Car"),
         Spans::from("'S' : Save the inputted data as a Transaction"),
         Spans::from("'Enter' : Submit field and continue"),
         Spans::from("'Esc' : Stop editing filed"),
         Spans::from("Amount Field supports simple calculation using '+' '-' '*' '/'"),
+        Spans::from("Amount Field considers 'b' as the current balance of the added TX Method"),
     ];
 
     let mut status_text = vec![];
@@ -105,6 +108,8 @@ pub fn tx_ui<B: Backend>(
     let amount_text = vec![Spans::from(input_data[3])];
 
     let tx_type_text = vec![Spans::from(input_data[4])];
+
+    let tags_text = vec![Spans::from(input_data[5])];
 
     let create_block = |title| {
         Block::default()
@@ -184,6 +189,15 @@ pub fn tx_ui<B: Backend>(
         .block(create_block("Details"))
         .alignment(Alignment::Left);
 
+    let tags_sec = Paragraph::new(tags_text.clone())
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
+        .block(create_block("Tags"))
+        .alignment(Alignment::Left);
+
     // We will be adding a cursor/box based on which tab is selected.
     // This was created utilizing the tui-rs example named user_input.rs
     match cu_selected {
@@ -207,15 +221,21 @@ pub fn tx_ui<B: Backend>(
             another_chunk[3].x + input_data[4].len() as u16 + 1,
             another_chunk[3].y + 1,
         ),
+        TxTab::Tags => f.set_cursor(
+            another_chunk[4].x + input_data[5].len() as u16 + 1,
+            another_chunk[4].y + 1,
+        ),
         TxTab::Nothing => {}
     }
 
     // render the previously generated data into an interface
+    f.render_widget(help_sec, chunks[0]);
     f.render_widget(details_sec, chunks[2]);
     f.render_widget(status_sec, chunks[3]);
-    f.render_widget(help_sec, chunks[0]);
+
     f.render_widget(date_sec, another_chunk[0]);
     f.render_widget(tx_method_sec, another_chunk[1]);
     f.render_widget(amount_sec, another_chunk[2]);
     f.render_widget(tx_type_sec, another_chunk[3]);
+    f.render_widget(tags_sec, another_chunk[4]);
 }

@@ -17,6 +17,7 @@ pub fn add_new_tx(
     tx_method: &str,
     amount: &str,
     tx_type: &str,
+    tags: &str,
     path: &str,
     id_num: Option<&str>,
 ) -> sqlResult<()> {
@@ -25,11 +26,11 @@ pub fn add_new_tx(
     let sp = conn.savepoint()?;
 
     if let Some(id) = id_num {
-        let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type, id_num) VALUES (?, ?, ?, ?, ?, ?)"#;
-        sp.execute(query, [date, details, tx_method, amount, tx_type, id])?;
+        let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type, id_num, tags) VALUES (?, ?, ?, ?, ?, ?, ?)"#;
+        sp.execute(query, [date, details, tx_method, amount, tx_type, id, tags])?;
     } else {
-        let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type) VALUES (?, ?, ?, ?, ?)"#;
-        sp.execute(query, [date, details, tx_method, amount, tx_type])?;
+        let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type, tags) VALUES (?, ?, ?, ?, ?, ?)"#;
+        sp.execute(query, [date, details, tx_method, amount, tx_type, tags])?;
     }
 
     let split = date.split('-');

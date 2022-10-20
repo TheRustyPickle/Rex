@@ -30,7 +30,8 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
         tx_method TEXT,
         amount TEXT,
         tx_type TEXT,
-        id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT
+        id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+        tags TEXT
     );",
         [],
     )?;
@@ -116,6 +117,15 @@ pub fn add_new_tx_methods(file_name: &str, tx_methods: Vec<String>) -> Result<()
         let query = format!(r#"ALTER TABLE changes_all ADD COLUMN "{i}" TEXT DEFAULT 0.00"#);
         sp.execute(&query, [])?;
     }
+    sp.commit()?;
+    Ok(())
+}
+
+/// Adds the tags column inside the database. Used when the old database without the tags column is detected
+pub fn add_tags_column(file_name: &str) -> Result<()> {
+    let mut conn = Connection::open(file_name)?;
+    let sp = conn.savepoint().unwrap();
+    sp.execute("ALTER TABLE tx_all ADD tags TEXT DEFAULT Unknown;", [])?;
     sp.commit()?;
     Ok(())
 }

@@ -191,42 +191,59 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
                 .name(&all_tx_methods[i])
                 .marker(symbols::Marker::Braille)
                 .graph_type(GraphType::Line)
-                .style(Style::default().fg(color_list.pop().unwrap()).bg(Color::Rgb(255, 255, 255)))
+                .style(
+                    Style::default()
+                        .fg(color_list.pop().unwrap())
+                        .bg(Color::Rgb(255, 255, 255)),
+                )
                 .data(&datasets[i]),
         )
     }
 
     let chart = Chart::new(final_dataset)
-        .block(Block::default().style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50))
-        ).title("Chart"))
+        .block(
+            Block::default()
+                .style(
+                    Style::default()
+                        .bg(Color::Rgb(255, 255, 255))
+                        .fg(Color::Rgb(50, 205, 50)),
+                )
+                .title("Chart"),
+        )
         .style(
             Style::default()
                 .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
         .x_axis(
             Axis::default()
                 .title(Span::styled(
-                    "X Axis",
-                    Style::default().bg(Color::Rgb(255, 255, 255))
-                    .fg(Color::Rgb(50, 205, 50)),
+                    "",
+                    Style::default()
+                        .bg(Color::Rgb(255, 255, 255))
+                        .fg(Color::Rgb(50, 205, 50)),
                 ))
-                .style(Style::default().bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)))
+                .style(
+                    Style::default()
+                        .bg(Color::Rgb(255, 255, 255))
+                        .fg(Color::Rgb(50, 205, 50)),
+                )
                 .bounds([0.0, current_axis])
                 .labels(date_labels.iter().cloned().map(Span::from).collect()),
         )
         .y_axis(
             Axis::default()
                 .title(Span::styled(
-                    "Y Axis",
-                    Style::default().bg(Color::Rgb(255, 255, 255))
-                    .fg(Color::Rgb(50, 205, 50)),
+                    "",
+                    Style::default()
+                        .bg(Color::Rgb(255, 255, 255))
+                        .fg(Color::Rgb(50, 205, 50)),
                 ))
-                .style(Style::default().bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)))
+                .style(
+                    Style::default()
+                        .bg(Color::Rgb(255, 255, 255))
+                        .fg(Color::Rgb(50, 205, 50)),
+                )
                 .bounds([lowest_balance, highest_balance])
                 .labels(labels.iter().cloned().map(Span::from).collect()),
         );

@@ -6,8 +6,11 @@ use crate::home_page::{
     CurrentUi, PopupState, SelectedTab, TableData, TimeData, TransferTab, TxTab,
 };
 use crate::initial_page::starter_ui;
-use crate::key_checker::{add_tx_keys, chart_keys, home_keys, initial_keys, transfer_keys};
+use crate::key_checker::{
+    add_tx_keys, chart_keys, home_keys, initial_keys, summary_keys, transfer_keys,
+};
 use crate::popup_page::add_popup;
+use crate::summary_page::{summary_ui, SummaryData};
 use crate::transfer_page::{transfer_ui, TransferData};
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
@@ -43,11 +46,23 @@ pub fn run_app<B: Backend>(
     //
     // table : I am calling the spreadsheet like widget the table. It contains the selected month and year's all transactions
     // cu_page : Opening UI page which is selected as the Home page
-    // cu_tx_page : To make sure random key presses are not registered, selected as Nothing
+    // cu_tx_page : To make sure random key presses are not registered for the Transaction UI, selected as Nothing
+    // cu_transfer_page : To make sure random key presses are not registered for the Transfer Transaction UI, selected as Nothing
+    // cu_popup : Contains the current state of popups. Defaults as Nothing
     //
     // data_for_tx : This is the struct for storing data which is to be stored as the transaction in the database.
     // It also contains all the texts for the Status widget in the transaction adding ui. For each key presses when
     // selected adds a character to the relevant struct field.
+    //
+    // data_for_transfer: Contains data to create a Transfer Transaction, handles key presses and saving the transaction.
+    //
+    // summary_data: Creates a struct that contains all information to create the Summary UI
+    // total_tags: Highlights how many tags the DB contains
+    // summary_table: Contains the vector to create Summary UI Table section
+    // summary_texts: Contains relevant texts inside a vector to create the upper section of the Summary UI
+    //
+    // summary_reloaded: The interface is a loop so we don't want to keep reloading same data over and over again
+    // which can be expensive. Makes sure it iters only one time but keeps the loop running.
     //
     // total_income & total_expense : Contains the data of all incomes and expenses of the selected month and year,
     // calculated from the transaction saved in the database, it is needed for the Income and Expense section in the Home page.
@@ -72,6 +87,11 @@ pub fn run_app<B: Backend>(
     let mut cu_transfer_page = TransferTab::Nothing;
     let mut data_for_tx = AddTxData::new();
     let mut data_for_transfer = TransferData::new();
+    let mut summary_data = SummaryData::new(&conn);
+    let mut total_tags = summary_data.get_table_data().len();
+    let mut summary_table = TableData::new(summary_data.get_table_data());
+    let mut summary_texts = summary_data.get_tx_data();
+    let mut summary_reloaded = false;
     let mut starter_index = 0;
 
     // The loop begins at this point and before the loop starts, multiple variables are initiated
@@ -149,7 +169,7 @@ pub fn run_app<B: Backend>(
                     &selected_tab,
                     &mut width_data,
                 );
-
+                summary_reloaded = false;
                 match cu_popup {
                     PopupState::Helper => add_popup(f, 1),
                     PopupState::DeleteFailed => add_popup(f, 2),
@@ -163,7 +183,7 @@ pub fn run_app<B: Backend>(
                     &cu_tx_page,
                     &data_for_tx.tx_status,
                 );
-
+                summary_reloaded = false;
                 if let PopupState::Helper = cu_popup {
                     add_popup(f, 1)
                 }
@@ -174,7 +194,7 @@ pub fn run_app<B: Backend>(
                 if starter_index > 28 {
                     starter_index = 0;
                 }
-
+                summary_reloaded = false;
                 if let PopupState::NewUpdate = cu_popup {
                     add_popup(f, 0)
                 }
@@ -187,15 +207,36 @@ pub fn run_app<B: Backend>(
                     &cu_transfer_page,
                     &data_for_transfer.tx_status,
                 );
-
+                summary_reloaded = false;
                 if let PopupState::Helper = cu_popup {
                     add_popup(f, 1)
                 }
             })?,
             CurrentUi::Chart => {
                 let data_for_chart = ChartData::set(cu_year_index);
+                summary_reloaded = false;
                 terminal.draw(|f| {
                     chart_ui(f, data_for_chart);
+
+                    if let PopupState::Helper = cu_popup {
+                        add_popup(f, 1)
+                    }
+                })?
+            }
+            CurrentUi::Summary => {
+                if summary_reloaded == false {
+                    summary_data = SummaryData::new(&conn);
+                    total_tags = summary_data.get_table_data().len();
+                    summary_table = TableData::new(summary_data.get_table_data());
+                    summary_texts = summary_data.get_tx_data();
+                    if total_tags > 0 {
+                        summary_table.state.select(Some(0));
+                    }
+
+                    summary_reloaded = true;
+                }
+                terminal.draw(|f| {
+                    summary_ui(f, &mut summary_table, &summary_texts);
 
                     if let PopupState::Helper = cu_popup {
                         add_popup(f, 1)
@@ -280,6 +321,20 @@ pub fn run_app<B: Backend>(
                             &mut cu_popup,
                             &mut cu_tx_page,
                             &mut data_for_tx,
+                        )?;
+                        if status != "0" {
+                            return Ok(status);
+                        }
+                    }
+                    CurrentUi::Summary => {
+                        let status = summary_keys(
+                            key,
+                            &mut cu_page,
+                            &mut cu_popup,
+                            &mut cu_tx_page,
+                            &mut data_for_tx,
+                            &mut summary_table,
+                            total_tags,
                         )?;
                         if status != "0" {
                             return Ok(status);

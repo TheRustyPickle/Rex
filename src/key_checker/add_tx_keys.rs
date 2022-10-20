@@ -53,6 +53,7 @@ pub fn add_tx_keys(
                     KeyCode::Char('3') => *cu_tx_page = TxTab::TxMethod,
                     KeyCode::Char('4') => *cu_tx_page = TxTab::Amount,
                     KeyCode::Char('5') => *cu_tx_page = TxTab::TxType,
+                    KeyCode::Char('6') => *cu_tx_page = TxTab::Tags,
                     KeyCode::Enter => *cu_tx_page = TxTab::Nothing,
                     KeyCode::Esc => *cu_tx_page = TxTab::Nothing,
                     _ => {}
@@ -134,11 +135,11 @@ pub fn add_tx_keys(
 
                 TxTab::Amount => match key.code {
                     KeyCode::Enter => {
-                        let status = data_for_tx.check_amount();
+                        let status = data_for_tx.check_amount(&conn);
                         match status {
                             Ok(a) => {
                                 data_for_tx.add_tx_status(&a);
-                                if a.contains("zero") {
+                                if a.contains("zero") || a.contains("determined") {
                                 } else {
                                     *cu_tx_page = TxTab::TxType;
                                 }
@@ -147,11 +148,11 @@ pub fn add_tx_keys(
                         }
                     }
                     KeyCode::Esc => {
-                        let status = data_for_tx.check_amount();
+                        let status = data_for_tx.check_amount(&conn);
                         match status {
                             Ok(a) => {
                                 data_for_tx.add_tx_status(&a);
-                                if a.contains("zero") {
+                                if a.contains("zero") || a.contains("determined") {
                                 } else {
                                     *cu_tx_page = TxTab::Nothing;
                                 }
@@ -172,7 +173,7 @@ pub fn add_tx_keys(
                                 Ok(a) => {
                                     data_for_tx.add_tx_status(&a);
                                     if a.contains("Accepted") || a.contains("Nothing") {
-                                        *cu_tx_page = TxTab::Nothing
+                                        *cu_tx_page = TxTab::Tags
                                     }
                                 }
                                 Err(_) => data_for_tx
@@ -197,6 +198,13 @@ pub fn add_tx_keys(
                         _ => {}
                     }
                 }
+                TxTab::Tags => match key.code {
+                    KeyCode::Enter => *cu_tx_page = TxTab::Nothing,
+                    KeyCode::Esc => *cu_tx_page = TxTab::Nothing,
+                    KeyCode::Backspace => data_for_tx.edit_tags('a', true),
+                    KeyCode::Char(a) => data_for_tx.edit_tags(a, false),
+                    _ => {}
+                },
             }
         }
         _ => *cu_popup = PopupState::Nothing,
