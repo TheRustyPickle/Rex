@@ -22,16 +22,3 @@ fn main() {
         println!("Could not find local data directory. Exiting program...");
     }
 }
-
-// [x] consider b as current balance when doing calculation in the UI
-// [x] create a separate page that collects all tags and shows total incomes or expenses
-// [x] Auto upgrade DB if using the old version
-// [x] update UI with the tag input field
-// [x] Update functions that breaks
-// [x] pass existing tests and add new ones if necessary
-// [x] check if version checker can be done in thread not worth it
-// [x] edit initial page, popup
-// [x] edit add tx and transfer page help text
-// [x] add this ALTER TABLE tx_all ADD tags TEXT DEFAULT Unknown;
-// [x] maintain tx method order during db creation
-// [x] find how to use cargo install. dirs crate

@@ -8,7 +8,6 @@ struct Version {
 /// Uses Github API to get the latest release version number to check if the current version matches with it.
 /// If not, we will start the new version pop up
 pub fn check_version() -> Result<bool, reqwest::Error> {
-    // TODO update version
     let cu_version = "v0.1.2".to_string();
     static APP_USER_AGENT: &str = "Rex";
 
