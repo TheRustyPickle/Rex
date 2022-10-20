@@ -1,5 +1,5 @@
-use crate::db::StatusChecker;
 use crate::db::{add_new_tx, delete_tx};
+use crate::db::{get_all_tx_methods, get_last_balances, StatusChecker};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::error::Error;
@@ -18,6 +18,7 @@ pub struct AddTxData {
     tx_method: String,
     amount: String,
     tx_type: String,
+    tags: String,
     pub tx_status: Vec<String>,
     editing_tx: bool,
     id_num: i32,
@@ -37,6 +38,7 @@ impl AddTxData {
             tx_method: "".to_string(),
             amount: "".to_string(),
             tx_type: "".to_string(),
+            tags: "".to_string(),
             tx_status: Vec::new(),
             editing_tx: false,
             id_num: 0,
@@ -51,6 +53,7 @@ impl AddTxData {
         tx_method: &str,
         amount: &str,
         tx_type: &str,
+        tags: &str,
         id_num: i32,
     ) -> Self {
         let splitted = date.split('-');
@@ -60,13 +63,13 @@ impl AddTxData {
         let day = data[0];
 
         let new_date = format!("{}-{}-{}", year, month, day);
-
         AddTxData {
             date: new_date,
             details: details.to_string(),
             tx_method: tx_method.to_string(),
             amount: amount.to_string(),
             tx_type: tx_type.to_string(),
+            tags: tags.to_string(),
             tx_status: Vec::new(),
             editing_tx: true,
             id_num,
@@ -82,6 +85,7 @@ impl AddTxData {
             &self.tx_method,
             &self.amount,
             &self.tx_type,
+            &self.tags,
         ]
     }
 
@@ -153,6 +157,17 @@ impl AddTxData {
         }
     }
 
+    pub fn edit_tags(&mut self, text: char, pop_last: bool) {
+        match pop_last {
+            true => {
+                if !self.tags.is_empty() {
+                    self.tags.pop().unwrap();
+                }
+            }
+            false => self.tags = format!("{}{text}", self.tags),
+        }
+    }
+
     /// Collects all the data for the transaction and calls the function
     /// that pushes them to the database.
     pub fn add_tx(&mut self) -> String {
@@ -166,6 +181,9 @@ impl AddTxData {
             return "Amount: Amount cannot be empty".to_string();
         } else if self.tx_type.is_empty() {
             return "Tx Type: Transaction Type cannot be empty".to_string();
+        }
+        if self.tags == "" {
+            self.tags = "Unknown".to_string();
         }
 
         if self.editing_tx {
@@ -187,6 +205,7 @@ impl AddTxData {
                 &self.tx_method,
                 &self.amount,
                 &self.tx_type,
+                &self.tags,
                 "data.sqlite",
                 Some(&self.id_num.to_string()),
             );
@@ -202,6 +221,7 @@ impl AddTxData {
                 &self.tx_method,
                 &self.amount,
                 &self.tx_type,
+                &self.tags,
                 "data.sqlite",
                 None,
             );
@@ -243,8 +263,31 @@ impl AddTxData {
     }
 
     /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
-    pub fn check_amount(&mut self) -> Result<String, Box<dyn Error>> {
-        let mut user_amount = self.amount.clone();
+    pub fn check_amount(&mut self, conn: &Connection) -> Result<String, Box<dyn Error>> {
+        let mut user_amount = self.amount.clone().to_lowercase();
+        if user_amount.contains("b") && !self.tx_method.is_empty() {
+            let all_methods = get_all_tx_methods(&conn);
+
+            if !all_methods.contains(&self.tx_method) {
+                return Ok(String::from(
+                    "Amount: TX Method not found. B value cannot be accepted",
+                ));
+            }
+
+            let last_balances = get_last_balances(&conn, &all_methods);
+
+            for x in 0..all_methods.len() {
+                if all_methods[x] == self.tx_method {
+                    user_amount = user_amount.replace("b", &last_balances[x]);
+                    self.amount = self.amount.replace("b", &last_balances[x]);
+                    break;
+                }
+            }
+        } else if user_amount.contains("b") && self.tx_method.is_empty() {
+            return Ok(String::from(
+                "Amount: TX Method cannot be empty. Value of B cannot be determined",
+            ));
+        }
 
         let status = self.verify_amount(&mut user_amount)?;
 

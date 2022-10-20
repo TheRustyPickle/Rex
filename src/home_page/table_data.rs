@@ -5,7 +5,7 @@ use rusqlite::{Connection, Result as sqlResult};
 /// TX, Balance, Changes are parsed and selected to only show the relevant part.
 /// Data storing format is:
 ///
-/// all_tx : `[[date, details, tx_method, source, tx_type],]`
+/// all_tx : `[[date, details, tx_method, amount, tx_type, tags],]`
 ///
 /// all_balance: `[["123.00", "123.00"],]`
 ///

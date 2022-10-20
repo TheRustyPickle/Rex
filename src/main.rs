@@ -1,8 +1,8 @@
 use dirs::data_local_dir;
-use std::fs;
 use std::env::set_current_dir;
+use std::fs;
 fn main() {
-    if let Some(dir) =  data_local_dir() {
+    if let Some(dir) = data_local_dir() {
         let mut is_windows = false;
         let mut verifying_path = "./data.sqlite";
 
@@ -21,5 +21,4 @@ fn main() {
     } else {
         println!("Could not find local data directory. Exiting program...");
     }
-    
 }

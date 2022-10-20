@@ -43,7 +43,7 @@ fn check_getting_all_changes() {
 
 #[test]
 fn check_getting_all_changes_2() {
-    let file_name = "getting_changes_2.sqlite".to_string();
+    let file_name = "getting_changes_2.sqlite";
     let conn = create_test_db(&file_name);
 
     add_new_tx(
@@ -52,6 +52,7 @@ fn check_getting_all_changes_2() {
         "test1",
         "159.00",
         "Expense",
+        "Unknown",
         &file_name,
         None,
     )
@@ -63,6 +64,7 @@ fn check_getting_all_changes_2() {
         "test 2",
         "159.00",
         "Expense",
+        "Unknown",
         &file_name,
         None,
     )
@@ -74,6 +76,7 @@ fn check_getting_all_changes_2() {
         "test 2",
         "753.00",
         "Expense",
+        "Unknown",
         &file_name,
         None,
     )

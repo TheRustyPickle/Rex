@@ -36,6 +36,7 @@ fn check_last_balances_2() {
         "test1",
         "159.00",
         "Expense",
+        "Unknown",
         file_name,
         None,
     )
@@ -47,6 +48,7 @@ fn check_last_balances_2() {
         "test 2",
         "159.19",
         "Income",
+        "Unknown",
         file_name,
         None,
     )
@@ -79,6 +81,7 @@ fn check_last_balances_3() {
         "test1 to test 2",
         "159.00",
         "Transfer",
+        "Unknown",
         file_name,
         None,
     )
@@ -90,6 +93,7 @@ fn check_last_balances_3() {
         "test 2 to test1",
         "159.00",
         "Transfer",
+        "Unknown",
         file_name,
         None,
     )
@@ -112,7 +116,7 @@ fn check_last_balances_3() {
 
 #[test]
 fn check_last_month_balance_1() {
-    let file_name = "last_month_balance_1.sqlite".to_string();
+    let file_name = "last_month_balance_1.sqlite";
     let conn = create_test_db(&file_name);
     let tx_methods = get_all_tx_methods(&conn);
 
@@ -127,7 +131,7 @@ fn check_last_month_balance_1() {
 
 #[test]
 fn check_last_balance_id() {
-    let file_name = "last_balance_id.sqlite".to_string();
+    let file_name = "last_balance_id.sqlite";
     let conn = create_test_db(&file_name);
 
     let data = get_last_balance_id(&conn);
@@ -141,7 +145,7 @@ fn check_last_balance_id() {
 
 #[test]
 fn check_last_month_balance_2() {
-    let file_name = "last_month_balance_2.sqlite".to_string();
+    let file_name = "last_month_balance_2.sqlite";
     let conn = create_test_db(&file_name);
     let tx_methods = get_all_tx_methods(&conn);
 
@@ -151,6 +155,7 @@ fn check_last_month_balance_2() {
         "test1",
         "100.00",
         "Income",
+        "Unknown",
         &file_name,
         None,
     )
@@ -162,6 +167,7 @@ fn check_last_month_balance_2() {
         "test 2",
         "100.00",
         "Income",
+        "Unknown",
         &file_name,
         None,
     )
@@ -173,6 +179,7 @@ fn check_last_month_balance_2() {
         "test1",
         "100.00",
         "Income",
+        "Unknown",
         &file_name,
         None,
     )
@@ -184,6 +191,7 @@ fn check_last_month_balance_2() {
         "test1",
         "100.00",
         "Income",
+        "Unknown",
         &file_name,
         None,
     )
@@ -195,6 +203,7 @@ fn check_last_month_balance_2() {
         "test1",
         "100.00",
         "Income",
+        "Unknown",
         &file_name,
         None,
     )
@@ -221,7 +230,7 @@ fn check_last_month_balance_2() {
 #[test]
 #[ignore]
 fn check_balance_all_day() {
-    let file_name = "check_balance_all_day.sqlite".to_string();
+    let file_name = "check_balance_all_day.sqlite";
     let conn = create_test_db(&file_name);
     let tx_methods = get_all_tx_methods(&conn);
 
@@ -245,6 +254,7 @@ fn check_balance_all_day() {
             tx_method,
             amount,
             tx_type,
+            "Unknown",
             &file_name,
             None,
         )
@@ -274,10 +284,9 @@ fn check_balance_all_day() {
     for (i, _x) in &data_2 {
         expected_data_2.insert(i.to_string(), 0.0);
     }
-    
+
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
-    
 
     assert_eq!(data_1, expected_data_1);
     assert_eq!(data_2, expected_data_2);

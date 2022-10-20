@@ -45,7 +45,14 @@ pub fn transfer_ui<B: Backend>(
     // We will now cut down a single vertical chunk into multiple horizontal chunk.
     let first_chunk = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(15), Constraint::Percentage(50)].as_ref())
+        .constraints(
+            [
+                Constraint::Length(15),
+                Constraint::Percentage(60),
+                Constraint::Length(10),
+            ]
+            .as_ref(),
+        )
         .split(chunks[1]);
 
     let second_chunk = Layout::default()
@@ -80,16 +87,18 @@ pub fn transfer_ui<B: Backend>(
     f.render_widget(block, size);
 
     // This is the details of the Help widget
-    let help_text = vec![Spans::from("Press the respective keys to edit fields."),
-    Spans::from("'1' : Date         Example: 2022-05-12, YYYY-MM-DD"),
-    Spans::from("'2' : TX details   Example: For Grocery, Salary"),
-    Spans::from("'3' : From Method  Example: Cash, Bank, Card"),
-    Spans::from("'4' : To Method    Example: Cash, Bank, Card"),
-    Spans::from("'5' : Amount       Example: 1000, 100+50"),
-    Spans::from("'S' : Save the inputted data as a Transaction"),
-    Spans::from("'Enter' : Submit field and continue"),
-    Spans::from("'Esc' : Stop editing filed"),
-    Spans::from("Amount Field supports simple calculation using '+' '-' '*' '/'"),
+    let help_text = vec![
+        Spans::from("Press the respective keys to edit fields."),
+        Spans::from("'1' : Date         Example: 2022-05-12, YYYY-MM-DD"),
+        Spans::from("'2' : TX details   Example: For Grocery, Salary"),
+        Spans::from("'3' : From Method  Example: Cash, Bank, Card"),
+        Spans::from("'4' : To Method    Example: Cash, Bank, Card"),
+        Spans::from("'5' : Amount       Example: 1000, 100+50"),
+        Spans::from("'6' : TX Tags      Example: Empty, Food, Car"),
+        Spans::from("'S' : Save the inputted data as a Transaction"),
+        Spans::from("'Enter' : Submit field and continue"),
+        Spans::from("'Esc' : Stop editing filed"),
+        Spans::from("Amount Field supports simple calculation using '+' '-' '*' '/'"),
     ];
 
     let mut status_text = vec![];
@@ -121,6 +130,9 @@ pub fn transfer_ui<B: Backend>(
     let to_text = vec![Spans::from(input_data[3])];
 
     let amount_text = vec![Spans::from(input_data[4])];
+
+    // * 5th index is the tx type which is not necessary for the transfer ui
+    let tags_text = vec![Spans::from(input_data[6])];
 
     let arrow_text = vec![Spans::from(""), Spans::from("➞ ➞ ➞")];
 
@@ -210,6 +222,15 @@ pub fn transfer_ui<B: Backend>(
         .block(create_block("Details"))
         .alignment(Alignment::Left);
 
+    let tags_sec = Paragraph::new(tags_text)
+        .style(
+            Style::default()
+                .bg(Color::Rgb(255, 255, 255))
+                .fg(Color::Rgb(50, 205, 50)),
+        )
+        .block(create_block("Tags"))
+        .alignment(Alignment::Left);
+
     // We will be adding a cursor/box based on which tab is selected.
     // This was created utilizing the tui-rs example named user_input.rs
     match cu_selected {
@@ -231,16 +252,24 @@ pub fn transfer_ui<B: Backend>(
         ),
         // The text of this goes into the middle so couldn't find a better place to insert the input box
         TransferTab::Amount => f.set_cursor(third_chunk[1].x + 1, third_chunk[1].y + 1),
+        TransferTab::Tags => f.set_cursor(
+            first_chunk[2].x + input_data[6].len() as u16 + 1,
+            first_chunk[2].y + 1,
+        ),
         TransferTab::Nothing => {}
     }
 
     // render the previously generated data into an interface
-    f.render_widget(details_sec, first_chunk[1]);
-    f.render_widget(status_sec, chunks[4]);
-    f.render_widget(help_sec, chunks[0]);
     f.render_widget(date_sec, first_chunk[0]);
+    f.render_widget(details_sec, first_chunk[1]);
+    f.render_widget(tags_sec, first_chunk[2]);
+
+    f.render_widget(help_sec, chunks[0]);
+    f.render_widget(status_sec, chunks[4]);
+
     f.render_widget(from_sec, second_chunk[0]);
-    f.render_widget(to_sec, second_chunk[2]);
     f.render_widget(arrow_sec, second_chunk[1]);
+    f.render_widget(to_sec, second_chunk[2]);
+
     f.render_widget(amount_sec, third_chunk[1]);
 }

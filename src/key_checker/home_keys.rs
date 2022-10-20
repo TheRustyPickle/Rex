@@ -30,6 +30,7 @@ pub fn home_keys(
                 KeyCode::Char('r') => *cu_page = CurrentUi::Chart,
                 KeyCode::Char('j') => return Ok("Change".to_string()),
                 KeyCode::Char('h') => *cu_popup = PopupState::Helper,
+                KeyCode::Char('z') => *cu_page = CurrentUi::Summary,
                 KeyCode::Char('e') => {
                     if let Some(a) = cu_table_index {
                         let target_data = &all_data.get_txs()[a];
@@ -45,6 +46,7 @@ pub fn home_keys(
                                 &target_data[2],
                                 &target_data[3],
                                 &target_data[4],
+                                &target_data[5],
                                 target_id_num,
                             );
                             *cu_page = CurrentUi::AddTx;
@@ -52,12 +54,14 @@ pub fn home_keys(
                             let from_to = target_data[2].split(" to ").collect::<Vec<&str>>();
                             let from_method = from_to[0];
                             let to_method = from_to[1];
+
                             *data_for_transfer = TransferData::custom(
                                 &target_data[0],
                                 &target_data[1],
                                 from_method,
                                 to_method,
                                 &target_data[3],
+                                &target_data[5],
                                 target_id_num,
                             );
                             *cu_page = CurrentUi::Transfer;
@@ -148,6 +152,14 @@ pub fn home_keys(
                             } else if !all_data.all_tx.is_empty() {
                                 table.next();
                             }
+                        }
+                        SelectedTab::Months => {
+                            if all_data.all_tx.is_empty() {
+                                *selected_tab = selected_tab.change_tab_up();
+                            } else {
+                                *selected_tab = selected_tab.change_tab_down();
+                                table.state.select(Some(0));
+                            };
                         }
                         _ => *selected_tab = selected_tab.change_tab_down(),
                     }

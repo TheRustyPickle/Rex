@@ -40,7 +40,7 @@ pub fn ui<B: Backend>(
     let normal_style = Style::default().bg(Color::LightBlue);
 
     // Transaction widget's top row/header to highlight what each data will mean
-    let header_cells = ["Date", "Details", "TX Method", "Amount", "Type"]
+    let header_cells = ["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(Color::Rgb(255, 255, 255))));
 
@@ -141,15 +141,17 @@ pub fn ui<B: Backend>(
     // set up the table columns and their size
     // resizing the table headers to match a % of the
     // terminal space
+
     let mut table_area = Table::new(rows)
         .header(header)
         .block(Block::default().borders(Borders::ALL).title("Transactions"))
         .widths(&[
             Constraint::Percentage(10),
-            Constraint::Percentage(40),
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
-            Constraint::Percentage(15),
+            Constraint::Percentage(37),
+            Constraint::Percentage(13),
+            Constraint::Percentage(13),
+            Constraint::Percentage(8),
+            Constraint::Percentage(18),
         ]);
 
     // This is what makes the Changes row in the Balance widget red or blue based on

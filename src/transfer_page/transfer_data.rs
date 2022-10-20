@@ -19,6 +19,7 @@ pub struct TransferData {
     to: String,
     amount: String,
     tx_type: String,
+    tags: String,
     pub tx_status: Vec<String>,
     editing_tx: bool,
     id_num: i32,
@@ -39,6 +40,7 @@ impl TransferData {
             to: "".to_string(),
             amount: "".to_string(),
             tx_type: "Transfer".to_string(),
+            tags: "".to_string(),
             tx_status: Vec::new(),
             editing_tx: false,
             id_num: 0,
@@ -53,6 +55,7 @@ impl TransferData {
         from: &str,
         to: &str,
         amount: &str,
+        tags: &str,
         id_num: i32,
     ) -> Self {
         let splitted = date.split('-');
@@ -62,7 +65,6 @@ impl TransferData {
         let day = data[0];
 
         let new_date = format!("{}-{}-{}", year, month, day);
-
         TransferData {
             date: new_date,
             details: details.to_string(),
@@ -70,6 +72,7 @@ impl TransferData {
             to: to.to_string(),
             amount: amount.to_string(),
             tx_type: "Transfer".to_string(),
+            tags: tags.to_string(),
             tx_status: Vec::new(),
             editing_tx: true,
             id_num,
@@ -86,6 +89,7 @@ impl TransferData {
             &self.to,
             &self.amount,
             &self.tx_type,
+            &self.tags,
         ]
     }
 
@@ -157,6 +161,17 @@ impl TransferData {
         }
     }
 
+    pub fn edit_tags(&mut self, text: char, pop_last: bool) {
+        match pop_last {
+            true => {
+                if !self.tags.is_empty() {
+                    self.tags.pop().unwrap();
+                }
+            }
+            false => self.tags = format!("{}{text}", self.tags),
+        }
+    }
+
     /// Collects all the data, verifies that all fields are complete for the transaction and calls the function
     /// that pushes them to the database.
     pub fn add_tx(&mut self) -> String {
@@ -175,6 +190,9 @@ impl TransferData {
             return "Amount: Amount cannot be empty".to_string();
         } else if self.tx_type.is_empty() {
             return "Tx Type: Transaction Type cannot be empty".to_string();
+        }
+        if self.tags == "" {
+            self.tags = "Unknown".to_string();
         }
 
         let tx_method = format!("{} to {}", self.from, self.to);
@@ -199,6 +217,7 @@ impl TransferData {
                 &tx_method,
                 &self.amount,
                 &self.tx_type,
+                &self.tags,
                 "data.sqlite",
                 Some(&self.id_num.to_string()),
             );
@@ -214,6 +233,7 @@ impl TransferData {
                 &tx_method,
                 &self.amount,
                 &self.tx_type,
+                &self.tags,
                 "data.sqlite",
                 None,
             );
@@ -249,7 +269,7 @@ impl TransferData {
         let mut cu_method = self.from.clone();
 
         let mut status = self.verify_tx_method(&mut cu_method, conn)?;
-        if cu_method == self.to {
+        if cu_method == self.to && !self.to.is_empty() && !self.from.is_empty() {
             return Ok(
                 "From TX Method: To and From Transaction Methods cannot be the same".to_string(),
             );
@@ -266,7 +286,7 @@ impl TransferData {
         let mut cu_method = self.to.clone();
 
         let mut status = self.verify_tx_method(&mut cu_method, conn)?;
-        if cu_method == self.from {
+        if cu_method == self.from && !self.to.is_empty() && !self.from.is_empty() {
             return Ok(
                 "To TX Method: To and From Transaction Methods cannot be the same".to_string(),
             );
