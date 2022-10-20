@@ -27,8 +27,15 @@ cargo run
   
   - Double click the executable which will try to open a terminal/CMD by itself. 
 
+<h4>How to run Option 3</h4>
+
+- Run `cargo install https://github.com/WaffleMixer/Rex.git`
+- Make sure `~/.cargo/bin` is on path if you're on linux
+
+<h4>App Data Location</h4>
+
+[See Here](https://docs.rs/dirs/latest/dirs/fn.data_local_dir.html) for location info which is determined based on the OS. If you are using an old version, you can manually move `data.sqlite` to the directory above to use it with existing data.
+
 <h4>Status</h4>
 
 More features are unlikely to be added unless something useful is suggested. 
-
-Still no logo cause I'm not a designer. 
