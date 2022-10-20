@@ -36,6 +36,10 @@ cargo run
 
 [See Here](https://docs.rs/dirs/latest/dirs/fn.data_local_dir.html) for location info which is determined based on the OS. If you are using an old version, you can manually move `data.sqlite` to the directory above to use it with existing data.
 
+<h4>Option 3</h4>
+- Run `cargo install https://github.com/WaffleMixer/Rex.git`
+- Make sure `~/.cargo/bin` is on path if you're on linux
+
 <h4>Status</h4>
 
 More features are unlikely to be added unless something useful is suggested. 
