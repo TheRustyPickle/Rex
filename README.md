@@ -29,7 +29,7 @@ cargo run
 
 <h4>How to run Option 3</h4>
 
-- Run `cargo install https://github.com/WaffleMixer/Rex.git`
+- Run `cargo install --git https://github.com/WaffleMixer/Rex.git`
 - Make sure `~/.cargo/bin` is on path if you're on linux
 
 <h4>App Data Location</h4>
