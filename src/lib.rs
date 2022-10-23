@@ -29,7 +29,7 @@ use tui::{backend::CrosstermBackend, Terminal};
 /// if not existing. Also checks if the user is trying to open the app via a terminal or the binary.
 /// If trying to open using the binary, tries open the relevant terminal to execute the app.
 /// Lastly, starts a loop that keeps the interface running until exit command is given.
-pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn Error>> {
+pub fn initializer(is_windows: bool, verifying_path: &str, original_dir: &str) -> Result<(), Box<dyn Error>> {
     let version_status = check_version();
     let mut new_version_available = false;
 
@@ -40,19 +40,18 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
     // atty verifies whether a terminal is being used or not.
     if atty::is(Stream::Stdout) {
     } else {
-        let cu_directory = std::env::current_dir()?.display().to_string();
         let output = if is_windows {
             Command::new("cmd.exe").arg("start").arg("rex").output()
         } else {
             let mut all_terminals = HashMap::new();
-            let gnome_dir = format!("--working-directory={}", cu_directory);
+            let gnome_dir = format!("--working-directory={}", original_dir);
 
             all_terminals.insert(
                 "konsole",
                 vec![
                     "--new-tab".to_string(),
                     "--workdir".to_string(),
-                    cu_directory,
+                    original_dir.to_string(),
                     "-e".to_string(),
                     "./rex".to_string(),
                 ],
@@ -94,7 +93,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
                     let full_text = format!(
                         "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{a:?}",
                     );
-                    let mut open = File::create("Error.txt")?;
+                    let mut open = File::create(format!("{original_dir}/Error.txt"))?;
                     open.write_all(full_text.as_bytes())?;
                 };
             }
@@ -103,7 +102,7 @@ pub fn initializer(is_windows: bool, verifying_path: &str) -> Result<(), Box<dyn
                     "Error while processing commands. Use a terminal/console to run the app. Output:\n\n{:?}",
                     e
                 );
-                let mut open = File::create("Error.txt")?;
+                let mut open = File::create(format!("{original_dir}/Error.txt"))?;
                 open.write_all(full_text.as_bytes())?;
             }
         }
