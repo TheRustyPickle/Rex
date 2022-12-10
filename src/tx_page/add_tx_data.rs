@@ -30,7 +30,7 @@ impl AddTxData {
     /// Creates an instance of the struct however the date field is
     /// edited with the current local date of the device.
     pub fn new() -> Self {
-        let cu_date = Local::today().to_string();
+        let cu_date = Local::now().to_string();
         let formatted_cu_date = &cu_date[0..10];
         AddTxData {
             date: formatted_cu_date.to_string(),

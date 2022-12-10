@@ -91,7 +91,7 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
                 let current_balances = &chart_data.all_balance[data_num];
 
                 // default next_date in case there is no more next_date
-                let mut next_date = NaiveDate::from_ymd(2030, 1, 1);
+                let mut next_date = NaiveDate::from_ymd_opt(2030, 1, 1).unwrap();
 
                 if chart_data.all_txs.len() > data_num + 1 {
                     next_date =
