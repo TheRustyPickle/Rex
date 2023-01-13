@@ -184,8 +184,8 @@ fn start_interface(new_version_available: bool) -> Result<String, Box<dyn Error>
         "October",
         "November",
         "December",
-    ]);
-    let years = TimeData::new(vec!["2022", "2023", "2024", "2025"]);
+    ], true);
+    let years = TimeData::new(vec!["2022", "2023", "2024", "2025"], false);
 
     // pass a few data to the main function and loop forever or until quit/faced with an error
     let res = run_app(&mut terminal, months, years, new_version_available)?;
