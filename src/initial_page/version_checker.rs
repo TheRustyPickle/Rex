@@ -8,7 +8,7 @@ struct Version {
 /// Uses Github API to get the latest release version number to check if the current version matches with it.
 /// If not, we will start the new version pop up
 pub fn check_version() -> Result<bool, reqwest::Error> {
-    let cu_version = "v0.1.4".to_string();
+    let cu_version = "v0.1.5".to_string();
     static APP_USER_AGENT: &str = "Rex";
 
     let client = reqwest::blocking::Client::builder()
