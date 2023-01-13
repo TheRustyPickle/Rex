@@ -69,15 +69,6 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
 
         // labels of the x axis
         date_labels.push(checking_date.to_string());
-
-        let date_difference = (final_date - checking_date).num_days() / 5;
-
-        let mut starting_point = checking_date;
-
-        for _i in 0..3 {
-            starting_point += Duration::days(date_difference);
-            date_labels.push(starting_point.to_string())
-        }
         date_labels.push(final_date.to_string());
 
         // data_num represents which index to check out all all the txs and balances data
@@ -228,7 +219,7 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
                         .bg(Color::Rgb(255, 255, 255))
                         .fg(Color::Rgb(50, 205, 50)),
                 )
-                .bounds([0.0, current_axis])
+                .bounds([0.0, current_axis-1.0])
                 .labels(date_labels.iter().cloned().map(Span::from).collect()),
         )
         .y_axis(
