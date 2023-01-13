@@ -1,4 +1,5 @@
 use tui::widgets::TableState;
+use chrono::{prelude::Local, Datelike};
 
 /// The struct stores all transaction data for the Transaction widget
 /// and creates an index to keep track of which transactions row is selected
@@ -64,10 +65,20 @@ pub struct TimeData<'a> {
 
 impl<'a> TimeData<'a> {
     /// Creates a new time data with the given titles and index at 0.
-    pub fn new(values: Vec<&'a str>) -> Self {
+    pub fn new(values: Vec<&'a str>, is_month: bool) -> Self {
+
+        let index: usize;
+
+        if is_month {
+            index = Local::now().month() as usize - 1;
+        } else {
+            let cu_month = Local::now().year();
+            index = cu_month as usize - 2022;
+        }
+
         TimeData {
             titles: values,
-            index: 0,
+            index: index,
         }
     }
 
