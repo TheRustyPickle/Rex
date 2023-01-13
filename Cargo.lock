@@ -843,7 +843,7 @@ dependencies = [
 
 [[package]]
 name = "rex"
-version = "0.1.2"
+version = "0.1.5"
 dependencies = [
  "atty",
  "chrono",
