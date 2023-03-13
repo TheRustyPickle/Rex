@@ -1,5 +1,5 @@
 <div align="center"><h1>Rex</h1></div>
-<p align=center><a href="https://wakatime.com/badge/github/WaffleMixer/Rex"><img src="https://wakatime.com/badge/github/WaffleMixer/Rex.svg" alt="wakatime"></a></p>
+<p align=center><a href="https://wakatime.com/badge/github/TheRustyPickle/Rex.svg"><img src="https://wakatime.com/badge/github/TheRustyPickle/Rex.svg" alt="wakatime"></a></p>
 
 A terminal based interface to keep track of income, expense and transactions, written in Rust and uses tui-rs for the interface. Stores the data in a local sqlite database and works fully offline.
 
@@ -11,7 +11,7 @@ A terminal based interface to keep track of income, expense and transactions, wr
 
 - Clone the repository
 `
-git clone https://github.com/WaffleMixer/Rex
+git clone https://github.com/TheRustyPickle/Rex
 `
 - Run with Cargo
 `
@@ -20,7 +20,7 @@ cargo run
 
 <h4>How to run Option 2</h4>
 
-- Download the latest executable from [Releases](https://github.com/WaffleMixer/Rex/releases).
+- Download the latest executable from [Releases](https://github.com/TheRustyPickle/Rex/releases).
   - Open terminal/CMD and start the program by the command `./rex` or `rex` depending on the OS at the correct directory.
   
   or
@@ -29,7 +29,7 @@ cargo run
 
 <h4>How to run Option 3</h4>
 
-- Run `cargo install --git https://github.com/WaffleMixer/Rex.git`
+- Run `cargo install --git https://github.com/TheRustyPickle/Rex.git`
 - Make sure `~/.cargo/bin` is on path if you're on linux
 
 <h4>App Data Location</h4>
