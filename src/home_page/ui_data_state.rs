@@ -172,6 +172,6 @@ pub enum CurrentUi {
 pub enum PopupState {
     NewUpdate,
     Helper,
-    DeleteFailed,
+    DeleteFailed(String),
     Nothing,
 }

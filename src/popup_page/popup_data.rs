@@ -1,20 +1,26 @@
 use crate::popup_page::create_popup;
+use crate::home_page::PopupState;
 use tui::{backend::Backend, Frame};
 
-pub fn add_popup<B: Backend>(f: &mut Frame<B>, popup_num: usize) {
+// TODO turn data into a struct for easier access
+
+pub fn add_popup<B: Backend>(f: &mut Frame<B>, popup_type: &PopupState) {
     let mut data = Vec::new();
-    if popup_num == 0 {
-        data.push("New Update".to_string());
-        data.push(
-            "There is a new version available\n
+
+    match popup_type {
+        PopupState::NewUpdate => {
+            data.push("New Update".to_string());
+            data.push(
+                "There is a new version available\n
 'Enter' : Redirect to the new version\nPress Any Key to dismiss"
-                .to_string(),
-        );
-        data.push("50".to_string());
-        data.push("30".to_string());
-    } else if popup_num == 1 {
-        data.push("Help".to_string());
-        data.push(
+                    .to_string(),
+            );
+            data.push("50".to_string());
+            data.push("30".to_string());
+        },
+        PopupState::Helper => {
+            data.push("Help".to_string());
+            data.push(
             "'Arrow Key' : Navigate
 'A' : Add Transaction Page
 'T' : Add Transfer Page
@@ -38,13 +44,18 @@ Add Transaction/Transfer Page:
 Press Any Key to dismiss"
                 .to_string(),
         );
-        data.push("50".to_string());
-        data.push("65".to_string());
-    } else {
-        data.push("Delete Error".to_string());
-        data.push("Error while deleting the transaction\n\nPress Any Key to dismiss".to_string());
-        data.push("40".to_string());
-        data.push("25".to_string());
+            data.push("50".to_string());
+            data.push("65".to_string());
+        },
+        PopupState::DeleteFailed(err) => {
+            data.push(format!("Deletion failed. Error: {}", err));
+            data.push("Error while deleting the transaction\n\nPress Any Key to dismiss".to_string());
+            data.push("40".to_string());
+            data.push("25".to_string());
+        }
+        _ => {}
     }
-    create_popup(f, &data);
+
+    if !data.is_empty() { create_popup(f, &data); }
+    
 }
