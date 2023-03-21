@@ -80,8 +80,8 @@ pub fn home_keys(
                                 table.state.select(None);
                                 *selected_tab = SelectedTab::Months;
                             }
-                            Err(_) => {
-                                *cu_popup = PopupState::DeleteFailed;
+                            Err(err) => {
+                                *cu_popup = PopupState::DeleteFailed(err.to_string());
                             }
                         }
                     }

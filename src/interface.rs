@@ -14,6 +14,7 @@ use crate::summary_page::{summary_ui, SummaryData};
 use crate::transfer_page::{transfer_ui, TransferData};
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
+
 use crossterm::event::poll;
 use crossterm::event::{self, Event};
 use rusqlite::Connection;
@@ -24,7 +25,7 @@ use tui::{backend::Backend, Terminal};
 /// run_app is the core part that makes the entire program run. It basically loops
 /// incredibly fast to refresh the terminal and passes the provided data to ui modules to draw them.
 /// While the loop is running, the program executes, gets the data from the db and key presses to
-/// To keep on providing new data to the UI.
+/// keep on providing new data to the UI.
 pub fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     mut months: TimeData,
@@ -158,92 +159,68 @@ pub fn run_app<B: Backend>(
         }
 
         // passing out relevant data to the ui function
-        match cu_page {
-            CurrentUi::Home => terminal.draw(|f| {
-                ui(
-                    f,
-                    &months,
-                    &years,
-                    &mut table,
-                    &mut balance,
-                    &selected_tab,
-                    &mut width_data,
-                );
-                summary_reloaded = false;
-                match cu_popup {
-                    PopupState::Helper => add_popup(f, 1),
-                    PopupState::DeleteFailed => add_popup(f, 2),
-                    _ => {}
+
+        terminal.draw(|f| {
+            match cu_page {
+                CurrentUi::Home => {
+                    ui(
+                        f,
+                        &months,
+                        &years,
+                        &mut table,
+                        &mut balance,
+                        &selected_tab,
+                        &mut width_data,
+                    );
+                    summary_reloaded = false;
                 }
-            })?,
-            CurrentUi::AddTx => terminal.draw(|f| {
-                tx_ui(
-                    f,
-                    data_for_tx.get_all_texts(),
-                    &cu_tx_page,
-                    &data_for_tx.tx_status,
-                );
-                summary_reloaded = false;
-                if let PopupState::Helper = cu_popup {
-                    add_popup(f, 1)
+                CurrentUi::AddTx => {
+                    tx_ui(
+                        f,
+                        data_for_tx.get_all_texts(),
+                        &cu_tx_page,
+                        &data_for_tx.tx_status,
+                    );
+                    summary_reloaded = false;
                 }
-            })?,
-            CurrentUi::Initial => terminal.draw(|f| {
-                starter_ui(f, starter_index);
+                CurrentUi::Initial => {
+                    starter_ui(f, starter_index);
                 starter_index += 1;
-                if starter_index > 28 {
-                    starter_index = 0;
+                    if starter_index > 28 {
+                        starter_index = 0;
+                    }
+                    summary_reloaded = false;
                 }
-                summary_reloaded = false;
-                if let PopupState::NewUpdate = cu_popup {
-                    add_popup(f, 0)
+                CurrentUi::Transfer => {
+                    transfer_ui(
+                        f,
+                        data_for_transfer.get_all_texts(),
+                        &cu_transfer_page,
+                        &data_for_transfer.tx_status,
+                    );
+                    summary_reloaded = false;
                 }
-            })?,
-
-            CurrentUi::Transfer => terminal.draw(|f| {
-                transfer_ui(
-                    f,
-                    data_for_transfer.get_all_texts(),
-                    &cu_transfer_page,
-                    &data_for_transfer.tx_status,
-                );
-                summary_reloaded = false;
-                if let PopupState::Helper = cu_popup {
-                    add_popup(f, 1)
-                }
-            })?,
-            CurrentUi::Chart => {
-                let data_for_chart = ChartData::set(cu_year_index);
-                summary_reloaded = false;
-                terminal.draw(|f| {
+                CurrentUi::Chart => {
+                    let data_for_chart = ChartData::set(cu_year_index);
                     chart_ui(f, data_for_chart);
-
-                    if let PopupState::Helper = cu_popup {
-                        add_popup(f, 1)
-                    }
-                })?
-            }
-            CurrentUi::Summary => {
-                if summary_reloaded == false {
-                    summary_data = SummaryData::new(&conn);
-                    total_tags = summary_data.get_table_data().len();
-                    summary_table = TableData::new(summary_data.get_table_data());
-                    summary_texts = summary_data.get_tx_data();
-                    if total_tags > 0 {
-                        summary_table.state.select(Some(0));
-                    }
-
-                    summary_reloaded = true;
+                    summary_reloaded = false;
                 }
-                terminal.draw(|f| {
-                    summary_ui(f, &mut summary_table, &summary_texts);
-
-                    if let PopupState::Helper = cu_popup {
-                        add_popup(f, 1)
+                CurrentUi::Summary => {
+                    if summary_reloaded == false {
+                        summary_data = SummaryData::new(&conn);
+                        total_tags = summary_data.get_table_data().len();
+                        summary_table = TableData::new(summary_data.get_table_data());
+                        summary_texts = summary_data.get_tx_data();
+                        if total_tags > 0 {
+                            summary_table.state.select(Some(0));
+                        }
                     }
-                })?
+                    summary_reloaded = true;
+                    summary_ui(f, &mut summary_table, &summary_texts);
+                }
             }
-        };
+            add_popup(f, &cu_popup);
+        })?;
 
         // This is where the keyboard press tracking starts
         // There are two options, event or timer. Timer keeps the loop unblocked. Loops for
