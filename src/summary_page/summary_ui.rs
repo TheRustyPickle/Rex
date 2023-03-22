@@ -13,7 +13,7 @@ use crate::home_page::TableData;
 pub fn summary_ui<B: Backend>(
     f: &mut Frame<B>,
     table_data: &mut TableData,
-    text_data: &Vec<(f64, String)>,
+    text_data: &[(f64, String)],
 ) {
     let size = f.size();
 

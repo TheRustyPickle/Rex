@@ -133,7 +133,7 @@ impl SummaryData {
             self.expense_date = (total_expense, format!("{} of {}", cu_month, cu_year));
         }
 
-        self.total_income = total_income + self.total_income;
-        self.total_expense = total_expense + self.total_expense;
+        self.total_income += total_income;
+        self.total_expense += total_expense;
     }
 }

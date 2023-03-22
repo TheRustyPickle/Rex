@@ -69,7 +69,7 @@ pub fn home_keys(
                     }
                 }
                 KeyCode::Char('d') => {
-                    if table.state.selected() != None {
+                    if table.state.selected().is_some() {
                         let status = all_data.del_tx(table.state.selected().unwrap());
                         match status {
                             Ok(_) => {

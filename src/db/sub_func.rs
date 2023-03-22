@@ -47,13 +47,10 @@ pub fn get_all_tx_columns(file_name: &str) -> Vec<String> {
 }
 
 /// The function is used to create dates in the form of strings to use the WHERE statement
-/// based on the month and year that has been passed to it. Will return two dates to use in the
+/// based on the month and year index that has been passed to it. Will return two dates to use in the
 /// WHERE statement. Will return the 1st and the 31st date of the given month and year.
 /// return example: `(2022-01-01, 2022-01-31)`
 pub fn get_sql_dates(month: usize, year: usize) -> (String, String) {
-    // returns dates from month and year to a format that is suitable for
-    // database WHERE statement.
-
     let new_month: String = if month < 10 {
         format!("0{}", month)
     } else {

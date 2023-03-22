@@ -1,5 +1,5 @@
-use crate::popup_page::create_popup;
 use crate::home_page::PopupState;
+use crate::popup_page::create_popup;
 use tui::{backend::Backend, Frame};
 
 // TODO turn data into a struct for easier access
@@ -17,11 +17,11 @@ pub fn add_popup<B: Backend>(f: &mut Frame<B>, popup_type: &PopupState) {
             );
             data.push("50".to_string());
             data.push("30".to_string());
-        },
+        }
         PopupState::Helper => {
             data.push("Help".to_string());
             data.push(
-            "'Arrow Key' : Navigate
+                "'Arrow Key' : Navigate
 'A' : Add Transaction Page
 'T' : Add Transfer Page
 'R' : Balance Chart (Follows your selected year)
@@ -42,20 +42,23 @@ Add Transaction/Transfer Page:
 'Enter' : Submit field and continue
 'Esc' : Stop editing filed\n
 Press Any Key to dismiss"
-                .to_string(),
-        );
+                    .to_string(),
+            );
             data.push("50".to_string());
             data.push("65".to_string());
-        },
+        }
         PopupState::DeleteFailed(err) => {
             data.push(format!("Deletion failed. Error: {}", err));
-            data.push("Error while deleting the transaction\n\nPress Any Key to dismiss".to_string());
+            data.push(
+                "Error while deleting the transaction\n\nPress Any Key to dismiss".to_string(),
+            );
             data.push("40".to_string());
             data.push("25".to_string());
         }
         _ => {}
     }
 
-    if !data.is_empty() { create_popup(f, &data); }
-    
+    if !data.is_empty() {
+        create_popup(f, &data);
+    }
 }

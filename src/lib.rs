@@ -29,7 +29,11 @@ use tui::{backend::CrosstermBackend, Terminal};
 /// if not existing. Also checks if the user is trying to open the app via a terminal or the binary.
 /// If trying to open using the binary, tries open the relevant terminal to execute the app.
 /// Lastly, starts a loop that keeps the interface running until exit command is given.
-pub fn initializer(is_windows: bool, verifying_path: &str, original_dir: &str) -> Result<(), Box<dyn Error>> {
+pub fn initializer(
+    is_windows: bool,
+    verifying_path: &str,
+    original_dir: &str,
+) -> Result<(), Box<dyn Error>> {
     let version_status = check_version();
     let mut new_version_available = false;
 
@@ -171,20 +175,23 @@ fn start_interface(new_version_available: bool) -> Result<String, Box<dyn Error>
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let months = TimeData::new(vec![
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-    ], true);
+    let months = TimeData::new(
+        vec![
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ],
+        true,
+    );
     let years = TimeData::new(vec!["2022", "2023", "2024", "2025"], false);
 
     // pass a few data to the main function and loop forever or until quit/faced with an error

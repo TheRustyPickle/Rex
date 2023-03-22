@@ -191,7 +191,7 @@ impl TransferData {
         } else if self.tx_type.is_empty() {
             return "Tx Type: Transaction Type cannot be empty".to_string();
         }
-        if self.tags == "" {
+        if self.tags.is_empty() {
             self.tags = "Unknown".to_string();
         }
 

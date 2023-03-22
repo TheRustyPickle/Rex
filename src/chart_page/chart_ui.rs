@@ -219,7 +219,7 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
                         .bg(Color::Rgb(255, 255, 255))
                         .fg(Color::Rgb(50, 205, 50)),
                 )
-                .bounds([0.0, current_axis-1.0])
+                .bounds([0.0, current_axis - 1.0])
                 .labels(date_labels.iter().cloned().map(Span::from).collect()),
         )
         .y_axis(

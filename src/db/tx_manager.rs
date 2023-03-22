@@ -52,7 +52,7 @@ pub fn add_new_tx(
         to_method = vec[1].to_string();
     }
 
-    let target_id_num = month as i32 + (year as i32 * 12);
+    let target_id_num = month + (year * 12);
 
     // This is necessary for the foreign key field in the changes_all table
     // and must align with the latest transaction id_num
@@ -204,7 +204,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
 
     let year = year - 2022;
 
-    let mut target_id_num = month as i32 + (year as i32 * 12);
+    let mut target_id_num = month + (year * 12);
 
     //
     let mut from_method = "";

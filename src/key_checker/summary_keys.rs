@@ -46,7 +46,7 @@ pub fn summary_keys(
             }
             _ => {}
         },
-        _ => *cu_popup = PopupState::Nothing
+        _ => *cu_popup = PopupState::Nothing,
     }
 
     Ok("0".to_string())
