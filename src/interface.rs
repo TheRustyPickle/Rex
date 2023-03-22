@@ -174,7 +174,7 @@ pub fn run_app<B: Backend>(
                 CurrentUi::Initial => {
                     starter_ui(f, starter_index);
                     starter_index += 1;
-                    if starter_index > 28 {
+                    if starter_index > 27 {
                         starter_index = 0;
                     }
                     summary_reloaded = false;
