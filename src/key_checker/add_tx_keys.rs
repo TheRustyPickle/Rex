@@ -135,7 +135,7 @@ pub fn add_tx_keys(
 
                 TxTab::Amount => match key.code {
                     KeyCode::Enter => {
-                        let status = data_for_tx.check_amount(&conn);
+                        let status = data_for_tx.check_amount(conn);
                         match status {
                             Ok(a) => {
                                 data_for_tx.add_tx_status(&a);
@@ -148,7 +148,7 @@ pub fn add_tx_keys(
                         }
                     }
                     KeyCode::Esc => {
-                        let status = data_for_tx.check_amount(&conn);
+                        let status = data_for_tx.check_amount(conn);
                         match status {
                             Ok(a) => {
                                 data_for_tx.add_tx_status(&a);

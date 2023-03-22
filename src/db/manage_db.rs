@@ -89,7 +89,7 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
         tx_methods, q_marks
     );
     // We are using :? to keep the commas inside the string and remove the other unnecessary characters
-    query = query.replace('[', "").replace(']', "");
+    query = query.replace(['[', ']'], "");
 
     for _i in years {
         for _a in 0..months.len() {

@@ -182,7 +182,7 @@ impl AddTxData {
         } else if self.tx_type.is_empty() {
             return "Tx Type: Transaction Type cannot be empty".to_string();
         }
-        if self.tags == "" {
+        if self.tags.is_empty() {
             self.tags = "Unknown".to_string();
         }
 
@@ -265,8 +265,8 @@ impl AddTxData {
     /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
     pub fn check_amount(&mut self, conn: &Connection) -> Result<String, Box<dyn Error>> {
         let mut user_amount = self.amount.clone().to_lowercase();
-        if user_amount.contains("b") && !self.tx_method.is_empty() {
-            let all_methods = get_all_tx_methods(&conn);
+        if user_amount.contains('b') && !self.tx_method.is_empty() {
+            let all_methods = get_all_tx_methods(conn);
 
             if !all_methods.contains(&self.tx_method) {
                 return Ok(String::from(
@@ -274,16 +274,16 @@ impl AddTxData {
                 ));
             }
 
-            let last_balances = get_last_balances(&conn, &all_methods);
+            let last_balances = get_last_balances(conn, &all_methods);
 
             for x in 0..all_methods.len() {
                 if all_methods[x] == self.tx_method {
-                    user_amount = user_amount.replace("b", &last_balances[x]);
-                    self.amount = self.amount.replace("b", &last_balances[x]);
+                    user_amount = user_amount.replace('b', &last_balances[x]);
+                    self.amount = self.amount.replace('b', &last_balances[x]);
                     break;
                 }
             }
-        } else if user_amount.contains("b") && self.tx_method.is_empty() {
+        } else if user_amount.contains('b') && self.tx_method.is_empty() {
             return Ok(String::from(
                 "Amount: TX Method cannot be empty. Value of B cannot be determined",
             ));
