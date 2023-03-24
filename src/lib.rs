@@ -1,19 +1,21 @@
 mod chart_page;
 pub mod db;
-pub mod home_page;
+mod home_page;
 mod initial_page;
 mod interface;
 mod key_checker;
 mod popup_page;
 pub mod summary_page;
 mod transfer_page;
-pub mod tx_page;
+pub mod tx_handler;
+mod tx_page;
+pub mod utility;
 use atty::Stream;
 use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use db::{add_new_tx_methods, add_tags_column, create_db, get_all_tx_columns, get_user_tx_methods};
+use db::{add_new_tx_methods, add_tags_column, create_db};
 use home_page::TimeData;
 use initial_page::check_version;
 use interface::run_app;
@@ -24,6 +26,7 @@ use std::io::prelude::*;
 use std::process::Command;
 use std::{error::Error, io, process, thread, time::Duration};
 use tui::{backend::CrosstermBackend, Terminal};
+use utility::{get_all_tx_columns, get_user_tx_methods};
 
 /// The starting function checks for the local database location and creates a new database
 /// if not existing. Also checks if the user is trying to open the app via a terminal or the binary.

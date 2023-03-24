@@ -1,5 +1,5 @@
-use crate::db::StatusChecker;
-use crate::db::{add_new_tx, delete_tx};
+use crate::tx_handler::{add_tx, delete_tx};
+use crate::utility::StatusChecker;
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::error::Error;
@@ -211,7 +211,7 @@ impl TransferData {
                     )
                 }
             }
-            let status_add = add_new_tx(
+            let status_add = add_tx(
                 &self.date,
                 &self.details,
                 &tx_method,
@@ -227,7 +227,7 @@ impl TransferData {
                 Err(e) => format!("Edit Transfer: Something went wrong {}", e),
             }
         } else {
-            let status = add_new_tx(
+            let status = add_tx(
                 &self.date,
                 &self.details,
                 &tx_method,

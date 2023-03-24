@@ -1,8 +1,9 @@
 extern crate rex;
-use rex::db::*;
+use rex::db::create_db;
+use rex::tx_handler::add_tx;
+use rex::utility::*;
 use rusqlite::{Connection, Result as sqlResult};
 use std::fs;
-
 fn create_test_db(file_name: &str) -> Connection {
     create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
     Connection::open(file_name).unwrap()
@@ -27,7 +28,7 @@ fn check_last_tx_id_2() {
     let file_name = "last_tx_id_2.sqlite";
     let conn = create_test_db(&file_name);
 
-    add_new_tx(
+    add_tx(
         "2022-09-19",
         "Testing transaction",
         "test1",
@@ -67,7 +68,7 @@ fn check_getting_all_tx_2() {
     let file_name = "getting_tx_2.sqlite";
     let conn = create_test_db(&file_name);
 
-    add_new_tx(
+    add_tx(
         "2022-07-19",
         "Testing transaction",
         "test1",
@@ -79,7 +80,7 @@ fn check_getting_all_tx_2() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-07-19",
         "Testing transaction",
         "test 2",
@@ -91,7 +92,7 @@ fn check_getting_all_tx_2() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-05-15",
         "Testing transaction",
         "test 2",
@@ -103,7 +104,7 @@ fn check_getting_all_tx_2() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-05-20",
         "Testing transaction",
         "test 2",

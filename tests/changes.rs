@@ -1,5 +1,7 @@
 extern crate rex;
-use rex::db::*;
+use rex::db::create_db;
+use rex::tx_handler::*;
+use rex::utility::*;
 use rusqlite::Connection;
 use std::fs;
 //use std::collections::HashMap;
@@ -46,7 +48,7 @@ fn check_getting_all_changes_2() {
     let file_name = "getting_changes_2.sqlite";
     let conn = create_test_db(&file_name);
 
-    add_new_tx(
+    add_tx(
         "2022-07-19",
         "Testing transaction",
         "test1",
@@ -58,7 +60,7 @@ fn check_getting_all_changes_2() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-07-19",
         "Testing transaction",
         "test 2",
@@ -70,7 +72,7 @@ fn check_getting_all_changes_2() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-05-01",
         "Testing transaction",
         "test 2",

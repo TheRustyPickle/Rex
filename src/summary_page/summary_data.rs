@@ -1,4 +1,4 @@
-use crate::db::{get_all_txs, get_month_name};
+use crate::utility::{get_all_txs, get_month_name};
 use rusqlite::Connection;
 use std::collections::HashMap;
 /// Contains the necessary information to construct the Summary Page highlighting

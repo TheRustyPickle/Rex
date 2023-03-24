@@ -1,4 +1,4 @@
-use crate::db::get_all_tx_methods;
+use crate::utility::get_all_tx_methods;
 use chrono::naive::NaiveDate;
 use rusqlite::Connection;
 use std::error::Error;

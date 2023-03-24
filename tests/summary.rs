@@ -1,6 +1,7 @@
 extern crate rex;
 use rex::db::*;
 use rex::summary_page::SummaryData;
+use rex::tx_handler::add_tx;
 use rusqlite::Connection;
 use std::fs;
 
@@ -14,7 +15,7 @@ fn check_summary_data() {
     let file_name = "summary_data.sqlite";
     let conn = create_test_db(&file_name);
 
-    add_new_tx(
+    add_tx(
         "2022-08-19",
         "Testing transaction",
         "test1",
@@ -26,7 +27,7 @@ fn check_summary_data() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2023-07-19",
         "Testing transaction",
         "test 2",
@@ -38,7 +39,7 @@ fn check_summary_data() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2024-07-19",
         "Testing transaction",
         "test1",

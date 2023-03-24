@@ -1,4 +1,4 @@
-use crate::db::get_all_txs;
+use crate::utility::get_all_txs;
 use chrono::naive::NaiveDate;
 use rusqlite::Connection;
 

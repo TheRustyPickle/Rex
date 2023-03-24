@@ -1,5 +1,6 @@
 extern crate rex;
-use rex::db::*;
+use rex::db::create_db;
+use rex::utility::*;
 use rusqlite::Connection;
 use std::fs;
 //use std::collections::HashMap;

@@ -1,4 +1,5 @@
-use crate::db::{delete_tx, get_all_changes, get_all_tx_methods, get_all_txs, get_last_balances};
+use crate::tx_handler::delete_tx;
+use crate::utility::{get_all_changes, get_all_tx_methods, get_all_txs, get_last_balances};
 use rusqlite::{Connection, Result as sqlResult};
 
 /// This struct stores the transaction data, balance, changes and the id num
