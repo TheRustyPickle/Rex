@@ -17,7 +17,7 @@ pub fn check_version() -> Result<bool, reqwest::Error> {
         .build()?;
 
     let caller: Version = client
-    // TODO update link
+        // TODO update link
         .get("https://api.github.com/repos/WaffleMixer/Rex/releases/latest")
         .send()?
         .json()?;

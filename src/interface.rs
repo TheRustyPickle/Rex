@@ -1,5 +1,4 @@
 use crate::chart_page::{chart_ui, ChartData};
-use crate::db::{get_all_tx_methods, get_empty_changes};
 use crate::home_page::ui;
 use crate::home_page::TransactionData;
 use crate::home_page::{
@@ -14,6 +13,7 @@ use crate::summary_page::{summary_ui, SummaryData};
 use crate::transfer_page::{transfer_ui, TransferData};
 use crate::tx_page::tx_ui;
 use crate::tx_page::AddTxData;
+use crate::utility::{get_all_tx_methods, get_empty_changes};
 
 use crossterm::event::poll;
 use crossterm::event::{self, Event};
@@ -29,6 +29,7 @@ pub fn run_app<B: Backend>(
     mut months: TimeData,
     mut years: TimeData,
     new_version_available: bool,
+    // TODO: add custom error handling
 ) -> Result<String, Box<dyn Error>> {
     // Setting up some default values. Let's go through all of them
 
@@ -233,6 +234,7 @@ pub fn run_app<B: Backend>(
                             &mut years,
                             &conn,
                         )?;
+                        // TODO: change to an error type
                         if status != "0" {
                             return Ok(status);
                         }

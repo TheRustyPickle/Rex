@@ -12,13 +12,18 @@ use std::fs;
 // TODO: Allow year selection of the summary page. All | year | year
 // TODO: Check if I can center point on transfer page from the position of the latest char
 // TODO update string calculation.
-// TODO: Update REX logo algorithm to something more readable
+// [x]: Update REX logo algorithm to something more readable
 // ? use a separate library for string calculation?
 // TODO: Allow pasting
-// TODO: On date selection, arrow key up down will change the date by 1
+// TODO: On date selection, arrow key up down will change the date by 1, also for amount
 // TODO: Add left/right arrow key to navigate strings
 // ? Create a trait for easy implementation?
-
+// TODO: Create another instance of the terminal in full screen if opening from a terminal. Use mpsc and send tracing data to the original terminal
+// TODO: Accept tx method in lower case
+// TODO: Trait for method checker, input inserter
+// TODO: Autocomplete for tx method
+// TODO: Tx method autocomplete take consideration of the char position
+// TODO: Handle repeating keys in a separate function
 fn main() {
     if let Some(dir) = data_local_dir() {
         let mut is_windows = false;

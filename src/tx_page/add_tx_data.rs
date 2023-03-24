@@ -1,5 +1,5 @@
-use crate::db::{add_new_tx, delete_tx};
-use crate::db::{get_all_tx_methods, get_last_balances, StatusChecker};
+use crate::tx_handler::{add_tx, delete_tx};
+use crate::utility::{get_all_tx_methods, get_last_balances, StatusChecker};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::error::Error;
@@ -77,7 +77,7 @@ impl AddTxData {
     }
 
     /// Sends out all the collected data that has been inputted into the Add Transaction widgets
-    ///  that is going to be used for creating a new transaction
+    /// that is going to be used for creating a new transaction
     pub fn get_all_texts(&self) -> Vec<&str> {
         vec![
             &self.date,
@@ -91,6 +91,7 @@ impl AddTxData {
 
     /// Used to add a new character to the date value that is being inputted by the
     /// user following each key press. Takes a bool value to represent backspace pressing.
+    // TODO: Make char to Option<>. If none, backspace will be used
     pub fn edit_date(&mut self, text: char, pop_last: bool) {
         match pop_last {
             true => {
@@ -199,7 +200,7 @@ impl AddTxData {
                 }
             }
 
-            let status_add = add_new_tx(
+            let status_add = add_tx(
                 &self.date,
                 &self.details,
                 &self.tx_method,
@@ -215,7 +216,7 @@ impl AddTxData {
                 Err(e) => format!("Edit Transaction: Something went wrong {}", e),
             }
         } else {
-            let status = add_new_tx(
+            let status = add_tx(
                 &self.date,
                 &self.details,
                 &self.tx_method,

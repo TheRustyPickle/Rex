@@ -1,5 +1,5 @@
 use crate::chart_page::ChartData;
-use crate::db::get_all_tx_methods;
+use crate::utility::get_all_tx_methods;
 use chrono::{naive::NaiveDate, Duration};
 use rusqlite::Connection;
 use tui::{

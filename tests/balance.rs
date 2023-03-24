@@ -1,10 +1,11 @@
 extern crate rex;
 use chrono::{naive::NaiveDate, Duration};
-use rex::db::*;
+use rex::db::create_db;
+use rex::tx_handler::*;
+use rex::utility::*;
 use rusqlite::{Connection, Result as sqlResult};
 use std::collections::HashMap;
 use std::fs;
-
 fn create_test_db(file_name: &str) -> Connection {
     create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
     Connection::open(file_name).unwrap()
@@ -30,7 +31,7 @@ fn check_last_balances_2() {
     let conn = create_test_db(file_name);
     let tx_methods = get_all_tx_methods(&conn);
 
-    add_new_tx(
+    add_tx(
         "2022-07-19",
         "Testing transaction",
         "test1",
@@ -42,7 +43,7 @@ fn check_last_balances_2() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-07-19",
         "Testing transaction",
         "test 2",
@@ -75,7 +76,7 @@ fn check_last_balances_3() {
     let conn = create_test_db(file_name);
     let tx_methods = get_all_tx_methods(&conn);
 
-    add_new_tx(
+    add_tx(
         "2022-07-19",
         "Testing transaction",
         "test1 to test 2",
@@ -87,7 +88,7 @@ fn check_last_balances_3() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-07-19",
         "Testing transaction",
         "test 2 to test1",
@@ -149,7 +150,7 @@ fn check_last_month_balance_2() {
     let conn = create_test_db(&file_name);
     let tx_methods = get_all_tx_methods(&conn);
 
-    add_new_tx(
+    add_tx(
         "2022-07-19",
         "Testing transaction",
         "test1",
@@ -161,7 +162,7 @@ fn check_last_month_balance_2() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-07-19",
         "Testing transaction",
         "test 2",
@@ -173,7 +174,7 @@ fn check_last_month_balance_2() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-08-19",
         "Testing transaction",
         "test1",
@@ -185,7 +186,7 @@ fn check_last_month_balance_2() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-09-19",
         "Testing transaction",
         "test1",
@@ -197,7 +198,7 @@ fn check_last_month_balance_2() {
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-10-19",
         "Testing transaction",
         "test1",
@@ -248,7 +249,7 @@ fn check_balance_all_day() {
         if current_date == ending_date + Duration::days(1) {
             break;
         }
-        add_new_tx(
+        add_tx(
             &current_date.to_string(),
             details,
             tx_method,
