@@ -141,46 +141,120 @@ pub trait StatusChecker {
             return Ok("Amount: Nothing to check".to_string());
         }
 
-        let calc_symbols = vec!["*", "+", "-", "/"];
+        let calc_symbols = vec!["*", "/", "+", "-"];
 
-        for i in calc_symbols {
-            if amount.contains(i) {
-                let data = amount.split(i).collect::<Vec<&str>>();
-                if !data[0].trim().is_empty() && !data[1].trim().is_empty() {
-                    let first_amount: f64 = data[0].trim().parse()?;
-                    let second_amount: f64 = data[1].trim().parse()?;
+        // check if any of the symbols are present
+        if calc_symbols.iter().any(|s| amount.contains(s)) {
 
-                    match i {
-                        "*" => *amount = format!("{:.2}", (first_amount * second_amount)),
-                        "/" => *amount = format!("{:.2}", (first_amount / second_amount)),
-                        "+" => *amount = format!("{:.2}", (first_amount + second_amount)),
-                        "-" => *amount = format!("{:.2}", (first_amount - second_amount)),
-                        _ => {}
+            // how it works:
+            // the calc_symbol intentionally starts with * and / so these calculations are done first
+            // start a main loop which will only run for the amount of times any one of them from calc_symbols is present
+            // loop over the symbols and check if the symbol is present in the string
+            // find the index of where the symbol is then take the number values from both side of the symbol
+            // example: 1+5*10. We start with *, we initially, we will work with 5*10
+            // isolate the numbers => do the calculation => replace the part of the string we are working with, with the result which is 50
+            // result: 1+50 => break the symbol checking loop and continue the main loop again so we start working with 1+50.
+
+            // get the amount of time the symbols were found in the amount string
+            let count = amount.chars()
+            .filter(|c| calc_symbols.contains(&c.to_string().as_str()))
+            .count();
+
+            // remove all spaces for easier indexing
+            let mut working_value = amount.replace(" ", "");
+
+            for _i in 0..count {
+                for symbol in &calc_symbols {
+                    if let Some(location) = working_value.find(symbol) {
+
+                        // if a symbol is found, we want to store the values to its side to these variables.
+                        // example: 1+5 first_value = 1 last_value = 5
+                        let mut first_value = String::new();
+                        let mut last_value = String::new();
+
+                        // skip to symbol location + 1 index value and start taking chars from here until the end
+                        // of the string or until another cal symbol is encountered
+                        for char in working_value.chars().skip(location + 1) {
+                            if !calc_symbols.contains(&String::from(char).as_str()) {
+                                last_value.push(char)
+                            } else {
+                                break;
+                            }
+                        }
+
+                        // do the same thing as before but this time, reverse the string
+                        for char in working_value
+                            .chars()
+                            .rev()
+                            .skip(working_value.len() - location)
+                        {
+                            if !calc_symbols.contains(&String::from(char).as_str()) {
+                                first_value.push(char)
+                            } else {
+                                
+                                break;
+                            }
+                        }
+                        // un-reverse the string
+                        first_value = first_value.chars().rev().collect();
+
+                        // if either of them is empty, the one that is not empty is the value we want to use for using in replacement
+                        let final_value = if first_value.is_empty()
+                            || last_value.is_empty()
+                        {
+                            if first_value.is_empty() {
+                                format!("{last_value}")
+                            } else {
+                                format!("{first_value}")
+                            }
+                        } else {
+                            // if both value is intact, do the calculation and the result is for replacement
+                            let first_num: f64 = first_value.parse()?;
+                            let last_num: f64 = last_value.parse()?;
+
+                            match symbol {
+                                &"*" => format!("{:.2}", (first_num * last_num)),
+                                &"/" => format!("{:.2}", (first_num / last_num)),
+                                &"+" => format!("{:.2}", (first_num + last_num)),
+                                &"-" => format!("{:.2}", (first_num - last_num)),
+                                _ => String::new(),
+                            }
+                        };
+
+                        // example: 1+5*10
+                        // if everything goes alright, first_value is 5, last_value is 10 and the symbol is *
+                        // replace 5*10 with the earlier result we got which is 50. Continue with 1+50 in the next loop
+                        working_value = working_value.replace(
+                            &format!("{first_value}{symbol}{last_value}"),
+                            &format!("{final_value}"),
+                        );
+
+                        break;
                     }
-                    break;
-                } else {
-                    *amount = amount.replace(i, "").trim().to_string();
                 }
             }
+            *amount = working_value;
         }
 
+        // if dot is present but nothing after that, add 2 zero
+        // if no dot, add dot + 2 zero
         if amount.contains('.') {
-            let state = amount.split('.');
-            let splitted = state.collect::<Vec<&str>>();
-            if splitted[1].is_empty() {
+            let state = amount.split('.').collect::<Vec<&str>>();
+            if state[1].is_empty() {
                 *amount += "00"
             }
+        } else {
+            *amount = format!("{amount}.00");
         }
 
-        // If the amount contains non-number character, make it fail
-        let int_amount: f64 = amount.trim().parse()?;
+        let float_amount: f64 = amount.trim().parse()?;
 
-        if int_amount <= 0.0 {
-            *amount = format!("{:.2}", (int_amount - (int_amount * 2.0)));
+        if float_amount <= 0.0 {
+            *amount = format!("{:.2}", (float_amount - (float_amount * 2.0)));
             return Ok("Amount: Value must be bigger than zero".to_string());
         }
 
-        // checks if there double zero after the dot else add double zero
+        // checks if there is 2 number after the dot else add zero/s
         if amount.contains('.') {
             let splitted = amount.split('.');
             let splitted_data = splitted.collect::<Vec<&str>>();
@@ -190,21 +264,18 @@ pub trait StatusChecker {
             } else if splitted_data[1].len() > 2 {
                 *amount = format!("{}.{}", splitted_data[0], &splitted_data[1][..2]);
             }
-        } else {
-            *amount = format!("{amount}.00");
-        }
+        } 
 
         // we can safely split now as previously we just added a dot + 2 numbers with the amount
         // and create the final value for the amount
-        let splitted = amount.split('.');
-        let splitted_data = splitted.collect::<Vec<&str>>();
+        let splitted = amount.split('.').collect::<Vec<&str>>();
 
         // limit max character to 10
-        if splitted_data[0].len() > 10 {
+        if splitted[0].len() > 10 {
             *amount = format!(
                 "{}.{}",
-                &splitted_data[0].trim()[..10],
-                splitted_data[1].trim()
+                &splitted[0].trim()[..10],
+                splitted[1].trim()
             );
         }
 
@@ -234,34 +305,37 @@ pub trait StatusChecker {
             return Ok("TX Method: Nothing to check".to_string());
         }
 
-        // loops through all tx methods and matches each character
-        // of the tx method with the current inputted text. Based on matches
-        // selects the best matching one if text is not any exact match.
-        if all_tx_methods.contains(cu_method) {
-            return Ok("TX Method: Transaction Method Accepted".to_string());
-        } else {
-            let mut current_match = all_tx_methods[0].clone();
-            let mut current_chance = 0;
+        for method in &all_tx_methods {
+            if method.to_lowercase() == cu_method.to_lowercase() {
+                *cu_method = method.to_string();
+                return Ok("TX Method: Transaction Method Accepted".to_string());
+            }
+        }
 
-            for i in all_tx_methods {
-                let mut total_match = 0;
-                let method = i.trim().to_string();
-                for i in method.chars() {
-                    if cu_method
-                        .to_lowercase()
-                        .contains(&i.to_string().to_lowercase().to_string())
-                    {
-                        total_match += 1;
-                    }
-                }
-                let chance = (100 * total_match) / method.len();
+        let mut matching_tx_methods: Vec<&str> = all_tx_methods
+            .iter()
+            .filter(|&s| s.to_lowercase().contains(&cu_method.to_lowercase()))
+            .map(|s| s.as_str())
+            .collect();
 
-                if chance > current_chance {
-                    current_match = method;
-                    current_chance = chance;
+        if matching_tx_methods.is_empty() {
+            matching_tx_methods.push(&all_tx_methods[0]);
+        }
+
+        if matching_tx_methods.len() > 1 {
+            let mut best_match = matching_tx_methods[0];
+            let mut best_score = rank_match(best_match, cu_method);
+
+            for &match_str in &matching_tx_methods[1..] {
+                let score = rank_match(match_str, cu_method);
+                if score > best_score {
+                    best_match = match_str;
+                    best_score = score;
                 }
             }
-            *cu_method = current_match;
+            *cu_method = best_match.to_string()
+        } else {
+            *cu_method = matching_tx_methods[0].to_string();
         }
 
         Ok("TX Method: Transaction Method not found".to_string())
@@ -288,4 +362,10 @@ pub trait StatusChecker {
             Ok("TX Type: Transaction Type not acceptable. Values: Expense/Income/E/I".to_string())
         }
     }
+}
+
+fn rank_match(match_str: &str, search_str: &str) -> f64 {
+    let match_count = match_str.to_lowercase().matches(search_str).count();
+    let match_len = match_str.len() as f64;
+    (match_count as f64) / match_len
 }
