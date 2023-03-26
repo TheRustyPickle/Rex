@@ -25,68 +25,68 @@ pub trait StatusChecker {
         if user_date.is_empty() {
             return Ok("Date: Nothing to check".to_string());
         }
+        *user_date = user_date.replace(' ', "");
 
         // we will be splitting them into 3 parts to verify each part of the date
-        let splitted = user_date.split('-');
-        let split = splitted.collect::<Vec<&str>>();
-
-        // to prevent any extra spaces passing, recreate the vec again
-        let mut data = vec![];
-
-        for i in split {
-            data.push(i.trim().to_string());
-        }
+        let splitted_date = user_date
+            .split('-')
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
 
         // if one part of the date is missing, return unknown date
-        if data.len() != 3 {
+        if splitted_date.len() != 3 {
             *user_date = "2022-01-01".to_string();
             return Ok("Date: Unknown date".to_string());
         }
-        // rewrite the original date in case of extra spaces
-        *user_date = format!("{}-{}-{}", data[0], data[1], data[2]);
 
-        let int_year: u32 = data[0].trim().parse()?;
-        let int_month: u32 = data[1].trim().parse()?;
-        let int_day: u32 = data[2].trim().parse()?;
+        let int_year: u32 = splitted_date[0].parse()?;
+        let int_month: u32 = splitted_date[1].parse()?;
+        let int_day: u32 = splitted_date[2].parse()?;
 
         // checks if the year part length is 4. If not 4, turn the year to 2022 + the other character entered by the user
         // and return the new date
-        if data[0].len() != 4 {
-            if data[0].len() < 4 {
-                *user_date = format!("2022-{}-{}", data[1], data[2]);
-            } else if data[0].len() > 4 {
-                *user_date = format!("{}-{}-{}", &data[0][..4], data[1], data[2]);
+        if splitted_date[0].len() != 4 {
+            if splitted_date[0].len() < 4 {
+                *user_date = format!("2022-{}-{}", splitted_date[1], splitted_date[2]);
+            } else if splitted_date[0].len() > 4 {
+                *user_date = format!(
+                    "{}-{}-{}",
+                    &splitted_date[0][..4],
+                    splitted_date[1],
+                    splitted_date[2]
+                );
             }
             return Ok("Date: Year length not acceptable. Example Date: 2022-05-01".to_string());
 
         // checks if the month part length is 2. If not 2, turn the month to 0 + whatever month was entered + the other character entered by the user
         // and return the new date
-        } else if data[1].len() != 2 {
+        } else if splitted_date[1].len() != 2 {
             if int_month < 10 {
-                *user_date = format!("{}-0{int_month}-{}", data[0], data[2]);
+                *user_date = format!("{}-0{int_month}-{}", splitted_date[0], splitted_date[2]);
             } else if int_month > 12 {
-                *user_date = format!("{}-12-{}", data[0], data[2]);
+                *user_date = format!("{}-12-{}", splitted_date[0], splitted_date[2]);
             }
 
             return Ok("Date: Month length not acceptable. Example Date: 2022-05-01".to_string());
 
         // checks if the day part length is 2. If not 2, turn the day to 0 + whatever day was entered + the other character entered by the user
         // and return the new date
-        } else if data[2].len() != 2 {
+        } else if splitted_date[2].len() != 2 {
             if int_day < 10 {
-                *user_date = format!("{}-{}-0{int_day}", data[0], data[1]);
+                *user_date = format!("{}-{}-0{int_day}", splitted_date[0], splitted_date[1]);
             } else if int_day > 31 {
-                *user_date = format!("{}-{}-31", data[0], data[1]);
+                *user_date = format!("{}-{}-31", splitted_date[0], splitted_date[1]);
             }
 
             return Ok("Date: Day length not acceptable. Example Date: 2022-05-01".to_string());
 
         // checks if the year value is between 2022 and 2025
+        // TODO year check
         } else if !(2022..=2025).contains(&int_year) {
             if int_year < 2022 {
-                *user_date = format!("2022-{}-{}", data[1], data[2]);
+                *user_date = format!("2022-{}-{}", splitted_date[1], splitted_date[2]);
             } else if int_year > 2025 {
-                *user_date = format!("2025-{}-{}", data[1], data[2]);
+                *user_date = format!("2025-{}-{}", splitted_date[1], splitted_date[2]);
             }
 
             return Ok("Date: Year must be between 2022-2025".to_string());
@@ -94,9 +94,9 @@ pub trait StatusChecker {
         // checks if the month value is between 1 and 12
         } else if !(1..=12).contains(&int_month) {
             if int_month < 1 {
-                *user_date = format!("{}-01-{}", data[0], data[2]);
+                *user_date = format!("{}-01-{}", splitted_date[0], splitted_date[2]);
             } else if int_month > 12 {
-                *user_date = format!("{}-12-{}", data[0], data[2]);
+                *user_date = format!("{}-12-{}", splitted_date[0], splitted_date[2]);
             }
 
             return Ok("Date: Month must be between 01-12".to_string());
@@ -104,9 +104,9 @@ pub trait StatusChecker {
         // checks if the day value is between 1 and 31
         } else if !(1..=31).contains(&int_day) {
             if int_day < 1 {
-                *user_date = format!("{}-{}-01", data[0], data[1]);
+                *user_date = format!("{}-{}-01", splitted_date[0], splitted_date[1]);
             } else if int_day > 31 {
-                *user_date = format!("{}-{}-31", data[0], data[1]);
+                *user_date = format!("{}-{}-31", splitted_date[0], splitted_date[1]);
             }
 
             return Ok("Date: Day must be between 01-31".to_string());
@@ -141,11 +141,12 @@ pub trait StatusChecker {
             return Ok("Amount: Nothing to check".to_string());
         }
 
+        *amount = amount.replace(' ', "");
+
         let calc_symbols = vec!["*", "/", "+", "-"];
 
         // check if any of the symbols are present
         if calc_symbols.iter().any(|s| amount.contains(s)) {
-
             // how it works:
             // the calc_symbol intentionally starts with * and / so these calculations are done first
             // start a main loop which will only run for the amount of times any one of them from calc_symbols is present
@@ -156,17 +157,17 @@ pub trait StatusChecker {
             // result: 1+50 => break the symbol checking loop and continue the main loop again so we start working with 1+50.
 
             // get the amount of time the symbols were found in the amount string
-            let count = amount.chars()
-            .filter(|c| calc_symbols.contains(&c.to_string().as_str()))
-            .count();
+            let count = amount
+                .chars()
+                .filter(|c| calc_symbols.contains(&c.to_string().as_str()))
+                .count();
 
             // remove all spaces for easier indexing
-            let mut working_value = amount.replace(" ", "");
+            let mut working_value = amount.to_owned();
 
             for _i in 0..count {
                 for symbol in &calc_symbols {
                     if let Some(location) = working_value.find(symbol) {
-
                         // if a symbol is found, we want to store the values to its side to these variables.
                         // example: 1+5 first_value = 1 last_value = 5
                         let mut first_value = String::new();
@@ -191,7 +192,6 @@ pub trait StatusChecker {
                             if !calc_symbols.contains(&String::from(char).as_str()) {
                                 first_value.push(char)
                             } else {
-                                
                                 break;
                             }
                         }
@@ -199,24 +199,22 @@ pub trait StatusChecker {
                         first_value = first_value.chars().rev().collect();
 
                         // if either of them is empty, the one that is not empty is the value we want to use for using in replacement
-                        let final_value = if first_value.is_empty()
-                            || last_value.is_empty()
-                        {
+                        let final_value = if first_value.is_empty() || last_value.is_empty() {
                             if first_value.is_empty() {
-                                format!("{last_value}")
+                                last_value.to_string()
                             } else {
-                                format!("{first_value}")
+                                first_value.to_string()
                             }
                         } else {
                             // if both value is intact, do the calculation and the result is for replacement
                             let first_num: f64 = first_value.parse()?;
                             let last_num: f64 = last_value.parse()?;
 
-                            match symbol {
-                                &"*" => format!("{:.2}", (first_num * last_num)),
-                                &"/" => format!("{:.2}", (first_num / last_num)),
-                                &"+" => format!("{:.2}", (first_num + last_num)),
-                                &"-" => format!("{:.2}", (first_num - last_num)),
+                            match *symbol {
+                                "*" => format!("{:.2}", (first_num * last_num)),
+                                "/" => format!("{:.2}", (first_num / last_num)),
+                                "+" => format!("{:.2}", (first_num + last_num)),
+                                "-" => format!("{:.2}", (first_num - last_num)),
                                 _ => String::new(),
                             }
                         };
@@ -224,10 +222,8 @@ pub trait StatusChecker {
                         // example: 1+5*10
                         // if everything goes alright, first_value is 5, last_value is 10 and the symbol is *
                         // replace 5*10 with the earlier result we got which is 50. Continue with 1+50 in the next loop
-                        working_value = working_value.replace(
-                            &format!("{first_value}{symbol}{last_value}"),
-                            &format!("{final_value}"),
-                        );
+                        working_value = working_value
+                            .replace(&format!("{first_value}{symbol}{last_value}"), &final_value);
 
                         break;
                     }
@@ -247,7 +243,7 @@ pub trait StatusChecker {
             *amount = format!("{amount}.00");
         }
 
-        let float_amount: f64 = amount.trim().parse()?;
+        let float_amount: f64 = amount.parse()?;
 
         if float_amount <= 0.0 {
             *amount = format!("{:.2}", (float_amount - (float_amount * 2.0)));
@@ -256,27 +252,22 @@ pub trait StatusChecker {
 
         // checks if there is 2 number after the dot else add zero/s
         if amount.contains('.') {
-            let splitted = amount.split('.');
-            let splitted_data = splitted.collect::<Vec<&str>>();
+            let splitted = amount.split('.').collect::<Vec<&str>>();
 
-            if splitted_data[1].len() < 2 {
+            if splitted[1].len() < 2 {
                 *amount = format!("{amount}0");
-            } else if splitted_data[1].len() > 2 {
-                *amount = format!("{}.{}", splitted_data[0], &splitted_data[1][..2]);
+            } else if splitted[1].len() > 2 {
+                *amount = format!("{}.{}", splitted[0], &splitted[1][..2]);
             }
-        } 
+        }
 
         // we can safely split now as previously we just added a dot + 2 numbers with the amount
         // and create the final value for the amount
-        let splitted = amount.split('.').collect::<Vec<&str>>();
+        let splitted_amount = amount.split('.').collect::<Vec<&str>>();
 
         // limit max character to 10
-        if splitted[0].len() > 10 {
-            *amount = format!(
-                "{}.{}",
-                &splitted[0].trim()[..10],
-                splitted[1].trim()
-            );
+        if splitted_amount[0].len() > 10 {
+            *amount = format!("{}.{}", &splitted_amount[0][..10], splitted_amount[1]);
         }
 
         Ok("Amount: Amount Accepted".to_string())
@@ -347,18 +338,19 @@ pub trait StatusChecker {
     ///
     /// Auto expands E to Expense and I to Income.
     fn verify_tx_type(&self, tx_type: &mut String) -> Result<String, Box<dyn Error>> {
-        *tx_type = tx_type.trim().to_string();
+        *tx_type = tx_type.replace(' ', "");
 
         if tx_type.is_empty() {
             return Ok("TX Type: Nothing to check".to_string());
         }
-        if tx_type.to_lowercase().trim().starts_with('e') {
+        if tx_type.to_lowercase().starts_with('e') {
             *tx_type = "Expense".to_string();
             Ok("TX Type: Transaction Type Accepted".to_string())
-        } else if tx_type.to_lowercase().trim().starts_with('i') {
+        } else if tx_type.to_lowercase().starts_with('i') {
             *tx_type = "Income".to_string();
             Ok("TX Type: Transaction Type Accepted".to_string())
         } else {
+            *tx_type = String::new();
             Ok("TX Type: Transaction Type not acceptable. Values: Expense/Income/E/I".to_string())
         }
     }
