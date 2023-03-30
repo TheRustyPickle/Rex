@@ -58,8 +58,7 @@ impl TransferData {
         tags: &str,
         id_num: i32,
     ) -> Self {
-        let splitted = date.split('-');
-        let data = splitted.collect::<Vec<&str>>();
+        let data = date.split('-').collect::<Vec<&str>>();
         let year = data[2];
         let month = data[1];
         let day = data[0];
@@ -248,7 +247,7 @@ impl TransferData {
     /// on Add Transaction/Transfer page and called upon on Enter/Esc presses.
     /// Removes the earliest status if total status number passes 20.
     pub fn add_tx_status(&mut self, data: &str) {
-        if self.tx_status.len() == 20 {
+        if self.tx_status.len() == 30 {
             self.tx_status.remove(0);
         }
         self.tx_status.push(data.to_string());

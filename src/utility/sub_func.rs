@@ -196,10 +196,9 @@ pub fn get_all_txs(
         } else if tx_type == "Income" {
             new_balance_from = last_month_balance[tx_method] + amount;
         } else if tx_type == "Transfer" {
-            let split = tx_method.split(" to ");
-            let vec = split.collect::<Vec<&str>>();
-            from_method = vec[0].to_string();
-            to_method = vec[1].to_string();
+            let splitted = tx_method.split(" to ").collect::<Vec<&str>>();
+            from_method = splitted[0].to_string();
+            to_method = splitted[1].to_string();
             new_balance_from = last_month_balance[&from_method] - amount;
             new_balance_to = last_month_balance[&to_method] + amount;
         }
@@ -326,8 +325,7 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
         }
 
         // split them and remove duplicates
-        let split = line.split(", ");
-        let mut splitted = split.collect::<Vec<&str>>();
+        let mut splitted = line.split(", ").collect::<Vec<&str>>();
         let splitted_copy = splitted.clone();
 
         // remove duplicates from the splitted vec

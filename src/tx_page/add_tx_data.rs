@@ -56,8 +56,7 @@ impl AddTxData {
         tags: &str,
         id_num: i32,
     ) -> Self {
-        let splitted = date.split('-');
-        let data = splitted.collect::<Vec<&str>>();
+        let data = date.split('-').collect::<Vec<&str>>();
         let year = data[2];
         let month = data[1];
         let day = data[0];
@@ -171,6 +170,7 @@ impl AddTxData {
 
     /// Collects all the data for the transaction and calls the function
     /// that pushes them to the database.
+    // TODO: update status return type
     pub fn add_tx(&mut self) -> String {
         if self.date.is_empty() {
             return "Date: Date cannot be empty".to_string();
@@ -237,7 +237,7 @@ impl AddTxData {
     /// on Add Transaction page and called upon on Enter/Esc presses.
     /// Removes the earliest status if total status number passes 20.
     pub fn add_tx_status(&mut self, data: &str) {
-        if self.tx_status.len() == 20 {
+        if self.tx_status.len() == 30 {
             self.tx_status.remove(0);
         }
         self.tx_status.push(data.to_string());

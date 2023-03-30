@@ -24,8 +24,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
         Ok(final_data)
     })?;
 
-    let split = data[0].split('-');
-    let splitted = split.collect::<Vec<&str>>();
+    let splitted = data[0].split('-').collect::<Vec<&str>>();
     let (year, month) = (
         splitted[0].parse::<i32>().unwrap(),
         splitted[1].parse::<i32>().unwrap(),
