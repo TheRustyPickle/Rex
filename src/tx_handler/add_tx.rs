@@ -33,23 +33,21 @@ pub fn add_tx(
         sp.execute(query, [date, details, tx_method, amount, tx_type, tags])?;
     }
 
-    let split = date.split('-');
-    let vec = split.collect::<Vec<&str>>();
-    let mut mnth = vec[1].to_string();
+    let splitted = date.split('-').collect::<Vec<&str>>();
+    let mut mnth = splitted[1].to_string();
     if &mnth[0..0] == "0" {
         mnth = mnth.replace('0', "");
     }
     let month = mnth.parse::<i32>().unwrap();
-    let year = vec[0][2..].parse::<i32>().unwrap() - 22;
+    let year = splitted[0][2..].parse::<i32>().unwrap() - 22;
 
     let mut from_method = String::new();
     let mut to_method = String::new();
 
     if tx_type == "Transfer" {
-        let split = tx_method.split(" to ");
-        let vec = split.collect::<Vec<&str>>();
-        from_method = vec[0].to_string();
-        to_method = vec[1].to_string();
+        let splitted = tx_method.split(" to ").collect::<Vec<&str>>();
+        from_method = splitted[0].to_string();
+        to_method = splitted[1].to_string();
     }
 
     let target_id_num = month + (year * 12);
