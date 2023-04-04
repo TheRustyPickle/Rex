@@ -1,4 +1,4 @@
-use crate::home_page::{SelectedTab, TableData, TimeData};
+use crate::ui_handler::{HomeTab, TableData, TimeData};
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
@@ -12,13 +12,13 @@ use tui::{
 /// coloring everything and all related things.  This function takes several arguments
 /// from the run_app function with the necessary data and fields.
 
-pub fn ui<B: Backend>(
+pub fn home_ui<B: Backend>(
     f: &mut Frame<B>,
     months: &TimeData,
     years: &TimeData,
     table: &mut TableData,
     balance: &mut [Vec<String>],
-    cu_tab: &SelectedTab,
+    cu_tab: &HomeTab,
     width_data: &mut [Constraint],
 ) {
     let size = f.size();
@@ -179,7 +179,7 @@ pub fn ui<B: Backend>(
     match cu_tab {
         // previously added a black block to year and month widget if a value is not selected
         // Now we will turn that black block into green if a value is selected
-        SelectedTab::Months => {
+        HomeTab::Months => {
             month_tab = month_tab.highlight_style(
                 Style::default()
                     .add_modifier(Modifier::BOLD)
@@ -187,7 +187,7 @@ pub fn ui<B: Backend>(
             );
         }
 
-        SelectedTab::Years => {
+        HomeTab::Years => {
             year_tab = year_tab.highlight_style(
                 Style::default()
                     .add_modifier(Modifier::BOLD)
@@ -195,7 +195,7 @@ pub fn ui<B: Backend>(
             );
         }
         // changes the color of row based on Expense or Income tx type on Transaction widget.
-        SelectedTab::Table => {
+        HomeTab::Table => {
             if let Some(a) = table.state.selected() {
                 if table.items[a][4] == "Expense" {
                     table_area = table_area
