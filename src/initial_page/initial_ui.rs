@@ -10,7 +10,7 @@ use tui::{
 /// The initial UI that starts on the startup of the program. The function
 /// draws 2 widgets with the intention to show the hotkeys of the program.
 /// Takes an additional vector parameter to show pop up if necessary.
-pub fn starter_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
+pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
     let size = f.size();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -49,8 +49,7 @@ pub fn starter_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
 
     // To work with this and add a slight touch of animation, we will split the entire
     // text by \n. Once it is done, we will loop through each line and take a specific amount of chars from each line.
-    let state = text.split('\n');
-    let splitted = state.collect::<Vec<&str>>();
+    let splitted = text.split('\n').collect::<Vec<&str>>();
     let mut upper_text = String::new();
 
     for line in splitted {

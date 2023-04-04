@@ -85,8 +85,7 @@ impl TransactionData {
         let mut changes_data = vec!["Changes".to_string()];
         for i in self.all_changes[index].iter() {
             let mut new_value = i.to_string();
-            let split = i.split('.');
-            let splitted = split.collect::<Vec<&str>>();
+            let splitted = i.split('.').collect::<Vec<&str>>();
 
             // the splitting and checking is necessary to make sure all strings are
             // properly ending with 2 values after dot. it's a string with ↓ or ↑

@@ -1,4 +1,4 @@
-use crate::home_page::TxTab;
+use crate::ui_handler::AddTxTab;
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -18,10 +18,10 @@ use tui::{
 /// - cu_selected : For verifying the current selected widget to add a block box
 /// - status_data : Contains all the String to push into the Status widget
 
-pub fn tx_ui<B: Backend>(
+pub fn add_tx_ui<B: Backend>(
     f: &mut Frame<B>,
     input_data: Vec<&str>,
-    cu_selected: &TxTab,
+    cu_selected: &AddTxTab,
     status_data: &[String],
 ) {
     let size = f.size();
@@ -203,31 +203,31 @@ pub fn tx_ui<B: Backend>(
     // We will be adding a cursor/box based on which tab is selected.
     // This was created utilizing the tui-rs example named user_input.rs
     match cu_selected {
-        TxTab::Date => f.set_cursor(
+        AddTxTab::Date => f.set_cursor(
             another_chunk[0].x + input_data[0].len() as u16 + 1,
             another_chunk[0].y + 1,
         ),
-        TxTab::Details => f.set_cursor(
+        AddTxTab::Details => f.set_cursor(
             chunks[2].x + input_data[1].len() as u16 + 1,
             chunks[2].y + 1,
         ),
-        TxTab::TxMethod => f.set_cursor(
+        AddTxTab::TxMethod => f.set_cursor(
             another_chunk[1].x + input_data[2].len() as u16 + 1,
             another_chunk[1].y + 1,
         ),
-        TxTab::Amount => f.set_cursor(
+        AddTxTab::Amount => f.set_cursor(
             another_chunk[2].x + input_data[3].len() as u16 + 1,
             another_chunk[2].y + 1,
         ),
-        TxTab::TxType => f.set_cursor(
+        AddTxTab::TxType => f.set_cursor(
             another_chunk[3].x + input_data[4].len() as u16 + 1,
             another_chunk[3].y + 1,
         ),
-        TxTab::Tags => f.set_cursor(
+        AddTxTab::Tags => f.set_cursor(
             another_chunk[4].x + input_data[5].len() as u16 + 1,
             another_chunk[4].y + 1,
         ),
-        TxTab::Nothing => {}
+        AddTxTab::Nothing => {}
     }
 
     // render the previously generated data into an interface
