@@ -1,11 +1,11 @@
+use crate::outputs::TerminalExecutionError;
 use crate::utility::{get_all_tx_methods, get_sql_dates};
-use crossterm::{
-    execute,
-    terminal::{Clear, ClearType},
-};
+use crossterm::execute;
+use crossterm::terminal::{Clear, ClearType};
 use rusqlite::Connection;
 use std::collections::HashMap;
 use std::io;
+use std::process::Command;
 
 /// Gathers all the balance of all sources from the previous month or from earlier.
 /// If all the previous month's balances are 0, returns 0
@@ -275,7 +275,7 @@ pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<Stri
 /// Once the collection is done sends to the database for adding the columns.
 /// This functions is both used when creating the initial db and when updating
 /// the database with new transaction methods.
-pub fn get_user_tx_methods(add_new_method: bool) -> Vec<String> {
+pub fn get_user_tx_methods(add_new_method: bool) -> Option<Vec<String>> {
     let mut stdout = io::stdout();
 
     // this command clears up the terminal. This is added so the terminal doesn't get
@@ -321,7 +321,7 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
         line = line.trim().to_string();
 
         if line.to_lowercase().starts_with("cancel") && add_new_method {
-            return vec!["".to_string()];
+            return None;
         }
 
         // split them and remove duplicates
@@ -392,5 +392,62 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
             }
         }
     }
-    db_tx_methods
+    Some(db_tx_methods)
+}
+
+pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> {
+    if cfg!(target_os = "windows") {
+        Command::new("cmd.exe")
+            .arg("start")
+            .arg("rex")
+            .output()
+            .map_err(|err| TerminalExecutionError::ExecutionFailed(err))?;
+    } else {
+        let mut all_terminals = HashMap::new();
+        let gnome_dir = format!("--working-directory={}", original_dir);
+
+        // TODO add more terminal support
+        all_terminals.insert(
+            "konsole",
+            vec![
+                "--new-tab".to_string(),
+                "--workdir".to_string(),
+                original_dir.to_string(),
+                "-e".to_string(),
+                "./rex".to_string(),
+            ],
+        );
+
+        all_terminals.insert(
+            "gnome-terminal",
+            vec![
+                gnome_dir,
+                "--maximize".to_string(),
+                "--".to_string(),
+                "./rex".to_string(),
+            ],
+        );
+
+        let mut terminal_opened = false;
+        let mut result = None;
+
+        for (key, value) in all_terminals {
+            let status = Command::new(key).args(value).output();
+            match status {
+                Ok(out) => {
+                    if out.stderr.len() > 2 {
+                        result = Some(TerminalExecutionError::NotFound(out))
+                    } else {
+                        terminal_opened = true;
+                        break;
+                    }
+                }
+                Err(err) => result = Some(TerminalExecutionError::ExecutionFailed(err)),
+            }
+        }
+        if !terminal_opened {
+            return Err(result.unwrap());
+        }
+    };
+    return Ok(());
 }

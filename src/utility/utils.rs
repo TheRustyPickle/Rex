@@ -1,4 +1,17 @@
+use crate::db::{add_tags_column, create_db};
+use crate::utility::get_user_tx_methods;
+use crossterm::execute;
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+};
 use rusqlite::{Connection, Result as sqlResult};
+use std::error::Error;
+use std::fs;
+use std::io::{self, Stdout};
+use std::time::Duration;
+use std::{process, thread};
+use tui::backend::CrosstermBackend;
+use tui::Terminal;
 
 /// Gives the month and year name by index
 pub fn get_month_name(month_index: usize, year_index: usize) -> (String, String) {
@@ -107,4 +120,71 @@ pub fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     let datetime_1 = format!("{}-{}-01", new_year, new_month);
     let datetime_2 = format!("{}-{}-31", new_year, new_month);
     (datetime_1, datetime_2)
+}
+
+pub fn check_old_sql() {
+    if !get_all_tx_columns("data.sqlite").contains(&"tags".to_string()) {
+        println!("Old database detected. Starting migration...");
+        let status = add_tags_column("data.sqlite");
+        match status {
+            Ok(_) => {
+                println!("Database migration successfully complete. Restarting in 5 seconds...");
+                // TODO update the timer with each passing second?
+                thread::sleep(Duration::from_millis(5000));
+            }
+            Err(e) => {
+                println!("Database migration failed. Try again. Error: {}", e);
+                println!("Commits reversed. Exiting...");
+                process::exit(1);
+            }
+        }
+    }
+}
+
+pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+    Ok(terminal)
+}
+
+/// The function is used to exit out of the interface and alternate screen
+pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
+    let stdout = io::stdout();
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    terminal.show_cursor()?;
+    disable_raw_mode()?;
+    Ok(())
+}
+
+pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
+    // checks the local folder and searches for data.sqlite
+    let paths = fs::read_dir(".")?;
+    let mut db_found = false;
+    for path in paths {
+        let path = path?.path().display().to_string();
+        if path == verifying_path {
+            db_found = true;
+        }
+    }
+    if !db_found {
+        let db_tx_methods = get_user_tx_methods(false).unwrap();
+        println!("Creating New Database. It may take some time...");
+        let status = create_db("data.sqlite", db_tx_methods);
+        match status {
+            Ok(_) => {}
+            Err(e) => {
+                println!("Database creation failed. Try again. Error: {}", e);
+                fs::remove_file("data.sqlite")?;
+                process::exit(1);
+            }
+        }
+    }
+
+    Ok(())
 }
