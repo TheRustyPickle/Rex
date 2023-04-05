@@ -1,7 +1,7 @@
 mod sub_func;
-mod traits;
+mod verifier;
 mod utils;
 
 pub use sub_func::*;
-pub use traits::*;
+pub use verifier::*;
 pub use utils::*;
