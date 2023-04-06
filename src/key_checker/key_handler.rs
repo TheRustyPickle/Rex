@@ -1,8 +1,9 @@
-use crate::home_page::{
-    AddTxTab, CurrentUi, PopupState, SelectedTab, TableData, TimeData, TransactionData, TransferTab,
+use crate::home_page::TransactionData;
+use crate::outputs::{HandlingOutput, VerifyingOutput};
+use crate::tx_handler::TxData;
+use crate::ui_handler::{
+    AddTxTab, CurrentUi, HomeTab, PopupState, TableData, TimeData, TransferTab,
 };
-use crate::transfer_page::TransferData;
-use crate::tx_page::AddTxData;
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 
@@ -12,12 +13,12 @@ pub struct InputKeyHandler<'a> {
     pub current_popup: &'a mut PopupState,
     pub current_tx_tab: &'a mut AddTxTab,
     pub current_transfer_tab: &'a mut TransferTab,
-    add_tx_data: &'a mut AddTxData,
-    transfer_data: &'a mut TransferData,
+    add_tx_data: &'a mut TxData,
+    transfer_data: &'a mut TxData,
     tx_data: &'a mut TransactionData,
     table: &'a mut TableData,
     summary_table: &'a mut TableData,
-    selected_tab: &'a mut SelectedTab,
+    selected_tab: &'a mut HomeTab,
     months: &'a mut TimeData,
     years: &'a mut TimeData,
     month_index: usize,
@@ -34,12 +35,12 @@ impl<'a> InputKeyHandler<'a> {
         current_popup: &'a mut PopupState,
         current_tx_tab: &'a mut AddTxTab,
         current_transfer_tab: &'a mut TransferTab,
-        add_tx_data: &'a mut AddTxData,
-        transfer_data: &'a mut TransferData,
+        add_tx_data: &'a mut TxData,
+        transfer_data: &'a mut TxData,
         tx_data: &'a mut TransactionData,
         table: &'a mut TableData,
         summary_table: &'a mut TableData,
-        selected_tab: &'a mut SelectedTab,
+        selected_tab: &'a mut HomeTab,
         months: &'a mut TimeData,
         years: &'a mut TimeData,
         month_index: usize,
@@ -73,12 +74,12 @@ impl<'a> InputKeyHandler<'a> {
     pub fn go_home(&mut self) {
         match self.current_page {
             CurrentUi::AddTx => {
-                *self.add_tx_data = AddTxData::new();
+                *self.add_tx_data = TxData::new();
                 *self.current_tx_tab = AddTxTab::Nothing;
             }
             CurrentUi::Transfer => {
                 *self.current_transfer_tab = TransferTab::Nothing;
-                *self.transfer_data = TransferData::new();
+                *self.transfer_data = TxData::new();
             }
             _ => {}
         }
@@ -114,20 +115,16 @@ impl<'a> InputKeyHandler<'a> {
         *self.table = TableData::new(self.tx_data.get_txs());
     }
 
-    pub fn handle_update_popup(&mut self) {
+    pub fn handle_update_popup(&mut self) -> Result<(), HandlingOutput> {
         match self.key.code {
             KeyCode::Enter => {
                 // If there is a new version, Enter will try to open the default browser with this link
-                match open::that("https://github.com/WaffleMixer/Rex/releases/latest") {
-                    Ok(_) => *self.current_popup = PopupState::Nothing,
-
-                    // TODO handle this error
-                    // if it fails for any reason, break interface and print the link
-                    Err(_) => { //return Ok("Link".to_string())
-                    }
-                }
+                Ok(
+                    open::that("https://github.com/WaffleMixer/Rex/releases/latest")
+                        .map_err(|_| HandlingOutput::PrintNewUpdate)?,
+                )
             }
-            _ => *self.current_popup = PopupState::Nothing,
+            _ => Ok(*self.current_popup = PopupState::Nothing),
         }
     }
 
@@ -136,10 +133,10 @@ impl<'a> InputKeyHandler<'a> {
         if status.is_empty() {
             self.go_home();
             // we just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
-            *self.selected_tab = SelectedTab::Months;
+            *self.selected_tab = HomeTab::Months;
             self.reload_home_table()
         } else {
-            self.add_tx_data.add_tx_status(&status);
+            self.add_tx_data.add_tx_status(status);
         }
     }
 
@@ -152,10 +149,11 @@ impl<'a> InputKeyHandler<'a> {
             // based on what kind of transaction is selected, passes the tx data to the struct
             // and changes the current interface
             if tx_type != "Transfer" {
-                *self.add_tx_data = AddTxData::custom(
+                *self.add_tx_data = TxData::custom(
                     &target_data[0],
                     &target_data[1],
                     &target_data[2],
+                    "",
                     &target_data[3],
                     &target_data[4],
                     &target_data[5],
@@ -167,12 +165,13 @@ impl<'a> InputKeyHandler<'a> {
                 let from_method = from_to[0];
                 let to_method = from_to[1];
 
-                *self.transfer_data = TransferData::custom(
+                *self.transfer_data = TxData::custom(
                     &target_data[0],
                     &target_data[1],
                     from_method,
                     to_method,
                     &target_data[3],
+                    "Transfer",
                     &target_data[5],
                     target_id_num,
                 );
@@ -189,7 +188,7 @@ impl<'a> InputKeyHandler<'a> {
                     // transaction deleted so reload the data again
                     self.reload_home_table();
                     self.table.state.select(None);
-                    *self.selected_tab = SelectedTab::Months;
+                    *self.selected_tab = HomeTab::Months;
                 }
                 Err(err) => {
                     *self.current_popup = PopupState::DeleteFailed(err.to_string());
@@ -202,11 +201,11 @@ impl<'a> InputKeyHandler<'a> {
         let status = self.transfer_data.add_tx();
         if status == *"" {
             // reload home page and switch UI
-            *self.selected_tab = SelectedTab::Months;
+            *self.selected_tab = HomeTab::Months;
             self.go_home();
             self.reload_home_table();
         } else {
-            self.transfer_data.add_tx_status(&status);
+            self.transfer_data.add_tx_status(status);
         }
     }
 
@@ -237,8 +236,8 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_left_arrow(&mut self) {
         match self.current_page {
             CurrentUi::Home => match self.selected_tab {
-                SelectedTab::Months => self.months.previous(),
-                SelectedTab::Years => {
+                HomeTab::Months => self.months.previous(),
+                HomeTab::Years => {
                     self.years.previous();
                     self.months.index = 0;
                 }
@@ -253,8 +252,8 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_right_arrow(&mut self) {
         match self.current_page {
             CurrentUi::Home => match self.selected_tab {
-                SelectedTab::Months => self.months.next(),
-                SelectedTab::Years => {
+                HomeTab::Months => self.months.next(),
+                HomeTab::Years => {
                     self.years.next();
                     self.months.index = 0;
                 }
@@ -341,7 +340,7 @@ impl<'a> InputKeyHandler<'a> {
 impl<'a> InputKeyHandler<'a> {
     fn do_home_up(&mut self) {
         match &self.selected_tab {
-            SelectedTab::Table => {
+            HomeTab::Table => {
                 // Do not select any table rows in the table section If
                 // there is no transaction
                 if self.tx_data.all_tx.is_empty() {
@@ -349,13 +348,13 @@ impl<'a> InputKeyHandler<'a> {
                 }
                 // executes when going from first table row to month widget
                 else if self.table.state.selected() == Some(0) {
-                    *self.selected_tab = SelectedTab::Months;
+                    *self.selected_tab = HomeTab::Months;
                     self.table.state.select(None);
                 } else if !self.tx_data.all_tx.is_empty() {
                     self.table.previous();
                 }
             }
-            SelectedTab::Years => {
+            HomeTab::Years => {
                 // Do not select any table rows in the table section If
                 // there is no transaction
                 if self.tx_data.all_tx.is_empty() {
@@ -376,7 +375,7 @@ impl<'a> InputKeyHandler<'a> {
 
     fn do_home_down(&mut self) {
         match &self.selected_tab {
-            SelectedTab::Table => {
+            HomeTab::Table => {
                 // Do not proceed to the table section If
                 // there is no transaction
                 if self.tx_data.all_tx.is_empty() {
@@ -385,13 +384,13 @@ impl<'a> InputKeyHandler<'a> {
                 // executes when pressed on last row of the table
                 // moves to the year widget
                 else if self.table.state.selected() == Some(self.table.items.len() - 1) {
-                    *self.selected_tab = SelectedTab::Years;
+                    *self.selected_tab = HomeTab::Years;
                     self.table.state.select(None);
                 } else if !self.tx_data.all_tx.is_empty() {
                     self.table.next();
                 }
             }
-            SelectedTab::Months => {
+            HomeTab::Months => {
                 if self.tx_data.all_tx.is_empty() {
                     *self.selected_tab = self.selected_tab.change_tab_up();
                 } else {
@@ -431,34 +430,26 @@ impl<'a> InputKeyHandler<'a> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.add_tx_data.check_date();
+                self.add_tx_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.add_tx_data.add_tx_status(&a);
-                        if a.contains("Accepted") || a.contains("Nothing") {
-                            *self.current_tx_tab = AddTxTab::Details
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_tx_tab = AddTxTab::Details
                     }
-                    Err(_) => self
-                        .add_tx_data
-                        .add_tx_status("Date: Error acquired or Date not acceptable."),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
             KeyCode::Esc => {
                 let status = self.add_tx_data.check_date();
+                self.add_tx_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.add_tx_data.add_tx_status(&a);
-                        if a.contains("Accepted") || a.contains("Nothing") {
-                            *self.current_tx_tab = AddTxTab::Nothing
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_tx_tab = AddTxTab::Nothing
                     }
-                    Err(_) => self
-                        .add_tx_data
-                        .add_tx_status("Date: Error acquired or Date not acceptable."),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
-            KeyCode::Backspace => self.add_tx_data.edit_date('a', true),
-            KeyCode::Char(a) => self.add_tx_data.edit_date(a, false),
+            KeyCode::Backspace => self.add_tx_data.edit_date(None),
+            KeyCode::Char(a) => self.add_tx_data.edit_date(Some(a)),
             _ => {}
         }
     }
@@ -466,37 +457,27 @@ impl<'a> InputKeyHandler<'a> {
     fn check_add_tx_method(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.add_tx_data.check_tx_method(self.conn);
-
+                let status = self.add_tx_data.check_from_method(self.conn);
+                self.add_tx_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.add_tx_data.add_tx_status(&a);
-                        if a.contains("Accepted") || a.contains("Nothing") {
-                            *self.current_tx_tab = AddTxTab::Amount
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_tx_tab = AddTxTab::Amount
                     }
-                    Err(_) => self
-                        .add_tx_data
-                        .add_tx_status("TX Method: Error acquired while checking."),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
             KeyCode::Esc => {
-                let status = self.add_tx_data.check_tx_method(self.conn);
-
+                let status = self.add_tx_data.check_from_method(self.conn);
+                self.add_tx_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.add_tx_data.add_tx_status(&a);
-                        if a.contains("Accepted") || a.contains("Nothing") {
-                            *self.current_tx_tab = AddTxTab::Nothing
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_tx_tab = AddTxTab::Nothing
                     }
-                    Err(_) => self
-                        .add_tx_data
-                        .add_tx_status("TX Method: Error acquired while checking."),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
-            KeyCode::Backspace => self.add_tx_data.edit_tx_method('a', true),
-            KeyCode::Char(a) => self.add_tx_data.edit_tx_method(a, false),
+            KeyCode::Backspace => self.add_tx_data.edit_from_method(None),
+            KeyCode::Char(a) => self.add_tx_data.edit_from_method(Some(a)),
             _ => {}
         }
     }
@@ -505,36 +486,26 @@ impl<'a> InputKeyHandler<'a> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.add_tx_data.check_amount(self.conn);
+                self.add_tx_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.add_tx_data.add_tx_status(&a);
-                        if a.contains("zero") || a.contains("determined") {
-                        } else {
-                            *self.current_tx_tab = AddTxTab::TxType;
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_tx_tab = AddTxTab::TxType
                     }
-                    Err(_) => self
-                        .add_tx_data
-                        .add_tx_status("Amount: Invalid Amount found"),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
             KeyCode::Esc => {
                 let status = self.add_tx_data.check_amount(self.conn);
+                self.add_tx_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.add_tx_data.add_tx_status(&a);
-                        if a.contains("zero") || a.contains("determined") {
-                        } else {
-                            *self.current_tx_tab = AddTxTab::Nothing;
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_tx_tab = AddTxTab::Nothing
                     }
-                    Err(_) => self
-                        .add_tx_data
-                        .add_tx_status("Amount: Invalid Amount found"),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
-            KeyCode::Backspace => self.add_tx_data.edit_amount('a', true),
-            KeyCode::Char(a) => self.add_tx_data.edit_amount(a, false),
+            KeyCode::Backspace => self.add_tx_data.edit_amount(None),
+            KeyCode::Char(a) => self.add_tx_data.edit_amount(Some(a)),
             _ => {}
         }
     }
@@ -543,34 +514,26 @@ impl<'a> InputKeyHandler<'a> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.add_tx_data.check_tx_type();
+                self.add_tx_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.add_tx_data.add_tx_status(&a);
-                        if a.contains("Accepted") || a.contains("Nothing") {
-                            *self.current_tx_tab = AddTxTab::Tags
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_tx_tab = AddTxTab::Tags
                     }
-                    Err(_) => self
-                        .add_tx_data
-                        .add_tx_status("TX Type: Invalid Transaction Type Found"),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
             KeyCode::Esc => {
                 let status = self.add_tx_data.check_tx_type();
+                self.add_tx_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.add_tx_data.add_tx_status(&a);
-                        if a.contains("Accepted") || a.contains("Nothing") {
-                            *self.current_tx_tab = AddTxTab::Nothing
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_tx_tab = AddTxTab::Nothing
                     }
-                    Err(_) => self
-                        .add_tx_data
-                        .add_tx_status("TX Type: Invalid Transaction Type Found"),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
-            KeyCode::Backspace => self.add_tx_data.edit_tx_type('a', true),
-            KeyCode::Char(a) => self.add_tx_data.edit_tx_type(a, false),
+            KeyCode::Backspace => self.add_tx_data.edit_tx_type(None),
+            KeyCode::Char(a) => self.add_tx_data.edit_tx_type(Some(a)),
             _ => {}
         }
     }
@@ -579,8 +542,8 @@ impl<'a> InputKeyHandler<'a> {
         match self.key.code {
             KeyCode::Enter => *self.current_tx_tab = AddTxTab::TxMethod,
             KeyCode::Esc => *self.current_tx_tab = AddTxTab::Nothing,
-            KeyCode::Backspace => self.add_tx_data.edit_details('a', true),
-            KeyCode::Char(a) => self.add_tx_data.edit_details(a, false),
+            KeyCode::Backspace => self.add_tx_data.edit_details(None),
+            KeyCode::Char(a) => self.add_tx_data.edit_details(Some(a)),
             _ => {}
         }
     }
@@ -589,8 +552,8 @@ impl<'a> InputKeyHandler<'a> {
         match self.key.code {
             KeyCode::Enter => *self.current_tx_tab = AddTxTab::Nothing,
             KeyCode::Esc => *self.current_tx_tab = AddTxTab::Nothing,
-            KeyCode::Backspace => self.add_tx_data.edit_tags('a', true),
-            KeyCode::Char(a) => self.add_tx_data.edit_tags(a, false),
+            KeyCode::Backspace => self.add_tx_data.edit_tags(None),
+            KeyCode::Char(a) => self.add_tx_data.edit_tags(Some(a)),
             _ => {}
         }
     }
@@ -599,34 +562,26 @@ impl<'a> InputKeyHandler<'a> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.transfer_data.check_date();
+                self.transfer_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.transfer_data.add_tx_status(&a);
-                        if a.contains("Accepted") || a.contains("Nothing") {
-                            *self.current_transfer_tab = TransferTab::Details
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_transfer_tab = TransferTab::Details
                     }
-                    Err(_) => self
-                        .transfer_data
-                        .add_tx_status("Date: Error acquired or Date not acceptable."),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
             KeyCode::Esc => {
                 let status = self.transfer_data.check_date();
+                self.transfer_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.transfer_data.add_tx_status(&a);
-                        if a.contains("Accepted") || a.contains("Nothing") {
-                            *self.current_transfer_tab = TransferTab::Nothing
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_transfer_tab = TransferTab::Nothing
                     }
-                    Err(_) => self
-                        .transfer_data
-                        .add_tx_status("Date: Error acquired or Date not acceptable."),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
-            KeyCode::Backspace => self.transfer_data.edit_date('a', true),
-            KeyCode::Char(a) => self.transfer_data.edit_date(a, false),
+            KeyCode::Backspace => self.transfer_data.edit_date(None),
+            KeyCode::Char(a) => self.transfer_data.edit_date(Some(a)),
             _ => {}
         }
     }
@@ -635,8 +590,8 @@ impl<'a> InputKeyHandler<'a> {
         match self.key.code {
             KeyCode::Enter => *self.current_transfer_tab = TransferTab::From,
             KeyCode::Esc => *self.current_transfer_tab = TransferTab::Nothing,
-            KeyCode::Backspace => self.transfer_data.edit_details('a', true),
-            KeyCode::Char(a) => self.transfer_data.edit_details(a, false),
+            KeyCode::Backspace => self.transfer_data.edit_details(None),
+            KeyCode::Char(a) => self.transfer_data.edit_details(Some(a)),
             _ => {}
         }
     }
@@ -644,37 +599,27 @@ impl<'a> InputKeyHandler<'a> {
     fn check_transfer_from(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.transfer_data.check_from(self.conn);
-
+                let status = self.transfer_data.check_from_method(self.conn);
+                self.transfer_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.transfer_data.add_tx_status(&a);
-                        if a.contains("Accepted") || a.contains("Nothing") {
-                            *self.current_transfer_tab = TransferTab::To
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_transfer_tab = TransferTab::To
                     }
-                    Err(_) => self
-                        .transfer_data
-                        .add_tx_status("TX Method: Error acquired while checking."),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
             KeyCode::Esc => {
-                let status = self.transfer_data.check_from(self.conn);
-
+                let status = self.transfer_data.check_from_method(self.conn);
+                self.transfer_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.transfer_data.add_tx_status(&a);
-                        if a.contains("Accepted") || a.contains("Nothing") {
-                            *self.current_transfer_tab = TransferTab::Nothing
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_transfer_tab = TransferTab::Nothing
                     }
-                    Err(_) => self
-                        .transfer_data
-                        .add_tx_status("TX Method: Error acquired while checking."),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
-            KeyCode::Backspace => self.transfer_data.edit_from('a', true),
-            KeyCode::Char(a) => self.transfer_data.edit_from(a, false),
+            KeyCode::Backspace => self.transfer_data.edit_from_method(None),
+            KeyCode::Char(a) => self.transfer_data.edit_from_method(Some(a)),
             _ => {}
         }
     }
@@ -682,37 +627,27 @@ impl<'a> InputKeyHandler<'a> {
     fn check_transfer_to(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.transfer_data.check_to(self.conn);
-
+                let status = self.transfer_data.check_to_method(self.conn);
+                self.transfer_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.transfer_data.add_tx_status(&a);
-                        if a.contains("Accepted") || a.contains("Nothing") {
-                            *self.current_transfer_tab = TransferTab::Amount
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_transfer_tab = TransferTab::Amount
                     }
-                    Err(_) => self
-                        .transfer_data
-                        .add_tx_status("TX Method: Error acquired while checking."),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
             KeyCode::Esc => {
-                let status = self.transfer_data.check_to(self.conn);
-
+                let status = self.transfer_data.check_to_method(self.conn);
+                self.transfer_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.transfer_data.add_tx_status(&a);
-                        if a.contains("Accepted") || a.contains("Nothing") {
-                            *self.current_transfer_tab = TransferTab::Nothing
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_transfer_tab = TransferTab::Nothing
                     }
-                    Err(_) => self
-                        .transfer_data
-                        .add_tx_status("TX Method: Error acquired while checking."),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
-            KeyCode::Backspace => self.transfer_data.edit_to('a', true),
-            KeyCode::Char(a) => self.transfer_data.edit_to(a, false),
+            KeyCode::Backspace => self.transfer_data.edit_to_method(None),
+            KeyCode::Char(a) => self.transfer_data.edit_to_method(Some(a)),
             _ => {}
         }
     }
@@ -720,37 +655,27 @@ impl<'a> InputKeyHandler<'a> {
     fn check_transfer_amount(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.transfer_data.check_amount();
+                let status = self.transfer_data.check_amount(self.conn);
+                self.transfer_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.transfer_data.add_tx_status(&a);
-                        if a.contains("zero") {
-                        } else {
-                            *self.current_transfer_tab = TransferTab::Tags;
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_transfer_tab = TransferTab::Tags
                     }
-                    Err(_) => self
-                        .transfer_data
-                        .add_tx_status("Amount: Invalid Amount found"),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
             KeyCode::Esc => {
-                let status = self.transfer_data.check_amount();
+                let status = self.transfer_data.check_amount(self.conn);
+                self.transfer_data.add_tx_status(status.to_string());
                 match status {
-                    Ok(a) => {
-                        self.transfer_data.add_tx_status(&a);
-                        if a.contains("zero") {
-                        } else {
-                            *self.current_transfer_tab = TransferTab::Nothing;
-                        }
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.current_transfer_tab = TransferTab::Nothing
                     }
-                    Err(_) => self
-                        .transfer_data
-                        .add_tx_status("Amount: Invalid Amount found"),
+                    VerifyingOutput::NotAccepted(_) => {}
                 }
             }
-            KeyCode::Backspace => self.transfer_data.edit_amount('a', true),
-            KeyCode::Char(a) => self.transfer_data.edit_amount(a, false),
+            KeyCode::Backspace => self.transfer_data.edit_amount(None),
+            KeyCode::Char(a) => self.transfer_data.edit_amount(Some(a)),
             _ => {}
         }
     }
@@ -759,8 +684,8 @@ impl<'a> InputKeyHandler<'a> {
         match self.key.code {
             KeyCode::Enter => *self.current_transfer_tab = TransferTab::Nothing,
             KeyCode::Esc => *self.current_transfer_tab = TransferTab::Nothing,
-            KeyCode::Backspace => self.transfer_data.edit_tags('a', true),
-            KeyCode::Char(a) => self.transfer_data.edit_tags(a, false),
+            KeyCode::Backspace => self.transfer_data.edit_tags(None),
+            KeyCode::Char(a) => self.transfer_data.edit_tags(Some(a)),
             _ => {}
         }
     }
