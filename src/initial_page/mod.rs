@@ -1,5 +1,5 @@
-mod starter_ui;
+mod initial_ui;
 mod version_checker;
 
-pub use starter_ui::starter_ui;
+pub use initial_ui::initial_ui;
 pub use version_checker::check_version;
