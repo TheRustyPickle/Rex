@@ -1,12 +1,10 @@
-use crate::home_page::TransferTab;
-use tui::{
-    backend::Backend,
-    layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::{Span, Spans},
-    widgets::{Block, Borders, Paragraph},
-    Frame,
-};
+use crate::ui_handler::TransferTab;
+use tui::backend::Backend;
+use tui::layout::{Alignment, Constraint, Direction, Layout};
+use tui::style::{Color, Modifier, Style};
+use tui::text::{Span, Spans};
+use tui::widgets::{Block, Borders, Paragraph};
+use tui::Frame;
 
 /// The UI functions that draws the Transfer page of the interface.
 /// Takes arguments for user inputted data, status page data to process the details and turns them into
@@ -89,18 +87,18 @@ pub fn transfer_ui<B: Backend>(
     // This is the details of the Help widget
     let help_text = vec![
         Spans::from("Press the respective keys to edit fields."),
-        Spans::from("'1' : Date         Example: 2022-05-12, YYYY-MM-DD"),
-        Spans::from("'2' : TX details   Example: For Grocery, Salary"),
-        Spans::from("'3' : From Method  Example: Cash, Bank, Card"),
-        Spans::from("'4' : To Method    Example: Cash, Bank, Card"),
-        Spans::from("'5' : Amount       Example: 1000, 100+50"),
-        Spans::from(
-            "'6' : TX Tags      Example: Empty, Food, Car. Add Comma + Space for a new tag",
+        Spans::from("1 : Date         Example: 2022-05-12, YYYY-MM-DD"),
+        Spans::from("2 : TX details   Example: For Grocery, Salary"),
+        Spans::from("3 : From Method  Example: Cash, Bank, Card"),
+        Spans::from("4 : To Method    Example: Cash, Bank, Card"),
+        Spans::from("5 : Amount       Example: 1000, 100+50"),
+        Spans::from("6 : TX Tags      Example: Empty, Food, Car. Add Comma + Space for a new tag",
         ),
-        Spans::from("'S' : Save the inputted data as a Transaction"),
-        Spans::from("'Enter' : Submit field and continue"),
-        Spans::from("'Esc' : Stop editing filed"),
+        Spans::from("S : Save the inputted data as a Transaction"),
+        Spans::from("Enter : Submit field and continue"),
+        Spans::from("Esc : Stop editing filed"),
         Spans::from("Amount Field supports simple calculation using '+' '-' '*' '/'"),
+        Spans::from("Amount Field considers 'b' as the current balance of the method in From Method Box. Example: b - 100")
     ];
 
     let mut status_text = vec![];
@@ -186,7 +184,7 @@ pub fn transfer_ui<B: Backend>(
                 .bg(Color::Rgb(255, 255, 255))
                 .fg(Color::Rgb(50, 205, 50)),
         )
-        .block(create_block("From"))
+        .block(create_block("From Method"))
         .alignment(Alignment::Left);
 
     let to_sec = Paragraph::new(to_text)
@@ -195,7 +193,7 @@ pub fn transfer_ui<B: Backend>(
                 .bg(Color::Rgb(255, 255, 255))
                 .fg(Color::Rgb(50, 205, 50)),
         )
-        .block(create_block("To"))
+        .block(create_block("To Method"))
         .alignment(Alignment::Left);
 
     let arrow_sec = Paragraph::new(arrow_text)

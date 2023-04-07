@@ -1,12 +1,10 @@
 use crate::ui_handler::AddTxTab;
-use tui::{
-    backend::Backend,
-    layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::{Span, Spans},
-    widgets::{Block, Borders, Paragraph},
-    Frame,
-};
+use tui::backend::Backend;
+use tui::layout::{Alignment, Constraint, Direction, Layout};
+use tui::style::{Color, Modifier, Style};
+use tui::text::{Span, Spans};
+use tui::widgets::{Block, Borders, Paragraph};
+use tui::Frame;
 
 /// The UI functions that draws the Add Transaction page of the interface.
 /// Takes arguments for user inputted data, status page data to process the details and turns them into
@@ -67,19 +65,18 @@ pub fn add_tx_ui<B: Backend>(
     // This is the details of the Help widget
     let help_text = vec![
         Spans::from("Press the respective keys to edit fields."),
-        Spans::from("'1' : Date         Example: 2022-05-12, YYYY-MM-DD"),
-        Spans::from("'2' : TX details   Example: For Grocery, Salary"),
-        Spans::from("'3' : TX Method    Example: Cash, Bank, Card"),
-        Spans::from("'4' : Amount       Example: 1000, 100+50, b - 100"),
-        Spans::from("'5' : TX Type      Example: Income/Expense/I/E"),
-        Spans::from(
-            "'6' : TX Tags      Example: Empty, Food, Car. Add Comma + Space for a new tag",
+        Spans::from("1: Date         Example: 2022-05-12, YYYY-MM-DD"),
+        Spans::from("2 : TX details   Example: For Grocery, Salary"),
+        Spans::from("3 : TX Method    Example: Cash, Bank, Card"),
+        Spans::from("4 : Amount       Example: 1000, 100+50, b - 100"),
+        Spans::from("5 : TX Type      Example: Income/Expense/I/E"),
+        Spans::from("6 : TX Tags      Example: Empty, Food, Car. Add Comma + Space for a new tag",
         ),
-        Spans::from("'S' : Save the inputted data as a Transaction"),
-        Spans::from("'Enter' : Submit field and continue"),
-        Spans::from("'Esc' : Stop editing filed"),
+        Spans::from("S : Save the inputted data as a Transaction"),
+        Spans::from("Enter : Submit field and continue"),
+        Spans::from("Esc : Stop editing filed"),
         Spans::from("Amount Field supports simple calculation using '+' '-' '*' '/'"),
-        Spans::from("Amount Field considers 'b' as the current balance of the added TX Method"),
+        Spans::from("Amount Field considers 'b' as the current balance of the method in Tx Method Box. Example: b - 100"),
     ];
 
     let mut status_text = vec![];
@@ -107,11 +104,11 @@ pub fn add_tx_ui<B: Backend>(
 
     let tx_method_text = vec![Spans::from(input_data[2])];
 
-    let amount_text = vec![Spans::from(input_data[3])];
+    let amount_text = vec![Spans::from(input_data[4])];
 
-    let tx_type_text = vec![Spans::from(input_data[4])];
+    let tx_type_text = vec![Spans::from(input_data[5])];
 
-    let tags_text = vec![Spans::from(input_data[5])];
+    let tags_text = vec![Spans::from(input_data[6])];
 
     let create_block = |title| {
         Block::default()
@@ -216,15 +213,15 @@ pub fn add_tx_ui<B: Backend>(
             another_chunk[1].y + 1,
         ),
         AddTxTab::Amount => f.set_cursor(
-            another_chunk[2].x + input_data[3].len() as u16 + 1,
+            another_chunk[2].x + input_data[4].len() as u16 + 1,
             another_chunk[2].y + 1,
         ),
         AddTxTab::TxType => f.set_cursor(
-            another_chunk[3].x + input_data[4].len() as u16 + 1,
+            another_chunk[3].x + input_data[5].len() as u16 + 1,
             another_chunk[3].y + 1,
         ),
         AddTxTab::Tags => f.set_cursor(
-            another_chunk[4].x + input_data[5].len() as u16 + 1,
+            another_chunk[4].x + input_data[6].len() as u16 + 1,
             another_chunk[4].y + 1,
         ),
         AddTxTab::Nothing => {}
