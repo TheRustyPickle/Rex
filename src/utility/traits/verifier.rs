@@ -1,5 +1,4 @@
 use crate::outputs::{AType, NAType, VerifyingOutput};
-use crate::tx_handler::TxData;
 use crate::utility::get_all_tx_methods;
 use chrono::naive::NaiveDate;
 use rusqlite::Connection;
@@ -19,8 +18,8 @@ use rusqlite::Connection;
 /// or restores to the smallest or the largest date if date is beyond the
 /// accepted value.
 
-impl TxData {
-    pub fn verify_date(&self, user_date: &mut String) -> VerifyingOutput {
+pub trait DataVerifier {
+    fn verify_date(&self, user_date: &mut String) -> VerifyingOutput {
         // cancel other verification if there is no text
         if user_date.is_empty() {
             return VerifyingOutput::Nothing(AType::Date);
@@ -142,10 +141,10 @@ impl TxData {
     ///
     /// if the value is not float, tries to make it float ending with double zero
 
-    pub fn verify_amount(&self, amount: &mut String) -> VerifyingOutput {
+    fn verify_amount(&self, amount: &mut String) -> VerifyingOutput {
         // cancel all verification if the amount is empty
         if amount.is_empty() {
-            return VerifyingOutput::Accepted(AType::Amount);
+            return VerifyingOutput::Nothing(AType::Amount);
         }
 
         *amount = amount.replace(' ', "");
@@ -306,7 +305,7 @@ impl TxData {
     /// if the Transaction is not found, matches each character with the available
     /// Transaction Methods and corrects to the best matching one.
 
-    pub fn verify_tx_method(&self, cu_method: &mut String, conn: &Connection) -> VerifyingOutput {
+    fn verify_tx_method(&self, cu_method: &mut String, conn: &Connection) -> VerifyingOutput {
         // get all currently added tx methods
         let all_tx_methods = get_all_tx_methods(conn);
 
@@ -358,7 +357,7 @@ impl TxData {
     /// - The transaction method starts with E or I
     ///
     /// Auto expands E to Expense and I to Income.
-    pub fn verify_tx_type(&self, tx_type: &mut String) -> VerifyingOutput {
+    fn verify_tx_type(&self, tx_type: &mut String) -> VerifyingOutput {
         *tx_type = tx_type.replace(' ', "");
 
         if tx_type.is_empty() {
