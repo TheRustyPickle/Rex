@@ -1,31 +1,12 @@
 use std::fmt;
+
 pub enum HandlingOutput {
     QuitUi,
     AddTxMethod,
     PrintNewUpdate,
 }
 
-#[derive(Debug)]
-pub enum SavingOutput {
-    EmptyDate,
-    EmptyMethod,
-    EmptyAmount,
-    EmptyTxType,
-}
-
-impl fmt::Display for SavingOutput {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            SavingOutput::EmptyDate => write!(f, "Date: Date cannot be empty"),
-            SavingOutput::EmptyMethod => write!(f, "Tx Method: TX Method cannot be empty"),
-            SavingOutput::EmptyAmount => write!(f, "Amount: Amount cannot be empty"),
-            SavingOutput::EmptyTxType => write!(f, "Tx Type: Transaction Type cannot be empty"),
-        }
-    }
-}
-
-impl std::error::Error for SavingOutput {}
-
+#[derive(PartialEq, Debug)]
 pub enum VerifyingOutput {
     Nothing(AType),
     Accepted(AType),
@@ -35,14 +16,15 @@ pub enum VerifyingOutput {
 impl fmt::Display for VerifyingOutput {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            VerifyingOutput::Nothing(value) => write!(f, "{value}: Accepted"),
-            VerifyingOutput::Accepted(value) => write!(f, "{value}:  Accepted"),
-            VerifyingOutput::NotAccepted(value) => write!(f, "{value}: Accepted"),
+            VerifyingOutput::Nothing(value) => write!(f, "{value}: Nothing to check"),
+            VerifyingOutput::Accepted(value) => write!(f, "{value}: Accepted"),
+            VerifyingOutput::NotAccepted(value) => write!(f, "{value}"),
         }
     }
 }
 
 /// Accepted Type
+#[derive(PartialEq, Debug)]
 pub enum AType {
     Date,
     TxMethod,
@@ -61,7 +43,8 @@ impl fmt::Display for AType {
     }
 }
 
-// Non Accepted Type
+/// Non Accepted Type
+#[derive(PartialEq, Debug)]
 pub enum NAType {
     InvalidDate,
     InvalidYear,

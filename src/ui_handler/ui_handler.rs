@@ -15,20 +15,19 @@ use crate::ui_handler::{
     AddTxTab, CurrentUi, HomeTab, PopupState, TableData, TimeData, TransferTab,
 };
 use crate::utility::{get_all_tx_methods, get_empty_changes};
-
 use crossterm::event::poll;
 use crossterm::event::{self, Event};
 use rusqlite::Connection;
 use std::time::Duration;
+use tui::backend::Backend;
 use tui::layout::Constraint;
-use tui::{backend::Backend, Terminal};
+use tui::Terminal;
 
 /// The core part that makes the entire program run. It loops
 /// incredibly fast to refresh the terminal and passes the provided data to ui modules to draw them.
 pub fn start_app<B: Backend>(
     terminal: &mut Terminal<B>,
     new_version_available: bool,
-    // TODO: add custom error handling
 ) -> Result<HandlingOutput, UiHandlingError> {
     // Setting up some default values. Let's go through all of them
 
@@ -71,7 +70,7 @@ pub fn start_app<B: Backend>(
     // Holds the data that will be/are inserted into the Add Tx page's input fields
     let mut data_for_tx = TxData::new();
     // Holds the data that will be/are inserted into the Transfer Tx page's input fields
-    let mut data_for_transfer = TxData::new();
+    let mut data_for_transfer = TxData::new_transfer();
     // Holds the data that will be/are inserted into the Summary Page
     let mut summary_data = SummaryData::new(&conn);
 
@@ -268,8 +267,6 @@ pub fn start_app<B: Backend>(
                     status = summary_keys(&mut handler);
                 }
             }
-
-            // TODO handle errors here
             if let Some(output) = status {
                 return Ok(output);
             }
