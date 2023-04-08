@@ -1,9 +1,9 @@
-use crate::outputs::{NAType, SavingOutput, VerifyingOutput};
+use crate::outputs::{NAType, SavingError, VerifyingOutput};
 use crate::tx_handler::{add_tx, delete_tx};
+use crate::utility::traits::DataVerifier;
 use crate::utility::{get_all_tx_methods, get_last_balances};
 use chrono::prelude::Local;
 use rusqlite::Connection;
-
 pub struct TxData {
     date: String,
     details: String,
@@ -17,6 +17,8 @@ pub struct TxData {
     id_num: i32,
 }
 
+impl DataVerifier for TxData {}
+
 impl TxData {
     /// Creates an instance of the struct however the date field is
     /// edited with the current local date of the device.
@@ -25,12 +27,29 @@ impl TxData {
         let formatted_cu_date = &cu_date[0..10];
         TxData {
             date: formatted_cu_date.to_string(),
-            details: "".to_string(),
-            from_method: "".to_string(),
-            to_method: "".to_string(),
-            amount: "".to_string(),
-            tx_type: "".to_string(),
-            tags: "".to_string(),
+            details: String::new(),
+            from_method: String::new(),
+            to_method: String::new(),
+            amount: String::new(),
+            tx_type: String::new(),
+            tags: String::new(),
+            tx_status: Vec::new(),
+            editing_tx: false,
+            id_num: 0,
+        }
+    }
+
+    pub fn new_transfer() -> Self {
+        let cu_date = Local::now().to_string();
+        let formatted_cu_date = &cu_date[0..10];
+        TxData {
+            date: formatted_cu_date.to_string(),
+            details: String::new(),
+            from_method: String::new(),
+            to_method: String::new(),
+            amount: String::new(),
+            tx_type: "Transfer".to_string(),
+            tags: String::new(),
             tx_status: Vec::new(),
             editing_tx: false,
             id_num: 0,
@@ -82,7 +101,7 @@ impl TxData {
     }
 
     pub fn get_tx_method(&self) -> String {
-        if self.tx_type == "transfer" {
+        if self.tx_type == "Transfer" {
             format!("{} to {}", self.from_method, self.to_method)
         } else {
             self.from_method.to_string()
@@ -292,18 +311,21 @@ impl TxData {
         status
     }
 
-    pub fn check_all_fields(&mut self) -> Option<SavingOutput> {
+    pub fn check_all_fields(&mut self) -> Option<SavingError> {
         if self.date.is_empty() {
-            return Some(SavingOutput::EmptyDate);
-        } else if self.details.is_empty() {
-            // TODO need to check if I can push empty string to db
-            self.details = " ".to_string()
-        } else if self.from_method.is_empty() || self.to_method.is_empty() {
-            return Some(SavingOutput::EmptyMethod);
+            return Some(SavingError::EmptyDate);
+        } else if self.from_method.is_empty() && self.tx_type != "Transfer" {
+            return Some(SavingError::EmptyMethod);
         } else if self.amount.is_empty() {
-            return Some(SavingOutput::EmptyAmount);
+            return Some(SavingError::EmptyAmount);
         } else if self.tx_type.is_empty() {
-            return Some(SavingOutput::EmptyTxType);
+            return Some(SavingError::EmptyTxType);
+        } else if self.tx_type == "Transfer" && self.from_method == self.to_method {
+            return Some(SavingError::SameTxMethod);
+        } else if self.tx_type == "Transfer"
+            && (self.from_method.is_empty() || self.to_method.is_empty())
+        {
+            return Some(SavingError::EmptyMethod);
         }
         if self.tags.is_empty() {
             self.tags = "Unknown".to_string();
