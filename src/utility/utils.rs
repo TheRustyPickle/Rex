@@ -146,7 +146,7 @@ pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<d
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let terminal = Terminal::new(backend)?;
     Ok(terminal)
 }
 

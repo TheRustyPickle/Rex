@@ -1,5 +1,5 @@
-use crate::home_page::PopupState;
 use crate::popup_page::create_popup;
+use crate::ui_handler::PopupState;
 use tui::{backend::Backend, Frame};
 
 // TODO turn data into a struct for easier access
