@@ -7,7 +7,7 @@ use tui::{
     Frame,
 };
 
-use crate::home_page::TableData;
+use crate::ui_handler::TableData;
 
 /// Renders the Summary UI page
 pub fn summary_ui<B: Backend>(
