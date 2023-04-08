@@ -57,7 +57,10 @@ pub fn initialize_app(verifying_path: &str, current_dir: &str) -> Result<(), Box
                 HandlingOutput::QuitUi => break,
                 HandlingOutput::PrintNewUpdate => println!("Could not open browser.\n\nLatest Version Link: https://github.com/TheRustyPickle/Rex/releases/latest")
             },
-            Err(error) => {}
+            Err(error) => {
+                println!("{error}");
+                process::exit(1);
+            }
         }
     }
 
