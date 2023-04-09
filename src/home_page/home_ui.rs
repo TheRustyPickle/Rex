@@ -1,12 +1,10 @@
-use crate::ui_handler::{HomeTab, IndexedData, TableData};
-use tui::{
-    backend::Backend,
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::{Span, Spans},
-    widgets::{Block, Borders, Cell, Row, Table, Tabs},
-    Frame,
-};
+use crate::page_handler::{HomeTab, IndexedData, TableData};
+use tui::backend::Backend;
+use tui::layout::{Constraint, Direction, Layout};
+use tui::style::{Color, Modifier, Style};
+use tui::text::{Span, Spans};
+use tui::widgets::{Block, Borders, Cell, Row, Table, Tabs};
+use tui::Frame;
 
 /// This function is responsible for drawing all the widgets in the Home page,
 /// coloring everything and all related things.  This function takes several arguments
@@ -184,19 +182,14 @@ pub fn home_ui<B: Backend>(
         }
         // changes the color of row based on Expense or Income tx type on Transaction widget.
         HomeTab::Table => {
+            table_area = table_area.highlight_symbol(">> ");
             if let Some(a) = table.state.selected() {
                 if table.items[a][4] == "Expense" {
-                    table_area = table_area
-                        .highlight_style(selected_style_red)
-                        .highlight_symbol(">> ")
+                    table_area = table_area.highlight_style(selected_style_red)
                 } else if table.items[a][4] == "Income" {
-                    table_area = table_area
-                        .highlight_style(selected_style_blue)
-                        .highlight_symbol(">> ")
+                    table_area = table_area.highlight_style(selected_style_blue)
                 } else if table.items[a][4] == "Transfer" {
-                    table_area = table_area
-                        .highlight_style(selected_style_gray)
-                        .highlight_symbol(">> ")
+                    table_area = table_area.highlight_style(selected_style_gray)
                 }
             }
         }

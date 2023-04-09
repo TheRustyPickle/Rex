@@ -1,6 +1,7 @@
+use crate::page_handler::PopupState;
 use crate::popup_page::create_popup;
-use crate::ui_handler::PopupState;
-use tui::{backend::Backend, Frame};
+use tui::backend::Backend;
+use tui::Frame;
 
 // TODO turn data into a struct for easier access
 // TODO give specific help page for each tab?

@@ -1,10 +1,10 @@
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
-use crate::ui_handler::PopupState;
+use crate::page_handler::PopupState;
 use crossterm::event::KeyCode;
 
 pub fn initial_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
-    match handler.current_popup {
+    match handler.popup {
         PopupState::Nothing => match handler.key.code {
             KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
             _ => handler.go_home(),

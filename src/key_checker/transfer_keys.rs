@@ -1,12 +1,12 @@
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
-use crate::ui_handler::{PopupState, TransferTab};
+use crate::page_handler::{PopupState, TransferTab};
 use crossterm::event::KeyCode;
 
 pub fn transfer_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
-    match handler.current_popup {
+    match handler.popup {
         PopupState::Nothing => {
-            match handler.current_transfer_tab {
+            match handler.transfer_tab {
                 // start matching key pressed based on which widget is selected.
                 // current state tracked with enums
                 TransferTab::Nothing => match handler.key.code {
