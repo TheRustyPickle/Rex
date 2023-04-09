@@ -1,4 +1,5 @@
-use chrono::{prelude::Local, Datelike};
+use chrono::prelude::Local;
+use chrono::Datelike;
 use tui::widgets::TableState;
 
 /// The struct stores all transaction data for the Transaction widget
@@ -117,6 +118,10 @@ impl IndexedData {
             self.index = self.titles.len() - 1;
         }
     }
+
+    pub fn set_index_zero(&mut self) {
+        self.index = 0;
+    }
 }
 
 /// The enum is used to keep track of which tab is currently set at active
@@ -207,7 +212,7 @@ pub enum ChartTab {
 impl ChartTab {
     /// Moves the current selected tab to the upper value. If at the 1st value, the
     /// the final value is selected.
-    pub fn change_tab_up(&mut self) -> Self {
+    pub fn change_tab_up_monthly(&mut self) -> Self {
         match &self {
             ChartTab::ModeSelection => ChartTab::Months,
             ChartTab::Years => ChartTab::ModeSelection,
@@ -217,11 +222,106 @@ impl ChartTab {
 
     /// Moves the current selected tab to the bottom value. If at the last value, the
     /// the 1st value is selected.
-    pub fn change_tab_down(&mut self) -> Self {
+    pub fn change_tab_down_monthly(&mut self) -> Self {
         match &self {
             ChartTab::ModeSelection => ChartTab::Years,
             ChartTab::Years => ChartTab::Months,
             ChartTab::Months => ChartTab::ModeSelection,
+        }
+    }
+
+    /// Moves the current selected tab to the upper value. If at the 1st value, the
+    /// the final value is selected.
+    pub fn change_tab_up_yearly(&mut self) -> Self {
+        match &self {
+            ChartTab::ModeSelection => ChartTab::Years,
+            ChartTab::Years => ChartTab::ModeSelection,
+            ChartTab::Months => ChartTab::Months,
+        }
+    }
+
+    /// Moves the current selected tab to the bottom value. If at the last value, the
+    /// the 1st value is selected.
+    pub fn change_tab_down_yearly(&mut self) -> Self {
+        match &self {
+            ChartTab::ModeSelection => ChartTab::Years,
+            ChartTab::Years => ChartTab::ModeSelection,
+            ChartTab::Months => ChartTab::Months,
+        }
+    }
+}
+
+pub enum SummaryTab {
+    ModeSelection,
+    Years,
+    Months,
+    Table,
+}
+
+impl SummaryTab {
+    /// Moves the current selected tab to the upper value. If at the 1st value, the
+    /// the final value is selected.
+    pub fn change_tab_up_monthly(&mut self) -> Self {
+        match &self {
+            SummaryTab::ModeSelection => SummaryTab::Table,
+            SummaryTab::Years => SummaryTab::ModeSelection,
+            SummaryTab::Months => SummaryTab::Years,
+            SummaryTab::Table => SummaryTab::Months,
+        }
+    }
+
+    /// Moves the current selected tab to the bottom value. If at the last value, the
+    /// the 1st value is selected.
+    pub fn change_tab_down_monthly(&mut self) -> Self {
+        match &self {
+            SummaryTab::ModeSelection => SummaryTab::Years,
+            SummaryTab::Years => SummaryTab::Months,
+            SummaryTab::Months => SummaryTab::Table,
+            SummaryTab::Table => SummaryTab::ModeSelection,
+        }
+    }
+
+    /// Moves the current selected tab to the upper value. If at the 1st value, the
+    /// the final value is selected.
+    pub fn change_tab_up_yearly(&mut self) -> Self {
+        match &self {
+            SummaryTab::ModeSelection => SummaryTab::Table,
+            SummaryTab::Years => SummaryTab::ModeSelection,
+            SummaryTab::Table => SummaryTab::Years,
+            SummaryTab::Months => SummaryTab::Months,
+        }
+    }
+
+    /// Moves the current selected tab to the bottom value. If at the last value, the
+    /// the 1st value is selected.
+    pub fn change_tab_down_yearly(&mut self) -> Self {
+        match &self {
+            SummaryTab::ModeSelection => SummaryTab::Years,
+            SummaryTab::Years => SummaryTab::Table,
+            SummaryTab::Table => SummaryTab::ModeSelection,
+            SummaryTab::Months => SummaryTab::Months,
+        }
+    }
+
+    /// Moves the current selected tab to the upper value. If at the 1st value, the
+    /// the final value is selected.
+    pub fn change_tab_up_all_time(&mut self) -> Self {
+        match &self {
+            SummaryTab::ModeSelection => SummaryTab::Table,
+            SummaryTab::Table => SummaryTab::ModeSelection,
+            SummaryTab::Years => SummaryTab::Years,
+            SummaryTab::Months => SummaryTab::Months,
+        }
+    }
+
+    /// Moves the current selected tab to the bottom value. If at the last value, the
+    /// the 1st value is selected.
+    pub fn change_tab_down_all_time(&mut self) -> Self {
+        match &self {
+            SummaryTab::ModeSelection => SummaryTab::Table,
+            SummaryTab::Table => SummaryTab::ModeSelection,
+            SummaryTab::Years => SummaryTab::Years,
+            SummaryTab::Months => SummaryTab::Months,
         }
     }
 }

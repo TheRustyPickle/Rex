@@ -7,13 +7,14 @@ use crate::key_checker::{
     add_tx_keys, chart_keys, home_keys, initial_keys, summary_keys, transfer_keys, InputKeyHandler,
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
+use crate::page_handler::{
+    AddTxTab, ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SummaryTab, TableData,
+    TransferTab,
+};
 use crate::popup_page::add_popup;
 use crate::summary_page::{summary_ui, SummaryData};
 use crate::transfer_page::transfer_ui;
 use crate::tx_handler::TxData;
-use crate::ui_handler::{
-    AddTxTab, ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, TableData, TransferTab,
-};
 use crate::utility::{get_all_tx_methods, get_empty_changes};
 use crossterm::event::poll;
 use crossterm::event::{self, Event};
@@ -41,6 +42,16 @@ pub fn start_app<B: Backend>(
     let mut chart_years = IndexedData::new_yearly();
     // contains the chart page mode selection list that is indexed
     let mut chart_modes = IndexedData::new(vec![
+        "Monthly".to_string(),
+        "Yearly".to_string(),
+        "All Time".to_string(),
+    ]);
+    // contains the summary page month list that is indexed
+    let mut summary_months = IndexedData::new_monthly();
+    // contains the summary page year list that is indexed
+    let mut summary_years = IndexedData::new_yearly();
+    // contains the summary page mode selection list that is indexed
+    let mut summary_modes = IndexedData::new(vec![
         "Monthly".to_string(),
         "Yearly".to_string(),
         "All Time".to_string(),
@@ -77,6 +88,8 @@ pub fn start_app<B: Backend>(
     let mut transfer_tab = TransferTab::Nothing;
     // Store the current selected widget on Chart page
     let mut chart_tab = ChartTab::ModeSelection;
+    // Store the current selected widget on Summary page
+    let mut summary_tab = SummaryTab::ModeSelection;
 
     // Holds the data that will be/are inserted into the Add Tx page's input fields
     let mut add_tx_data = TxData::new();
@@ -228,7 +241,15 @@ pub fn start_app<B: Backend>(
                             }
                         }
                         summary_reloaded = true;
-                        summary_ui(f, &mut summary_table, &summary_texts);
+                        summary_ui(
+                            f,
+                            &summary_months,
+                            &summary_years,
+                            &summary_modes,
+                            &mut summary_table,
+                            &summary_texts,
+                            &summary_tab,
+                        );
                     }
                 }
                 add_popup(f, &popup);
@@ -249,6 +270,7 @@ pub fn start_app<B: Backend>(
                 &mut tx_tab,
                 &mut transfer_tab,
                 &mut chart_tab,
+                &mut summary_tab,
                 &mut home_tab,
                 &mut add_tx_data,
                 &mut transfer_data,
@@ -260,6 +282,9 @@ pub fn start_app<B: Backend>(
                 &mut chart_months,
                 &mut chart_years,
                 &mut chart_modes,
+                &mut summary_months,
+                &mut summary_years,
+                &mut summary_modes,
                 cu_month_index,
                 cu_year_index,
                 cu_table_index,

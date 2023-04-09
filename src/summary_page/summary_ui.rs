@@ -1,19 +1,21 @@
-use tui::{
-    backend::Backend,
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::{Span, Spans},
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table},
-    Frame,
-};
+use tui::backend::Backend;
+use tui::layout::{Constraint, Direction, Layout};
+use tui::style::{Color, Modifier, Style};
+use tui::text::{Span, Spans};
+use tui::widgets::{Block, Borders, Cell, Paragraph, Row, Table, Tabs};
+use tui::Frame;
 
-use crate::ui_handler::TableData;
+use crate::page_handler::{IndexedData, SummaryTab, TableData};
 
 /// Renders the Summary UI page
 pub fn summary_ui<B: Backend>(
     f: &mut Frame<B>,
+    months: &IndexedData,
+    years: &IndexedData,
+    mode_selection: &IndexedData,
     table_data: &mut TableData,
     text_data: &[(f64, String)],
+    current_page: &SummaryTab,
 ) {
     let size = f.size();
 
@@ -29,11 +31,46 @@ pub fn summary_ui<B: Backend>(
         .height(1)
         .bottom_margin(0);
 
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .margin(2)
-        .constraints([Constraint::Length(7), Constraint::Min(5)].as_ref())
-        .split(size);
+    let mut main_layout = Layout::default().direction(Direction::Vertical).margin(2);
+
+    match mode_selection.index {
+        0 => {
+            main_layout = main_layout.constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(7),
+                    Constraint::Min(0),
+                ]
+                .as_ref(),
+            )
+        }
+        1 => {
+            main_layout = main_layout.constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(7),
+                    Constraint::Min(0),
+                ]
+                .as_ref(),
+            )
+        }
+        2 => {
+            main_layout = main_layout.constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Length(7),
+                    Constraint::Min(0),
+                ]
+                .as_ref(),
+            )
+        }
+        _ => {}
+    };
+
+    let chunks = main_layout.split(size);
 
     let block = Block::default().style(
         Style::default()
@@ -42,6 +79,63 @@ pub fn summary_ui<B: Backend>(
     );
 
     f.render_widget(block, size);
+
+    let month_titles = months
+        .titles
+        .iter()
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .collect();
+
+    //color the first two letters of the year to blue
+    let year_titles = years
+        .titles
+        .iter()
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .collect();
+
+    let mode_selection_titles = mode_selection
+        .titles
+        .iter()
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .collect();
+
+    // The default style for the select index in the month section if
+    // the Month widget is not selected
+    let mut month_tab = Tabs::new(month_titles)
+        .block(Block::default().borders(Borders::ALL).title("Months"))
+        .select(months.index)
+        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .highlight_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .bg(Color::Black),
+        );
+
+    // The default style for the select index in the year section if
+    // the Year widget is not selected
+    let mut year_tab = Tabs::new(year_titles)
+        .block(Block::default().borders(Borders::ALL).title("Years"))
+        .select(years.index)
+        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .highlight_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .bg(Color::Black),
+        );
+
+    let mut mode_selection_tab = Tabs::new(mode_selection_titles)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Mode Selection"),
+        )
+        .select(mode_selection.index)
+        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .highlight_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .bg(Color::Black),
+        );
 
     // * contains the text for the upper side of the Summary UI
     let text = vec![
@@ -116,16 +210,14 @@ pub fn summary_ui<B: Backend>(
         Row::new(cells).height(height as u16).bottom_margin(0)
     });
 
-    let table_area = Table::new(rows)
+    let mut table_area = Table::new(rows)
         .header(header)
         .block(Block::default().borders(Borders::ALL).title("Tags"))
         .widths(&[
             Constraint::Percentage(33),
             Constraint::Percentage(33),
             Constraint::Percentage(33),
-        ])
-        .highlight_symbol(">> ")
-        .highlight_style(selected_style);
+        ]);
 
     let paragraph = Paragraph::new(text).style(
         Style::default()
@@ -133,6 +225,56 @@ pub fn summary_ui<B: Backend>(
             .fg(Color::Rgb(50, 205, 50)),
     );
 
-    f.render_widget(paragraph, chunks[0]);
-    f.render_stateful_widget(table_area, chunks[1], &mut table_data.state)
+    match current_page {
+        // previously added a black block to year and month widget if a value is not selected
+        // Now we will turn that black block into green if a value is selected
+        SummaryTab::Months => {
+            month_tab = month_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(Color::Rgb(152, 251, 152)),
+            );
+        }
+
+        SummaryTab::Years => {
+            year_tab = year_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(Color::Rgb(152, 251, 152)),
+            );
+        }
+        SummaryTab::ModeSelection => {
+            mode_selection_tab = mode_selection_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(Color::Rgb(152, 251, 152)),
+            );
+        }
+        SummaryTab::Table => {
+            table_area = table_area
+                .highlight_style(selected_style)
+                .highlight_symbol(">> ")
+        }
+    }
+
+    f.render_widget(mode_selection_tab, chunks[0]);
+
+    match mode_selection.index {
+        0 => {
+            f.render_widget(year_tab, chunks[1]);
+            f.render_widget(month_tab, chunks[2]);
+            f.render_widget(paragraph, chunks[3]);
+            f.render_stateful_widget(table_area, chunks[4], &mut table_data.state)
+        }
+        1 => {
+            f.render_widget(year_tab, chunks[1]);
+            f.render_widget(paragraph, chunks[2]);
+            f.render_stateful_widget(table_area, chunks[3], &mut table_data.state)
+        }
+        2 => {
+            f.render_widget(paragraph, chunks[1]);
+            f.render_stateful_widget(table_area, chunks[2], &mut table_data.state)
+        }
+        _ => {}
+    }
 }

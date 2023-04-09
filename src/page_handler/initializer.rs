@@ -1,5 +1,5 @@
 use crate::initial_page::check_version;
-use crate::ui_handler::start_app;
+use crate::page_handler::start_app;
 use crate::utility::{
     check_n_create_db, check_old_sql, enter_tui_interface, exit_tui_interface, get_user_tx_methods,
     start_terminal,
