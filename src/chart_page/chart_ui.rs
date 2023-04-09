@@ -1,26 +1,42 @@
 use crate::chart_page::ChartData;
+use crate::ui_handler::{ChartTab, IndexedData};
 use crate::utility::get_all_tx_methods;
 use chrono::{naive::NaiveDate, Duration};
 use rusqlite::Connection;
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     symbols,
-    text::Span,
-    widgets::{Axis, Block, Chart, Dataset, GraphType},
+    text::{Span, Spans},
+    widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Tabs},
     Frame,
 };
 
 /// Creates the balance chart from all the transactions in a given year
-pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
+pub fn chart_ui<B: Backend>(
+    f: &mut Frame<B>,
+    months: &IndexedData,
+    years: &IndexedData,
+    mode_selection: &IndexedData,
+    chart_data: ChartData,
+    current_page: &ChartTab,
+) {
     let size = f.size();
 
     // divide the terminal into various chunks to draw the interface. This is a vertical chunk
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints([Constraint::Percentage(100)].as_ref())
+        .constraints(
+            [
+                Constraint::Length(3),
+                Constraint::Length(3),
+                Constraint::Length(3),
+                Constraint::Min(0),
+            ]
+            .as_ref(),
+        )
         .split(size);
 
     let block = Block::default().style(
@@ -29,6 +45,63 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
             .fg(Color::Rgb(50, 205, 50)),
     );
     f.render_widget(block, size);
+
+    let month_titles = months
+        .titles
+        .iter()
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .collect();
+
+    //color the first two letters of the year to blue
+    let year_titles = years
+        .titles
+        .iter()
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .collect();
+
+    let mode_selection_titles = mode_selection
+        .titles
+        .iter()
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .collect();
+
+    // The default style for the select index in the month section if
+    // the Month widget is not selected
+    let mut month_tab = Tabs::new(month_titles)
+        .block(Block::default().borders(Borders::ALL).title("Months"))
+        .select(months.index)
+        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .highlight_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .bg(Color::Black),
+        );
+
+    // The default style for the select index in the year section if
+    // the Year widget is not selected
+    let mut year_tab = Tabs::new(year_titles)
+        .block(Block::default().borders(Borders::ALL).title("Years"))
+        .select(years.index)
+        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .highlight_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .bg(Color::Black),
+        );
+
+    let mut mode_selection_tab = Tabs::new(mode_selection_titles)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Mode Selection"),
+        )
+        .select(mode_selection.index)
+        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .highlight_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .bg(Color::Black),
+        );
 
     // connect to the database and gather all the tx methods
     let conn = Connection::open("data.sqlite").expect("Could not connect to database");
@@ -71,7 +144,7 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
         date_labels.push(checking_date.to_string());
         date_labels.push(final_date.to_string());
 
-        // data_num represents which index to check out all all the txs and balances data
+        // data_num represents which index to check out all the txs and balances data
         // to_add_again will become true in cases where two or more transactions shares the same date.
         // So same date transactions will be combined together for one day
 
@@ -239,5 +312,35 @@ pub fn chart_ui<B: Backend>(f: &mut Frame<B>, chart_data: ChartData) {
                 .labels(labels.iter().cloned().map(Span::from).collect()),
         );
 
-    f.render_widget(chart, chunks[0]);
+    match current_page {
+        // previously added a black block to year and month widget if a value is not selected
+        // Now we will turn that black block into green if a value is selected
+        ChartTab::Months => {
+            month_tab = month_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(Color::Rgb(152, 251, 152)),
+            );
+        }
+
+        ChartTab::Years => {
+            year_tab = year_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(Color::Rgb(152, 251, 152)),
+            );
+        }
+        ChartTab::ModeSelection => {
+            mode_selection_tab = mode_selection_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(Color::Rgb(152, 251, 152)),
+            );
+        }
+    }
+
+    f.render_widget(mode_selection_tab, chunks[0]);
+    f.render_widget(year_tab, chunks[1]);
+    f.render_widget(month_tab, chunks[2]);
+    f.render_widget(chart, chunks[3]);
 }
