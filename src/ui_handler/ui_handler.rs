@@ -12,7 +12,7 @@ use crate::summary_page::{summary_ui, SummaryData};
 use crate::transfer_page::transfer_ui;
 use crate::tx_handler::TxData;
 use crate::ui_handler::{
-    AddTxTab, CurrentUi, HomeTab, PopupState, TableData, TimeData, TransferTab,
+    AddTxTab, ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, TableData, TransferTab,
 };
 use crate::utility::{get_all_tx_methods, get_empty_changes};
 use crossterm::event::poll;
@@ -31,17 +31,26 @@ pub fn start_app<B: Backend>(
 ) -> Result<HandlingOutput, UiHandlingError> {
     // Setting up some default values. Let's go through all of them
 
-    // contains the home page month list that can be indexed
-    let mut months = TimeData::new_monthly();
-
-    // contains the home page year list that can be indexed
-    let mut years = TimeData::new_yearly();
+    // contains the home page month list that is indexed
+    let mut add_tx_months = IndexedData::new_monthly();
+    // contains the home page year list that is indexed
+    let mut add_tx_years = IndexedData::new_yearly();
+    // contains the chart page month list that is indexed
+    let mut chart_months = IndexedData::new_monthly();
+    // contains the chart page year list that is indexed
+    let mut chart_years = IndexedData::new_yearly();
+    // contains the chart page mode selection list that is indexed
+    let mut chart_modes = IndexedData::new(vec![
+        "Monthly".to_string(),
+        "Yearly".to_string(),
+        "All Time".to_string(),
+    ]);
 
     // We only want to open the version checker popup once, turns true once the checking is done
     let mut version_checked = false;
 
     // the selected widget on the Home Page. Default set to the month selection
-    let mut selected_tab = HomeTab::Months;
+    let mut home_tab = HomeTab::Months;
 
     // Helps keep track if the Home Page's month or the year index was changed
     let mut last_month_index = 99;
@@ -54,23 +63,25 @@ pub fn start_app<B: Backend>(
         .expect("Could not enable foreign keys");
 
     // Stores all data relevant for home page such as balance, changes and txs
-    let mut all_data = TransactionData::new(&conn, 0, 0);
+    let mut all_tx_data = TransactionData::new(&conn, 0, 0);
     // data for the Home Page's tx table
-    let mut table = TableData::new(all_data.get_txs());
+    let mut table = TableData::new(all_tx_data.get_txs());
 
     // The page which is currently selected. Default is the initial page
-    let mut cu_page = CurrentUi::Initial;
+    let mut page = CurrentUi::Initial;
     // stores current popup status
-    let mut cu_popup = PopupState::Nothing;
+    let mut popup = PopupState::Nothing;
     // Stores the current selected widget on Add Transaction page
-    let mut cu_tx_page = AddTxTab::Nothing;
+    let mut tx_tab = AddTxTab::Nothing;
     // Store the current selected widget on Add Transfer page
-    let mut cu_transfer_page = TransferTab::Nothing;
+    let mut transfer_tab = TransferTab::Nothing;
+    // Store the current selected widget on Chart page
+    let mut chart_tab = ChartTab::ModeSelection;
 
     // Holds the data that will be/are inserted into the Add Tx page's input fields
-    let mut data_for_tx = TxData::new();
+    let mut add_tx_data = TxData::new();
     // Holds the data that will be/are inserted into the Transfer Tx page's input fields
-    let mut data_for_transfer = TxData::new_transfer();
+    let mut transfer_data = TxData::new_transfer();
     // Holds the data that will be/are inserted into the Summary Page
     let mut summary_data = SummaryData::new(&conn);
 
@@ -91,21 +102,21 @@ pub fn start_app<B: Backend>(
     // with the default values which will quickly be changing once the loop starts.
     loop {
         // after each refresh this will check the current selected month, year and if a table/spreadsheet row is selected in the ui.
-        let cu_month_index = months.index;
-        let cu_year_index = years.index;
+        let cu_month_index = add_tx_months.index;
+        let cu_year_index = add_tx_years.index;
         let cu_table_index = table.state.selected();
 
         // reload the data saved in memory each time the month or the year changes
         if cu_month_index != last_month_index || cu_year_index != last_year_index {
-            all_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
-            table = TableData::new(all_data.get_txs());
+            all_tx_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
+            table = TableData::new(all_tx_data.get_txs());
             last_month_index = cu_month_index;
             last_year_index = cu_year_index;
         };
 
         // total income and expense value for the home page
-        let total_income = all_data.get_total_income(&conn, cu_table_index);
-        let total_expense = all_data.get_total_expense(&conn, cu_table_index);
+        let total_income = all_tx_data.get_total_income(&conn, cu_table_index);
+        let total_expense = all_tx_data.get_total_expense(&conn, cu_table_index);
 
         // balance variable contains all the 'rows' of the Balance widget in the home page.
         // So each line is inside a vector. "" represents empty placeholder.
@@ -128,12 +139,12 @@ pub fn start_app<B: Backend>(
         match cu_table_index {
             // pass out the current index to get the necessary balance & changes data
             Some(a) => {
-                balance.push(all_data.get_balance(a));
-                balance.push(all_data.get_changes(a));
+                balance.push(all_tx_data.get_balance(a));
+                balance.push(all_tx_data.get_changes(a));
             }
             // if none selected, get empty changes + the absolute final balance
             None => {
-                balance.push(all_data.get_last_balance(&conn));
+                balance.push(all_tx_data.get_last_balance(&conn));
                 balance.push(get_empty_changes(&conn));
             }
         }
@@ -146,7 +157,7 @@ pub fn start_app<B: Backend>(
         // check the version of current TUI and based on that, turn on the popup
         if !version_checked {
             if new_version_available {
-                cu_popup = PopupState::NewUpdate
+                popup = PopupState::NewUpdate
             }
             version_checked = true;
         }
@@ -155,15 +166,15 @@ pub fn start_app<B: Backend>(
 
         terminal
             .draw(|f| {
-                match cu_page {
+                match page {
                     CurrentUi::Home => {
                         home_ui(
                             f,
-                            &months,
-                            &years,
+                            &add_tx_months,
+                            &add_tx_years,
                             &mut table,
                             &mut balance,
-                            &selected_tab,
+                            &home_tab,
                             &mut width_data,
                         );
                         summary_reloaded = false;
@@ -171,9 +182,9 @@ pub fn start_app<B: Backend>(
                     CurrentUi::AddTx => {
                         add_tx_ui(
                             f,
-                            data_for_tx.get_all_texts(),
-                            &cu_tx_page,
-                            &data_for_tx.tx_status,
+                            add_tx_data.get_all_texts(),
+                            &tx_tab,
+                            &add_tx_data.tx_status,
                         );
                         summary_reloaded = false;
                     }
@@ -188,15 +199,22 @@ pub fn start_app<B: Backend>(
                     CurrentUi::Transfer => {
                         transfer_ui(
                             f,
-                            data_for_transfer.get_all_texts(),
-                            &cu_transfer_page,
-                            &data_for_transfer.tx_status,
+                            transfer_data.get_all_texts(),
+                            &transfer_tab,
+                            &transfer_data.tx_status,
                         );
                         summary_reloaded = false;
                     }
                     CurrentUi::Chart => {
-                        let data_for_chart = ChartData::set(cu_year_index);
-                        chart_ui(f, data_for_chart);
+                        let chart_data = ChartData::set(cu_year_index);
+                        chart_ui(
+                            f,
+                            &chart_months,
+                            &chart_years,
+                            &chart_modes,
+                            chart_data,
+                            &chart_tab,
+                        );
                         summary_reloaded = false;
                     }
                     CurrentUi::Summary => {
@@ -213,31 +231,35 @@ pub fn start_app<B: Backend>(
                         summary_ui(f, &mut summary_table, &summary_texts);
                     }
                 }
-                add_popup(f, &cu_popup);
+                add_popup(f, &popup);
             })
-            .map_err(|err| UiHandlingError::DrawingError(err))?;
+            .map_err(UiHandlingError::DrawingError)?;
 
-        if let CurrentUi::Initial = cu_page {
-            if !poll(Duration::from_millis(40)).map_err(|err| UiHandlingError::PollingError(err))? {
+        if let CurrentUi::Initial = page {
+            if !poll(Duration::from_millis(40)).map_err(UiHandlingError::PollingError)? {
                 continue;
             }
         }
 
-        if let Event::Key(key) = event::read().map_err(|err| UiHandlingError::PollingError(err))? {
+        if let Event::Key(key) = event::read().map_err(UiHandlingError::PollingError)? {
             let mut handler = InputKeyHandler::new(
                 key,
-                &mut cu_page,
-                &mut cu_popup,
-                &mut cu_tx_page,
-                &mut cu_transfer_page,
-                &mut data_for_tx,
-                &mut data_for_transfer,
-                &mut all_data,
+                &mut page,
+                &mut popup,
+                &mut tx_tab,
+                &mut transfer_tab,
+                &mut chart_tab,
+                &mut home_tab,
+                &mut add_tx_data,
+                &mut transfer_data,
+                &mut all_tx_data,
                 &mut table,
                 &mut summary_table,
-                &mut selected_tab,
-                &mut months,
-                &mut years,
+                &mut add_tx_months,
+                &mut add_tx_years,
+                &mut chart_months,
+                &mut chart_years,
+                &mut chart_modes,
                 cu_month_index,
                 cu_year_index,
                 cu_table_index,
@@ -245,28 +267,15 @@ pub fn start_app<B: Backend>(
                 &conn,
             );
 
-            let status;
+            let status = match handler.page {
+                CurrentUi::Initial => initial_keys(&mut handler),
+                CurrentUi::Home => home_keys(&mut handler),
+                CurrentUi::AddTx => add_tx_keys(&mut handler),
+                CurrentUi::Transfer => transfer_keys(&mut handler),
+                CurrentUi::Chart => chart_keys(&mut handler),
+                CurrentUi::Summary => summary_keys(&mut handler),
+            };
 
-            match handler.current_page {
-                CurrentUi::Initial => {
-                    status = initial_keys(&mut handler);
-                }
-                CurrentUi::Home => {
-                    status = home_keys(&mut handler);
-                }
-                CurrentUi::AddTx => {
-                    status = add_tx_keys(&mut handler);
-                }
-                CurrentUi::Transfer => {
-                    status = transfer_keys(&mut handler);
-                }
-                CurrentUi::Chart => {
-                    status = chart_keys(&mut handler);
-                }
-                CurrentUi::Summary => {
-                    status = summary_keys(&mut handler);
-                }
-            }
             if let Some(output) = status {
                 return Ok(output);
             }
