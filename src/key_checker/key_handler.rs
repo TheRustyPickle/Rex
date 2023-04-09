@@ -1,9 +1,10 @@
 use crate::home_page::TransactionData;
 use crate::outputs::{HandlingOutput, VerifyingOutput};
-use crate::tx_handler::TxData;
-use crate::ui_handler::{
-    AddTxTab, ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, TableData, TransferTab,
+use crate::page_handler::{
+    AddTxTab, ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SummaryTab, TableData,
+    TransferTab,
 };
+use crate::tx_handler::TxData;
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 
@@ -14,6 +15,7 @@ pub struct InputKeyHandler<'a> {
     pub tx_tab: &'a mut AddTxTab,
     pub transfer_tab: &'a mut TransferTab,
     chart_tab: &'a mut ChartTab,
+    summary_tab: &'a mut SummaryTab,
     home_tab: &'a mut HomeTab,
     add_tx_data: &'a mut TxData,
     transfer_data: &'a mut TxData,
@@ -25,6 +27,9 @@ pub struct InputKeyHandler<'a> {
     chart_months: &'a mut IndexedData,
     chart_years: &'a mut IndexedData,
     chart_modes: &'a mut IndexedData,
+    summary_months: &'a mut IndexedData,
+    summary_years: &'a mut IndexedData,
+    summary_modes: &'a mut IndexedData,
     month_index: usize,
     year_index: usize,
     table_index: Option<usize>,
@@ -40,6 +45,7 @@ impl<'a> InputKeyHandler<'a> {
         tx_tab: &'a mut AddTxTab,
         transfer_tab: &'a mut TransferTab,
         chart_tab: &'a mut ChartTab,
+        summary_tab: &'a mut SummaryTab,
         home_tab: &'a mut HomeTab,
         add_tx_data: &'a mut TxData,
         transfer_data: &'a mut TxData,
@@ -51,6 +57,9 @@ impl<'a> InputKeyHandler<'a> {
         chart_months: &'a mut IndexedData,
         chart_years: &'a mut IndexedData,
         chart_modes: &'a mut IndexedData,
+        summary_months: &'a mut IndexedData,
+        summary_years: &'a mut IndexedData,
+        summary_modes: &'a mut IndexedData,
         month_index: usize,
         year_index: usize,
         table_index: Option<usize>,
@@ -64,6 +73,7 @@ impl<'a> InputKeyHandler<'a> {
             tx_tab,
             transfer_tab,
             chart_tab,
+            summary_tab,
             home_tab,
             add_tx_data,
             transfer_data,
@@ -75,6 +85,9 @@ impl<'a> InputKeyHandler<'a> {
             chart_months,
             chart_years,
             chart_modes,
+            summary_months,
+            summary_years,
+            summary_modes,
             month_index,
             year_index,
             table_index,
@@ -251,7 +264,7 @@ impl<'a> InputKeyHandler<'a> {
                 HomeTab::Months => self.add_tx_months.previous(),
                 HomeTab::Years => {
                     self.add_tx_years.previous();
-                    self.add_tx_months.index = 0;
+                    self.add_tx_months.set_index_zero();
                 }
                 _ => {}
             },
@@ -259,10 +272,21 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Transfer => {}
             CurrentUi::Chart => match self.chart_tab {
                 ChartTab::ModeSelection => self.chart_modes.previous(),
-                ChartTab::Years => self.chart_years.previous(),
+                ChartTab::Years => {
+                    self.chart_years.previous();
+                    self.chart_months.set_index_zero()
+                }
                 ChartTab::Months => self.chart_months.previous(),
             },
-
+            CurrentUi::Summary => match self.summary_tab {
+                SummaryTab::ModeSelection => self.summary_modes.previous(),
+                SummaryTab::Years => {
+                    self.summary_months.previous();
+                    self.summary_years.previous();
+                }
+                SummaryTab::Months => self.summary_months.previous(),
+                _ => {}
+            },
             _ => {}
         }
     }
@@ -273,7 +297,7 @@ impl<'a> InputKeyHandler<'a> {
                 HomeTab::Months => self.add_tx_months.next(),
                 HomeTab::Years => {
                     self.add_tx_years.next();
-                    self.add_tx_months.index = 0;
+                    self.add_tx_months.set_index_zero();
                 }
                 _ => {}
             },
@@ -281,8 +305,20 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Transfer => {}
             CurrentUi::Chart => match self.chart_tab {
                 ChartTab::ModeSelection => self.chart_modes.next(),
-                ChartTab::Years => self.chart_years.next(),
+                ChartTab::Years => {
+                    self.chart_years.next();
+                    self.chart_months.set_index_zero();
+                }
                 ChartTab::Months => self.chart_months.next(),
+            },
+            CurrentUi::Summary => match self.summary_tab {
+                SummaryTab::ModeSelection => self.summary_modes.next(),
+                SummaryTab::Years => {
+                    self.summary_months.next();
+                    self.summary_years.next();
+                }
+                SummaryTab::Months => self.summary_months.next(),
+                _ => {}
             },
             _ => {}
         }
@@ -428,35 +464,151 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     fn do_summary_up(&mut self) {
-        if self.total_tags > 0 {
-            if self.summary_table.state.selected() == Some(0) {
-                self.summary_table.state.select(Some(self.total_tags - 1));
-            } else {
-                self.summary_table.previous();
-            }
-        } else {
-            self.summary_table.state.select(None)
+        match self.summary_modes.index {
+            0 => match self.summary_tab {
+                SummaryTab::Table => {
+                    if self.summary_table.state.selected() == Some(0) {
+                        *self.summary_tab = self.summary_tab.change_tab_up_monthly();
+                    } else {
+                        self.summary_table.previous()
+                    }
+                }
+                SummaryTab::ModeSelection => {
+                    if self.total_tags > 0 {
+                        self.summary_table.state.select(Some(self.total_tags - 1));
+                        *self.summary_tab = self.summary_tab.change_tab_up_monthly();
+                    } else {
+                        *self.summary_tab = self.summary_tab.change_tab_up_monthly();
+                        *self.summary_tab = self.summary_tab.change_tab_up_monthly();
+                        self.summary_table.state.select(None)
+                    }
+                }
+                _ => *self.summary_tab = self.summary_tab.change_tab_up_monthly(),
+            },
+            1 => match self.summary_tab {
+                SummaryTab::Table => {
+                    if self.summary_table.state.selected() == Some(0) {
+                        *self.summary_tab = self.summary_tab.change_tab_up_yearly();
+                    } else {
+                        self.summary_table.previous()
+                    }
+                }
+                SummaryTab::ModeSelection => {
+                    if self.total_tags > 0 {
+                        self.summary_table.state.select(Some(self.total_tags - 1));
+                        *self.summary_tab = self.summary_tab.change_tab_up_yearly()
+                    } else {
+                        *self.summary_tab = self.summary_tab.change_tab_up_yearly();
+                        *self.summary_tab = self.summary_tab.change_tab_up_yearly();
+                        self.summary_table.state.select(None)
+                    }
+                }
+                _ => *self.summary_tab = self.summary_tab.change_tab_up_yearly(),
+            },
+            2 => match self.summary_tab {
+                SummaryTab::Table => {
+                    if self.summary_table.state.selected() == Some(0) {
+                        *self.summary_tab = self.summary_tab.change_tab_up_all_time();
+                    } else {
+                        self.summary_table.previous()
+                    }
+                }
+                SummaryTab::ModeSelection => {
+                    if self.total_tags > 0 {
+                        self.summary_table.state.select(Some(self.total_tags - 1));
+                        *self.summary_tab = self.summary_tab.change_tab_up_all_time();
+                    } else {
+                        *self.summary_tab = self.summary_tab.change_tab_up_all_time();
+                        *self.summary_tab = self.summary_tab.change_tab_up_all_time();
+                        self.summary_table.state.select(None)
+                    }
+                }
+                _ => {}
+            },
+            _ => {}
         }
     }
 
     fn do_summary_down(&mut self) {
-        if self.total_tags > 0 {
-            if self.summary_table.state.selected() == Some(self.total_tags - 1) {
-                self.summary_table.state.select(Some(0));
-            } else {
-                self.summary_table.next();
-            }
-        } else {
-            self.summary_table.state.select(None)
+        match self.summary_modes.index {
+            0 => match self.summary_tab {
+                SummaryTab::Table => {
+                    if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                        *self.summary_tab = self.summary_tab.change_tab_down_monthly();
+                    } else {
+                        self.summary_table.next()
+                    }
+                }
+                SummaryTab::Months => {
+                    if self.total_tags > 0 {
+                        self.summary_table.state.select(Some(0));
+                        *self.summary_tab = self.summary_tab.change_tab_down_monthly();
+                    } else {
+                        *self.summary_tab = self.summary_tab.change_tab_down_monthly();
+                        *self.summary_tab = self.summary_tab.change_tab_down_monthly();
+                        self.summary_table.state.select(None)
+                    }
+                }
+                _ => *self.summary_tab = self.summary_tab.change_tab_down_monthly(),
+            },
+            1 => match self.summary_tab {
+                SummaryTab::Table => {
+                    if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                        *self.summary_tab = self.summary_tab.change_tab_down_yearly();
+                    } else {
+                        self.summary_table.next()
+                    }
+                }
+                SummaryTab::Years => {
+                    if self.total_tags > 0 {
+                        self.summary_table.state.select(Some(0));
+                        *self.summary_tab = self.summary_tab.change_tab_down_yearly()
+                    } else {
+                        *self.summary_tab = self.summary_tab.change_tab_down_yearly();
+                        *self.summary_tab = self.summary_tab.change_tab_down_yearly();
+                        self.summary_table.state.select(None)
+                    }
+                }
+                _ => *self.summary_tab = self.summary_tab.change_tab_down_yearly(),
+            },
+            2 => match self.summary_tab {
+                SummaryTab::Table => {
+                    if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                        *self.summary_tab = self.summary_tab.change_tab_down_all_time();
+                    } else {
+                        self.summary_table.next()
+                    }
+                }
+                SummaryTab::ModeSelection => {
+                    if self.total_tags > 0 {
+                        self.summary_table.state.select(Some(0));
+                        *self.summary_tab = self.summary_tab.change_tab_down_all_time();
+                    } else {
+                        *self.summary_tab = self.summary_tab.change_tab_down_all_time();
+                        *self.summary_tab = self.summary_tab.change_tab_down_all_time();
+                        self.summary_table.state.select(None)
+                    }
+                }
+                _ => {}
+            },
+            _ => {}
         }
     }
 
     fn do_chart_up(&mut self) {
-        *self.chart_tab = self.chart_tab.change_tab_up();
+        match self.chart_modes.index {
+            0 => *self.chart_tab = self.chart_tab.change_tab_up_monthly(),
+            1 => *self.chart_tab = self.chart_tab.change_tab_up_yearly(),
+            _ => {}
+        }
     }
 
     fn do_chart_down(&mut self) {
-        *self.chart_tab = self.chart_tab.change_tab_down();
+        match self.chart_modes.index {
+            0 => *self.chart_tab = self.chart_tab.change_tab_down_monthly(),
+            1 => *self.chart_tab = self.chart_tab.change_tab_down_yearly(),
+            _ => {}
+        }
     }
 
     fn check_add_tx_date(&mut self) {

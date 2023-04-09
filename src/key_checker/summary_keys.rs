@@ -1,6 +1,6 @@
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
-use crate::ui_handler::PopupState;
+use crate::page_handler::PopupState;
 use crossterm::event::KeyCode;
 
 pub fn summary_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
@@ -11,6 +11,8 @@ pub fn summary_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
             KeyCode::Char('f') => handler.go_home(),
             KeyCode::Char('h') => handler.do_help_popup(),
+            KeyCode::Right => handler.handle_right_arrow(),
+            KeyCode::Left => handler.handle_left_arrow(),
             KeyCode::Up => handler.handle_up_arrow(),
             KeyCode::Down => handler.handle_down_arrow(),
             _ => {}

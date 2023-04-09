@@ -1,6 +1,6 @@
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
-use crate::ui_handler::PopupState;
+use crate::page_handler::PopupState;
 use crossterm::event::KeyCode;
 
 pub fn chart_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {

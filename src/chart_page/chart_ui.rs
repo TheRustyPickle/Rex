@@ -1,17 +1,14 @@
 use crate::chart_page::ChartData;
-use crate::ui_handler::{ChartTab, IndexedData};
+use crate::page_handler::{ChartTab, IndexedData};
 use crate::utility::get_all_tx_methods;
 use chrono::{naive::NaiveDate, Duration};
 use rusqlite::Connection;
-use tui::{
-    backend::Backend,
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    symbols,
-    text::{Span, Spans},
-    widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Tabs},
-    Frame,
-};
+use tui::backend::Backend;
+use tui::layout::{Constraint, Direction, Layout};
+use tui::style::{Color, Modifier, Style};
+use tui::text::{Span, Spans};
+use tui::widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Tabs};
+use tui::{symbols, Frame};
 
 /// Creates the balance chart from all the transactions in a given year
 pub fn chart_ui<B: Backend>(
@@ -25,19 +22,39 @@ pub fn chart_ui<B: Backend>(
     let size = f.size();
 
     // divide the terminal into various chunks to draw the interface. This is a vertical chunk
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .margin(2)
-        .constraints(
-            [
-                Constraint::Length(3),
-                Constraint::Length(3),
-                Constraint::Length(3),
-                Constraint::Min(0),
-            ]
-            .as_ref(),
-        )
-        .split(size);
+
+    let mut main_layout = Layout::default().direction(Direction::Vertical).margin(2);
+
+    match mode_selection.index {
+        0 => {
+            main_layout = main_layout.constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Min(0),
+                ]
+                .as_ref(),
+            )
+        }
+        1 => {
+            main_layout = main_layout.constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Min(0),
+                ]
+                .as_ref(),
+            )
+        }
+        2 => {
+            main_layout =
+                main_layout.constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
+        }
+        _ => {}
+    };
+
+    let chunks = main_layout.split(size);
 
     let block = Block::default().style(
         Style::default()
@@ -266,13 +283,11 @@ pub fn chart_ui<B: Backend>(
 
     let chart = Chart::new(final_dataset)
         .block(
-            Block::default()
-                .style(
-                    Style::default()
-                        .bg(Color::Rgb(255, 255, 255))
-                        .fg(Color::Rgb(50, 205, 50)),
-                )
-                .title("Chart"),
+            Block::default().style(
+                Style::default()
+                    .bg(Color::Rgb(255, 255, 255))
+                    .fg(Color::Rgb(50, 205, 50)),
+            ),
         )
         .style(
             Style::default()
@@ -340,7 +355,20 @@ pub fn chart_ui<B: Backend>(
     }
 
     f.render_widget(mode_selection_tab, chunks[0]);
-    f.render_widget(year_tab, chunks[1]);
-    f.render_widget(month_tab, chunks[2]);
-    f.render_widget(chart, chunks[3]);
+
+    match mode_selection.index {
+        0 => {
+            f.render_widget(year_tab, chunks[1]);
+            f.render_widget(month_tab, chunks[2]);
+            f.render_widget(chart, chunks[3]);
+        }
+        1 => {
+            f.render_widget(year_tab, chunks[1]);
+            f.render_widget(chart, chunks[2]);
+        }
+        2 => {
+            f.render_widget(chart, chunks[1]);
+        }
+        _ => {}
+    }
 }
