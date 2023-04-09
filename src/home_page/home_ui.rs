@@ -1,4 +1,4 @@
-use crate::ui_handler::{HomeTab, TableData, TimeData};
+use crate::ui_handler::{HomeTab, IndexedData, TableData};
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
@@ -14,8 +14,8 @@ use tui::{
 
 pub fn home_ui<B: Backend>(
     f: &mut Frame<B>,
-    months: &TimeData,
-    years: &TimeData,
+    months: &IndexedData,
+    years: &IndexedData,
     table: &mut TableData,
     balance: &mut [Vec<String>],
     cu_tab: &HomeTab,
@@ -92,26 +92,14 @@ pub fn home_ui<B: Backend>(
     let month_titles = months
         .titles
         .iter()
-        .map(|t| {
-            let (first, rest) = t.split_at(3);
-            Spans::from(vec![
-                Span::styled(first, Style::default().fg(Color::Blue)),
-                Span::styled(rest, Style::default().fg(Color::Rgb(50, 205, 50))),
-            ])
-        })
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
         .collect();
 
     //color the first two letters of the year to blue
     let year_titles = years
         .titles
         .iter()
-        .map(|t| {
-            let (first, rest) = t.split_at(2);
-            Spans::from(vec![
-                Span::styled(first, Style::default().fg(Color::Blue)),
-                Span::styled(rest, Style::default().fg(Color::Rgb(50, 205, 50))),
-            ])
-        })
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
         .collect();
 
     // The default style for the select index in the month section if
