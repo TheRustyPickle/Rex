@@ -59,15 +59,19 @@ impl TableData {
 ///
 /// titles: `["January", "February",]`
 
-pub struct TimeData {
+pub struct IndexedData {
     pub titles: Vec<String>,
     pub index: usize,
 }
 
-impl TimeData {
+impl IndexedData {
+    pub fn new(titles: Vec<String>) -> Self {
+        IndexedData { titles, index: 0 }
+    }
+
     pub fn new_monthly() -> Self {
         let month_index = Local::now().month() as usize - 1;
-        TimeData {
+        IndexedData {
             titles: vec![
                 "January",
                 "February",
@@ -91,7 +95,7 @@ impl TimeData {
 
     pub fn new_yearly() -> Self {
         let year_index = Local::now().year() as usize - 2022;
-        TimeData {
+        IndexedData {
             titles: vec!["2022", "2023", "2024", "2025"]
                 .into_iter()
                 .map(|s| s.to_string())
@@ -192,4 +196,32 @@ pub enum PopupState {
     Helper,
     DeleteFailed(String),
     Nothing,
+}
+
+pub enum ChartTab {
+    ModeSelection,
+    Years,
+    Months,
+}
+
+impl ChartTab {
+    /// Moves the current selected tab to the upper value. If at the 1st value, the
+    /// the final value is selected.
+    pub fn change_tab_up(&mut self) -> Self {
+        match &self {
+            ChartTab::ModeSelection => ChartTab::Months,
+            ChartTab::Years => ChartTab::ModeSelection,
+            ChartTab::Months => ChartTab::Years,
+        }
+    }
+
+    /// Moves the current selected tab to the bottom value. If at the last value, the
+    /// the 1st value is selected.
+    pub fn change_tab_down(&mut self) -> Self {
+        match &self {
+            ChartTab::ModeSelection => ChartTab::Years,
+            ChartTab::Years => ChartTab::Months,
+            ChartTab::Months => ChartTab::ModeSelection,
+        }
+    }
 }
