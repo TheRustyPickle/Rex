@@ -8,7 +8,7 @@ use std::fs;
 
 struct Testing {
     data: String,
-    result: VerifyingOutput
+    result: VerifyingOutput,
 }
 impl DataVerifier for Testing {}
 
@@ -28,7 +28,7 @@ fn check_sql_dates() {
 fn check_verifier_date_1() {
     let test_data = Testing {
         data: "".to_string(),
-        result: VerifyingOutput::Nothing(AType::Date)
+        result: VerifyingOutput::Nothing(AType::Date),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
@@ -36,7 +36,7 @@ fn check_verifier_date_1() {
 
     let test_data = Testing {
         data: "2022-01-01".to_string(),
-        result: VerifyingOutput::Accepted(AType::Date)
+        result: VerifyingOutput::Accepted(AType::Date),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
@@ -45,7 +45,7 @@ fn check_verifier_date_1() {
 
     let test_data = Testing {
         data: "  2022  -  01  -  01  ".to_string(),
-        result: VerifyingOutput::Accepted(AType::Date)
+        result: VerifyingOutput::Accepted(AType::Date),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
@@ -54,7 +54,7 @@ fn check_verifier_date_1() {
 
     let test_data = Testing {
         data: "  2022-01-01  ".to_string(),
-        result: VerifyingOutput::Accepted(AType::Date)
+        result: VerifyingOutput::Accepted(AType::Date),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
@@ -63,7 +63,7 @@ fn check_verifier_date_1() {
 
     let test_data = Testing {
         data: "2022-01".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::InvalidDate)
+        result: VerifyingOutput::NotAccepted(NAType::InvalidDate),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
@@ -75,7 +75,7 @@ fn check_verifier_date_1() {
 fn check_verifier_date_2() {
     let test_data = Testing {
         data: "2022-01-0".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::InvalidDay)
+        result: VerifyingOutput::NotAccepted(NAType::InvalidDay),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
@@ -84,7 +84,7 @@ fn check_verifier_date_2() {
 
     let test_data = Testing {
         data: "2022-0-01".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::InvalidMonth)
+        result: VerifyingOutput::NotAccepted(NAType::InvalidMonth),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
@@ -93,7 +93,7 @@ fn check_verifier_date_2() {
 
     let test_data = Testing {
         data: "01-01-2022".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::InvalidYear)
+        result: VerifyingOutput::NotAccepted(NAType::InvalidYear),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
@@ -105,7 +105,7 @@ fn check_verifier_date_2() {
 fn check_verifier_date_3() {
     let test_data = Testing {
         data: "2022-01-32".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::DayTooBig)
+        result: VerifyingOutput::NotAccepted(NAType::DayTooBig),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
@@ -114,19 +114,16 @@ fn check_verifier_date_3() {
 
     let test_data = Testing {
         data: "2022-02-31".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::NonExistingDate)
+        result: VerifyingOutput::NotAccepted(NAType::NonExistingDate),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
-    assert_eq!(
-        result,
-        test_data.result
-    );
+    assert_eq!(result, test_data.result);
     assert_eq!(to_verify, "2022-02-31".to_string());
 
     let test_data = Testing {
         data: "2022-13-31".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::MonthTooBig)
+        result: VerifyingOutput::NotAccepted(NAType::MonthTooBig),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
@@ -135,7 +132,7 @@ fn check_verifier_date_3() {
 
     let test_data = Testing {
         data: "2026-01-31".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::YearTooBig)
+        result: VerifyingOutput::NotAccepted(NAType::YearTooBig),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
@@ -144,21 +141,18 @@ fn check_verifier_date_3() {
 
     let test_data = Testing {
         data: "2022-01-".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date))
+        result: VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date)),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
-    assert_eq!(
-        result,
-        test_data.result
-    )
+    assert_eq!(result, test_data.result)
 }
 
 #[test]
 fn check_verifier_amount_1() {
     let test_data = Testing {
         data: "".to_string(),
-        result: VerifyingOutput::Nothing(AType::Amount)
+        result: VerifyingOutput::Nothing(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -166,7 +160,7 @@ fn check_verifier_amount_1() {
 
     let test_data = Testing {
         data: "1".to_string(),
-        result: VerifyingOutput::Accepted(AType::Amount)
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -175,7 +169,7 @@ fn check_verifier_amount_1() {
 
     let test_data = Testing {
         data: "1.".to_string(),
-        result: VerifyingOutput::Accepted(AType::Amount)
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -184,7 +178,7 @@ fn check_verifier_amount_1() {
 
     let test_data = Testing {
         data: "1.0".to_string(),
-        result: VerifyingOutput::Accepted(AType::Amount)
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -196,7 +190,7 @@ fn check_verifier_amount_1() {
 fn check_verifier_amount_2() {
     let test_data = Testing {
         data: "   -100     ".to_string(),
-        result: VerifyingOutput::Accepted(AType::Amount)
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -205,7 +199,7 @@ fn check_verifier_amount_2() {
 
     let test_data = Testing {
         data: "100+".to_string(),
-        result: VerifyingOutput::Accepted(AType::Amount)
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -214,7 +208,7 @@ fn check_verifier_amount_2() {
 
     let test_data = Testing {
         data: "-100 *  ".to_string(),
-        result: VerifyingOutput::Accepted(AType::Amount)
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -226,7 +220,7 @@ fn check_verifier_amount_2() {
 fn check_verifier_amount_3() {
     let test_data = Testing {
         data: "100-50".to_string(),
-        result: VerifyingOutput::Accepted(AType::Amount)
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -235,7 +229,7 @@ fn check_verifier_amount_3() {
 
     let test_data = Testing {
         data: "50 - 100".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::AmountBelowZero)
+        result: VerifyingOutput::NotAccepted(NAType::AmountBelowZero),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -244,7 +238,7 @@ fn check_verifier_amount_3() {
 
     let test_data = Testing {
         data: "100   + 50".to_string(),
-        result: VerifyingOutput::Accepted(AType::Amount)
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -253,7 +247,7 @@ fn check_verifier_amount_3() {
 
     let test_data = Testing {
         data: "100*2".to_string(),
-        result: VerifyingOutput::Accepted(AType::Amount)
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -262,7 +256,7 @@ fn check_verifier_amount_3() {
 
     let test_data = Testing {
         data: "100/2".to_string(),
-        result: VerifyingOutput::Accepted(AType::Amount)
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -271,7 +265,7 @@ fn check_verifier_amount_3() {
 
     let test_data = Testing {
         data: "  2/7  ".to_string(),
-        result: VerifyingOutput::Accepted(AType::Amount)
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -283,7 +277,7 @@ fn check_verifier_amount_3() {
 fn check_verifier_amount_4() {
     let test_data = Testing {
         data: "   1000000000000000.52   ".to_string(),
-        result: VerifyingOutput::Accepted(AType::Amount)
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
@@ -292,21 +286,18 @@ fn check_verifier_amount_4() {
 
     let test_data = Testing {
         data: "@%15612".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Amount))
+        result: VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Amount)),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
-    assert_eq!(
-        result,
-        test_data.result
-    )
+    assert_eq!(result, test_data.result)
 }
 
 #[test]
 fn check_verifier_tx_method() {
     let test_data = Testing {
         data: "".to_string(),
-        result: VerifyingOutput::Nothing(AType::TxMethod)
+        result: VerifyingOutput::Nothing(AType::TxMethod),
     };
     let file_name = "check_verifier_tx_method.sqlite";
     let conn = create_test_db(file_name);
@@ -316,7 +307,7 @@ fn check_verifier_tx_method() {
     assert_eq!(result, test_data.result);
     let test_data = Testing {
         data: "test 2".to_string(),
-        result: VerifyingOutput::Accepted(AType::TxMethod)
+        result: VerifyingOutput::Accepted(AType::TxMethod),
     };
 
     let mut to_verify = test_data.data.clone();
@@ -325,19 +316,16 @@ fn check_verifier_tx_method() {
 
     let test_data = Testing {
         data: "random".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::InvalidTxMethod)
+        result: VerifyingOutput::NotAccepted(NAType::InvalidTxMethod),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_tx_method(&mut to_verify, &conn);
-    assert_eq!(
-        result,
-        test_data.result
-    );
+    assert_eq!(result, test_data.result);
     assert_eq!(to_verify, "test1".to_string());
 
     let test_data = Testing {
         data: "  test 2  ".to_string(),
-        result: VerifyingOutput::Accepted(AType::TxMethod)
+        result: VerifyingOutput::Accepted(AType::TxMethod),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_tx_method(&mut to_verify, &conn);
@@ -352,7 +340,7 @@ fn check_verifier_tx_method() {
 fn check_verifier_tx_type() {
     let test_data = Testing {
         data: "".to_string(),
-        result: VerifyingOutput::Nothing(AType::TxType)
+        result: VerifyingOutput::Nothing(AType::TxType),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_tx_type(&mut to_verify);
@@ -360,7 +348,7 @@ fn check_verifier_tx_type() {
 
     let test_data = Testing {
         data: "e".to_string(),
-        result: VerifyingOutput::Accepted(AType::TxType)
+        result: VerifyingOutput::Accepted(AType::TxType),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_tx_type(&mut to_verify);
@@ -369,7 +357,7 @@ fn check_verifier_tx_type() {
 
     let test_data = Testing {
         data: "i".to_string(),
-        result: VerifyingOutput::Accepted(AType::TxType)
+        result: VerifyingOutput::Accepted(AType::TxType),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_tx_type(&mut to_verify);
@@ -378,7 +366,7 @@ fn check_verifier_tx_type() {
 
     let test_data = Testing {
         data: "w".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::InvalidTxType)
+        result: VerifyingOutput::NotAccepted(NAType::InvalidTxType),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_tx_type(&mut to_verify);
@@ -386,7 +374,7 @@ fn check_verifier_tx_type() {
 
     let test_data = Testing {
         data: "   i".to_string(),
-        result: VerifyingOutput::Accepted(AType::TxType)
+        result: VerifyingOutput::Accepted(AType::TxType),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_tx_type(&mut to_verify);
@@ -395,7 +383,7 @@ fn check_verifier_tx_type() {
 
     let test_data = Testing {
         data: "  i   ".to_string(),
-        result: VerifyingOutput::Accepted(AType::TxType)
+        result: VerifyingOutput::Accepted(AType::TxType),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_tx_type(&mut to_verify);
