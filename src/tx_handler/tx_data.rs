@@ -185,6 +185,7 @@ impl TxData {
         }
     }
 
+    // TODO: Handle errors
     pub fn add_tx(&mut self) -> String {
         if let Some(output) = self.check_all_fields() {
             return output.to_string();

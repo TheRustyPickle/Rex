@@ -1,14 +1,14 @@
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
-use crate::ui_handler::{AddTxTab, PopupState};
+use crate::page_handler::{AddTxTab, PopupState};
 use crossterm::event::KeyCode;
 
 /// Tracks the keys once interacting with the Add Transaction interface. Based on the key pressed,
 /// calls functions and passes them to a struct
 pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
-    match handler.current_popup {
+    match handler.popup {
         // we don't want to move this interface while the popup is on
-        PopupState::Nothing => match handler.current_tx_tab {
+        PopupState::Nothing => match handler.tx_tab {
             AddTxTab::Nothing => match handler.key.code {
                 KeyCode::Char('t') => handler.go_transfer(),
                 KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),

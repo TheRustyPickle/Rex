@@ -1,4 +1,4 @@
-use crate::ui_handler::TransferTab;
+use crate::page_handler::TransferTab;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};

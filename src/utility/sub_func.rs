@@ -401,7 +401,7 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
             .arg("start")
             .arg("rex")
             .output()
-            .map_err(|err| TerminalExecutionError::ExecutionFailed(err))?;
+            .map_err(TerminalExecutionError::ExecutionFailed)?;
     } else {
         let mut all_terminals = HashMap::new();
         let gnome_dir = format!("--working-directory={}", original_dir);
@@ -449,5 +449,5 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
             return Err(result.unwrap());
         }
     };
-    return Ok(());
+    Ok(())
 }

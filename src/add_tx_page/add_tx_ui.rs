@@ -1,4 +1,4 @@
-use crate::ui_handler::AddTxTab;
+use crate::page_handler::AddTxTab;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};

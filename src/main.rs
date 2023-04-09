@@ -1,4 +1,5 @@
 use dirs::data_local_dir;
+use rex::page_handler::initialize_app;
 use std::env::{current_dir, set_current_dir};
 use std::fs;
 
@@ -11,22 +12,31 @@ use std::fs;
 // TODO: Allow changing year in the chart page. All | year | year
 // TODO: Allow year selection of the summary page. All | year | year
 // TODO: Check if I can center point on transfer page from the position of the latest char
-// TODO update string calculation.
+// [x] update string calculation.
 // [x]: Update REX logo algorithm to something more readable
 // ? use a separate library for string calculation?
 // TODO: Allow pasting
 // TODO: On date selection, arrow key up down will change the date by 1, also for amount
 // TODO: Add left/right arrow key to navigate strings
 // ? Create a trait for easy implementation?
-// TODO: Create another instance of the terminal in full screen if opening from a terminal. Use mpsc and send tracing data to the original terminal
-// TODO: Accept tx method in lower case
+// [x]: Accept tx method in lower case
 // TODO: Trait for method checker, input inserter
 // TODO: Autocomplete for tx method
 // TODO: Tx method autocomplete take consideration of the char position
 // TODO: Handle repeating keys in a separate function
+// [x]: instead of passing too many args to key checkers, turn all of them into a struct and pass that
+// [x]: Move stuff from lib.rs
+// TODO: replace all cu_something to current_something
+// TODO: Handle tags checking with comma.
+// [x]: Merge AddTxData and TransferData into one struct?
+// TODO: Better logic when taking input for new tx methods
+// TODO: better sql construction
+// TODO: Allow hiding year selection on chart page
+// TODO: Allow some kind of chart animation. Use the poll, create var that will track how many days it needs to render. Pass the var => render 1 day => return
+// TODO load all data from db to summary and chart struct. Only reload on new tx
+
 fn main() {
     if let Some(dir) = data_local_dir() {
-        let mut is_windows = false;
         let current_dir = current_dir().unwrap().display().to_string();
         let mut verifying_path = "./data.sqlite";
 
@@ -34,14 +44,15 @@ fn main() {
         let working_path = format!("{}/Rex/", dir.display());
 
         if cfg!(target_os = "windows") {
-            is_windows = true;
             verifying_path = r#".\data.sqlite"#;
         }
         // * Create folder if non-existing then move the current working directory
         // * to the OS data directory
         fs::create_dir_all(&working_path).unwrap();
         set_current_dir(working_path).unwrap();
-        rex::initializer(is_windows, verifying_path, &current_dir).unwrap();
+        if initialize_app(verifying_path, &current_dir).is_err() {
+            std::process::exit(1);
+        }
     } else {
         println!("Could not find local data directory. Exiting program...");
     }
