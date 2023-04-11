@@ -34,6 +34,7 @@ pub struct InputKeyHandler<'a> {
     year_index: usize,
     table_index: Option<usize>,
     total_tags: usize,
+    reload_summary: &'a mut bool,
     conn: &'a Connection,
 }
 
@@ -64,6 +65,7 @@ impl<'a> InputKeyHandler<'a> {
         year_index: usize,
         table_index: Option<usize>,
         total_tags: usize,
+        reload_summary: &'a mut bool,
         conn: &'a Connection,
     ) -> InputKeyHandler<'a> {
         InputKeyHandler {
@@ -92,6 +94,7 @@ impl<'a> InputKeyHandler<'a> {
             year_index,
             table_index,
             total_tags,
+            reload_summary,
             conn,
         }
     }
@@ -279,12 +282,19 @@ impl<'a> InputKeyHandler<'a> {
                 ChartTab::Months => self.chart_months.previous(),
             },
             CurrentUi::Summary => match self.summary_tab {
-                SummaryTab::ModeSelection => self.summary_modes.previous(),
-                SummaryTab::Years => {
-                    self.summary_months.previous();
-                    self.summary_years.previous();
+                SummaryTab::ModeSelection => {
+                    self.summary_modes.previous();
+                    *self.reload_summary = true;
                 }
-                SummaryTab::Months => self.summary_months.previous(),
+                SummaryTab::Years => {
+                    self.summary_months.set_index_zero();
+                    self.summary_years.previous();
+                    *self.reload_summary = true;
+                }
+                SummaryTab::Months => {
+                    self.summary_months.previous();
+                    *self.reload_summary = true;
+                }
                 _ => {}
             },
             _ => {}
@@ -312,12 +322,19 @@ impl<'a> InputKeyHandler<'a> {
                 ChartTab::Months => self.chart_months.next(),
             },
             CurrentUi::Summary => match self.summary_tab {
-                SummaryTab::ModeSelection => self.summary_modes.next(),
-                SummaryTab::Years => {
-                    self.summary_months.next();
-                    self.summary_years.next();
+                SummaryTab::ModeSelection => {
+                    self.summary_modes.next();
+                    *self.reload_summary = true;
                 }
-                SummaryTab::Months => self.summary_months.next(),
+                SummaryTab::Years => {
+                    self.summary_months.set_index_zero();
+                    self.summary_years.next();
+                    *self.reload_summary = true;
+                }
+                SummaryTab::Months => {
+                    self.summary_months.next();
+                    *self.reload_summary = true;
+                }
                 _ => {}
             },
             _ => {}

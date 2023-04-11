@@ -67,6 +67,8 @@ pub fn start_app<B: Backend>(
     let mut last_month_index = 99;
     let mut last_year_index = 99;
 
+    let mut reload_summary = false;
+
     // the database connection and the path of the db
     let path = "data.sqlite";
     let conn = Connection::open(path).expect("Could not connect to database");
@@ -96,7 +98,12 @@ pub fn start_app<B: Backend>(
     // Holds the data that will be/are inserted into the Transfer Tx page's input fields
     let mut transfer_data = TxData::new_transfer();
     // Holds the data that will be/are inserted into the Summary Page
-    let mut summary_data = SummaryData::new(&conn);
+    let mut summary_data = SummaryData::new(
+        &summary_modes,
+        summary_months.index,
+        summary_years.index,
+        &conn,
+    );
 
     // Stores how many unique tags that stores. Used as an index for Summary Page table
     let mut total_tags = summary_data.get_table_data().len();
@@ -104,9 +111,6 @@ pub fn start_app<B: Backend>(
     let mut summary_table = TableData::new(summary_data.get_table_data());
     // Texts and numbers of the details shown at top of summary page
     let mut summary_texts = summary_data.get_tx_data();
-    // summary data generation is a heavy task. As it's a loop, the data is loaded once the page is selected.
-    // If true, the data is no longer generated even if the summary page is on
-    let mut summary_reloaded = false;
 
     // the initial page REX loading index
     let mut starter_index = 0;
@@ -190,7 +194,6 @@ pub fn start_app<B: Backend>(
                             &home_tab,
                             &mut width_data,
                         );
-                        summary_reloaded = false;
                     }
                     CurrentUi::AddTx => {
                         add_tx_ui(
@@ -199,7 +202,6 @@ pub fn start_app<B: Backend>(
                             &tx_tab,
                             &add_tx_data.tx_status,
                         );
-                        summary_reloaded = false;
                     }
                     CurrentUi::Initial => {
                         initial_ui(f, starter_index);
@@ -207,7 +209,6 @@ pub fn start_app<B: Backend>(
                         if starter_index > 27 {
                             starter_index = 0;
                         }
-                        summary_reloaded = false;
                     }
                     CurrentUi::Transfer => {
                         transfer_ui(
@@ -216,10 +217,10 @@ pub fn start_app<B: Backend>(
                             &transfer_tab,
                             &transfer_data.tx_status,
                         );
-                        summary_reloaded = false;
                     }
                     CurrentUi::Chart => {
-                        let chart_data = ChartData::set(cu_year_index);
+                        let chart_data =
+                            ChartData::set(&chart_modes, chart_months.index, chart_years.index);
                         chart_ui(
                             f,
                             &chart_months,
@@ -228,19 +229,21 @@ pub fn start_app<B: Backend>(
                             chart_data,
                             &chart_tab,
                         );
-                        summary_reloaded = false;
                     }
                     CurrentUi::Summary => {
-                        if !summary_reloaded {
-                            summary_data = SummaryData::new(&conn);
+                        if reload_summary {
+                            summary_data = SummaryData::new(
+                                &summary_modes,
+                                summary_months.index,
+                                summary_years.index,
+                                &conn,
+                            );
                             total_tags = summary_data.get_table_data().len();
                             summary_table = TableData::new(summary_data.get_table_data());
                             summary_texts = summary_data.get_tx_data();
-                            if total_tags > 0 {
-                                summary_table.state.select(Some(0));
-                            }
+                            reload_summary = false;
                         }
-                        summary_reloaded = true;
+
                         summary_ui(
                             f,
                             &summary_months,
@@ -289,6 +292,7 @@ pub fn start_app<B: Backend>(
                 cu_year_index,
                 cu_table_index,
                 total_tags,
+                &mut reload_summary,
                 &conn,
             );
 
