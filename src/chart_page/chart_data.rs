@@ -1,3 +1,4 @@
+use crate::page_handler::IndexedData;
 use crate::utility::get_all_txs;
 use chrono::naive::NaiveDate;
 use rusqlite::Connection;
@@ -12,15 +13,41 @@ pub struct ChartData {
 
 impl ChartData {
     /// Gets all the transaction of the given year and saves them in the struct
-    pub fn set(year: usize) -> Self {
-        let mut all_txs = vec![];
-        let mut all_balance = vec![];
+    pub fn set(mode: &IndexedData, month: usize, year: usize) -> Self {
         let conn = Connection::open("data.sqlite").expect("Could not connect to database");
-        for month in 0..12 {
-            let (txs, balances, _id_num) = get_all_txs(&conn, month, year);
-            all_txs.extend(txs);
-            all_balance.extend(balances);
-        }
+
+        let (all_txs, all_balance) = match mode.index {
+            0 => {
+                let (txs, balance, _) = get_all_txs(&conn, month, year);
+                (txs, balance)
+            }
+            1 => {
+                let mut txs = vec![];
+                let mut balance = vec![];
+                for i in 0..12 {
+                    let (t, b, _) = get_all_txs(&conn, i, year);
+                    txs.extend(t);
+                    balance.extend(b);
+                }
+                (txs, balance)
+            }
+            2 => {
+                let mut txs = vec![];
+                let mut balance = vec![];
+                // TODO: year handling
+                for x in 0..4 {
+                    for i in 0..12 {
+                        let (t, b, _) = get_all_txs(&conn, i, x);
+                        txs.extend(t);
+                        balance.extend(b);
+                    }
+                }
+
+                (txs, balance)
+            }
+            _ => (Vec::new(), Vec::new()),
+        };
+
         ChartData {
             all_txs,
             all_balance,
