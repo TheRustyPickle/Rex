@@ -1,5 +1,6 @@
 extern crate rex;
 use rex::db::*;
+use rex::page_handler::IndexedData;
 use rex::summary_page::SummaryData;
 use rex::tx_handler::add_tx;
 use rusqlite::Connection;
@@ -51,7 +52,15 @@ fn check_summary_data() {
     )
     .unwrap();
 
-    let my_summary = SummaryData::new(&conn);
+    let mut summary_modes = IndexedData::new(vec![
+        "Monthly".to_string(),
+        "Yearly".to_string(),
+        "All Time".to_string(),
+    ]);
+    summary_modes.next();
+    summary_modes.next();
+
+    let my_summary = SummaryData::new(&summary_modes,  0, 0, &conn,);
     let my_summary_text = my_summary.get_table_data();
     let my_summary_text_2 = my_summary.get_tx_data();
 
