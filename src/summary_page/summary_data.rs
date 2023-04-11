@@ -1,4 +1,7 @@
-use crate::utility::{get_all_txs, get_month_name};
+use crate::{
+    page_handler::IndexedData,
+    utility::{get_all_txs, get_month_name},
+};
 use rusqlite::Connection;
 use std::collections::HashMap;
 /// Contains the necessary information to construct the Summary Page highlighting
@@ -16,7 +19,7 @@ pub struct SummaryData {
 
 impl SummaryData {
     /// Goes through all transactions to collect data for the summary
-    pub fn new(conn: &Connection) -> Self {
+    pub fn new(mode: &IndexedData, month: usize, year: usize, conn: &Connection) -> Self {
         // * create a default value in case of no data available
         let mut default = SummaryData {
             tags_income: HashMap::new(),
@@ -29,12 +32,32 @@ impl SummaryData {
             total_expense: 0.0,
         };
 
-        // * start collecting transaction based on month
-        for year in 0..4 {
-            for month in 0..12 {
-                default.collect_data(conn, month, year);
+        match mode.index {
+            0 => {
+                default.collect_data(&conn, month, year);
             }
-        }
+            1 => {
+                for i in 0..12 {
+                    default.collect_data(&conn, i, year);
+                }
+            }
+            2 => {
+                // TODO: year handling
+                for x in 0..4 {
+                    for i in 0..12 {
+                        default.collect_data(&conn, i, x);
+                    }
+                }
+            }
+            _ => {}
+        };
+
+        // * start collecting transaction based on month
+        //for year in 0..4 {
+        //    for month in 0..12 {
+        //        default.collect_data(conn, month, year);
+        //    }
+        //}
 
         default
     }
