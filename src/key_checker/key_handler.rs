@@ -1,9 +1,11 @@
+use crate::chart_page::ChartData;
 use crate::home_page::TransactionData;
 use crate::outputs::{HandlingOutput, VerifyingOutput};
 use crate::page_handler::{
     AddTxTab, ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SummaryTab, TableData,
     TransferTab,
 };
+use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
@@ -20,6 +22,8 @@ pub struct InputKeyHandler<'a> {
     add_tx_data: &'a mut TxData,
     transfer_data: &'a mut TxData,
     all_tx_data: &'a mut TransactionData,
+    chart_data: &'a mut ChartData,
+    summary_data: &'a mut SummaryData,
     table: &'a mut TableData,
     summary_table: &'a mut TableData,
     add_tx_months: &'a mut IndexedData,
@@ -30,11 +34,7 @@ pub struct InputKeyHandler<'a> {
     summary_months: &'a mut IndexedData,
     summary_years: &'a mut IndexedData,
     summary_modes: &'a mut IndexedData,
-    month_index: usize,
-    year_index: usize,
-    table_index: Option<usize>,
     total_tags: usize,
-    reload_summary: &'a mut bool,
     conn: &'a Connection,
 }
 
@@ -51,6 +51,8 @@ impl<'a> InputKeyHandler<'a> {
         add_tx_data: &'a mut TxData,
         transfer_data: &'a mut TxData,
         all_tx_data: &'a mut TransactionData,
+        chart_data: &'a mut ChartData,
+        summary_data: &'a mut SummaryData,
         table: &'a mut TableData,
         summary_table: &'a mut TableData,
         add_tx_months: &'a mut IndexedData,
@@ -61,13 +63,9 @@ impl<'a> InputKeyHandler<'a> {
         summary_months: &'a mut IndexedData,
         summary_years: &'a mut IndexedData,
         summary_modes: &'a mut IndexedData,
-        month_index: usize,
-        year_index: usize,
-        table_index: Option<usize>,
-        total_tags: usize,
-        reload_summary: &'a mut bool,
         conn: &'a Connection,
     ) -> InputKeyHandler<'a> {
+        let total_tags = summary_data.get_table_data().len();
         InputKeyHandler {
             key,
             page,
@@ -80,6 +78,8 @@ impl<'a> InputKeyHandler<'a> {
             add_tx_data,
             transfer_data,
             all_tx_data,
+            chart_data,
+            summary_data,
             table,
             summary_table,
             add_tx_months,
@@ -90,11 +90,7 @@ impl<'a> InputKeyHandler<'a> {
             summary_months,
             summary_years,
             summary_modes,
-            month_index,
-            year_index,
-            table_index,
             total_tags,
-            reload_summary,
             conn,
         }
     }
@@ -138,11 +134,6 @@ impl<'a> InputKeyHandler<'a> {
         *self.popup = PopupState::Nothing
     }
 
-    pub fn reload_home_table(&mut self) {
-        *self.all_tx_data = TransactionData::new(self.conn, self.month_index, self.year_index);
-        *self.table = TableData::new(self.all_tx_data.get_txs());
-    }
-
     pub fn handle_update_popup(&mut self) -> Result<(), HandlingOutput> {
         match self.key.code {
             KeyCode::Enter => {
@@ -169,7 +160,7 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     pub fn edit_tx(&mut self) {
-        if let Some(a) = self.table_index {
+        if let Some(a) = self.table.state.selected() {
             let target_data = &self.all_tx_data.get_txs()[a];
             let target_id_num = self.all_tx_data.get_id_num(a);
             let tx_type = &target_data[4];
@@ -189,9 +180,9 @@ impl<'a> InputKeyHandler<'a> {
                 );
                 *self.page = CurrentUi::AddTx;
             } else {
-                let from_to = target_data[2].split(" to ").collect::<Vec<&str>>();
-                let from_method = from_to[0];
-                let to_method = from_to[1];
+                let splitted_method = target_data[2].split(" to ").collect::<Vec<&str>>();
+                let from_method = splitted_method[0];
+                let to_method = splitted_method[1];
 
                 *self.transfer_data = TxData::custom(
                     &target_data[0],
@@ -264,36 +255,47 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_left_arrow(&mut self) {
         match self.page {
             CurrentUi::Home => match self.home_tab {
-                HomeTab::Months => self.add_tx_months.previous(),
+                HomeTab::Months => {
+                    self.add_tx_months.previous();
+                    self.reload_home_table();
+                }
                 HomeTab::Years => {
                     self.add_tx_years.previous();
                     self.add_tx_months.set_index_zero();
+                    self.reload_home_table();
                 }
                 _ => {}
             },
             CurrentUi::AddTx => {}
             CurrentUi::Transfer => {}
             CurrentUi::Chart => match self.chart_tab {
-                ChartTab::ModeSelection => self.chart_modes.previous(),
+                ChartTab::ModeSelection => {
+                    self.chart_modes.previous();
+                    self.reload_chart();
+                }
                 ChartTab::Years => {
                     self.chart_years.previous();
-                    self.chart_months.set_index_zero()
+                    self.chart_months.set_index_zero();
+                    self.reload_chart();
                 }
-                ChartTab::Months => self.chart_months.previous(),
+                ChartTab::Months => {
+                    self.chart_months.previous();
+                    self.reload_chart();
+                }
             },
             CurrentUi::Summary => match self.summary_tab {
                 SummaryTab::ModeSelection => {
                     self.summary_modes.previous();
-                    *self.reload_summary = true;
+                    self.reload_summary();
                 }
                 SummaryTab::Years => {
                     self.summary_months.set_index_zero();
                     self.summary_years.previous();
-                    *self.reload_summary = true;
+                    self.reload_summary();
                 }
                 SummaryTab::Months => {
                     self.summary_months.previous();
-                    *self.reload_summary = true;
+                    self.reload_summary();
                 }
                 _ => {}
             },
@@ -304,36 +306,47 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_right_arrow(&mut self) {
         match self.page {
             CurrentUi::Home => match self.home_tab {
-                HomeTab::Months => self.add_tx_months.next(),
+                HomeTab::Months => {
+                    self.add_tx_months.next();
+                    self.reload_home_table();
+                }
                 HomeTab::Years => {
                     self.add_tx_years.next();
                     self.add_tx_months.set_index_zero();
+                    self.reload_home_table();
                 }
                 _ => {}
             },
             CurrentUi::AddTx => {}
             CurrentUi::Transfer => {}
             CurrentUi::Chart => match self.chart_tab {
-                ChartTab::ModeSelection => self.chart_modes.next(),
+                ChartTab::ModeSelection => {
+                    self.chart_modes.next();
+                    self.reload_chart();
+                }
                 ChartTab::Years => {
                     self.chart_years.next();
                     self.chart_months.set_index_zero();
+                    self.reload_chart();
                 }
-                ChartTab::Months => self.chart_months.next(),
+                ChartTab::Months => {
+                    self.chart_months.next();
+                    self.reload_chart();
+                }
             },
             CurrentUi::Summary => match self.summary_tab {
                 SummaryTab::ModeSelection => {
                     self.summary_modes.next();
-                    *self.reload_summary = true;
+                    self.reload_summary();
                 }
                 SummaryTab::Years => {
                     self.summary_months.set_index_zero();
                     self.summary_years.next();
-                    *self.reload_summary = true;
+                    self.reload_summary();
                 }
                 SummaryTab::Months => {
                     self.summary_months.next();
-                    *self.reload_summary = true;
+                    self.reload_summary();
                 }
                 _ => {}
             },
@@ -890,5 +903,30 @@ impl<'a> InputKeyHandler<'a> {
             KeyCode::Char(a) => self.transfer_data.edit_tags(Some(a)),
             _ => {}
         }
+    }
+
+    fn reload_home_table(&mut self) {
+        *self.all_tx_data =
+            TransactionData::new(self.conn, self.add_tx_months.index, self.add_tx_years.index);
+        *self.table = TableData::new(self.all_tx_data.get_txs());
+    }
+
+    fn reload_summary(&mut self) {
+        *self.summary_data = SummaryData::new(
+            self.summary_modes,
+            self.summary_months.index,
+            self.summary_years.index,
+            self.conn,
+        );
+        *self.summary_table = TableData::new(self.summary_data.get_table_data());
+        self.total_tags = self.summary_data.get_table_data().len();
+    }
+
+    fn reload_chart(&mut self) {
+        *self.chart_data = ChartData::set(
+            self.chart_modes,
+            self.chart_months.index,
+            self.chart_years.index,
+        );
     }
 }

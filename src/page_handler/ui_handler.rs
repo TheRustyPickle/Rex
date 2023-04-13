@@ -57,17 +57,8 @@ pub fn start_app<B: Backend>(
         "All Time".to_string(),
     ]);
 
-    // We only want to open the version checker popup once, turns true once the checking is done
-    let mut version_checked = false;
-
     // the selected widget on the Home Page. Default set to the month selection
     let mut home_tab = HomeTab::Months;
-
-    // Helps keep track if the Home Page's month or the year index was changed
-    let mut last_month_index = 99;
-    let mut last_year_index = 99;
-
-    let mut reload_summary = false;
 
     // the database connection and the path of the db
     let path = "data.sqlite";
@@ -83,7 +74,12 @@ pub fn start_app<B: Backend>(
     // The page which is currently selected. Default is the initial page
     let mut page = CurrentUi::Initial;
     // stores current popup status
-    let mut popup = PopupState::Nothing;
+    let mut popup = if new_version_available {
+        PopupState::NewUpdate
+    } else {
+        PopupState::Nothing
+    };
+
     // Stores the current selected widget on Add Transaction page
     let mut tx_tab = AddTxTab::Nothing;
     // Store the current selected widget on Add Transfer page
@@ -105,12 +101,11 @@ pub fn start_app<B: Backend>(
         &conn,
     );
 
-    // Stores how many unique tags that stores. Used as an index for Summary Page table
-    let mut total_tags = summary_data.get_table_data().len();
+    // Holds the data that will be/are inserted into the Chart Page
+    let mut chart_data = ChartData::set(&chart_modes, chart_months.index, chart_years.index);
+
     // data for the Summary Page's table
     let mut summary_table = TableData::new(summary_data.get_table_data());
-    // Texts and numbers of the details shown at top of summary page
-    let mut summary_texts = summary_data.get_tx_data();
 
     // the initial page REX loading index
     let mut starter_index = 0;
@@ -118,22 +113,7 @@ pub fn start_app<B: Backend>(
     // The loop begins at this point and before the loop starts, multiple variables are initiated
     // with the default values which will quickly be changing once the loop starts.
     loop {
-        // after each refresh this will check the current selected month, year and if a table/spreadsheet row is selected in the ui.
-        let cu_month_index = add_tx_months.index;
-        let cu_year_index = add_tx_years.index;
-        let cu_table_index = table.state.selected();
-
-        // reload the data saved in memory each time the month or the year changes
-        if cu_month_index != last_month_index || cu_year_index != last_year_index {
-            all_tx_data = TransactionData::new(&conn, cu_month_index, cu_year_index);
-            table = TableData::new(all_tx_data.get_txs());
-            last_month_index = cu_month_index;
-            last_year_index = cu_year_index;
-        };
-
-        // total income and expense value for the home page
-        let total_income = all_tx_data.get_total_income(&conn, cu_table_index);
-        let total_expense = all_tx_data.get_total_expense(&conn, cu_table_index);
+        let current_table_index = table.state.selected();
 
         // balance variable contains all the 'rows' of the Balance widget in the home page.
         // So each line is inside a vector. "" represents empty placeholder.
@@ -149,11 +129,11 @@ pub fn start_app<B: Backend>(
             width_data.push(Constraint::Percentage(width_percent));
         }
 
-        // cu_table_index is the Home Page table widget index. If a row is selected,
+        // current_table_index is the Home Page table widget index. If a row is selected,
         // get the balance there was once that transaction happened + the changes it did
         // otherwise, get the absolute final balance after all transaction happened + no changes.
 
-        match cu_table_index {
+        match current_table_index {
             // pass out the current index to get the necessary balance & changes data
             Some(a) => {
                 balance.push(all_tx_data.get_balance(a));
@@ -166,94 +146,54 @@ pub fn start_app<B: Backend>(
             }
         }
 
-        // total_income & total_expense data changes on each month/year index change. So push it now
-        // to the balance vector to align with the rows.
-        balance.push(total_income.clone());
-        balance.push(total_expense.clone());
-
-        // check the version of current TUI and based on that, turn on the popup
-        if !version_checked {
-            if new_version_available {
-                popup = PopupState::NewUpdate
-            }
-            version_checked = true;
-        }
+        // total_income & total_expense data changes on each month/year index change.
+        balance.push(all_tx_data.get_total_income(&conn, current_table_index));
+        balance.push(all_tx_data.get_total_expense(&conn, current_table_index));
 
         // passing out relevant data to the ui function
 
         terminal
             .draw(|f| {
                 match page {
-                    CurrentUi::Home => {
-                        home_ui(
-                            f,
-                            &add_tx_months,
-                            &add_tx_years,
-                            &mut table,
-                            &mut balance,
-                            &home_tab,
-                            &mut width_data,
-                        );
-                    }
-                    CurrentUi::AddTx => {
-                        add_tx_ui(
-                            f,
-                            add_tx_data.get_all_texts(),
-                            &tx_tab,
-                            &add_tx_data.tx_status,
-                        );
-                    }
-                    CurrentUi::Initial => {
-                        initial_ui(f, starter_index);
-                        starter_index += 1;
-                        if starter_index > 27 {
-                            starter_index = 0;
-                        }
-                    }
-                    CurrentUi::Transfer => {
-                        transfer_ui(
-                            f,
-                            transfer_data.get_all_texts(),
-                            &transfer_tab,
-                            &transfer_data.tx_status,
-                        );
-                    }
-                    CurrentUi::Chart => {
-                        let chart_data =
-                            ChartData::set(&chart_modes, chart_months.index, chart_years.index);
-                        chart_ui(
-                            f,
-                            &chart_months,
-                            &chart_years,
-                            &chart_modes,
-                            chart_data,
-                            &chart_tab,
-                        );
-                    }
-                    CurrentUi::Summary => {
-                        if reload_summary {
-                            summary_data = SummaryData::new(
-                                &summary_modes,
-                                summary_months.index,
-                                summary_years.index,
-                                &conn,
-                            );
-                            total_tags = summary_data.get_table_data().len();
-                            summary_table = TableData::new(summary_data.get_table_data());
-                            summary_texts = summary_data.get_tx_data();
-                            reload_summary = false;
-                        }
+                    CurrentUi::Home => home_ui(
+                        f,
+                        &add_tx_months,
+                        &add_tx_years,
+                        &mut table,
+                        &mut balance,
+                        &home_tab,
+                        &mut width_data,
+                    ),
 
-                        summary_ui(
-                            f,
-                            &summary_months,
-                            &summary_years,
-                            &summary_modes,
-                            &mut summary_table,
-                            &summary_texts,
-                            &summary_tab,
-                        );
-                    }
+                    CurrentUi::AddTx => add_tx_ui(f, &add_tx_data, &tx_tab),
+
+                    CurrentUi::Initial => initial_ui(f, starter_index),
+
+                    CurrentUi::Transfer => transfer_ui(
+                        f,
+                        transfer_data.get_all_texts(),
+                        &transfer_tab,
+                        &transfer_data.tx_status,
+                    ),
+
+                    CurrentUi::Chart => chart_ui(
+                        f,
+                        &chart_months,
+                        &chart_years,
+                        &chart_modes,
+                        &chart_data,
+                        &chart_tab,
+                    ),
+
+                    CurrentUi::Summary => summary_ui(
+                        f,
+                        &summary_months,
+                        &summary_years,
+                        &summary_modes,
+                        &summary_data,
+                        &mut summary_table,
+                        &summary_tab,
+                    ),
                 }
                 add_popup(f, &popup);
             })
@@ -261,6 +201,7 @@ pub fn start_app<B: Backend>(
 
         if let CurrentUi::Initial = page {
             if !poll(Duration::from_millis(40)).map_err(UiHandlingError::PollingError)? {
+                starter_index = (starter_index + 1) % 28;
                 continue;
             }
         }
@@ -278,6 +219,8 @@ pub fn start_app<B: Backend>(
                 &mut add_tx_data,
                 &mut transfer_data,
                 &mut all_tx_data,
+                &mut chart_data,
+                &mut summary_data,
                 &mut table,
                 &mut summary_table,
                 &mut add_tx_months,
@@ -288,11 +231,6 @@ pub fn start_app<B: Backend>(
                 &mut summary_months,
                 &mut summary_years,
                 &mut summary_modes,
-                cu_month_index,
-                cu_year_index,
-                cu_table_index,
-                total_tags,
-                &mut reload_summary,
                 &conn,
             );
 
