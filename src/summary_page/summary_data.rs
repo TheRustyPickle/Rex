@@ -150,10 +150,16 @@ impl SummaryData {
         }
 
         if total_income > self.income_date.0 {
-            self.income_date = (total_income, format!("{} of {}", current_month, current_year));
+            self.income_date = (
+                total_income,
+                format!("{} of {}", current_month, current_year),
+            );
         }
         if total_expense > self.expense_date.0 {
-            self.expense_date = (total_expense, format!("{} of {}", current_month, current_year));
+            self.expense_date = (
+                total_expense,
+                format!("{} of {}", current_month, current_year),
+            );
         }
 
         self.total_income += total_income;

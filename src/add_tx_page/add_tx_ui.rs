@@ -1,4 +1,5 @@
 use crate::page_handler::AddTxTab;
+use crate::tx_handler::TxData;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
@@ -13,15 +14,16 @@ use tui::Frame;
 /// - input_data : Contains all the data for all field that has been inserted by the user so far for the transaction
 ///
 /// Example input_data : `["2020-10-10", "", "", "", "Expense"]`
-/// - cu_selected : For verifying the current selected widget to add a block box
+/// - currently_selected : For verifying the current selected widget to add a block box
 /// - status_data : Contains all the String to push into the Status widget
 
 pub fn add_tx_ui<B: Backend>(
     f: &mut Frame<B>,
-    input_data: Vec<&str>,
-    cu_selected: &AddTxTab,
-    status_data: &[String],
+    add_tx_data: &TxData,
+    currently_selected: &AddTxTab,
 ) {
+    let status_data = &add_tx_data.tx_status;
+    let input_data = add_tx_data.get_all_texts();
     let size = f.size();
 
     // divide the terminal into various chunks to draw the interface.
@@ -199,7 +201,7 @@ pub fn add_tx_ui<B: Backend>(
 
     // We will be adding a cursor/box based on which tab is selected.
     // This was created utilizing the tui-rs example named user_input.rs
-    match cu_selected {
+    match currently_selected {
         AddTxTab::Date => f.set_cursor(
             another_chunk[0].x + input_data[0].len() as u16 + 1,
             another_chunk[0].y + 1,

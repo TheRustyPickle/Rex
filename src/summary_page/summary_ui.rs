@@ -1,3 +1,5 @@
+use crate::page_handler::{IndexedData, SummaryTab, TableData};
+use crate::summary_page::SummaryData;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
@@ -5,18 +7,17 @@ use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Cell, Paragraph, Row, Table, Tabs};
 use tui::Frame;
 
-use crate::page_handler::{IndexedData, SummaryTab, TableData};
-
 /// Renders the Summary UI page
 pub fn summary_ui<B: Backend>(
     f: &mut Frame<B>,
     months: &IndexedData,
     years: &IndexedData,
     mode_selection: &IndexedData,
+    summary_data: &SummaryData,
     table_data: &mut TableData,
-    text_data: &[(f64, String)],
     current_page: &SummaryTab,
 ) {
+    let text_data = summary_data.get_tx_data();
     let size = f.size();
 
     let normal_style = Style::default().bg(Color::LightBlue);
