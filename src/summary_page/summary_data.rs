@@ -108,7 +108,7 @@ impl SummaryData {
         let mut total_income = 0.0;
         let mut total_expense = 0.0;
 
-        let (cu_month, cu_year) = get_month_name(month, year);
+        let (current_month, current_year) = get_month_name(month, year);
 
         let (all_tx, ..) = get_all_txs(conn, month, year);
         for tx in all_tx {
@@ -150,10 +150,10 @@ impl SummaryData {
         }
 
         if total_income > self.income_date.0 {
-            self.income_date = (total_income, format!("{} of {}", cu_month, cu_year));
+            self.income_date = (total_income, format!("{} of {}", current_month, current_year));
         }
         if total_expense > self.expense_date.0 {
-            self.expense_date = (total_expense, format!("{} of {}", cu_month, cu_year));
+            self.expense_date = (total_expense, format!("{} of {}", current_month, current_year));
         }
 
         self.total_income += total_income;

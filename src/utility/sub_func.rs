@@ -144,8 +144,7 @@ pub fn get_all_txs(
             // collect the row data and put them in a vec
             let date: String = row.get(0).unwrap();
             let id_num: i32 = row.get(5).unwrap();
-            let splitted_date = date.split('-');
-            let collected_date: Vec<&str> = splitted_date.collect();
+            let collected_date = date.split('-').collect::<Vec<&str>>();
             let new_date = format!(
                 "{}-{}-{}",
                 collected_date[2], collected_date[1], collected_date[0]
@@ -282,7 +281,7 @@ pub fn get_user_tx_methods(add_new_method: bool) -> Option<Vec<String>> {
     //filled up with previous unnecessary texts.
     execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
 
-    let mut cu_tx_methods: Vec<String> = Vec::new();
+    let mut current_tx_methods: Vec<String> = Vec::new();
     let mut db_tx_methods = vec![];
 
     let mut method_line = "Currently added Transaction Methods: ".to_string();
@@ -291,8 +290,8 @@ pub fn get_user_tx_methods(add_new_method: bool) -> Option<Vec<String>> {
     // to get the existing columns to prevent duplicates/error.
     if add_new_method {
         let conn = Connection::open("data.sqlite").expect("Could not connect to database");
-        cu_tx_methods = get_all_tx_methods(&conn);
-        for i in &cu_tx_methods {
+        current_tx_methods = get_all_tx_methods(&conn);
+        for i in &current_tx_methods {
             method_line.push_str(&format!("\n- {i}"))
         }
     }
@@ -344,7 +343,7 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
         if add_new_method {
             for i in &splitted {
                 let user_tx_method = i.to_string();
-                if !cu_tx_methods.contains(&user_tx_method) {
+                if !current_tx_methods.contains(&user_tx_method) {
                     filtered_splitted.push(user_tx_method)
                 }
             }

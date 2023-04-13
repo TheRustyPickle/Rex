@@ -61,7 +61,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
         query = query.replace('[', "");
         query = query.replace(']', "");
 
-        let cu_month_balance = sp.query_row(&query, [], |row| {
+        let current_month_balance = sp.query_row(&query, [], |row| {
             let mut final_data: Vec<String> = Vec::new();
             for i in 0..tx_methods.len() {
                 final_data.push(row.get(i)?)
@@ -77,26 +77,26 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
         // check the month balance as not zero because if it is 0, there was never any transaction
         // done on that month
         for i in 0..tx_methods.len() {
-            if &tx_methods[i] == source && cu_month_balance[i] != "0.00" {
-                let mut cu_int_amount = cu_month_balance[i].parse::<f64>().unwrap();
+            if &tx_methods[i] == source && current_month_balance[i] != "0.00" {
+                let mut current_amount = current_month_balance[i].parse::<f64>().unwrap();
                 if tx_type == "Expense" {
-                    cu_int_amount += amount;
+                    current_amount += amount;
                 } else if tx_type == "Income" {
-                    cu_int_amount -= amount;
+                    current_amount -= amount;
                 }
-                updated_month_balance.push(format!("{:.2}", cu_int_amount));
-            } else if tx_methods[i] == from_method && cu_month_balance[i] != "0.00" {
-                let mut cu_int_amount = cu_month_balance[i].parse::<f64>().unwrap();
-                cu_int_amount += amount;
-                updated_month_balance.push(format!("{:.2}", cu_int_amount));
-            } else if tx_methods[i] == to_method && cu_month_balance[i] != "0.00" {
-                let mut cu_int_amount = cu_month_balance[i].parse::<f64>().unwrap();
-                cu_int_amount -= amount;
-                updated_month_balance.push(format!("{:.2}", cu_int_amount));
+                updated_month_balance.push(format!("{:.2}", current_amount));
+            } else if tx_methods[i] == from_method && current_month_balance[i] != "0.00" {
+                let mut current_amount = current_month_balance[i].parse::<f64>().unwrap();
+                current_amount += amount;
+                updated_month_balance.push(format!("{:.2}", current_amount));
+            } else if tx_methods[i] == to_method && current_month_balance[i] != "0.00" {
+                let mut current_amount = current_month_balance[i].parse::<f64>().unwrap();
+                current_amount -= amount;
+                updated_month_balance.push(format!("{:.2}", current_amount));
             } else {
                 updated_month_balance.push(format!(
                     "{:.2}",
-                    cu_month_balance[i].parse::<f64>().unwrap()
+                    current_month_balance[i].parse::<f64>().unwrap()
                 ));
             }
         }
@@ -131,19 +131,19 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
     // with the one we are deleting, add/subtract from the amount.
     // Calculate the balance/s for the absolute final balance and create the query
     for i in 0..tx_methods.len() {
-        let mut cu_balance = last_balance[i].parse::<f64>().unwrap();
+        let mut current_balance = last_balance[i].parse::<f64>().unwrap();
         if &tx_methods[i] == source && tx_type != "Transfer" {
             match tx_type {
-                "Expense" => cu_balance += amount,
-                "Income" => cu_balance -= amount,
+                "Expense" => current_balance += amount,
+                "Income" => current_balance -= amount,
                 _ => {}
             }
         } else if tx_methods[i] == from_method && tx_type == "Transfer" {
-            cu_balance += amount;
+            current_balance += amount;
         } else if tx_methods[i] == to_method && tx_type == "Transfer" {
-            cu_balance -= amount;
+            current_balance -= amount;
         }
-        final_last_balance.push(format!("{:.2}", cu_balance));
+        final_last_balance.push(format!("{:.2}", current_balance));
     }
 
     let del_query = format!("DELETE FROM tx_all WHERE id_num = {id_num}");
