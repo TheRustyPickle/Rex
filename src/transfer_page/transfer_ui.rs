@@ -13,13 +13,13 @@ use tui::Frame;
 /// - input_data : Contains all the data for all field that has been inserted by the user so far for the transaction
 ///
 /// Example input_data : `["2020-10-10", "", "", "", "Expense"]`
-/// - cu_selected : For verifying the current selected widget to add a block box
+/// - currently_selected : For verifying the current selected widget to add a block box
 /// - status_data : Contains all the String to push into the Status widget
 
 pub fn transfer_ui<B: Backend>(
     f: &mut Frame<B>,
     input_data: Vec<&str>,
-    cu_selected: &TransferTab,
+    currently_selected: &TransferTab,
     status_data: &[String],
 ) {
     let size = f.size();
@@ -233,7 +233,7 @@ pub fn transfer_ui<B: Backend>(
 
     // We will be adding a cursor/box based on which tab is selected.
     // This was created utilizing the tui-rs example named user_input.rs
-    match cu_selected {
+    match currently_selected {
         TransferTab::Date => f.set_cursor(
             first_chunk[0].x + input_data[0].len() as u16 + 1,
             first_chunk[0].y + 1,

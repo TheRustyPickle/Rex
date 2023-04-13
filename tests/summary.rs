@@ -60,7 +60,7 @@ fn check_summary_data() {
     summary_modes.next();
     summary_modes.next();
 
-    let my_summary = SummaryData::new(&summary_modes,  0, 0, &conn,);
+    let my_summary = SummaryData::new(&summary_modes, 0, 0, &conn);
     let my_summary_text = my_summary.get_table_data();
     let my_summary_text_2 = my_summary.get_tx_data();
 

@@ -16,7 +16,7 @@ pub fn home_ui<B: Backend>(
     years: &IndexedData,
     table: &mut TableData,
     balance: &mut [Vec<String>],
-    cu_tab: &HomeTab,
+    current_tab: &HomeTab,
     width_data: &mut [Constraint],
 ) {
     let size = f.size();
@@ -162,7 +162,7 @@ pub fn home_ui<B: Backend>(
         .block(Block::default().borders(Borders::ALL).title("Balance"))
         .widths(width_data);
 
-    match cu_tab {
+    match current_tab {
         // previously added a black block to year and month widget if a value is not selected
         // Now we will turn that black block into green if a value is selected
         HomeTab::Months => {

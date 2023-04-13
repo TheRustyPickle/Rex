@@ -23,10 +23,10 @@ impl TxData {
     /// Creates an instance of the struct however the date field is
     /// edited with the current local date of the device.
     pub fn new() -> Self {
-        let cu_date = Local::now().to_string();
-        let formatted_cu_date = &cu_date[0..10];
+        let current_date = Local::now().to_string();
+        let formatted_current_date = &current_date[0..10];
         TxData {
-            date: formatted_cu_date.to_string(),
+            date: formatted_current_date.to_string(),
             details: String::new(),
             from_method: String::new(),
             to_method: String::new(),
@@ -40,10 +40,10 @@ impl TxData {
     }
 
     pub fn new_transfer() -> Self {
-        let cu_date = Local::now().to_string();
-        let formatted_cu_date = &cu_date[0..10];
+        let current_date = Local::now().to_string();
+        let formatted_current_date = &current_date[0..10];
         TxData {
-            date: formatted_cu_date.to_string(),
+            date: formatted_current_date.to_string(),
             details: String::new(),
             from_method: String::new(),
             to_method: String::new(),
@@ -257,21 +257,21 @@ impl TxData {
 
     /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
     pub fn check_from_method(&mut self, conn: &Connection) -> VerifyingOutput {
-        let mut cu_method = self.from_method.clone();
+        let mut current_method = self.from_method.clone();
 
-        let status = self.verify_tx_method(&mut cu_method, conn);
+        let status = self.verify_tx_method(&mut current_method, conn);
 
-        self.from_method = cu_method;
+        self.from_method = current_method;
         status
     }
 
     /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
     pub fn check_to_method(&mut self, conn: &Connection) -> VerifyingOutput {
-        let mut cu_method = self.to_method.clone();
+        let mut current_method = self.to_method.clone();
 
-        let status = self.verify_tx_method(&mut cu_method, conn);
+        let status = self.verify_tx_method(&mut current_method, conn);
 
-        self.to_method = cu_method;
+        self.to_method = current_method;
         status
     }
 

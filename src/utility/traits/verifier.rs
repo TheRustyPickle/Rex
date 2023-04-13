@@ -305,27 +305,27 @@ pub trait DataVerifier {
     /// if the Transaction is not found, matches each character with the available
     /// Transaction Methods and corrects to the best matching one.
 
-    fn verify_tx_method(&self, cu_method: &mut String, conn: &Connection) -> VerifyingOutput {
+    fn verify_tx_method(&self, current_method: &mut String, conn: &Connection) -> VerifyingOutput {
         // get all currently added tx methods
         let all_tx_methods = get_all_tx_methods(conn);
 
-        *cu_method = cu_method.trim().to_string();
+        *current_method = current_method.trim().to_string();
 
         // cancel all verification if the text is empty
-        if cu_method.is_empty() {
+        if current_method.is_empty() {
             return VerifyingOutput::Nothing(AType::TxMethod);
         }
 
         for method in &all_tx_methods {
-            if method.to_lowercase() == cu_method.to_lowercase() {
-                *cu_method = method.to_string();
+            if method.to_lowercase() == current_method.to_lowercase() {
+                *current_method = method.to_string();
                 return VerifyingOutput::Accepted(AType::TxMethod);
             }
         }
 
         let mut matching_tx_methods: Vec<&str> = all_tx_methods
             .iter()
-            .filter(|&s| s.to_lowercase().contains(&cu_method.to_lowercase()))
+            .filter(|&s| s.to_lowercase().contains(&current_method.to_lowercase()))
             .map(|s| s.as_str())
             .collect();
 
@@ -335,18 +335,18 @@ pub trait DataVerifier {
 
         if matching_tx_methods.len() > 1 {
             let mut best_match = matching_tx_methods[0];
-            let mut best_score = rank_match(best_match, cu_method);
+            let mut best_score = rank_match(best_match, current_method);
 
             for &match_str in &matching_tx_methods[1..] {
-                let score = rank_match(match_str, cu_method);
+                let score = rank_match(match_str, current_method);
                 if score > best_score {
                     best_match = match_str;
                     best_score = score;
                 }
             }
-            *cu_method = best_match.to_string()
+            *current_method = best_match.to_string()
         } else {
-            *cu_method = matching_tx_methods[0].to_string();
+            *current_method = matching_tx_methods[0].to_string();
         }
 
         VerifyingOutput::NotAccepted(NAType::InvalidTxMethod)

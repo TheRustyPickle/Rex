@@ -70,35 +70,35 @@ pub fn add_tx(
 
     let all_tx_methods = get_all_tx_methods(&sp);
     let last_balance = get_last_balances(&sp, &all_tx_methods);
-    let mut cu_month_balance =
+    let mut current_month_balance =
         get_last_time_balance(&sp, month as usize, year as usize, &all_tx_methods);
 
     let mut new_balance = 0.0;
     let int_amount = amount.parse::<f64>().unwrap();
 
     if tx_type == "Transfer" {
-        let new_balance_from = cu_month_balance[&from_method] - int_amount;
-        let new_balance_to = cu_month_balance[&to_method] + int_amount;
-        *cu_month_balance.get_mut(&from_method).unwrap() = new_balance_from;
-        *cu_month_balance.get_mut(&to_method).unwrap() = new_balance_to;
+        let new_balance_from = current_month_balance[&from_method] - int_amount;
+        let new_balance_to = current_month_balance[&to_method] + int_amount;
+        *current_month_balance.get_mut(&from_method).unwrap() = new_balance_from;
+        *current_month_balance.get_mut(&to_method).unwrap() = new_balance_to;
     } else {
         // makes changes to the current month balance and push them to vector
         if tx_type == "Expense" {
-            new_balance = cu_month_balance[tx_method] - int_amount;
+            new_balance = current_month_balance[tx_method] - int_amount;
         } else if tx_type == "Income" {
-            new_balance = cu_month_balance[tx_method] + int_amount;
+            new_balance = current_month_balance[tx_method] + int_amount;
         }
 
-        *cu_month_balance.get_mut(tx_method).unwrap() = new_balance;
+        *current_month_balance.get_mut(tx_method).unwrap() = new_balance;
     }
 
     for i in &all_tx_methods {
-        new_balance_data.push(format!("{:.2}", cu_month_balance[i]))
+        new_balance_data.push(format!("{:.2}", current_month_balance[i]))
     }
 
     for i in 0..all_tx_methods.len() {
         // the variable to keep track whether any changes were made to the tx method
-        let cu_last_balance = last_balance[i].parse::<f64>().unwrap();
+        let current_last_balance = last_balance[i].parse::<f64>().unwrap();
         let mut default_change = format!("{:.2}", 0.0);
 
         // we could have just used the tx_method from the argument but adding the default values
@@ -108,20 +108,20 @@ pub fn add_tx(
         // add the proper values and changes based on the tx type
         if tx_type == "Transfer" && all_tx_methods[i] == from_method {
             default_change = format!("↓{:.2}", &int_amount);
-            let edited_balance = cu_last_balance - int_amount;
+            let edited_balance = current_last_balance - int_amount;
             last_balance_data.insert(&from_method, format!("{edited_balance:.2}"));
         } else if tx_type == "Transfer" && all_tx_methods[i] == to_method {
             default_change = format!("↑{:.2}", &int_amount);
-            let edited_balance = cu_last_balance + int_amount;
+            let edited_balance = current_last_balance + int_amount;
             last_balance_data.insert(&to_method, format!("{edited_balance:.2}"));
         } else if tx_type != "Transfer" && all_tx_methods[i] == tx_method {
             if tx_type == "Expense" {
                 default_change = format!("↓{:.2}", &int_amount);
-                let edited_balance = cu_last_balance - int_amount;
+                let edited_balance = current_last_balance - int_amount;
                 last_balance_data.insert(&all_tx_methods[i], format!("{edited_balance:.2}"));
             } else if tx_type == "Income" {
                 default_change = format!("↑{:.2}", &int_amount);
-                let edited_balance = cu_last_balance + int_amount;
+                let edited_balance = current_last_balance + int_amount;
                 last_balance_data.insert(&all_tx_methods[i], format!("{edited_balance:.2}"));
             }
         }

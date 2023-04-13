@@ -113,7 +113,7 @@ impl TransactionData {
     }
 
     /// returns total incomes for the selected month by going through all the tx saved in the struct
-    pub fn get_total_income(&self, conn: &Connection, cu_index: Option<usize>) -> Vec<String> {
+    pub fn get_total_income(&self, conn: &Connection, current_index: Option<usize>) -> Vec<String> {
         let mut final_income = vec!["Income".to_string()];
         let all_tx_methods = get_all_tx_methods(conn);
         for _i in all_tx_methods.iter() {
@@ -122,7 +122,7 @@ impl TransactionData {
 
         let mut stopping_index = -1;
 
-        if let Some(a) = cu_index {
+        if let Some(a) = current_index {
             stopping_index = a as i32;
         }
 
@@ -145,7 +145,7 @@ impl TransactionData {
     }
 
     /// returns total expenses for the selected month by going through all the tx saved in the struct
-    pub fn get_total_expense(&self, conn: &Connection, cu_index: Option<usize>) -> Vec<String> {
+    pub fn get_total_expense(&self, conn: &Connection, current_index: Option<usize>) -> Vec<String> {
         let mut final_expense = vec!["Expense".to_string()];
         let all_tx_methods = get_all_tx_methods(conn);
         for _i in all_tx_methods.iter() {
@@ -154,7 +154,7 @@ impl TransactionData {
 
         let mut stopping_index = -1;
 
-        if let Some(a) = cu_index {
+        if let Some(a) = current_index {
             stopping_index = a as i32;
         }
 
