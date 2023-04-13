@@ -35,6 +35,7 @@ pub struct InputKeyHandler<'a> {
     summary_years: &'a mut IndexedData,
     summary_modes: &'a mut IndexedData,
     total_tags: usize,
+    chart_hidden_mode: &'a mut bool,
     conn: &'a Connection,
 }
 
@@ -63,6 +64,7 @@ impl<'a> InputKeyHandler<'a> {
         summary_months: &'a mut IndexedData,
         summary_years: &'a mut IndexedData,
         summary_modes: &'a mut IndexedData,
+        chart_hidden_mode: &'a mut bool,
         conn: &'a Connection,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data.get_table_data().len();
@@ -91,6 +93,7 @@ impl<'a> InputKeyHandler<'a> {
             summary_years,
             summary_modes,
             total_tags,
+            chart_hidden_mode,
             conn,
         }
     }
@@ -132,6 +135,10 @@ impl<'a> InputKeyHandler<'a> {
 
     pub fn do_empty_popup(&mut self) {
         *self.popup = PopupState::Nothing
+    }
+
+    pub fn do_hidden_mode(&mut self) {
+        *self.chart_hidden_mode = !*self.chart_hidden_mode;
     }
 
     pub fn handle_update_popup(&mut self) -> Result<(), HandlingOutput> {
@@ -268,21 +275,25 @@ impl<'a> InputKeyHandler<'a> {
             },
             CurrentUi::AddTx => {}
             CurrentUi::Transfer => {}
-            CurrentUi::Chart => match self.chart_tab {
-                ChartTab::ModeSelection => {
-                    self.chart_modes.previous();
-                    self.reload_chart();
+            CurrentUi::Chart => {
+                if !*self.chart_hidden_mode {
+                    match self.chart_tab {
+                        ChartTab::ModeSelection => {
+                            self.chart_modes.previous();
+                            self.reload_chart();
+                        }
+                        ChartTab::Years => {
+                            self.chart_years.previous();
+                            self.chart_months.set_index_zero();
+                            self.reload_chart();
+                        }
+                        ChartTab::Months => {
+                            self.chart_months.previous();
+                            self.reload_chart();
+                        }
+                    }
                 }
-                ChartTab::Years => {
-                    self.chart_years.previous();
-                    self.chart_months.set_index_zero();
-                    self.reload_chart();
-                }
-                ChartTab::Months => {
-                    self.chart_months.previous();
-                    self.reload_chart();
-                }
-            },
+            }
             CurrentUi::Summary => match self.summary_tab {
                 SummaryTab::ModeSelection => {
                     self.summary_modes.previous();
@@ -319,21 +330,25 @@ impl<'a> InputKeyHandler<'a> {
             },
             CurrentUi::AddTx => {}
             CurrentUi::Transfer => {}
-            CurrentUi::Chart => match self.chart_tab {
-                ChartTab::ModeSelection => {
-                    self.chart_modes.next();
-                    self.reload_chart();
+            CurrentUi::Chart => {
+                if !*self.chart_hidden_mode {
+                    match self.chart_tab {
+                        ChartTab::ModeSelection => {
+                            self.chart_modes.next();
+                            self.reload_chart();
+                        }
+                        ChartTab::Years => {
+                            self.chart_years.next();
+                            self.chart_months.set_index_zero();
+                            self.reload_chart();
+                        }
+                        ChartTab::Months => {
+                            self.chart_months.next();
+                            self.reload_chart();
+                        }
+                    }
                 }
-                ChartTab::Years => {
-                    self.chart_years.next();
-                    self.chart_months.set_index_zero();
-                    self.reload_chart();
-                }
-                ChartTab::Months => {
-                    self.chart_months.next();
-                    self.reload_chart();
-                }
-            },
+            }
             CurrentUi::Summary => match self.summary_tab {
                 SummaryTab::ModeSelection => {
                     self.summary_modes.next();
@@ -626,18 +641,22 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     fn do_chart_up(&mut self) {
-        match self.chart_modes.index {
-            0 => *self.chart_tab = self.chart_tab.change_tab_up_monthly(),
-            1 => *self.chart_tab = self.chart_tab.change_tab_up_yearly(),
-            _ => {}
+        if !*self.chart_hidden_mode {
+            match self.chart_modes.index {
+                0 => *self.chart_tab = self.chart_tab.change_tab_up_monthly(),
+                1 => *self.chart_tab = self.chart_tab.change_tab_up_yearly(),
+                _ => {}
+            }
         }
     }
 
     fn do_chart_down(&mut self) {
-        match self.chart_modes.index {
-            0 => *self.chart_tab = self.chart_tab.change_tab_down_monthly(),
-            1 => *self.chart_tab = self.chart_tab.change_tab_down_yearly(),
-            _ => {}
+        if !*self.chart_hidden_mode {
+            match self.chart_modes.index {
+                0 => *self.chart_tab = self.chart_tab.change_tab_down_monthly(),
+                1 => *self.chart_tab = self.chart_tab.change_tab_down_yearly(),
+                _ => {}
+            }
         }
     }
 
