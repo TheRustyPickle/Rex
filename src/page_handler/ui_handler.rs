@@ -110,6 +110,8 @@ pub fn start_app<B: Backend>(
     // the initial page REX loading index
     let mut starter_index = 0;
 
+    let mut chart_hidden_mode = false;
+
     // The loop begins at this point and before the loop starts, multiple variables are initiated
     // with the default values which will quickly be changing once the loop starts.
     loop {
@@ -183,6 +185,7 @@ pub fn start_app<B: Backend>(
                         &chart_modes,
                         &chart_data,
                         &chart_tab,
+                        chart_hidden_mode,
                     ),
 
                     CurrentUi::Summary => summary_ui(
@@ -231,6 +234,7 @@ pub fn start_app<B: Backend>(
                 &mut summary_months,
                 &mut summary_years,
                 &mut summary_modes,
+                &mut chart_hidden_mode,
                 &conn,
             );
 
