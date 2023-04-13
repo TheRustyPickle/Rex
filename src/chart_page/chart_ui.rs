@@ -19,6 +19,7 @@ pub fn chart_ui<B: Backend>(
     chart_data: &ChartData,
     current_page: &ChartTab,
     chart_hidden_mode: bool,
+    loop_remaining: &mut Option<usize>,
 ) {
     let size = f.size();
 
@@ -162,6 +163,25 @@ pub fn chart_ui<B: Backend>(
         )
         .unwrap();
 
+        let total_loop = final_date.signed_duration_since(checking_date).num_days() as usize;
+
+        if let Some(val) = loop_remaining {
+            if *val == 0 {
+                *loop_remaining = Some(total_loop - 1)
+            } else {
+                if *val - 1 != 0 {
+                    *loop_remaining = Some(*val - 1)
+                } else {
+                    *loop_remaining = None
+                }
+            }
+        }
+
+        let mut to_loop = match loop_remaining {
+            Some(val) => Some(total_loop - *val),
+            None => None,
+        };
+
         // labels of the x axis
         date_labels.push(checking_date.to_string());
         date_labels.push(final_date.to_string());
@@ -219,6 +239,13 @@ pub fn chart_ui<B: Backend>(
                     to_add_again = false;
                     current_axis += 1.0;
                     checking_date += Duration::days(1);
+
+                    if let Some(val) = to_loop {
+                        if val == 0 {
+                            break;
+                        }
+                        to_loop = Some(val - 1);
+                    }
                 }
 
                 // successfully checked a transaction, we will check the new index in the next iteration

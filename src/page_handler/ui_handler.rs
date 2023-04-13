@@ -33,9 +33,9 @@ pub fn start_app<B: Backend>(
     // Setting up some default values. Let's go through all of them
 
     // contains the home page month list that is indexed
-    let mut add_tx_months = IndexedData::new_monthly();
+    let mut home_months = IndexedData::new_monthly();
     // contains the home page year list that is indexed
-    let mut add_tx_years = IndexedData::new_yearly();
+    let mut home_years = IndexedData::new_yearly();
     // contains the chart page month list that is indexed
     let mut chart_months = IndexedData::new_monthly();
     // contains the chart page year list that is indexed
@@ -67,7 +67,7 @@ pub fn start_app<B: Backend>(
         .expect("Could not enable foreign keys");
 
     // Stores all data relevant for home page such as balance, changes and txs
-    let mut all_tx_data = TransactionData::new(&conn, 0, 0);
+    let mut all_tx_data = TransactionData::new(&conn, home_months.index, home_years.index);
     // data for the Home Page's tx table
     let mut table = TableData::new(all_tx_data.get_txs());
 
@@ -109,6 +109,8 @@ pub fn start_app<B: Backend>(
 
     // the initial page REX loading index
     let mut starter_index = 0;
+
+    let mut chart_index: Option<usize> = None;
 
     let mut chart_hidden_mode = false;
 
@@ -159,8 +161,8 @@ pub fn start_app<B: Backend>(
                 match page {
                     CurrentUi::Home => home_ui(
                         f,
-                        &add_tx_months,
-                        &add_tx_years,
+                        &home_months,
+                        &home_years,
                         &mut table,
                         &mut balance,
                         &home_tab,
@@ -186,6 +188,7 @@ pub fn start_app<B: Backend>(
                         &chart_data,
                         &chart_tab,
                         chart_hidden_mode,
+                        &mut chart_index,
                     ),
 
                     CurrentUi::Summary => summary_ui(
@@ -201,6 +204,31 @@ pub fn start_app<B: Backend>(
                 add_popup(f, &popup);
             })
             .map_err(UiHandlingError::DrawingError)?;
+
+        match page {
+            CurrentUi::Initial => {
+                if !poll(Duration::from_millis(40)).map_err(UiHandlingError::PollingError)? {
+                    starter_index = (starter_index + 1) % 28;
+                    continue;
+                }
+            }
+            CurrentUi::Chart => {
+                if !chart_index.is_none() {
+                    let duration_time = match chart_modes.index {
+                        0 => 25,
+                        1 => 6,
+                        2 => 2,
+                        _ => 0,
+                    };
+                    if !poll(Duration::from_millis(duration_time))
+                        .map_err(UiHandlingError::PollingError)?
+                    {
+                        continue;
+                    }
+                }
+            }
+            _ => {}
+        }
 
         if let CurrentUi::Initial = page {
             if !poll(Duration::from_millis(40)).map_err(UiHandlingError::PollingError)? {
@@ -226,14 +254,15 @@ pub fn start_app<B: Backend>(
                 &mut summary_data,
                 &mut table,
                 &mut summary_table,
-                &mut add_tx_months,
-                &mut add_tx_years,
+                &mut home_months,
+                &mut home_years,
                 &mut chart_months,
                 &mut chart_years,
                 &mut chart_modes,
                 &mut summary_months,
                 &mut summary_years,
                 &mut summary_modes,
+                &mut chart_index,
                 &mut chart_hidden_mode,
                 &conn,
             );
