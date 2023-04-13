@@ -8,6 +8,7 @@ pub fn summary_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
         PopupState::Nothing => match handler.key.code {
             KeyCode::Char('a') => handler.go_add_tx(),
             KeyCode::Char('t') => handler.go_transfer(),
+            KeyCode::Char('r') => handler.go_chart(),
             KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
             KeyCode::Char('f') => handler.go_home(),
             KeyCode::Char('h') => handler.do_help_popup(),
