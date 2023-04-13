@@ -16,8 +16,9 @@ pub fn chart_ui<B: Backend>(
     months: &IndexedData,
     years: &IndexedData,
     mode_selection: &IndexedData,
-    chart_data: ChartData,
+    chart_data: &ChartData,
     current_page: &ChartTab,
+    chart_hidden_mode: bool,
 ) {
     let size = f.size();
 
@@ -25,34 +26,38 @@ pub fn chart_ui<B: Backend>(
 
     let mut main_layout = Layout::default().direction(Direction::Vertical).margin(2);
 
-    match mode_selection.index {
-        0 => {
-            main_layout = main_layout.constraints(
-                [
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Min(0),
-                ]
-                .as_ref(),
-            )
-        }
-        1 => {
-            main_layout = main_layout.constraints(
-                [
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Min(0),
-                ]
-                .as_ref(),
-            )
-        }
-        2 => {
-            main_layout =
-                main_layout.constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
-        }
-        _ => {}
-    };
+    if chart_hidden_mode {
+        main_layout = main_layout.constraints([Constraint::Min(0)].as_ref())
+    } else {
+        match mode_selection.index {
+            0 => {
+                main_layout = main_layout.constraints(
+                    [
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                        Constraint::Min(0),
+                    ]
+                    .as_ref(),
+                )
+            }
+            1 => {
+                main_layout = main_layout.constraints(
+                    [
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                        Constraint::Min(0),
+                    ]
+                    .as_ref(),
+                )
+            }
+            2 => {
+                main_layout =
+                    main_layout.constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
+            }
+            _ => {}
+        };
+    }
 
     let chunks = main_layout.split(size);
 
@@ -185,11 +190,11 @@ pub fn chart_ui<B: Backend>(
 
                 for method_index in 0..all_tx_methods.len() {
                     // keep track of the highest and the lowest point of the balance
-                    let cu_bal = current_balances[method_index].parse::<f64>().unwrap();
-                    if cu_bal > highest_balance {
-                        highest_balance = cu_bal
-                    } else if cu_bal < lowest_balance {
-                        lowest_balance = cu_bal
+                    let current_balance = current_balances[method_index].parse::<f64>().unwrap();
+                    if current_balance > highest_balance {
+                        highest_balance = current_balance
+                    } else if current_balance < lowest_balance {
+                        lowest_balance = current_balance
                     }
 
                     if to_add_again {
@@ -197,13 +202,13 @@ pub fn chart_ui<B: Backend>(
                         // and replace it with the current balance
 
                         let (position, _balance) = datasets[method_index].pop().unwrap();
-                        let to_push = vec![(position, cu_bal)];
+                        let to_push = vec![(position, current_balance)];
                         datasets[method_index].extend(to_push);
-                        last_balances.push(cu_bal);
+                        last_balances.push(current_balance);
                     } else {
-                        let to_push = vec![(current_axis, cu_bal)];
+                        let to_push = vec![(current_axis, current_balance)];
                         datasets[method_index].extend(to_push);
-                        last_balances.push(cu_bal);
+                        last_balances.push(current_balance);
                     }
                 }
 
@@ -354,21 +359,25 @@ pub fn chart_ui<B: Backend>(
         }
     }
 
-    f.render_widget(mode_selection_tab, chunks[0]);
+    if chart_hidden_mode {
+        f.render_widget(chart, chunks[0]);
+    } else {
+        f.render_widget(mode_selection_tab, chunks[0]);
 
-    match mode_selection.index {
-        0 => {
-            f.render_widget(year_tab, chunks[1]);
-            f.render_widget(month_tab, chunks[2]);
-            f.render_widget(chart, chunks[3]);
+        match mode_selection.index {
+            0 => {
+                f.render_widget(year_tab, chunks[1]);
+                f.render_widget(month_tab, chunks[2]);
+                f.render_widget(chart, chunks[3]);
+            }
+            1 => {
+                f.render_widget(year_tab, chunks[1]);
+                f.render_widget(chart, chunks[2]);
+            }
+            2 => {
+                f.render_widget(chart, chunks[1]);
+            }
+            _ => {}
         }
-        1 => {
-            f.render_widget(year_tab, chunks[1]);
-            f.render_widget(chart, chunks[2]);
-        }
-        2 => {
-            f.render_widget(chart, chunks[1]);
-        }
-        _ => {}
     }
 }
