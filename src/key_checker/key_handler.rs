@@ -26,8 +26,8 @@ pub struct InputKeyHandler<'a> {
     summary_data: &'a mut SummaryData,
     table: &'a mut TableData,
     summary_table: &'a mut TableData,
-    add_tx_months: &'a mut IndexedData,
-    add_tx_years: &'a mut IndexedData,
+    home_months: &'a mut IndexedData,
+    home_years: &'a mut IndexedData,
     chart_months: &'a mut IndexedData,
     chart_years: &'a mut IndexedData,
     chart_modes: &'a mut IndexedData,
@@ -35,6 +35,7 @@ pub struct InputKeyHandler<'a> {
     summary_years: &'a mut IndexedData,
     summary_modes: &'a mut IndexedData,
     total_tags: usize,
+    chart_index: &'a mut Option<usize>,
     chart_hidden_mode: &'a mut bool,
     conn: &'a Connection,
 }
@@ -56,14 +57,15 @@ impl<'a> InputKeyHandler<'a> {
         summary_data: &'a mut SummaryData,
         table: &'a mut TableData,
         summary_table: &'a mut TableData,
-        add_tx_months: &'a mut IndexedData,
-        add_tx_years: &'a mut IndexedData,
+        home_months: &'a mut IndexedData,
+        home_years: &'a mut IndexedData,
         chart_months: &'a mut IndexedData,
         chart_years: &'a mut IndexedData,
         chart_modes: &'a mut IndexedData,
         summary_months: &'a mut IndexedData,
         summary_years: &'a mut IndexedData,
         summary_modes: &'a mut IndexedData,
+        chart_index: &'a mut Option<usize>,
         chart_hidden_mode: &'a mut bool,
         conn: &'a Connection,
     ) -> InputKeyHandler<'a> {
@@ -84,8 +86,8 @@ impl<'a> InputKeyHandler<'a> {
             summary_data,
             table,
             summary_table,
-            add_tx_months,
-            add_tx_years,
+            home_months,
+            home_years,
             chart_months,
             chart_years,
             chart_modes,
@@ -93,12 +95,13 @@ impl<'a> InputKeyHandler<'a> {
             summary_years,
             summary_modes,
             total_tags,
+            chart_index,
             chart_hidden_mode,
             conn,
         }
     }
 
-    pub fn go_home(&mut self) {
+    pub fn go_home_reset(&mut self) {
         match self.page {
             CurrentUi::AddTx => {
                 *self.add_tx_data = TxData::new();
@@ -113,6 +116,10 @@ impl<'a> InputKeyHandler<'a> {
         *self.page = CurrentUi::Home;
     }
 
+    pub fn go_home(&mut self) {
+        *self.page = CurrentUi::Home;
+    }
+
     pub fn go_add_tx(&mut self) {
         *self.page = CurrentUi::AddTx
     }
@@ -122,11 +129,22 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     pub fn go_summary(&mut self) {
-        *self.page = CurrentUi::Summary
+        *self.page = CurrentUi::Summary;
+        self.summary_modes.set_index_zero();
+        self.summary_months.set_index_zero();
+        self.summary_years.set_index_zero();
+        *self.summary_tab = SummaryTab::ModeSelection;
+        self.reload_summary();
     }
 
     pub fn go_chart(&mut self) {
-        *self.page = CurrentUi::Chart
+        *self.page = CurrentUi::Chart;
+        self.chart_modes.set_index_zero();
+        self.chart_years.set_index_zero();
+        self.chart_months.set_index_zero();
+        *self.chart_tab = ChartTab::ModeSelection;
+        *self.chart_hidden_mode = false;
+        self.reload_chart();
     }
 
     pub fn do_help_popup(&mut self) {
@@ -157,7 +175,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn add_tx(&mut self) {
         let status = self.add_tx_data.add_tx();
         if status.is_empty() {
-            self.go_home();
+            self.go_home_reset();
             // we just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
             *self.home_tab = HomeTab::Months;
             self.reload_home_table()
@@ -228,7 +246,7 @@ impl<'a> InputKeyHandler<'a> {
         if status == *"" {
             // reload home page and switch UI
             *self.home_tab = HomeTab::Months;
-            self.go_home();
+            self.go_home_reset();
             self.reload_home_table();
         } else {
             self.transfer_data.add_tx_status(status);
@@ -263,12 +281,12 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::Home => match self.home_tab {
                 HomeTab::Months => {
-                    self.add_tx_months.previous();
+                    self.home_months.previous();
                     self.reload_home_table();
                 }
                 HomeTab::Years => {
-                    self.add_tx_years.previous();
-                    self.add_tx_months.set_index_zero();
+                    self.home_years.previous();
+                    self.home_months.set_index_zero();
                     self.reload_home_table();
                 }
                 _ => {}
@@ -318,12 +336,12 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::Home => match self.home_tab {
                 HomeTab::Months => {
-                    self.add_tx_months.next();
+                    self.home_months.next();
                     self.reload_home_table();
                 }
                 HomeTab::Years => {
-                    self.add_tx_years.next();
-                    self.add_tx_months.set_index_zero();
+                    self.home_years.next();
+                    self.home_months.set_index_zero();
                     self.reload_home_table();
                 }
                 _ => {}
@@ -926,7 +944,7 @@ impl<'a> InputKeyHandler<'a> {
 
     fn reload_home_table(&mut self) {
         *self.all_tx_data =
-            TransactionData::new(self.conn, self.add_tx_months.index, self.add_tx_years.index);
+            TransactionData::new(self.conn, self.home_months.index, self.home_years.index);
         *self.table = TableData::new(self.all_tx_data.get_txs());
     }
 
@@ -947,5 +965,6 @@ impl<'a> InputKeyHandler<'a> {
             self.chart_months.index,
             self.chart_years.index,
         );
+        *self.chart_index = Some(0);
     }
 }
