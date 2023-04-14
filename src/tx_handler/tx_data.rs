@@ -1,4 +1,5 @@
 use crate::outputs::{NAType, SavingError, VerifyingOutput};
+use crate::page_handler::{AddTxTab, TransferTab};
 use crate::tx_handler::{add_tx, delete_tx};
 use crate::utility::traits::DataVerifier;
 use crate::utility::{get_all_tx_methods, get_last_balances};
@@ -15,6 +16,7 @@ pub struct TxData {
     pub tx_status: Vec<String>,
     editing_tx: bool,
     id_num: i32,
+    current_index: usize,
 }
 
 impl DataVerifier for TxData {}
@@ -36,6 +38,7 @@ impl TxData {
             tx_status: Vec::new(),
             editing_tx: false,
             id_num: 0,
+            current_index: 0,
         }
     }
 
@@ -53,6 +56,7 @@ impl TxData {
             tx_status: Vec::new(),
             editing_tx: false,
             id_num: 0,
+            current_index: 0,
         }
     }
 
@@ -85,6 +89,7 @@ impl TxData {
             tx_status: Vec::new(),
             editing_tx: true,
             id_num,
+            current_index: 0,
         }
     }
 
@@ -100,7 +105,7 @@ impl TxData {
         ]
     }
 
-    pub fn get_tx_method(&self) -> String {
+    fn get_tx_method(&self) -> String {
         if self.tx_type == "Transfer" {
             format!("{} to {}", self.from_method, self.to_method)
         } else {
@@ -109,77 +114,133 @@ impl TxData {
     }
 
     pub fn edit_date(&mut self, to_add: Option<char>) {
-        match to_add {
-            Some(ch) => self.date.push(ch),
-            None => {
-                if !self.date.is_empty() {
-                    self.date.pop().unwrap();
+        if self.current_index > self.date.len() {
+            self.current_index = self.date.len();
+        } else {
+            match to_add {
+                Some(ch) => {
+                    self.date.insert(self.current_index, ch);
+                    self.current_index += 1
+                }
+                None => {
+                    if !self.date.is_empty() {
+                        self.date.remove(self.current_index - 1);
+                        self.current_index -= 1;
+                    }
                 }
             }
         }
     }
 
     pub fn edit_details(&mut self, to_add: Option<char>) {
-        match to_add {
-            Some(ch) => self.details.push(ch),
-            None => {
-                if !self.details.is_empty() {
-                    self.details.pop().unwrap();
+        if self.current_index > self.details.len() {
+            self.current_index = self.details.len();
+        } else {
+            match to_add {
+                Some(ch) => {
+                    self.details.insert(self.current_index, ch);
+                    self.current_index += 1
+                }
+                None => {
+                    if !self.details.is_empty() {
+                        self.details.remove(self.current_index - 1);
+                        self.current_index -= 1;
+                    }
                 }
             }
         }
     }
 
     pub fn edit_from_method(&mut self, to_add: Option<char>) {
-        match to_add {
-            Some(ch) => self.from_method.push(ch),
-            None => {
-                if !self.from_method.is_empty() {
-                    self.from_method.pop().unwrap();
+        if self.current_index > self.from_method.len() {
+            self.current_index = self.from_method.len();
+        } else {
+            match to_add {
+                Some(ch) => {
+                    self.from_method.insert(self.current_index, ch);
+                    self.current_index += 1
+                }
+                None => {
+                    if !self.from_method.is_empty() {
+                        self.from_method.remove(self.current_index - 1);
+                        self.current_index -= 1;
+                    }
                 }
             }
         }
     }
 
     pub fn edit_to_method(&mut self, to_add: Option<char>) {
-        match to_add {
-            Some(ch) => self.to_method.push(ch),
-            None => {
-                if !self.to_method.is_empty() {
-                    self.to_method.pop().unwrap();
+        if self.current_index > self.to_method.len() {
+            self.current_index = self.to_method.len();
+        } else {
+            match to_add {
+                Some(ch) => {
+                    self.to_method.insert(self.current_index, ch);
+                    self.current_index += 1
+                }
+                None => {
+                    if !self.to_method.is_empty() {
+                        self.to_method.remove(self.current_index - 1);
+                        self.current_index -= 1;
+                    }
                 }
             }
         }
     }
 
     pub fn edit_amount(&mut self, to_add: Option<char>) {
-        match to_add {
-            Some(ch) => self.amount.push(ch),
-            None => {
-                if !self.amount.is_empty() {
-                    self.amount.pop().unwrap();
+        if self.current_index > self.amount.len() {
+            self.current_index = self.amount.len();
+        } else {
+            match to_add {
+                Some(ch) => {
+                    self.amount.insert(self.current_index, ch);
+                    self.current_index += 1
+                }
+                None => {
+                    if !self.amount.is_empty() {
+                        self.amount.remove(self.current_index - 1);
+                        self.current_index -= 1;
+                    }
                 }
             }
         }
     }
 
     pub fn edit_tx_type(&mut self, to_add: Option<char>) {
-        match to_add {
-            Some(ch) => self.tx_type.push(ch),
-            None => {
-                if !self.tx_type.is_empty() {
-                    self.tx_type.pop().unwrap();
+        if self.current_index > self.tx_type.len() {
+            self.current_index = self.tx_type.len();
+        } else {
+            match to_add {
+                Some(ch) => {
+                    self.tx_type.insert(self.current_index, ch);
+                    self.current_index += 1
+                }
+                None => {
+                    if !self.tx_type.is_empty() {
+                        self.tx_type.remove(self.current_index - 1);
+                        self.current_index -= 1;
+                    }
                 }
             }
         }
     }
 
     pub fn edit_tags(&mut self, to_add: Option<char>) {
-        match to_add {
-            Some(ch) => self.tags.push(ch),
-            None => {
-                if !self.tags.is_empty() {
-                    self.tags.pop().unwrap();
+        if self.current_index > self.tags.len() {
+            self.current_index = self.tags.len();
+        } else {
+            match to_add {
+                Some(ch) => {
+                    self.tags.insert(self.current_index, ch);
+                    self.current_index += 1
+                }
+                None => {
+                    if !self.tags.is_empty() {
+                        self.tags.remove(self.current_index - 1);
+                        self.current_index -= 1;
+                    }
                 }
             }
         }
@@ -333,6 +394,80 @@ impl TxData {
         }
         None
     }
-}
 
-impl TxData {}
+    pub fn get_current_index(&self) -> usize {
+        self.current_index
+    }
+
+    fn get_add_tx_data_len(&self, current_tab: &AddTxTab) -> usize {
+        match current_tab {
+            AddTxTab::Date => self.date.len(),
+            AddTxTab::Details => self.details.len(),
+            AddTxTab::TxMethod => self.from_method.len(),
+            AddTxTab::Amount => self.amount.len(),
+            AddTxTab::TxType => self.tx_type.len(),
+            AddTxTab::Tags => self.tags.len(),
+            AddTxTab::Nothing => 0,
+        }
+    }
+
+    fn get_transfer_data_len(&self, current_tab: &TransferTab) -> usize {
+        match current_tab {
+            TransferTab::Date => self.date.len(),
+            TransferTab::Details => self.details.len(),
+            TransferTab::From => self.from_method.len(),
+            TransferTab::To => self.to_method.len(),
+            TransferTab::Amount => self.amount.len(),
+            TransferTab::Tags => self.tags.len(),
+            TransferTab::Nothing => 0,
+        }
+    }
+
+    pub fn add_tx_move_index_left(&mut self, current_tab: &AddTxTab) {
+        let data_len = self.get_add_tx_data_len(current_tab);
+
+        if self.current_index > data_len {
+            self.current_index = data_len
+        } else if self.current_index > 0 {
+            self.current_index -= 1
+        }
+    }
+
+    pub fn add_tx_move_index_right(&mut self, current_tab: &AddTxTab) {
+        let data_len = self.get_add_tx_data_len(current_tab);
+
+        if self.current_index > data_len {
+            self.current_index = data_len
+        } else if data_len > self.current_index {
+            self.current_index += 1
+        }
+    }
+
+    pub fn transfer_move_index_left(&mut self, current_tab: &TransferTab) {
+        let data_len = self.get_transfer_data_len(current_tab);
+
+        if self.current_index > data_len {
+            self.current_index = data_len
+        } else if self.current_index > 0 {
+            self.current_index -= 1
+        }
+    }
+
+    pub fn transfer_move_index_right(&mut self, current_tab: &TransferTab) {
+        let data_len = self.get_transfer_data_len(current_tab);
+
+        if self.current_index > data_len {
+            self.current_index = data_len
+        } else if data_len > self.current_index {
+            self.current_index += 1
+        }
+    }
+
+    pub fn add_tx_go_current_index(&mut self, current_tab: &AddTxTab) {
+        self.current_index = self.get_add_tx_data_len(current_tab)
+    }
+
+    pub fn transfer_go_current_index(&mut self, current_tab: &TransferTab) {
+        self.current_index = self.get_transfer_data_len(current_tab)
+    }
+}

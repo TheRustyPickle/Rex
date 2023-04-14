@@ -8,7 +8,7 @@ use crossterm::event::KeyCode;
 pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
         // we don't want to move this interface while the popup is on
-        PopupState::Nothing => match handler.tx_tab {
+        PopupState::Nothing => match handler.add_tx_tab {
             AddTxTab::Nothing => match handler.key.code {
                 KeyCode::Char('t') => handler.go_transfer(),
                 KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
@@ -22,12 +22,19 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 }
                 _ => {}
             },
-            AddTxTab::Date => handler.handle_date(),
-            AddTxTab::Details => handler.handle_details(),
-            AddTxTab::TxMethod => handler.handle_tx_method(),
-            AddTxTab::Amount => handler.handle_amount(),
-            AddTxTab::TxType => handler.handle_tx_type(),
-            AddTxTab::Tags => handler.handle_tags(),
+            _ => match handler.key.code {
+                KeyCode::Right => handler.handle_right_arrow(),
+                KeyCode::Left => handler.handle_left_arrow(),
+                _ => match handler.add_tx_tab {
+                    AddTxTab::Date => handler.handle_date(),
+                    AddTxTab::Details => handler.handle_details(),
+                    AddTxTab::TxMethod => handler.handle_tx_method(),
+                    AddTxTab::Amount => handler.handle_amount(),
+                    AddTxTab::TxType => handler.handle_tx_type(),
+                    AddTxTab::Tags => handler.handle_tags(),
+                    _ => {}
+                },
+            },
         },
         _ => handler.do_empty_popup(),
     }
