@@ -81,7 +81,7 @@ pub fn start_app<B: Backend>(
     };
 
     // Stores the current selected widget on Add Transaction page
-    let mut tx_tab = AddTxTab::Nothing;
+    let mut add_tx_tab = AddTxTab::Nothing;
     // Store the current selected widget on Add Transfer page
     let mut transfer_tab = TransferTab::Nothing;
     // Store the current selected widget on Chart page
@@ -169,16 +169,11 @@ pub fn start_app<B: Backend>(
                         &mut width_data,
                     ),
 
-                    CurrentUi::AddTx => add_tx_ui(f, &add_tx_data, &tx_tab),
+                    CurrentUi::AddTx => add_tx_ui(f, &add_tx_data, &add_tx_tab),
 
                     CurrentUi::Initial => initial_ui(f, starter_index),
 
-                    CurrentUi::Transfer => transfer_ui(
-                        f,
-                        transfer_data.get_all_texts(),
-                        &transfer_tab,
-                        &transfer_data.tx_status,
-                    ),
+                    CurrentUi::Transfer => transfer_ui(f, &transfer_data, &transfer_tab),
 
                     CurrentUi::Chart => chart_ui(
                         f,
@@ -242,7 +237,7 @@ pub fn start_app<B: Backend>(
                 key,
                 &mut page,
                 &mut popup,
-                &mut tx_tab,
+                &mut add_tx_tab,
                 &mut transfer_tab,
                 &mut chart_tab,
                 &mut summary_tab,
