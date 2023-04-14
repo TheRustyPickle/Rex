@@ -24,6 +24,7 @@ pub fn add_tx_ui<B: Backend>(
 ) {
     let status_data = &add_tx_data.tx_status;
     let input_data = add_tx_data.get_all_texts();
+    let current_index = add_tx_data.get_current_index();
     let size = f.size();
 
     // divide the terminal into various chunks to draw the interface.
@@ -67,7 +68,7 @@ pub fn add_tx_ui<B: Backend>(
     // This is the details of the Help widget
     let help_text = vec![
         Spans::from("Press the respective keys to edit fields."),
-        Spans::from("1: Date         Example: 2022-05-12, YYYY-MM-DD"),
+        Spans::from("1 : Date         Example: 2022-05-12, YYYY-MM-DD"),
         Spans::from("2 : TX details   Example: For Grocery, Salary"),
         Spans::from("3 : TX Method    Example: Cash, Bank, Card"),
         Spans::from("4 : Amount       Example: 1000, 100+50, b - 100"),
@@ -203,27 +204,24 @@ pub fn add_tx_ui<B: Backend>(
     // This was created utilizing the tui-rs example named user_input.rs
     match currently_selected {
         AddTxTab::Date => f.set_cursor(
-            another_chunk[0].x + input_data[0].len() as u16 + 1,
+            another_chunk[0].x + current_index as u16 + 1,
             another_chunk[0].y + 1,
         ),
-        AddTxTab::Details => f.set_cursor(
-            chunks[2].x + input_data[1].len() as u16 + 1,
-            chunks[2].y + 1,
-        ),
+        AddTxTab::Details => f.set_cursor(chunks[2].x + current_index as u16 + 1, chunks[2].y + 1),
         AddTxTab::TxMethod => f.set_cursor(
-            another_chunk[1].x + input_data[2].len() as u16 + 1,
+            another_chunk[1].x + current_index as u16 + 1,
             another_chunk[1].y + 1,
         ),
         AddTxTab::Amount => f.set_cursor(
-            another_chunk[2].x + input_data[4].len() as u16 + 1,
+            another_chunk[2].x + current_index as u16 + 1,
             another_chunk[2].y + 1,
         ),
         AddTxTab::TxType => f.set_cursor(
-            another_chunk[3].x + input_data[5].len() as u16 + 1,
+            another_chunk[3].x + current_index as u16 + 1,
             another_chunk[3].y + 1,
         ),
         AddTxTab::Tags => f.set_cursor(
-            another_chunk[4].x + input_data[6].len() as u16 + 1,
+            another_chunk[4].x + current_index as u16 + 1,
             another_chunk[4].y + 1,
         ),
         AddTxTab::Nothing => {}

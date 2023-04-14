@@ -1,4 +1,5 @@
 use crate::page_handler::TransferTab;
+use crate::tx_handler::TxData;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
@@ -18,10 +19,12 @@ use tui::Frame;
 
 pub fn transfer_ui<B: Backend>(
     f: &mut Frame<B>,
-    input_data: Vec<&str>,
+    transfer_data: &TxData,
     currently_selected: &TransferTab,
-    status_data: &[String],
 ) {
+    let input_data = transfer_data.get_all_texts();
+    let status_data = &transfer_data.tx_status;
+    let current_index = transfer_data.get_current_index();
     let size = f.size();
 
     // divide the terminal into various chunks to draw the interface. This is a vertical chunk
@@ -31,7 +34,6 @@ pub fn transfer_ui<B: Backend>(
         .constraints(
             [
                 Constraint::Length(12),
-                Constraint::Length(3),
                 Constraint::Length(3),
                 Constraint::Length(3),
                 Constraint::Percentage(25),
@@ -45,37 +47,15 @@ pub fn transfer_ui<B: Backend>(
         .direction(Direction::Horizontal)
         .constraints(
             [
-                Constraint::Length(15),
-                Constraint::Percentage(60),
-                Constraint::Length(10),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
             ]
             .as_ref(),
         )
         .split(chunks[1]);
-
-    let second_chunk = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Percentage(40),
-                Constraint::Percentage(20),
-                Constraint::Percentage(40),
-            ]
-            .as_ref(),
-        )
-        .split(chunks[2]);
-
-    let third_chunk = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Percentage(30),
-                Constraint::Percentage(40),
-                Constraint::Percentage(30),
-            ]
-            .as_ref(),
-        )
-        .split(chunks[3]);
 
     let block = Block::default().style(
         Style::default()
@@ -133,8 +113,6 @@ pub fn transfer_ui<B: Backend>(
 
     // * 5th index is the tx type which is not necessary for the transfer ui
     let tags_text = vec![Spans::from(input_data[6])];
-
-    let arrow_text = vec![Spans::from(""), Spans::from("➞ ➞ ➞")];
 
     let create_block = |title| {
         Block::default()
@@ -196,14 +174,6 @@ pub fn transfer_ui<B: Backend>(
         .block(create_block("To Method"))
         .alignment(Alignment::Left);
 
-    let arrow_sec = Paragraph::new(arrow_text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
-        .alignment(Alignment::Center);
-
     let amount_sec = Paragraph::new(amount_text)
         .style(
             Style::default()
@@ -211,7 +181,7 @@ pub fn transfer_ui<B: Backend>(
                 .fg(Color::Rgb(50, 205, 50)),
         )
         .block(create_block("Amount"))
-        .alignment(Alignment::Center);
+        .alignment(Alignment::Left);
 
     let details_sec = Paragraph::new(details_text)
         .style(
@@ -235,41 +205,42 @@ pub fn transfer_ui<B: Backend>(
     // This was created utilizing the tui-rs example named user_input.rs
     match currently_selected {
         TransferTab::Date => f.set_cursor(
-            first_chunk[0].x + input_data[0].len() as u16 + 1,
+            first_chunk[0].x + current_index as u16 + 1,
             first_chunk[0].y + 1,
         ),
-        TransferTab::Details => f.set_cursor(
-            first_chunk[1].x + input_data[1].len() as u16 + 1,
+        TransferTab::Details => {
+            f.set_cursor(chunks[2].x + current_index as u16 + 1, chunks[2].y + 1)
+        }
+        TransferTab::From => f.set_cursor(
+            first_chunk[1].x + current_index as u16 + 1,
             first_chunk[1].y + 1,
         ),
-        TransferTab::From => f.set_cursor(
-            second_chunk[0].x + input_data[2].len() as u16 + 1,
-            second_chunk[0].y + 1,
-        ),
         TransferTab::To => f.set_cursor(
-            second_chunk[2].x + input_data[3].len() as u16 + 1,
-            second_chunk[2].y + 1,
+            first_chunk[2].x + current_index as u16 + 1,
+            first_chunk[2].y + 1,
         ),
         // The text of this goes into the middle so couldn't find a better place to insert the input box
-        TransferTab::Amount => f.set_cursor(third_chunk[1].x + 1, third_chunk[1].y + 1),
+        TransferTab::Amount => f.set_cursor(
+            first_chunk[3].x + current_index as u16 + 1,
+            first_chunk[3].y + 1,
+        ),
         TransferTab::Tags => f.set_cursor(
-            first_chunk[2].x + input_data[6].len() as u16 + 1,
-            first_chunk[2].y + 1,
+            first_chunk[4].x + current_index as u16 + 1,
+            first_chunk[4].y + 1,
         ),
         TransferTab::Nothing => {}
     }
 
     // render the previously generated data into an interface
     f.render_widget(date_sec, first_chunk[0]);
-    f.render_widget(details_sec, first_chunk[1]);
-    f.render_widget(tags_sec, first_chunk[2]);
+    f.render_widget(details_sec, chunks[2]);
+    f.render_widget(tags_sec, first_chunk[4]);
 
     f.render_widget(help_sec, chunks[0]);
-    f.render_widget(status_sec, chunks[4]);
+    f.render_widget(status_sec, chunks[3]);
 
-    f.render_widget(from_sec, second_chunk[0]);
-    f.render_widget(arrow_sec, second_chunk[1]);
-    f.render_widget(to_sec, second_chunk[2]);
+    f.render_widget(from_sec, first_chunk[1]);
+    f.render_widget(to_sec, first_chunk[2]);
 
-    f.render_widget(amount_sec, third_chunk[1]);
+    f.render_widget(amount_sec, first_chunk[3]);
 }
