@@ -134,17 +134,19 @@ pub fn chart_ui<B: Backend>(
     let mut last_balances = Vec::new();
 
     // adding default initial value
-    for _i in &all_tx_methods {
-        datasets.push(vec![(0.0, 0.0)]);
-        last_balances.push(0.0);
+    if chart_data.all_txs.is_empty() {
+        for _i in &all_tx_methods {
+            datasets.push(vec![(0.0, 0.0)]);
+            last_balances.push(0.0);
+        }
     }
-
+    
     let mut lowest_balance = 0.0;
     let mut highest_balance = 0.0;
 
     let mut date_labels: Vec<String> = vec![];
 
-    let mut current_axis = 1.0;
+    let mut current_axis = 0.0;
 
     // if there are no transactions, we will create an empty chart
     if !chart_data.all_txs.is_empty() {
@@ -227,7 +229,13 @@ pub fn chart_ui<B: Backend>(
                         last_balances.push(current_balance);
                     } else {
                         let to_push = vec![(current_axis, current_balance)];
-                        datasets[method_index].extend(to_push);
+
+                        if let Some(_) = datasets.get(method_index) {
+                            datasets[method_index].extend(to_push);
+                        } else {
+                            datasets.push(to_push)
+                        }
+                        
                         last_balances.push(current_balance);
                     }
                 }
