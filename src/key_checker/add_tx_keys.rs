@@ -25,6 +25,8 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             _ => match handler.key.code {
                 KeyCode::Right => handler.handle_right_arrow(),
                 KeyCode::Left => handler.handle_left_arrow(),
+                KeyCode::Up => handler.handle_up_arrow(),
+                KeyCode::Down => handler.handle_down_arrow(),
                 _ => match handler.add_tx_tab {
                     AddTxTab::Date => handler.handle_date(),
                     AddTxTab::Details => handler.handle_details(),

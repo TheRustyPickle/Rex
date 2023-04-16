@@ -65,3 +65,34 @@ impl fmt::Display for SavingError {
 }
 
 impl std::error::Error for SavingError {}
+
+pub enum SteppingError {
+    InvalidDate,
+    InvalidTxMethod,
+    InvalidAmount,
+    InvalidTxType,
+    InvalidTags,
+}
+
+impl fmt::Display for SteppingError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SteppingError::InvalidDate => {
+                write!(f, "Date: Failed to step due to invalid date format")
+            }
+            SteppingError::InvalidTxMethod => write!(
+                f,
+                "Tx Method: Failed to step as similar tx method does not exists"
+            ),
+            SteppingError::InvalidAmount => {
+                write!(f, "Amount: Failed to step due to invalid amount format")
+            }
+            SteppingError::InvalidTxType => {
+                write!(f, "Tx Type: Failed to step due to invalid tx type")
+            }
+            SteppingError::InvalidTags => {
+                write!(f, "Tags: Failed to step as similar tag does not exists")
+            }
+        }
+    }
+}

@@ -24,6 +24,8 @@ pub fn transfer_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             _ => match handler.key.code {
                 KeyCode::Right => handler.handle_right_arrow(),
                 KeyCode::Left => handler.handle_left_arrow(),
+                KeyCode::Up => handler.handle_up_arrow(),
+                KeyCode::Down => handler.handle_down_arrow(),
                 _ => match handler.transfer_tab {
                     TransferTab::Date => handler.handle_date(),
                     TransferTab::Details => handler.handle_details(),
