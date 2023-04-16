@@ -400,8 +400,8 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_up_arrow(&mut self) {
         match self.page {
             CurrentUi::Home => self.do_home_up(),
-            CurrentUi::AddTx => {}
-            CurrentUi::Transfer => {}
+            CurrentUi::AddTx => self.do_add_tx_up(),
+            CurrentUi::Transfer => self.do_transfer_up(),
             CurrentUi::Summary => self.do_summary_up(),
             CurrentUi::Chart => self.do_chart_up(),
             _ => {}
@@ -411,8 +411,8 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_down_arrow(&mut self) {
         match self.page {
             CurrentUi::Home => self.do_home_down(),
-            CurrentUi::AddTx => {}
-            CurrentUi::Transfer => {}
+            CurrentUi::AddTx => self.do_add_tx_down(),
+            CurrentUi::Transfer => self.do_transfer_down(),
             CurrentUi::Summary => self.do_summary_down(),
             CurrentUi::Chart => self.do_chart_down(),
             _ => {}
@@ -995,11 +995,70 @@ impl<'a> InputKeyHandler<'a> {
     fn go_correct_index(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.add_tx_data.add_tx_go_current_index(&self.add_tx_tab),
-
             CurrentUi::Transfer => self
                 .transfer_data
                 .transfer_go_current_index(&self.transfer_tab),
             _ => {}
+        }
+    }
+
+    fn do_add_tx_up(&mut self) {
+        let status = match self.add_tx_tab {
+            AddTxTab::Date => self.add_tx_data.do_date_up(),
+            AddTxTab::TxMethod => self.add_tx_data.do_from_method_up(self.conn),
+            AddTxTab::Amount => self.add_tx_data.do_amount_up(self.conn),
+            AddTxTab::TxType => self.add_tx_data.do_tx_type_up(),
+            AddTxTab::Tags => self.add_tx_data.do_tags_up(),
+            _ => Ok(()),
+        };
+
+        if let Err(e) = status {
+            self.add_tx_data.add_tx_status(e.to_string())
+        }
+    }
+
+    fn do_add_tx_down(&mut self) {
+        let status = match self.add_tx_tab {
+            AddTxTab::Date => self.add_tx_data.do_date_down(),
+            AddTxTab::TxMethod => self.add_tx_data.do_from_method_down(self.conn),
+            AddTxTab::Amount => self.add_tx_data.do_amount_down(self.conn),
+            AddTxTab::TxType => self.add_tx_data.do_tx_type_down(),
+            AddTxTab::Tags => self.add_tx_data.do_tags_down(),
+            _ => Ok(()),
+        };
+
+        if let Err(e) = status {
+            self.add_tx_data.add_tx_status(e.to_string())
+        }
+    }
+
+    fn do_transfer_up(&mut self) {
+        let status = match &self.transfer_tab {
+            TransferTab::Date => self.transfer_data.do_date_up(),
+            TransferTab::From => self.transfer_data.do_from_method_up(self.conn),
+            TransferTab::To => self.transfer_data.do_to_method_up(),
+            TransferTab::Amount => self.transfer_data.do_amount_up(self.conn),
+            TransferTab::Tags => self.transfer_data.do_tags_up(),
+            _ => Ok(()),
+        };
+
+        if let Err(e) = status {
+            self.add_tx_data.add_tx_status(e.to_string())
+        }
+    }
+
+    fn do_transfer_down(&mut self) {
+        let status = match &self.transfer_tab {
+            TransferTab::Date => self.transfer_data.do_date_down(),
+            TransferTab::From => self.transfer_data.do_from_method_down(self.conn),
+            TransferTab::To => self.transfer_data.do_to_method_down(),
+            TransferTab::Amount => self.transfer_data.do_amount_down(self.conn),
+            TransferTab::Tags => self.transfer_data.do_tags_down(),
+            _ => Ok(()),
+        };
+
+        if let Err(e) = status {
+            self.add_tx_data.add_tx_status(e.to_string())
         }
     }
 }

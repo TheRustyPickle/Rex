@@ -1,9 +1,10 @@
-use crate::outputs::{NAType, SavingError, VerifyingOutput};
+use crate::outputs::{NAType, SavingError, SteppingError, VerifyingOutput};
 use crate::page_handler::{AddTxTab, TransferTab};
 use crate::tx_handler::{add_tx, delete_tx};
 use crate::utility::traits::DataVerifier;
 use crate::utility::{get_all_tx_methods, get_last_balances};
 use chrono::prelude::Local;
+use chrono::{Duration, NaiveDate};
 use rusqlite::Connection;
 pub struct TxData {
     date: String,
@@ -123,7 +124,7 @@ impl TxData {
                     self.current_index += 1
                 }
                 None => {
-                    if !self.date.is_empty() {
+                    if !self.date.is_empty() && self.current_index != 0 {
                         self.date.remove(self.current_index - 1);
                         self.current_index -= 1;
                     }
@@ -142,7 +143,7 @@ impl TxData {
                     self.current_index += 1
                 }
                 None => {
-                    if !self.details.is_empty() {
+                    if !self.details.is_empty() && self.current_index != 0 {
                         self.details.remove(self.current_index - 1);
                         self.current_index -= 1;
                     }
@@ -161,7 +162,7 @@ impl TxData {
                     self.current_index += 1
                 }
                 None => {
-                    if !self.from_method.is_empty() {
+                    if !self.from_method.is_empty() && self.current_index != 0 {
                         self.from_method.remove(self.current_index - 1);
                         self.current_index -= 1;
                     }
@@ -180,7 +181,7 @@ impl TxData {
                     self.current_index += 1
                 }
                 None => {
-                    if !self.to_method.is_empty() {
+                    if !self.to_method.is_empty() && self.current_index != 0 {
                         self.to_method.remove(self.current_index - 1);
                         self.current_index -= 1;
                     }
@@ -199,7 +200,7 @@ impl TxData {
                     self.current_index += 1
                 }
                 None => {
-                    if !self.amount.is_empty() {
+                    if !self.amount.is_empty() && self.current_index != 0 {
                         self.amount.remove(self.current_index - 1);
                         self.current_index -= 1;
                     }
@@ -218,7 +219,7 @@ impl TxData {
                     self.current_index += 1
                 }
                 None => {
-                    if !self.tx_type.is_empty() {
+                    if !self.tx_type.is_empty() && self.current_index != 0 {
                         self.tx_type.remove(self.current_index - 1);
                         self.current_index -= 1;
                     }
@@ -237,7 +238,7 @@ impl TxData {
                     self.current_index += 1
                 }
                 None => {
-                    if !self.tags.is_empty() {
+                    if !self.tags.is_empty() && self.current_index != 0 {
                         self.tags.remove(self.current_index - 1);
                         self.current_index -= 1;
                     }
@@ -469,5 +470,196 @@ impl TxData {
 
     pub fn transfer_go_current_index(&mut self, current_tab: &TransferTab) {
         self.current_index = self.get_transfer_data_len(current_tab)
+    }
+
+    pub fn do_date_up(&mut self) -> Result<(), SteppingError> {
+        let status = self.check_date();
+        let data_len = self.get_add_tx_data_len(&AddTxTab::Date);
+        if self.current_index > data_len {
+            self.current_index = data_len
+        }
+
+        match status {
+            VerifyingOutput::Accepted(_) => {
+                // TODO date here
+                let final_date = NaiveDate::parse_from_str("2025-12-31", "%Y-%m-%d").unwrap();
+                let mut current_date = NaiveDate::parse_from_str(&self.date, "%Y-%m-%d").unwrap();
+                if current_date != final_date {
+                    current_date += Duration::days(1);
+                    self.date = current_date.to_string();
+                    self.add_tx_go_current_index(&AddTxTab::Date);
+                }
+            }
+            VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidDate),
+            VerifyingOutput::Nothing(_) => {
+                self.date = String::from("2022-01-01");
+                self.add_tx_go_current_index(&AddTxTab::Date);
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn do_date_down(&mut self) -> Result<(), SteppingError> {
+        let status = self.check_date();
+        let data_len = self.get_add_tx_data_len(&AddTxTab::Date);
+        if self.current_index > data_len {
+            self.current_index = data_len
+        }
+
+        match status {
+            VerifyingOutput::Accepted(_) => {
+                let final_date = NaiveDate::parse_from_str("2022-01-01", "%Y-%m-%d").unwrap();
+                let mut current_date = NaiveDate::parse_from_str(&self.date, "%Y-%m-%d").unwrap();
+                if current_date != final_date {
+                    current_date -= Duration::days(1);
+                    self.date = current_date.to_string();
+                    self.add_tx_go_current_index(&AddTxTab::Date);
+                }
+            }
+            VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidDate),
+            VerifyingOutput::Nothing(_) => {
+                self.date = String::from("2022-01-01");
+                self.add_tx_go_current_index(&AddTxTab::Date);
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn do_from_method_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+        let all_methods = get_all_tx_methods(conn);
+
+        let status = self.check_from_method(conn);
+        let data_len = self.get_add_tx_data_len(&AddTxTab::TxMethod);
+        if self.current_index > data_len {
+            self.current_index = data_len
+        }
+
+        match status {
+            VerifyingOutput::Accepted(_) => {
+                let current_method_index = all_methods
+                    .iter()
+                    .position(|e| e == &self.from_method)
+                    .unwrap();
+                let next_method_index = (current_method_index + 1) % all_methods.len();
+                self.from_method = String::from(&all_methods[next_method_index]);
+                self.add_tx_go_current_index(&AddTxTab::TxMethod);
+            }
+            VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidTxMethod),
+            VerifyingOutput::Nothing(_) => {
+                self.from_method = String::from(&all_methods[0]);
+                self.add_tx_go_current_index(&AddTxTab::TxMethod);
+            }
+        }
+        Ok(())
+    }
+
+    pub fn do_from_method_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+        let all_methods = get_all_tx_methods(conn);
+
+        let status = self.check_from_method(conn);
+        let data_len = self.get_add_tx_data_len(&AddTxTab::TxMethod);
+        if self.current_index > data_len {
+            self.current_index = data_len
+        }
+
+        match status {
+            VerifyingOutput::Accepted(_) => {
+                let current_method_index = all_methods
+                    .iter()
+                    .position(|e| e == &self.from_method)
+                    .unwrap();
+                let next_method_index = if current_method_index == 0 {
+                    all_methods.len() - 1
+                } else {
+                    (current_method_index - 1) % all_methods.len()
+                };
+                self.from_method = String::from(&all_methods[next_method_index]);
+                self.add_tx_go_current_index(&AddTxTab::TxMethod);
+            }
+            VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidTxMethod),
+            VerifyingOutput::Nothing(_) => {
+                self.from_method = String::from(&all_methods[0]);
+                self.add_tx_go_current_index(&AddTxTab::TxMethod);
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn do_to_method_up(&mut self) -> Result<(), SteppingError> {
+        Ok(())
+    }
+
+    pub fn do_to_method_down(&mut self) -> Result<(), SteppingError> {
+        Ok(())
+    }
+
+    pub fn do_tx_type_up(&mut self) -> Result<(), SteppingError> {
+        Ok(())
+    }
+
+    pub fn do_tx_type_down(&mut self) -> Result<(), SteppingError> {
+        Ok(())
+    }
+
+    pub fn do_amount_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+        let status = self.check_amount(conn);
+        let data_len = self.get_add_tx_data_len(&AddTxTab::Amount);
+        if self.current_index > data_len {
+            self.current_index = data_len
+        }
+
+        if self.amount == "0.00" || self.amount == "" {
+            self.amount = "1.00".to_string()
+        } else {
+            match status {
+                VerifyingOutput::Accepted(_) => {
+                    let mut current_amount: f64 = self.amount.parse().unwrap();
+
+                    if 1000000000.00 != current_amount {
+                        current_amount += 1.0;
+                        self.amount = format!("{current_amount:.2}");
+                    }
+                }
+                VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidAmount),
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    pub fn do_amount_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+        let status = self.check_amount(conn);
+
+        let data_len = self.get_add_tx_data_len(&AddTxTab::Amount);
+        if self.current_index > data_len {
+            self.current_index = data_len
+        }
+
+        if self.amount != "0.00" {
+            match status {
+                VerifyingOutput::Accepted(_) => {
+                    let mut current_amount: f64 = self.amount.parse().unwrap();
+
+                    if 0.0 != current_amount {
+                        current_amount -= 1.0;
+                        self.amount = format!("{current_amount:.2}")
+                    }
+                }
+                VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidAmount),
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    pub fn do_tags_up(&mut self) -> Result<(), SteppingError> {
+        Ok(())
+    }
+
+    pub fn do_tags_down(&mut self) -> Result<(), SteppingError> {
+        Ok(())
     }
 }
