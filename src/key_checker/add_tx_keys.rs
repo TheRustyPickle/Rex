@@ -1,6 +1,6 @@
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
-use crate::page_handler::{AddTxTab, PopupState};
+use crate::page_handler::{PopupState, TxTab};
 use crossterm::event::KeyCode;
 
 /// Tracks the keys once interacting with the Add Transaction interface. Based on the key pressed,
@@ -9,7 +9,7 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
         // we don't want to move this interface while the popup is on
         PopupState::Nothing => match handler.add_tx_tab {
-            AddTxTab::Nothing => match handler.key.code {
+            TxTab::Nothing => match handler.key.code {
                 KeyCode::Char('t') => handler.go_transfer(),
                 KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
                 KeyCode::Char('f') => handler.go_home(),
@@ -28,12 +28,12 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 KeyCode::Up => handler.handle_up_arrow(),
                 KeyCode::Down => handler.handle_down_arrow(),
                 _ => match handler.add_tx_tab {
-                    AddTxTab::Date => handler.handle_date(),
-                    AddTxTab::Details => handler.handle_details(),
-                    AddTxTab::TxMethod => handler.handle_tx_method(),
-                    AddTxTab::Amount => handler.handle_amount(),
-                    AddTxTab::TxType => handler.handle_tx_type(),
-                    AddTxTab::Tags => handler.handle_tags(),
+                    TxTab::Date => handler.handle_date(),
+                    TxTab::Details => handler.handle_details(),
+                    TxTab::FromMethod => handler.handle_tx_method(),
+                    TxTab::Amount => handler.handle_amount(),
+                    TxTab::TxType => handler.handle_tx_type(),
+                    TxTab::Tags => handler.handle_tags(),
                     _ => {}
                 },
             },

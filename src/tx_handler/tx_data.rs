@@ -1,11 +1,12 @@
 use crate::outputs::{NAType, SavingError, SteppingError, VerifyingOutput};
-use crate::page_handler::{AddTxTab, TransferTab};
+use crate::page_handler::TxTab;
 use crate::tx_handler::{add_tx, delete_tx};
 use crate::utility::traits::DataVerifier;
 use crate::utility::{get_all_tx_methods, get_last_balances};
 use chrono::prelude::Local;
 use chrono::{Duration, NaiveDate};
 use rusqlite::Connection;
+
 pub struct TxData {
     date: String,
     details: String,
@@ -400,32 +401,21 @@ impl TxData {
         self.current_index
     }
 
-    fn get_add_tx_data_len(&self, current_tab: &AddTxTab) -> usize {
+    fn get_data_len(&self, current_tab: &TxTab) -> usize {
         match current_tab {
-            AddTxTab::Date => self.date.len(),
-            AddTxTab::Details => self.details.len(),
-            AddTxTab::TxMethod => self.from_method.len(),
-            AddTxTab::Amount => self.amount.len(),
-            AddTxTab::TxType => self.tx_type.len(),
-            AddTxTab::Tags => self.tags.len(),
-            AddTxTab::Nothing => 0,
+            TxTab::Date => self.date.len(),
+            TxTab::Details => self.details.len(),
+            TxTab::FromMethod => self.from_method.len(),
+            TxTab::ToMethod => self.to_method.len(),
+            TxTab::Amount => self.amount.len(),
+            TxTab::TxType => self.tx_type.len(),
+            TxTab::Tags => self.tags.len(),
+            TxTab::Nothing => 0,
         }
     }
 
-    fn get_transfer_data_len(&self, current_tab: &TransferTab) -> usize {
-        match current_tab {
-            TransferTab::Date => self.date.len(),
-            TransferTab::Details => self.details.len(),
-            TransferTab::From => self.from_method.len(),
-            TransferTab::To => self.to_method.len(),
-            TransferTab::Amount => self.amount.len(),
-            TransferTab::Tags => self.tags.len(),
-            TransferTab::Nothing => 0,
-        }
-    }
-
-    pub fn add_tx_move_index_left(&mut self, current_tab: &AddTxTab) {
-        let data_len = self.get_add_tx_data_len(current_tab);
+    pub fn add_tx_move_index_left(&mut self, current_tab: &TxTab) {
+        let data_len = self.get_data_len(current_tab);
 
         if self.current_index > data_len {
             self.current_index = data_len
@@ -434,8 +424,8 @@ impl TxData {
         }
     }
 
-    pub fn add_tx_move_index_right(&mut self, current_tab: &AddTxTab) {
-        let data_len = self.get_add_tx_data_len(current_tab);
+    pub fn add_tx_move_index_right(&mut self, current_tab: &TxTab) {
+        let data_len = self.get_data_len(current_tab);
 
         if self.current_index > data_len {
             self.current_index = data_len
@@ -444,8 +434,8 @@ impl TxData {
         }
     }
 
-    pub fn transfer_move_index_left(&mut self, current_tab: &TransferTab) {
-        let data_len = self.get_transfer_data_len(current_tab);
+    pub fn transfer_move_index_left(&mut self, current_tab: &TxTab) {
+        let data_len = self.get_data_len(current_tab);
 
         if self.current_index > data_len {
             self.current_index = data_len
@@ -454,8 +444,8 @@ impl TxData {
         }
     }
 
-    pub fn transfer_move_index_right(&mut self, current_tab: &TransferTab) {
-        let data_len = self.get_transfer_data_len(current_tab);
+    pub fn transfer_move_index_right(&mut self, current_tab: &TxTab) {
+        let data_len = self.get_data_len(current_tab);
 
         if self.current_index > data_len {
             self.current_index = data_len
@@ -464,17 +454,17 @@ impl TxData {
         }
     }
 
-    pub fn add_tx_go_current_index(&mut self, current_tab: &AddTxTab) {
-        self.current_index = self.get_add_tx_data_len(current_tab)
+    pub fn add_tx_go_current_index(&mut self, current_tab: &TxTab) {
+        self.current_index = self.get_data_len(current_tab)
     }
 
-    pub fn transfer_go_current_index(&mut self, current_tab: &TransferTab) {
-        self.current_index = self.get_transfer_data_len(current_tab)
+    pub fn transfer_go_current_index(&mut self, current_tab: &TxTab) {
+        self.current_index = self.get_data_len(current_tab)
     }
 
     pub fn do_date_up(&mut self) -> Result<(), SteppingError> {
         let status = self.check_date();
-        let data_len = self.get_add_tx_data_len(&AddTxTab::Date);
+        let data_len = self.get_data_len(&TxTab::Date);
         if self.current_index > data_len {
             self.current_index = data_len
         }
@@ -487,13 +477,13 @@ impl TxData {
                 if current_date != final_date {
                     current_date += Duration::days(1);
                     self.date = current_date.to_string();
-                    self.add_tx_go_current_index(&AddTxTab::Date);
+                    self.add_tx_go_current_index(&TxTab::Date);
                 }
             }
             VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidDate),
             VerifyingOutput::Nothing(_) => {
                 self.date = String::from("2022-01-01");
-                self.add_tx_go_current_index(&AddTxTab::Date);
+                self.add_tx_go_current_index(&TxTab::Date);
             }
         }
 
@@ -502,7 +492,7 @@ impl TxData {
 
     pub fn do_date_down(&mut self) -> Result<(), SteppingError> {
         let status = self.check_date();
-        let data_len = self.get_add_tx_data_len(&AddTxTab::Date);
+        let data_len = self.get_data_len(&TxTab::Date);
         if self.current_index > data_len {
             self.current_index = data_len
         }
@@ -514,13 +504,13 @@ impl TxData {
                 if current_date != final_date {
                     current_date -= Duration::days(1);
                     self.date = current_date.to_string();
-                    self.add_tx_go_current_index(&AddTxTab::Date);
+                    self.add_tx_go_current_index(&TxTab::Date);
                 }
             }
             VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidDate),
             VerifyingOutput::Nothing(_) => {
                 self.date = String::from("2022-01-01");
-                self.add_tx_go_current_index(&AddTxTab::Date);
+                self.add_tx_go_current_index(&TxTab::Date);
             }
         }
 
@@ -531,7 +521,7 @@ impl TxData {
         let all_methods = get_all_tx_methods(conn);
 
         let status = self.check_from_method(conn);
-        let data_len = self.get_add_tx_data_len(&AddTxTab::TxMethod);
+        let data_len = self.get_data_len(&TxTab::FromMethod);
         if self.current_index > data_len {
             self.current_index = data_len
         }
@@ -544,12 +534,12 @@ impl TxData {
                     .unwrap();
                 let next_method_index = (current_method_index + 1) % all_methods.len();
                 self.from_method = String::from(&all_methods[next_method_index]);
-                self.add_tx_go_current_index(&AddTxTab::TxMethod);
+                self.add_tx_go_current_index(&TxTab::FromMethod);
             }
             VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidTxMethod),
             VerifyingOutput::Nothing(_) => {
                 self.from_method = String::from(&all_methods[0]);
-                self.add_tx_go_current_index(&AddTxTab::TxMethod);
+                self.add_tx_go_current_index(&TxTab::FromMethod);
             }
         }
         Ok(())
@@ -559,7 +549,7 @@ impl TxData {
         let all_methods = get_all_tx_methods(conn);
 
         let status = self.check_from_method(conn);
-        let data_len = self.get_add_tx_data_len(&AddTxTab::TxMethod);
+        let data_len = self.get_data_len(&TxTab::FromMethod);
         if self.current_index > data_len {
             self.current_index = data_len
         }
@@ -576,23 +566,76 @@ impl TxData {
                     (current_method_index - 1) % all_methods.len()
                 };
                 self.from_method = String::from(&all_methods[next_method_index]);
-                self.add_tx_go_current_index(&AddTxTab::TxMethod);
+                self.add_tx_go_current_index(&TxTab::FromMethod);
             }
             VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidTxMethod),
             VerifyingOutput::Nothing(_) => {
                 self.from_method = String::from(&all_methods[0]);
-                self.add_tx_go_current_index(&AddTxTab::TxMethod);
+                self.add_tx_go_current_index(&TxTab::FromMethod);
             }
         }
 
         Ok(())
     }
 
-    pub fn do_to_method_up(&mut self) -> Result<(), SteppingError> {
+    pub fn do_to_method_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+        let all_methods = get_all_tx_methods(conn);
+
+        let status = self.check_to_method(conn);
+        let data_len = self.get_data_len(&TxTab::ToMethod);
+        if self.current_index > data_len {
+            self.current_index = data_len
+        }
+
+        match status {
+            VerifyingOutput::Accepted(_) => {
+                let current_method_index = all_methods
+                    .iter()
+                    .position(|e| e == &self.to_method)
+                    .unwrap();
+                let next_method_index = (current_method_index + 1) % all_methods.len();
+                self.to_method = String::from(&all_methods[next_method_index]);
+                self.add_tx_go_current_index(&TxTab::ToMethod);
+            }
+            VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidTxMethod),
+            VerifyingOutput::Nothing(_) => {
+                self.to_method = String::from(&all_methods[0]);
+                self.add_tx_go_current_index(&TxTab::ToMethod);
+            }
+        }
         Ok(())
     }
 
-    pub fn do_to_method_down(&mut self) -> Result<(), SteppingError> {
+    pub fn do_to_method_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+        let all_methods = get_all_tx_methods(conn);
+
+        let status = self.check_to_method(conn);
+        let data_len = self.get_data_len(&TxTab::ToMethod);
+        if self.current_index > data_len {
+            self.current_index = data_len
+        }
+
+        match status {
+            VerifyingOutput::Accepted(_) => {
+                let current_method_index = all_methods
+                    .iter()
+                    .position(|e| e == &self.to_method)
+                    .unwrap();
+                let next_method_index = if current_method_index == 0 {
+                    all_methods.len() - 1
+                } else {
+                    (current_method_index - 1) % all_methods.len()
+                };
+                self.to_method = String::from(&all_methods[next_method_index]);
+                self.add_tx_go_current_index(&TxTab::ToMethod);
+            }
+            VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidTxMethod),
+            VerifyingOutput::Nothing(_) => {
+                self.to_method = String::from(&all_methods[0]);
+                self.add_tx_go_current_index(&TxTab::ToMethod);
+            }
+        }
+
         Ok(())
     }
 
@@ -606,7 +649,7 @@ impl TxData {
 
     pub fn do_amount_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let status = self.check_amount(conn);
-        let data_len = self.get_add_tx_data_len(&AddTxTab::Amount);
+        let data_len = self.get_data_len(&TxTab::Amount);
         if self.current_index > data_len {
             self.current_index = data_len
         }
@@ -633,7 +676,7 @@ impl TxData {
     pub fn do_amount_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let status = self.check_amount(conn);
 
-        let data_len = self.get_add_tx_data_len(&AddTxTab::Amount);
+        let data_len = self.get_data_len(&TxTab::Amount);
         if self.current_index > data_len {
             self.current_index = data_len
         }
