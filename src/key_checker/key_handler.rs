@@ -296,10 +296,8 @@ impl<'a> InputKeyHandler<'a> {
                 }
                 _ => {}
             },
-            CurrentUi::AddTx => self.add_tx_data.add_tx_move_index_left(&self.add_tx_tab),
-            CurrentUi::Transfer => self
-                .transfer_data
-                .transfer_move_index_left(&self.transfer_tab),
+            CurrentUi::AddTx => self.add_tx_data.move_index_left(&self.add_tx_tab),
+            CurrentUi::Transfer => self.transfer_data.move_index_left(&self.transfer_tab),
             CurrentUi::Chart => {
                 if !*self.chart_hidden_mode {
                     match self.chart_tab {
@@ -353,10 +351,8 @@ impl<'a> InputKeyHandler<'a> {
                 }
                 _ => {}
             },
-            CurrentUi::AddTx => self.add_tx_data.add_tx_move_index_right(&self.add_tx_tab),
-            CurrentUi::Transfer => self
-                .transfer_data
-                .transfer_move_index_right(&self.transfer_tab),
+            CurrentUi::AddTx => self.add_tx_data.move_index_right(&self.add_tx_tab),
+            CurrentUi::Transfer => self.transfer_data.move_index_right(&self.transfer_tab),
             CurrentUi::Chart => {
                 if !*self.chart_hidden_mode {
                     match self.chart_tab {
@@ -993,10 +989,8 @@ impl<'a> InputKeyHandler<'a> {
 
     fn go_correct_index(&mut self) {
         match self.page {
-            CurrentUi::AddTx => self.add_tx_data.add_tx_go_current_index(&self.add_tx_tab),
-            CurrentUi::Transfer => self
-                .transfer_data
-                .transfer_go_current_index(&self.transfer_tab),
+            CurrentUi::AddTx => self.add_tx_data.go_current_index(&self.add_tx_tab),
+            CurrentUi::Transfer => self.transfer_data.go_current_index(&self.transfer_tab),
             _ => {}
         }
     }
@@ -1007,7 +1001,7 @@ impl<'a> InputKeyHandler<'a> {
             TxTab::FromMethod => self.add_tx_data.do_from_method_up(self.conn),
             TxTab::Amount => self.add_tx_data.do_amount_up(self.conn),
             TxTab::TxType => self.add_tx_data.do_tx_type_up(),
-            TxTab::Tags => self.add_tx_data.do_tags_up(),
+            TxTab::Tags => self.add_tx_data.do_tags_up(self.conn),
             _ => Ok(()),
         };
 
@@ -1022,7 +1016,7 @@ impl<'a> InputKeyHandler<'a> {
             TxTab::FromMethod => self.add_tx_data.do_from_method_down(self.conn),
             TxTab::Amount => self.add_tx_data.do_amount_down(self.conn),
             TxTab::TxType => self.add_tx_data.do_tx_type_down(),
-            TxTab::Tags => self.add_tx_data.do_tags_down(),
+            TxTab::Tags => self.add_tx_data.do_tags_down(self.conn),
             _ => Ok(()),
         };
 
@@ -1037,7 +1031,7 @@ impl<'a> InputKeyHandler<'a> {
             TxTab::FromMethod => self.transfer_data.do_from_method_up(self.conn),
             TxTab::ToMethod => self.transfer_data.do_to_method_up(self.conn),
             TxTab::Amount => self.transfer_data.do_amount_up(self.conn),
-            TxTab::Tags => self.transfer_data.do_tags_up(),
+            TxTab::Tags => self.transfer_data.do_tags_up(self.conn),
             _ => Ok(()),
         };
 
@@ -1052,7 +1046,7 @@ impl<'a> InputKeyHandler<'a> {
             TxTab::FromMethod => self.transfer_data.do_from_method_down(self.conn),
             TxTab::ToMethod => self.transfer_data.do_to_method_down(self.conn),
             TxTab::Amount => self.transfer_data.do_amount_down(self.conn),
-            TxTab::Tags => self.transfer_data.do_tags_down(),
+            TxTab::Tags => self.transfer_data.do_tags_down(self.conn),
             _ => Ok(()),
         };
 

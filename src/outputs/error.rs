@@ -41,7 +41,7 @@ impl fmt::Display for UiHandlingError {
 impl std::error::Error for UiHandlingError {}
 
 #[derive(Debug)]
-pub enum SavingError {
+pub enum CheckingError {
     EmptyDate,
     EmptyMethod,
     EmptyAmount,
@@ -49,14 +49,14 @@ pub enum SavingError {
     SameTxMethod,
 }
 
-impl fmt::Display for SavingError {
+impl fmt::Display for CheckingError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SavingError::EmptyDate => write!(f, "Date: Date cannot be empty"),
-            SavingError::EmptyMethod => write!(f, "Tx Method: TX Method cannot be empty"),
-            SavingError::EmptyAmount => write!(f, "Amount: Amount cannot be empty"),
-            SavingError::EmptyTxType => write!(f, "Tx Type: Transaction Type cannot be empty"),
-            SavingError::SameTxMethod => write!(
+            CheckingError::EmptyDate => write!(f, "Date: Date cannot be empty"),
+            CheckingError::EmptyMethod => write!(f, "Tx Method: TX Method cannot be empty"),
+            CheckingError::EmptyAmount => write!(f, "Amount: Amount cannot be empty"),
+            CheckingError::EmptyTxType => write!(f, "Tx Type: Transaction Type cannot be empty"),
+            CheckingError::SameTxMethod => write!(
                 f,
                 "Tx Method: From and To methods cannot be the same for Transfer"
             ),
@@ -64,7 +64,7 @@ impl fmt::Display for SavingError {
     }
 }
 
-impl std::error::Error for SavingError {}
+impl std::error::Error for CheckingError {}
 
 pub enum SteppingError {
     InvalidDate,
@@ -82,7 +82,7 @@ impl fmt::Display for SteppingError {
             }
             SteppingError::InvalidTxMethod => write!(
                 f,
-                "Tx Method: Failed to step as similar tx method does not exists"
+                "Tx Method: Failed to step as the tx method does not exists"
             ),
             SteppingError::InvalidAmount => {
                 write!(f, "Amount: Failed to step due to invalid amount format")
@@ -91,7 +91,7 @@ impl fmt::Display for SteppingError {
                 write!(f, "Tx Type: Failed to step due to invalid tx type")
             }
             SteppingError::InvalidTags => {
-                write!(f, "Tags: Failed to step as similar tag does not exists")
+                write!(f, "Tags: Failed to step as the tag does not exists")
             }
         }
     }

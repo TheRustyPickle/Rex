@@ -23,7 +23,7 @@ pub fn transfer_ui<B: Backend>(
     currently_selected: &TxTab,
 ) {
     let input_data = transfer_data.get_all_texts();
-    let status_data = &transfer_data.tx_status;
+    let status_data = transfer_data.get_tx_status();
     let current_index = transfer_data.get_current_index();
     let size = f.size();
 

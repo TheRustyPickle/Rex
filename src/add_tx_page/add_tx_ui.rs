@@ -18,7 +18,7 @@ use tui::Frame;
 /// - status_data : Contains all the String to push into the Status widget
 
 pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_selected: &TxTab) {
-    let status_data = &add_tx_data.tx_status;
+    let status_data = add_tx_data.get_tx_status();
     let input_data = add_tx_data.get_all_texts();
     let current_index = add_tx_data.get_current_index();
     let size = f.size();
