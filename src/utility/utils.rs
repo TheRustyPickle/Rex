@@ -5,6 +5,7 @@ use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
 use rusqlite::{Connection, Result as sqlResult};
+use std::collections::HashSet;
 use std::error::Error;
 use std::fs;
 use std::io::{self, Stdout};
@@ -54,6 +55,37 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
         .collect();
     data.remove(0);
     data
+}
+
+pub fn get_all_tags(conn: &Connection) -> Vec<String> {
+    let mut query = conn
+        .prepare("SELECT tags FROM tx_all")
+        .expect("could not prepare statement");
+
+    let mut tags_data: HashSet<String> = HashSet::new();
+
+    if let Ok(rows) = query.query_map([], |row| {
+        let row_data: String = row.get(0).unwrap();
+        let splitted = row_data.split(",");
+        let final_data = splitted
+            .into_iter()
+            .map(|s| s.trim().to_string())
+            .collect::<Vec<String>>();
+        Ok(final_data)
+    }) {
+        for inner_data in rows {
+            if let Ok(row_data) = inner_data {
+                for x in row_data {
+                    tags_data.insert(x);
+                }
+            }
+        }
+    }
+
+    let mut sorted_tags = tags_data.into_iter().collect::<Vec<String>>();
+    sorted_tags.sort();
+
+    sorted_tags
 }
 
 /// Gets all columns inside the tx_all table. Used to determine if the database needs to be migrated
