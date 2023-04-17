@@ -8,8 +8,7 @@ use crate::key_checker::{
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
-    AddTxTab, ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SummaryTab, TableData,
-    TransferTab,
+    ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SummaryTab, TableData, TxTab,
 };
 use crate::popup_page::add_popup;
 use crate::summary_page::{summary_ui, SummaryData};
@@ -81,9 +80,9 @@ pub fn start_app<B: Backend>(
     };
 
     // Stores the current selected widget on Add Transaction page
-    let mut add_tx_tab = AddTxTab::Nothing;
+    let mut add_tx_tab = TxTab::Nothing;
     // Store the current selected widget on Add Transfer page
-    let mut transfer_tab = TransferTab::Nothing;
+    let mut transfer_tab = TxTab::Nothing;
     // Store the current selected widget on Chart page
     let mut chart_tab = ChartTab::ModeSelection;
     // Store the current selected widget on Summary page

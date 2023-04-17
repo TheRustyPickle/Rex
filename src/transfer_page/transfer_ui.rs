@@ -1,4 +1,4 @@
-use crate::page_handler::TransferTab;
+use crate::page_handler::TxTab;
 use crate::tx_handler::TxData;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
@@ -20,7 +20,7 @@ use tui::Frame;
 pub fn transfer_ui<B: Backend>(
     f: &mut Frame<B>,
     transfer_data: &TxData,
-    currently_selected: &TransferTab,
+    currently_selected: &TxTab,
 ) {
     let input_data = transfer_data.get_all_texts();
     let status_data = &transfer_data.tx_status;
@@ -204,31 +204,29 @@ pub fn transfer_ui<B: Backend>(
     // We will be adding a cursor/box based on which tab is selected.
     // This was created utilizing the tui-rs example named user_input.rs
     match currently_selected {
-        TransferTab::Date => f.set_cursor(
+        TxTab::Date => f.set_cursor(
             first_chunk[0].x + current_index as u16 + 1,
             first_chunk[0].y + 1,
         ),
-        TransferTab::Details => {
-            f.set_cursor(chunks[2].x + current_index as u16 + 1, chunks[2].y + 1)
-        }
-        TransferTab::From => f.set_cursor(
+        TxTab::Details => f.set_cursor(chunks[2].x + current_index as u16 + 1, chunks[2].y + 1),
+        TxTab::FromMethod => f.set_cursor(
             first_chunk[1].x + current_index as u16 + 1,
             first_chunk[1].y + 1,
         ),
-        TransferTab::To => f.set_cursor(
+        TxTab::ToMethod => f.set_cursor(
             first_chunk[2].x + current_index as u16 + 1,
             first_chunk[2].y + 1,
         ),
         // The text of this goes into the middle so couldn't find a better place to insert the input box
-        TransferTab::Amount => f.set_cursor(
+        TxTab::Amount => f.set_cursor(
             first_chunk[3].x + current_index as u16 + 1,
             first_chunk[3].y + 1,
         ),
-        TransferTab::Tags => f.set_cursor(
+        TxTab::Tags => f.set_cursor(
             first_chunk[4].x + current_index as u16 + 1,
             first_chunk[4].y + 1,
         ),
-        TransferTab::Nothing => {}
+        _ => {}
     }
 
     // render the previously generated data into an interface

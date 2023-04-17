@@ -140,7 +140,7 @@ pub fn chart_ui<B: Backend>(
             last_balances.push(0.0);
         }
     }
-    
+
     let mut lowest_balance = 0.0;
     let mut highest_balance = 0.0;
 
@@ -235,7 +235,7 @@ pub fn chart_ui<B: Backend>(
                         } else {
                             datasets.push(to_push)
                         }
-                        
+
                         last_balances.push(current_balance);
                     }
                 }

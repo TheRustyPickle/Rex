@@ -1,4 +1,4 @@
-use crate::page_handler::AddTxTab;
+use crate::page_handler::TxTab;
 use crate::tx_handler::TxData;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
@@ -17,11 +17,7 @@ use tui::Frame;
 /// - currently_selected : For verifying the current selected widget to add a block box
 /// - status_data : Contains all the String to push into the Status widget
 
-pub fn add_tx_ui<B: Backend>(
-    f: &mut Frame<B>,
-    add_tx_data: &TxData,
-    currently_selected: &AddTxTab,
-) {
+pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_selected: &TxTab) {
     let status_data = &add_tx_data.tx_status;
     let input_data = add_tx_data.get_all_texts();
     let current_index = add_tx_data.get_current_index();
@@ -203,28 +199,28 @@ pub fn add_tx_ui<B: Backend>(
     // We will be adding a cursor/box based on which tab is selected.
     // This was created utilizing the tui-rs example named user_input.rs
     match currently_selected {
-        AddTxTab::Date => f.set_cursor(
+        TxTab::Date => f.set_cursor(
             another_chunk[0].x + current_index as u16 + 1,
             another_chunk[0].y + 1,
         ),
-        AddTxTab::Details => f.set_cursor(chunks[2].x + current_index as u16 + 1, chunks[2].y + 1),
-        AddTxTab::TxMethod => f.set_cursor(
+        TxTab::Details => f.set_cursor(chunks[2].x + current_index as u16 + 1, chunks[2].y + 1),
+        TxTab::FromMethod => f.set_cursor(
             another_chunk[1].x + current_index as u16 + 1,
             another_chunk[1].y + 1,
         ),
-        AddTxTab::Amount => f.set_cursor(
+        TxTab::Amount => f.set_cursor(
             another_chunk[2].x + current_index as u16 + 1,
             another_chunk[2].y + 1,
         ),
-        AddTxTab::TxType => f.set_cursor(
+        TxTab::TxType => f.set_cursor(
             another_chunk[3].x + current_index as u16 + 1,
             another_chunk[3].y + 1,
         ),
-        AddTxTab::Tags => f.set_cursor(
+        TxTab::Tags => f.set_cursor(
             another_chunk[4].x + current_index as u16 + 1,
             another_chunk[4].y + 1,
         ),
-        AddTxTab::Nothing => {}
+        _ => {}
     }
 
     // render the previously generated data into an interface

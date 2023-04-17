@@ -2,8 +2,7 @@ use crate::chart_page::ChartData;
 use crate::home_page::TransactionData;
 use crate::outputs::{HandlingOutput, VerifyingOutput};
 use crate::page_handler::{
-    AddTxTab, ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SummaryTab, TableData,
-    TransferTab,
+    ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SummaryTab, TableData, TxTab,
 };
 use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
@@ -14,8 +13,8 @@ pub struct InputKeyHandler<'a> {
     pub key: KeyEvent,
     pub page: &'a mut CurrentUi,
     pub popup: &'a mut PopupState,
-    pub add_tx_tab: &'a mut AddTxTab,
-    pub transfer_tab: &'a mut TransferTab,
+    pub add_tx_tab: &'a mut TxTab,
+    pub transfer_tab: &'a mut TxTab,
     chart_tab: &'a mut ChartTab,
     summary_tab: &'a mut SummaryTab,
     home_tab: &'a mut HomeTab,
@@ -45,8 +44,8 @@ impl<'a> InputKeyHandler<'a> {
         key: KeyEvent,
         page: &'a mut CurrentUi,
         popup: &'a mut PopupState,
-        add_tx_tab: &'a mut AddTxTab,
-        transfer_tab: &'a mut TransferTab,
+        add_tx_tab: &'a mut TxTab,
+        transfer_tab: &'a mut TxTab,
         chart_tab: &'a mut ChartTab,
         summary_tab: &'a mut SummaryTab,
         home_tab: &'a mut HomeTab,
@@ -105,10 +104,10 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::AddTx => {
                 *self.add_tx_data = TxData::new();
-                *self.add_tx_tab = AddTxTab::Nothing;
+                *self.add_tx_tab = TxTab::Nothing;
             }
             CurrentUi::Transfer => {
-                *self.transfer_tab = TransferTab::Nothing;
+                *self.transfer_tab = TxTab::Nothing;
                 *self.transfer_data = TxData::new();
             }
             _ => {}
@@ -257,24 +256,24 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::AddTx => {
                 match self.key.code {
-                    KeyCode::Char('1') => *self.add_tx_tab = AddTxTab::Date,
-                    KeyCode::Char('2') => *self.add_tx_tab = AddTxTab::Details,
-                    KeyCode::Char('3') => *self.add_tx_tab = AddTxTab::TxMethod,
-                    KeyCode::Char('4') => *self.add_tx_tab = AddTxTab::Amount,
-                    KeyCode::Char('5') => *self.add_tx_tab = AddTxTab::TxType,
-                    KeyCode::Char('6') => *self.add_tx_tab = AddTxTab::Tags,
+                    KeyCode::Char('1') => *self.add_tx_tab = TxTab::Date,
+                    KeyCode::Char('2') => *self.add_tx_tab = TxTab::Details,
+                    KeyCode::Char('3') => *self.add_tx_tab = TxTab::FromMethod,
+                    KeyCode::Char('4') => *self.add_tx_tab = TxTab::Amount,
+                    KeyCode::Char('5') => *self.add_tx_tab = TxTab::TxType,
+                    KeyCode::Char('6') => *self.add_tx_tab = TxTab::Tags,
                     _ => {}
                 }
                 self.go_correct_index();
             }
             CurrentUi::Transfer => {
                 match self.key.code {
-                    KeyCode::Char('1') => *self.transfer_tab = TransferTab::Date,
-                    KeyCode::Char('2') => *self.transfer_tab = TransferTab::Details,
-                    KeyCode::Char('3') => *self.transfer_tab = TransferTab::From,
-                    KeyCode::Char('4') => *self.transfer_tab = TransferTab::To,
-                    KeyCode::Char('5') => *self.transfer_tab = TransferTab::Amount,
-                    KeyCode::Char('6') => *self.transfer_tab = TransferTab::Tags,
+                    KeyCode::Char('1') => *self.transfer_tab = TxTab::Date,
+                    KeyCode::Char('2') => *self.transfer_tab = TxTab::Details,
+                    KeyCode::Char('3') => *self.transfer_tab = TxTab::FromMethod,
+                    KeyCode::Char('4') => *self.transfer_tab = TxTab::ToMethod,
+                    KeyCode::Char('5') => *self.transfer_tab = TxTab::Amount,
+                    KeyCode::Char('6') => *self.transfer_tab = TxTab::Tags,
                     _ => {}
                 }
                 self.go_correct_index();
@@ -439,8 +438,8 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_method(),
             CurrentUi::Transfer => match self.transfer_tab {
-                TransferTab::From => self.check_transfer_from(),
-                TransferTab::To => self.check_transfer_to(),
+                TxTab::FromMethod => self.check_transfer_from(),
+                TxTab::ToMethod => self.check_transfer_to(),
                 _ => {}
             },
             _ => {}
@@ -695,7 +694,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = AddTxTab::Details;
+                        *self.add_tx_tab = TxTab::Details;
                         self.go_correct_index();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
@@ -706,7 +705,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = AddTxTab::Nothing
+                        *self.add_tx_tab = TxTab::Nothing
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -724,7 +723,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = AddTxTab::Amount;
+                        *self.add_tx_tab = TxTab::Amount;
                         self.go_correct_index();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
@@ -735,7 +734,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = AddTxTab::Nothing
+                        *self.add_tx_tab = TxTab::Nothing
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -753,7 +752,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = AddTxTab::TxType;
+                        *self.add_tx_tab = TxTab::TxType;
                         self.go_correct_index();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
@@ -764,7 +763,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = AddTxTab::Nothing;
+                        *self.add_tx_tab = TxTab::Nothing;
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -782,7 +781,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = AddTxTab::Tags;
+                        *self.add_tx_tab = TxTab::Tags;
                         self.go_correct_index();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
@@ -793,7 +792,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = AddTxTab::Nothing
+                        *self.add_tx_tab = TxTab::Nothing
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -807,10 +806,10 @@ impl<'a> InputKeyHandler<'a> {
     fn check_add_tx_details(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                *self.add_tx_tab = AddTxTab::TxMethod;
+                *self.add_tx_tab = TxTab::FromMethod;
                 self.go_correct_index();
             }
-            KeyCode::Esc => *self.add_tx_tab = AddTxTab::Nothing,
+            KeyCode::Esc => *self.add_tx_tab = TxTab::Nothing,
             KeyCode::Backspace => self.add_tx_data.edit_details(None),
             KeyCode::Char(a) => self.add_tx_data.edit_details(Some(a)),
             _ => {}
@@ -819,8 +818,8 @@ impl<'a> InputKeyHandler<'a> {
 
     fn check_add_tx_tags(&mut self) {
         match self.key.code {
-            KeyCode::Enter => *self.add_tx_tab = AddTxTab::Nothing,
-            KeyCode::Esc => *self.add_tx_tab = AddTxTab::Nothing,
+            KeyCode::Enter => *self.add_tx_tab = TxTab::Nothing,
+            KeyCode::Esc => *self.add_tx_tab = TxTab::Nothing,
             KeyCode::Backspace => self.add_tx_data.edit_tags(None),
             KeyCode::Char(a) => self.add_tx_data.edit_tags(Some(a)),
             _ => {}
@@ -834,7 +833,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.transfer_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TransferTab::Details;
+                        *self.transfer_tab = TxTab::Details;
                         self.go_correct_index();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
@@ -845,7 +844,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.transfer_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TransferTab::Nothing
+                        *self.transfer_tab = TxTab::Nothing
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -859,10 +858,10 @@ impl<'a> InputKeyHandler<'a> {
     fn check_transfer_details(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                *self.transfer_tab = TransferTab::From;
+                *self.transfer_tab = TxTab::FromMethod;
                 self.go_correct_index();
             }
-            KeyCode::Esc => *self.transfer_tab = TransferTab::Nothing,
+            KeyCode::Esc => *self.transfer_tab = TxTab::Nothing,
             KeyCode::Backspace => self.transfer_data.edit_details(None),
             KeyCode::Char(a) => self.transfer_data.edit_details(Some(a)),
             _ => {}
@@ -876,7 +875,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.transfer_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TransferTab::To;
+                        *self.transfer_tab = TxTab::ToMethod;
                         self.go_correct_index();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
@@ -887,7 +886,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.transfer_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TransferTab::Nothing
+                        *self.transfer_tab = TxTab::Nothing
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -905,7 +904,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.transfer_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TransferTab::Amount;
+                        *self.transfer_tab = TxTab::Amount;
                         self.go_correct_index();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
@@ -916,7 +915,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.transfer_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TransferTab::Nothing
+                        *self.transfer_tab = TxTab::Nothing
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -934,7 +933,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.transfer_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TransferTab::Tags;
+                        *self.transfer_tab = TxTab::Tags;
                         self.go_correct_index();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
@@ -945,7 +944,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.transfer_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TransferTab::Nothing
+                        *self.transfer_tab = TxTab::Nothing
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -958,8 +957,8 @@ impl<'a> InputKeyHandler<'a> {
 
     fn check_transfer_tags(&mut self) {
         match self.key.code {
-            KeyCode::Enter => *self.transfer_tab = TransferTab::Nothing,
-            KeyCode::Esc => *self.transfer_tab = TransferTab::Nothing,
+            KeyCode::Enter => *self.transfer_tab = TxTab::Nothing,
+            KeyCode::Esc => *self.transfer_tab = TxTab::Nothing,
             KeyCode::Backspace => self.transfer_data.edit_tags(None),
             KeyCode::Char(a) => self.transfer_data.edit_tags(Some(a)),
             _ => {}
@@ -1004,11 +1003,11 @@ impl<'a> InputKeyHandler<'a> {
 
     fn do_add_tx_up(&mut self) {
         let status = match self.add_tx_tab {
-            AddTxTab::Date => self.add_tx_data.do_date_up(),
-            AddTxTab::TxMethod => self.add_tx_data.do_from_method_up(self.conn),
-            AddTxTab::Amount => self.add_tx_data.do_amount_up(self.conn),
-            AddTxTab::TxType => self.add_tx_data.do_tx_type_up(),
-            AddTxTab::Tags => self.add_tx_data.do_tags_up(),
+            TxTab::Date => self.add_tx_data.do_date_up(),
+            TxTab::FromMethod => self.add_tx_data.do_from_method_up(self.conn),
+            TxTab::Amount => self.add_tx_data.do_amount_up(self.conn),
+            TxTab::TxType => self.add_tx_data.do_tx_type_up(),
+            TxTab::Tags => self.add_tx_data.do_tags_up(),
             _ => Ok(()),
         };
 
@@ -1019,11 +1018,11 @@ impl<'a> InputKeyHandler<'a> {
 
     fn do_add_tx_down(&mut self) {
         let status = match self.add_tx_tab {
-            AddTxTab::Date => self.add_tx_data.do_date_down(),
-            AddTxTab::TxMethod => self.add_tx_data.do_from_method_down(self.conn),
-            AddTxTab::Amount => self.add_tx_data.do_amount_down(self.conn),
-            AddTxTab::TxType => self.add_tx_data.do_tx_type_down(),
-            AddTxTab::Tags => self.add_tx_data.do_tags_down(),
+            TxTab::Date => self.add_tx_data.do_date_down(),
+            TxTab::FromMethod => self.add_tx_data.do_from_method_down(self.conn),
+            TxTab::Amount => self.add_tx_data.do_amount_down(self.conn),
+            TxTab::TxType => self.add_tx_data.do_tx_type_down(),
+            TxTab::Tags => self.add_tx_data.do_tags_down(),
             _ => Ok(()),
         };
 
@@ -1033,32 +1032,32 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     fn do_transfer_up(&mut self) {
-        let status = match &self.transfer_tab {
-            TransferTab::Date => self.transfer_data.do_date_up(),
-            TransferTab::From => self.transfer_data.do_from_method_up(self.conn),
-            TransferTab::To => self.transfer_data.do_to_method_up(),
-            TransferTab::Amount => self.transfer_data.do_amount_up(self.conn),
-            TransferTab::Tags => self.transfer_data.do_tags_up(),
+        let status = match self.transfer_tab {
+            TxTab::Date => self.transfer_data.do_date_up(),
+            TxTab::FromMethod => self.transfer_data.do_from_method_up(self.conn),
+            TxTab::ToMethod => self.transfer_data.do_to_method_up(self.conn),
+            TxTab::Amount => self.transfer_data.do_amount_up(self.conn),
+            TxTab::Tags => self.transfer_data.do_tags_up(),
             _ => Ok(()),
         };
 
         if let Err(e) = status {
-            self.add_tx_data.add_tx_status(e.to_string())
+            self.transfer_data.add_tx_status(e.to_string())
         }
     }
 
     fn do_transfer_down(&mut self) {
-        let status = match &self.transfer_tab {
-            TransferTab::Date => self.transfer_data.do_date_down(),
-            TransferTab::From => self.transfer_data.do_from_method_down(self.conn),
-            TransferTab::To => self.transfer_data.do_to_method_down(),
-            TransferTab::Amount => self.transfer_data.do_amount_down(self.conn),
-            TransferTab::Tags => self.transfer_data.do_tags_down(),
+        let status = match self.transfer_tab {
+            TxTab::Date => self.transfer_data.do_date_down(),
+            TxTab::FromMethod => self.transfer_data.do_from_method_down(self.conn),
+            TxTab::ToMethod => self.transfer_data.do_to_method_down(self.conn),
+            TxTab::Amount => self.transfer_data.do_amount_down(self.conn),
+            TxTab::Tags => self.transfer_data.do_tags_down(),
             _ => Ok(()),
         };
 
         if let Err(e) = status {
-            self.add_tx_data.add_tx_status(e.to_string())
+            self.transfer_data.add_tx_status(e.to_string())
         }
     }
 }

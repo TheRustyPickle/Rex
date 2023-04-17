@@ -156,30 +156,16 @@ impl HomeTab {
     }
 }
 
-/// This enum is used inside the Add Transaction page.
-/// This is targeted to be used to keep track which field of the Add Transaction widgets
-/// is currently being interacted with. Based on which one is selected, each keypress is
-/// recorded and added to the relevant struct.
-pub enum AddTxTab {
+/// This enum is used inside the Add Transaction and Transfer page.
+/// This is targeted to be used to keep track which widget of the Add Transaction and Transfer
+/// is currently being interacted with.
+pub enum TxTab {
     Date,
     Details,
-    TxMethod,
+    FromMethod,
+    ToMethod,
     Amount,
     TxType,
-    Tags,
-    Nothing,
-}
-
-/// This enum is used inside the Transfer page.
-/// This is targeted to be used to keep track which field of the Transfer widgets
-/// is currently being interacted with. Based on which one is selected, each keypress is
-/// recorded and added to the relevant struct.
-pub enum TransferTab {
-    Date,
-    Details,
-    From,
-    To,
-    Amount,
     Tags,
     Nothing,
 }

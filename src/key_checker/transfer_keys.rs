@@ -1,6 +1,6 @@
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
-use crate::page_handler::{PopupState, TransferTab};
+use crate::page_handler::{PopupState, TxTab};
 use crossterm::event::KeyCode;
 
 pub fn transfer_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
@@ -8,7 +8,7 @@ pub fn transfer_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
         PopupState::Nothing => match handler.transfer_tab {
             // start matching key pressed based on which widget is selected.
             // current state tracked with enums
-            TransferTab::Nothing => match handler.key.code {
+            TxTab::Nothing => match handler.key.code {
                 KeyCode::Char('a') => handler.go_add_tx(),
                 KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
                 KeyCode::Char('f') => handler.go_home(),
@@ -27,12 +27,12 @@ pub fn transfer_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 KeyCode::Up => handler.handle_up_arrow(),
                 KeyCode::Down => handler.handle_down_arrow(),
                 _ => match handler.transfer_tab {
-                    TransferTab::Date => handler.handle_date(),
-                    TransferTab::Details => handler.handle_details(),
-                    TransferTab::From => handler.handle_tx_method(),
-                    TransferTab::To => handler.handle_tx_method(),
-                    TransferTab::Amount => handler.handle_amount(),
-                    TransferTab::Tags => handler.handle_tags(),
+                    TxTab::Date => handler.handle_date(),
+                    TxTab::Details => handler.handle_details(),
+                    TxTab::FromMethod => handler.handle_tx_method(),
+                    TxTab::ToMethod => handler.handle_tx_method(),
+                    TxTab::Amount => handler.handle_amount(),
+                    TxTab::Tags => handler.handle_tags(),
                     _ => {}
                 },
             },
