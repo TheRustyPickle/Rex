@@ -323,33 +323,19 @@ pub trait DataVerifier {
             }
         }
 
-        let mut matching_tx_methods: Vec<&str> = all_tx_methods
-            .iter()
-            .filter(|&s| s.to_lowercase().contains(&current_method.to_lowercase()))
-            .map(|s| s.as_str())
-            .collect();
+        let mut best_match = &all_tx_methods[0];
+        let mut best_score = 0;
 
-        if matching_tx_methods.is_empty() {
-            matching_tx_methods.push(&all_tx_methods[0]);
-        }
-
-        if matching_tx_methods.len() > 1 {
-            let mut best_match = matching_tx_methods[0];
-            let mut best_score = rank_match(best_match, current_method);
-
-            for &match_str in &matching_tx_methods[1..] {
-                let score = rank_match(match_str, current_method);
-                if score > best_score {
-                    best_match = match_str;
-                    best_score = score;
-                }
+        for x in all_tx_methods.iter() {
+            let new_score = current_method.chars().filter(|c| x.contains(*c)).count();
+            if new_score > best_score {
+                best_match = x;
+                best_score = new_score;
             }
-            *current_method = best_match.to_string()
-        } else {
-            *current_method = matching_tx_methods[0].to_string();
         }
 
-        VerifyingOutput::NotAccepted(NAType::InvalidTxMethod)
+        *current_method = best_match.to_string();
+        return VerifyingOutput::NotAccepted(NAType::InvalidTxMethod);
     }
 
     /// Checks if:
@@ -374,10 +360,4 @@ pub trait DataVerifier {
             VerifyingOutput::NotAccepted(NAType::InvalidTxType)
         }
     }
-}
-
-fn rank_match(match_str: &str, search_str: &str) -> f64 {
-    let match_count = match_str.to_lowercase().matches(search_str).count();
-    let match_len = match_str.len() as f64;
-    (match_count as f64) / match_len
 }
