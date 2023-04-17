@@ -1,8 +1,8 @@
-use crate::outputs::{NAType, SavingError, SteppingError, VerifyingOutput};
+use crate::outputs::{CheckingError, NAType, SteppingError, VerifyingOutput};
 use crate::page_handler::TxTab;
 use crate::tx_handler::{add_tx, delete_tx};
 use crate::utility::traits::DataVerifier;
-use crate::utility::{get_all_tx_methods, get_last_balances};
+use crate::utility::{get_all_tags, get_all_tx_methods, get_last_balances};
 use chrono::prelude::Local;
 use chrono::{Duration, NaiveDate};
 use rusqlite::Connection;
@@ -15,7 +15,7 @@ pub struct TxData {
     amount: String,
     tx_type: String,
     tags: String,
-    pub tx_status: Vec<String>,
+    tx_status: Vec<String>,
     editing_tx: bool,
     id_num: i32,
     current_index: usize,
@@ -113,6 +113,10 @@ impl TxData {
         } else {
             self.from_method.to_string()
         }
+    }
+
+    pub fn get_tx_status(&self) -> &Vec<String> {
+        &self.tx_status
     }
 
     pub fn edit_date(&mut self, to_add: Option<char>) {
@@ -315,6 +319,7 @@ impl TxData {
         let status = self.verify_date(&mut user_date);
 
         self.date = user_date;
+        self.go_current_index(&TxTab::Date);
         status
     }
 
@@ -325,6 +330,7 @@ impl TxData {
         let status = self.verify_tx_method(&mut current_method, conn);
 
         self.from_method = current_method;
+        self.go_current_index(&TxTab::FromMethod);
         status
     }
 
@@ -335,6 +341,7 @@ impl TxData {
         let status = self.verify_tx_method(&mut current_method, conn);
 
         self.to_method = current_method;
+        self.go_current_index(&TxTab::ToMethod);
         status
     }
 
@@ -362,6 +369,7 @@ impl TxData {
         let status = self.verify_amount(&mut user_amount);
 
         self.amount = user_amount;
+        self.go_current_index(&TxTab::Amount);
         status
     }
 
@@ -372,24 +380,25 @@ impl TxData {
         let status = self.verify_tx_type(&mut tx_type);
 
         self.tx_type = tx_type;
+        self.go_current_index(&TxTab::TxType);
         status
     }
 
-    pub fn check_all_fields(&mut self) -> Option<SavingError> {
+    pub fn check_all_fields(&mut self) -> Option<CheckingError> {
         if self.date.is_empty() {
-            return Some(SavingError::EmptyDate);
+            return Some(CheckingError::EmptyDate);
         } else if self.from_method.is_empty() && self.tx_type != "Transfer" {
-            return Some(SavingError::EmptyMethod);
+            return Some(CheckingError::EmptyMethod);
         } else if self.amount.is_empty() {
-            return Some(SavingError::EmptyAmount);
+            return Some(CheckingError::EmptyAmount);
         } else if self.tx_type.is_empty() {
-            return Some(SavingError::EmptyTxType);
+            return Some(CheckingError::EmptyTxType);
         } else if self.tx_type == "Transfer" && self.from_method == self.to_method {
-            return Some(SavingError::SameTxMethod);
+            return Some(CheckingError::SameTxMethod);
         } else if self.tx_type == "Transfer"
             && (self.from_method.is_empty() || self.to_method.is_empty())
         {
-            return Some(SavingError::EmptyMethod);
+            return Some(CheckingError::EmptyMethod);
         }
         if self.tags.is_empty() {
             self.tags = "Unknown".to_string();
@@ -414,7 +423,7 @@ impl TxData {
         }
     }
 
-    pub fn add_tx_move_index_left(&mut self, current_tab: &TxTab) {
+    pub fn move_index_left(&mut self, current_tab: &TxTab) {
         let data_len = self.get_data_len(current_tab);
 
         if self.current_index > data_len {
@@ -424,7 +433,7 @@ impl TxData {
         }
     }
 
-    pub fn add_tx_move_index_right(&mut self, current_tab: &TxTab) {
+    pub fn move_index_right(&mut self, current_tab: &TxTab) {
         let data_len = self.get_data_len(current_tab);
 
         if self.current_index > data_len {
@@ -434,31 +443,7 @@ impl TxData {
         }
     }
 
-    pub fn transfer_move_index_left(&mut self, current_tab: &TxTab) {
-        let data_len = self.get_data_len(current_tab);
-
-        if self.current_index > data_len {
-            self.current_index = data_len
-        } else if self.current_index > 0 {
-            self.current_index -= 1
-        }
-    }
-
-    pub fn transfer_move_index_right(&mut self, current_tab: &TxTab) {
-        let data_len = self.get_data_len(current_tab);
-
-        if self.current_index > data_len {
-            self.current_index = data_len
-        } else if data_len > self.current_index {
-            self.current_index += 1
-        }
-    }
-
-    pub fn add_tx_go_current_index(&mut self, current_tab: &TxTab) {
-        self.current_index = self.get_data_len(current_tab)
-    }
-
-    pub fn transfer_go_current_index(&mut self, current_tab: &TxTab) {
+    pub fn go_current_index(&mut self, current_tab: &TxTab) {
         self.current_index = self.get_data_len(current_tab)
     }
 
@@ -477,16 +462,18 @@ impl TxData {
                 if current_date != final_date {
                     current_date += Duration::days(1);
                     self.date = current_date.to_string();
-                    self.add_tx_go_current_index(&TxTab::Date);
                 }
             }
-            VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidDate),
+            VerifyingOutput::NotAccepted(_) => {
+                self.go_current_index(&TxTab::Date);
+                return Err(SteppingError::InvalidDate);
+            }
             VerifyingOutput::Nothing(_) => {
                 self.date = String::from("2022-01-01");
-                self.add_tx_go_current_index(&TxTab::Date);
             }
         }
 
+        self.go_current_index(&TxTab::Date);
         Ok(())
     }
 
@@ -504,16 +491,18 @@ impl TxData {
                 if current_date != final_date {
                     current_date -= Duration::days(1);
                     self.date = current_date.to_string();
-                    self.add_tx_go_current_index(&TxTab::Date);
                 }
             }
-            VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidDate),
+            VerifyingOutput::NotAccepted(_) => {
+                self.go_current_index(&TxTab::Date);
+                return Err(SteppingError::InvalidDate);
+            }
             VerifyingOutput::Nothing(_) => {
                 self.date = String::from("2022-01-01");
-                self.add_tx_go_current_index(&TxTab::Date);
             }
         }
 
+        self.go_current_index(&TxTab::Date);
         Ok(())
     }
 
@@ -534,14 +523,17 @@ impl TxData {
                     .unwrap();
                 let next_method_index = (current_method_index + 1) % all_methods.len();
                 self.from_method = String::from(&all_methods[next_method_index]);
-                self.add_tx_go_current_index(&TxTab::FromMethod);
             }
-            VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidTxMethod),
+            VerifyingOutput::NotAccepted(_) => {
+                self.go_current_index(&TxTab::FromMethod);
+                return Err(SteppingError::InvalidTxMethod);
+            }
             VerifyingOutput::Nothing(_) => {
                 self.from_method = String::from(&all_methods[0]);
-                self.add_tx_go_current_index(&TxTab::FromMethod);
             }
         }
+
+        self.go_current_index(&TxTab::FromMethod);
         Ok(())
     }
 
@@ -566,15 +558,17 @@ impl TxData {
                     (current_method_index - 1) % all_methods.len()
                 };
                 self.from_method = String::from(&all_methods[next_method_index]);
-                self.add_tx_go_current_index(&TxTab::FromMethod);
             }
-            VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidTxMethod),
+            VerifyingOutput::NotAccepted(_) => {
+                self.go_current_index(&TxTab::FromMethod);
+                return Err(SteppingError::InvalidTxMethod);
+            }
             VerifyingOutput::Nothing(_) => {
                 self.from_method = String::from(&all_methods[0]);
-                self.add_tx_go_current_index(&TxTab::FromMethod);
             }
         }
 
+        self.go_current_index(&TxTab::FromMethod);
         Ok(())
     }
 
@@ -595,14 +589,17 @@ impl TxData {
                     .unwrap();
                 let next_method_index = (current_method_index + 1) % all_methods.len();
                 self.to_method = String::from(&all_methods[next_method_index]);
-                self.add_tx_go_current_index(&TxTab::ToMethod);
             }
-            VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidTxMethod),
+            VerifyingOutput::NotAccepted(_) => {
+                self.go_current_index(&TxTab::ToMethod);
+                return Err(SteppingError::InvalidTxMethod);
+            }
             VerifyingOutput::Nothing(_) => {
                 self.to_method = String::from(&all_methods[0]);
-                self.add_tx_go_current_index(&TxTab::ToMethod);
             }
         }
+
+        self.go_current_index(&TxTab::ToMethod);
         Ok(())
     }
 
@@ -627,15 +624,17 @@ impl TxData {
                     (current_method_index - 1) % all_methods.len()
                 };
                 self.to_method = String::from(&all_methods[next_method_index]);
-                self.add_tx_go_current_index(&TxTab::ToMethod);
             }
-            VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidTxMethod),
+            VerifyingOutput::NotAccepted(_) => {
+                self.go_current_index(&TxTab::ToMethod);
+                return Err(SteppingError::InvalidTxMethod);
+            }
             VerifyingOutput::Nothing(_) => {
                 self.to_method = String::from(&all_methods[0]);
-                self.add_tx_go_current_index(&TxTab::ToMethod);
             }
         }
 
+        self.go_current_index(&TxTab::ToMethod);
         Ok(())
     }
 
@@ -654,22 +653,30 @@ impl TxData {
             self.current_index = data_len
         }
 
-        if self.amount == "0.00" || self.amount == "" {
-            self.amount = "1.00".to_string()
-        } else {
-            match status {
-                VerifyingOutput::Accepted(_) => {
-                    let mut current_amount: f64 = self.amount.parse().unwrap();
+        match status {
+            VerifyingOutput::Accepted(_) => {
+                let mut current_amount: f64 = self.amount.parse().unwrap();
 
-                    if 1000000000.00 != current_amount {
-                        current_amount += 1.0;
-                        self.amount = format!("{current_amount:.2}");
-                    }
+                if 1000000000.00 > current_amount + 1.0 {
+                    current_amount += 1.0;
+                    self.amount = format!("{current_amount:.2}");
                 }
-                VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidAmount),
-                _ => {}
             }
+            VerifyingOutput::NotAccepted(etype) => match etype {
+                NAType::AmountBelowZero => {
+                    let mut current_amount: f64 = self.amount.parse().unwrap();
+                    current_amount += 1.0;
+                    self.amount = format!("{current_amount:.2}");
+                }
+                _ => {
+                    self.go_current_index(&TxTab::Amount);
+                    return Err(SteppingError::InvalidAmount);
+                }
+            },
+            VerifyingOutput::Nothing(_) => self.amount = "1.00".to_string(),
         }
+
+        self.go_current_index(&TxTab::Amount);
         Ok(())
     }
 
@@ -681,28 +688,126 @@ impl TxData {
             self.current_index = data_len
         }
 
-        if self.amount != "0.00" {
-            match status {
-                VerifyingOutput::Accepted(_) => {
-                    let mut current_amount: f64 = self.amount.parse().unwrap();
+        match status {
+            VerifyingOutput::Accepted(_) => {
+                let mut current_amount: f64 = self.amount.parse().unwrap();
 
-                    if 0.0 != current_amount {
-                        current_amount -= 1.0;
-                        self.amount = format!("{current_amount:.2}")
+                if (current_amount - 1.0) > 0.00 {
+                    current_amount -= 1.0;
+                    self.amount = format!("{current_amount:.2}");
+                }
+            }
+            VerifyingOutput::NotAccepted(etype) => match etype {
+                NAType::AmountBelowZero => {}
+                _ => {
+                    self.go_current_index(&TxTab::Amount);
+                    return Err(SteppingError::InvalidAmount);
+                }
+            },
+            VerifyingOutput::Nothing(_) => self.amount = "1.00".to_string(),
+        }
+
+        self.go_current_index(&TxTab::Amount);
+        Ok(())
+    }
+
+    pub fn do_tags_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+        let tags = get_all_tags(conn);
+
+        let data_len = self.get_data_len(&TxTab::Tags);
+        if self.current_index > data_len {
+            self.current_index = data_len
+        }
+
+        if self.tags.is_empty() {
+            self.tags = String::from(&tags[0]);
+        } else {
+            let mut current_tags = self
+                .tags
+                .split(",")
+                .map(|s| s.trim().to_string())
+                .collect::<Vec<String>>();
+            let last_tag = current_tags.pop().unwrap();
+
+            if !tags.contains(&last_tag) {
+                if last_tag.is_empty() {
+                    current_tags.push(tags[0].to_owned());
+                    self.tags = current_tags.join(", ");
+                } else {
+                    for tag in tags {
+                        if tag
+                            .to_lowercase()
+                            .starts_with(&&last_tag.to_lowercase()[..1])
+                        {
+                            current_tags.push(tag);
+                            self.tags = current_tags.join(", ");
+                            self.go_current_index(&TxTab::Tags);
+                            return Err(SteppingError::InvalidTags);
+                        }
                     }
                 }
-                VerifyingOutput::NotAccepted(_) => return Err(SteppingError::InvalidAmount),
-                _ => {}
+            } else {
+                if let Some(index) = tags.iter().position(|tag| tag == &last_tag) {
+                    let next_index = (index + 1) % tags.len();
+                    current_tags.push(tags[next_index].to_owned());
+                    self.tags = current_tags.join(", ");
+                }
             }
         }
+
+        self.go_current_index(&TxTab::Tags);
         Ok(())
     }
 
-    pub fn do_tags_up(&mut self) -> Result<(), SteppingError> {
-        Ok(())
-    }
+    pub fn do_tags_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+        let tags = get_all_tags(conn);
 
-    pub fn do_tags_down(&mut self) -> Result<(), SteppingError> {
+        let data_len = self.get_data_len(&TxTab::Tags);
+        if self.current_index > data_len {
+            self.current_index = data_len
+        }
+
+        if self.tags.is_empty() {
+            self.tags = String::from(&tags[0]);
+        } else {
+            let mut current_tags = self
+                .tags
+                .split(",")
+                .map(|s| s.trim().to_string())
+                .collect::<Vec<String>>();
+            let last_tag = current_tags.pop().unwrap();
+
+            if !tags.contains(&last_tag) {
+                if last_tag.is_empty() {
+                    current_tags.push(tags[0].to_owned());
+                    self.tags = current_tags.join(", ");
+                } else {
+                    for tag in tags {
+                        if tag
+                            .to_lowercase()
+                            .starts_with(&&last_tag.to_lowercase()[..1])
+                        {
+                            current_tags.push(tag);
+                            self.tags = current_tags.join(", ");
+                            self.go_current_index(&TxTab::Tags);
+                            return Err(SteppingError::InvalidTags);
+                        }
+                    }
+                }
+            } else {
+                if let Some(index) = tags.iter().position(|tag| tag == &last_tag) {
+                    let next_index = if index == 0 {
+                        tags.len() - 1
+                    } else {
+                        (index - 1) % tags.len()
+                    };
+                    current_tags.push(tags[next_index].to_owned());
+                    self.tags = current_tags.join(", ");
+                }
+            }
+        }
+
+        self.go_current_index(&TxTab::Tags);
         Ok(())
     }
 }
