@@ -16,11 +16,7 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
     // get the deletion tx data
     let query = format!("SELECT * FROM tx_all Where id_num = {}", id_num);
     let data = sp.query_row(&query, [], |row| {
-        let mut final_data: Vec<String> = Vec::new();
-        final_data.push(row.get(0)?);
-        final_data.push(row.get(2)?);
-        final_data.push(row.get(3)?);
-        final_data.push(row.get(4)?);
+        let final_data: Vec<String> = vec![row.get(0)?, row.get(2)?, row.get(3)?, row.get(4)?];
         Ok(final_data)
     })?;
 

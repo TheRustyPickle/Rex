@@ -207,7 +207,7 @@ pub fn start_app<B: Backend>(
                 }
             }
             CurrentUi::Chart => {
-                if !chart_index.is_none() {
+                if chart_index.is_some() {
                     let duration_time = match chart_modes.index {
                         0 => 25,
                         1 => 6,

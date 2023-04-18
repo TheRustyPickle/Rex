@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use crate::outputs::{AType, NAType, VerifyingOutput};
 use crate::utility::get_all_tx_methods;
 use chrono::naive::NaiveDate;
@@ -56,15 +58,19 @@ pub trait DataVerifier {
         // checks if the year part length is 4. If not 4, turn the year to 2022 + the other character entered by the user
         // and return the new date
         if splitted_date[0].len() != 4 {
-            if splitted_date[0].len() < 4 {
-                *user_date = format!("2022-{}-{}", splitted_date[1], splitted_date[2]);
-            } else if splitted_date[0].len() > 4 {
-                *user_date = format!(
-                    "{}-{}-{}",
-                    &splitted_date[0][..4],
-                    splitted_date[1],
-                    splitted_date[2]
-                );
+            match splitted_date[0].len().cmp(&4) {
+                Ordering::Less => {
+                    *user_date = format!("2022-{}-{}", splitted_date[1], splitted_date[2]);
+                }
+                Ordering::Greater => {
+                    *user_date = format!(
+                        "{}-{}-{}",
+                        &splitted_date[0][..4],
+                        splitted_date[1],
+                        splitted_date[2]
+                    );
+                }
+                _ => {}
             }
             return VerifyingOutput::NotAccepted(NAType::InvalidYear);
 
@@ -278,10 +284,10 @@ pub trait DataVerifier {
         if amount.contains('.') {
             let splitted = amount.split('.').collect::<Vec<&str>>();
 
-            if splitted[1].len() < 2 {
-                *amount = format!("{amount}0");
-            } else if splitted[1].len() > 2 {
-                *amount = format!("{}.{}", splitted[0], &splitted[1][..2]);
+            match splitted[1].len().cmp(&2) {
+                Ordering::Less => *amount = format!("{amount}0"),
+                Ordering::Greater => *amount = format!("{}.{}", splitted[0], &splitted[1][..2]),
+                Ordering::Equal => (),
             }
         }
 
@@ -335,7 +341,7 @@ pub trait DataVerifier {
         }
 
         *current_method = best_match.to_string();
-        return VerifyingOutput::NotAccepted(NAType::InvalidTxMethod);
+        VerifyingOutput::NotAccepted(NAType::InvalidTxMethod)
     }
 
     /// Checks if:

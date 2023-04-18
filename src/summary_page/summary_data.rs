@@ -34,18 +34,18 @@ impl SummaryData {
 
         match mode.index {
             0 => {
-                default.collect_data(&conn, month, year);
+                default.collect_data(conn, month, year);
             }
             1 => {
                 for i in 0..12 {
-                    default.collect_data(&conn, i, year);
+                    default.collect_data(conn, i, year);
                 }
             }
             2 => {
                 // TODO: year handling
                 for x in 0..4 {
                     for i in 0..12 {
-                        default.collect_data(&conn, i, x);
+                        default.collect_data(conn, i, x);
                     }
                 }
             }

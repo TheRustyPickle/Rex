@@ -3,7 +3,7 @@ use crate::utility::{get_all_tx_methods, get_sql_dates};
 use crossterm::execute;
 use crossterm::terminal::{Clear, ClearType};
 use rusqlite::Connection;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io;
 use std::process::Command;
 
@@ -305,12 +305,14 @@ pub fn get_user_tx_methods(add_new_method: bool) -> Option<Vec<String>> {
 
         if add_new_method {
             println!("{method_line}\n");
-            println!("\nUser input required for Transaction Methods. Must be separated by one comma and one space \
-or ', '. Example: Bank, Cash, PayPal.\n\nInput 'Cancel' to cancel the operation\n\nEnter Transaction Methods:");
+            println!("\nUser input required for Transaction Methods. Must be separated by one comma \
+or ','. Example: Bank, Cash, PayPal.\n\nInput 'Cancel' to cancel the operation\n\nEnter Transaction Methods:");
         } else {
             println!("Database not found. Follow the guide below to start the app.");
-            println!("\nUser input required for Transaction Methods. Must be separated by one comma and one space \
-or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
+            println!(
+                "\nUser input required for Transaction Methods. Must be separated by one comma \
+or ','. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:"
+            );
         }
 
         // take user input for transaction methods
@@ -324,17 +326,19 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
         }
 
         // split them and remove duplicates
-        let mut splitted = line.split(", ").collect::<Vec<&str>>();
-        let splitted_copy = splitted.clone();
+        let mut splitted = line.split(",").map(|s| s.trim()).collect::<Vec<&str>>();
+        splitted.retain(|s| !s.is_empty());
+
+        let mut seen = HashSet::new();
+        let mut unique = Vec::new();
 
         // remove duplicates from the splitted vec
-        // index in reverse so even after removing an index, it won't panic because the index is only going down
-        for x in splitted_copy.len()..0 {
-            let index_value = splitted_copy[x];
-            if splitted.contains(&index_value) {
-                splitted.remove(x);
+        for item in splitted {
+            if seen.insert(item) {
+                unique.push(item);
             }
         }
+        splitted = unique;
 
         let mut filtered_splitted = vec![];
 
@@ -349,10 +353,8 @@ or ', '. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:");
             }
         }
         // Check if the input is not empty. If yes, start from the beginning
-        if (splitted == vec!["".to_string()] && !add_new_method)
-            || (filtered_splitted == vec!["".to_string()] && add_new_method)
-            || (!add_new_method && splitted.is_empty())
-            || (add_new_method && filtered_splitted.is_empty())
+        if (splitted.is_empty() || add_new_method)
+            && (filtered_splitted.is_empty() || !add_new_method)
         {
             execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
             println!("\nTransaction Method input cannot be empty and existing Transaction Methods cannot be used twice");
