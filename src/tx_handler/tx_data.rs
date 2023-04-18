@@ -385,6 +385,14 @@ impl TxData {
         status
     }
 
+    pub fn check_tags(&mut self) {
+        let mut tags = self.tags.clone();
+
+        self.verify_tags(&mut tags);
+        self.tags = tags;
+        self.go_current_index(&TxTab::Tags);
+    }
+
     pub fn check_all_fields(&mut self) -> Option<CheckingError> {
         if self.date.is_empty() {
             return Some(CheckingError::EmptyDate);

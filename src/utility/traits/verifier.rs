@@ -366,4 +366,12 @@ pub trait DataVerifier {
             VerifyingOutput::NotAccepted(NAType::InvalidTxType)
         }
     }
+
+    fn verify_tags(&self, tags: &mut String) {
+        let mut splitted = tags.split(",").map(|s| s.trim()).collect::<Vec<&str>>();
+        splitted.retain(|s| !s.is_empty());
+
+        let new_string = format!("{}", splitted.join(", "));
+        *tags = new_string;
+    }
 }
