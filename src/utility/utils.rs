@@ -66,18 +66,16 @@ pub fn get_all_tags(conn: &Connection) -> Vec<String> {
 
     if let Ok(rows) = query.query_map([], |row| {
         let row_data: String = row.get(0).unwrap();
-        let splitted = row_data.split(",");
+        let splitted = row_data.split(',');
         let final_data = splitted
             .into_iter()
             .map(|s| s.trim().to_string())
             .collect::<Vec<String>>();
         Ok(final_data)
     }) {
-        for inner_data in rows {
-            if let Ok(row_data) = inner_data {
-                for x in row_data {
-                    tags_data.insert(x);
-                }
+        for inner_data in rows.flatten() {
+            for x in inner_data {
+                tags_data.insert(x);
             }
         }
     }

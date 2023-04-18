@@ -167,7 +167,10 @@ impl<'a> InputKeyHandler<'a> {
                         .map_err(|_| HandlingOutput::PrintNewUpdate)?,
                 )
             }
-            _ => Ok(*self.popup = PopupState::Nothing),
+            _ => {
+                *self.popup = PopupState::Nothing;
+                Ok(())
+            }
         }
     }
 
@@ -296,8 +299,8 @@ impl<'a> InputKeyHandler<'a> {
                 }
                 _ => {}
             },
-            CurrentUi::AddTx => self.add_tx_data.move_index_left(&self.add_tx_tab),
-            CurrentUi::Transfer => self.transfer_data.move_index_left(&self.transfer_tab),
+            CurrentUi::AddTx => self.add_tx_data.move_index_left(self.add_tx_tab),
+            CurrentUi::Transfer => self.transfer_data.move_index_left(self.transfer_tab),
             CurrentUi::Chart => {
                 if !*self.chart_hidden_mode {
                     match self.chart_tab {
@@ -351,8 +354,8 @@ impl<'a> InputKeyHandler<'a> {
                 }
                 _ => {}
             },
-            CurrentUi::AddTx => self.add_tx_data.move_index_right(&self.add_tx_tab),
-            CurrentUi::Transfer => self.transfer_data.move_index_right(&self.transfer_tab),
+            CurrentUi::AddTx => self.add_tx_data.move_index_right(self.add_tx_tab),
+            CurrentUi::Transfer => self.transfer_data.move_index_right(self.transfer_tab),
             CurrentUi::Chart => {
                 if !*self.chart_hidden_mode {
                     match self.chart_tab {
@@ -989,8 +992,8 @@ impl<'a> InputKeyHandler<'a> {
 
     fn go_correct_index(&mut self) {
         match self.page {
-            CurrentUi::AddTx => self.add_tx_data.go_current_index(&self.add_tx_tab),
-            CurrentUi::Transfer => self.transfer_data.go_current_index(&self.transfer_tab),
+            CurrentUi::AddTx => self.add_tx_data.go_current_index(self.add_tx_tab),
+            CurrentUi::Transfer => self.transfer_data.go_current_index(self.transfer_tab),
             _ => {}
         }
     }

@@ -4,7 +4,6 @@ use rex::tx_handler::*;
 use rex::utility::*;
 use rusqlite::Connection;
 use std::fs;
-//use std::collections::HashMap;
 
 fn create_test_db(file_name: &str) -> Connection {
     create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();

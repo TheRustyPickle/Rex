@@ -6,6 +6,7 @@ use crate::utility::{get_all_tags, get_all_tx_methods, get_last_balances};
 use chrono::prelude::Local;
 use chrono::{Duration, NaiveDate};
 use rusqlite::Connection;
+use std::cmp::Ordering;
 
 pub struct TxData {
     date: String,
@@ -436,10 +437,10 @@ impl TxData {
     pub fn move_index_right(&mut self, current_tab: &TxTab) {
         let data_len = self.get_data_len(current_tab);
 
-        if self.current_index > data_len {
-            self.current_index = data_len
-        } else if data_len > self.current_index {
-            self.current_index += 1
+        match data_len.cmp(&self.current_index) {
+            Ordering::Less => self.current_index = data_len,
+            Ordering::Greater => self.current_index += 1,
+            Ordering::Equal => {}
         }
     }
 
@@ -662,7 +663,7 @@ impl TxData {
                     self.amount = format!("{current_amount:.2}");
                 }
             }
-            VerifyingOutput::NotAccepted(etype) => match etype {
+            VerifyingOutput::NotAccepted(err_type) => match err_type {
                 NAType::AmountBelowZero => {
                     let mut current_amount: f64 = self.amount.parse().unwrap();
                     current_amount += 1.0;
@@ -697,7 +698,7 @@ impl TxData {
                     self.amount = format!("{current_amount:.2}");
                 }
             }
-            VerifyingOutput::NotAccepted(etype) => match etype {
+            VerifyingOutput::NotAccepted(err_type) => match err_type {
                 NAType::AmountBelowZero => {}
                 _ => {
                     self.go_current_index(&TxTab::Amount);
@@ -724,7 +725,7 @@ impl TxData {
         } else {
             let mut current_tags = self
                 .tags
-                .split(",")
+                .split(',')
                 .map(|s| s.trim().to_string())
                 .collect::<Vec<String>>();
             let last_tag = current_tags.pop().unwrap();
@@ -737,7 +738,7 @@ impl TxData {
                     for tag in tags {
                         if tag
                             .to_lowercase()
-                            .starts_with(&&last_tag.to_lowercase()[..1])
+                            .starts_with(&last_tag.to_lowercase()[..1])
                         {
                             current_tags.push(tag);
                             self.tags = current_tags.join(", ");
@@ -746,12 +747,10 @@ impl TxData {
                         }
                     }
                 }
-            } else {
-                if let Some(index) = tags.iter().position(|tag| tag == &last_tag) {
-                    let next_index = (index + 1) % tags.len();
-                    current_tags.push(tags[next_index].to_owned());
-                    self.tags = current_tags.join(", ");
-                }
+            } else if let Some(index) = tags.iter().position(|tag| tag == &last_tag) {
+                let next_index = (index + 1) % tags.len();
+                current_tags.push(tags[next_index].to_owned());
+                self.tags = current_tags.join(", ");
             }
         }
 
@@ -772,7 +771,7 @@ impl TxData {
         } else {
             let mut current_tags = self
                 .tags
-                .split(",")
+                .split(',')
                 .map(|s| s.trim().to_string())
                 .collect::<Vec<String>>();
             let last_tag = current_tags.pop().unwrap();
@@ -785,7 +784,7 @@ impl TxData {
                     for tag in tags {
                         if tag
                             .to_lowercase()
-                            .starts_with(&&last_tag.to_lowercase()[..1])
+                            .starts_with(&last_tag.to_lowercase()[..1])
                         {
                             current_tags.push(tag);
                             self.tags = current_tags.join(", ");
@@ -794,16 +793,14 @@ impl TxData {
                         }
                     }
                 }
-            } else {
-                if let Some(index) = tags.iter().position(|tag| tag == &last_tag) {
-                    let next_index = if index == 0 {
-                        tags.len() - 1
-                    } else {
-                        (index - 1) % tags.len()
-                    };
-                    current_tags.push(tags[next_index].to_owned());
-                    self.tags = current_tags.join(", ");
-                }
+            } else if let Some(index) = tags.iter().position(|tag| tag == &last_tag) {
+                let next_index = if index == 0 {
+                    tags.len() - 1
+                } else {
+                    (index - 1) % tags.len()
+                };
+                current_tags.push(tags[next_index].to_owned());
+                self.tags = current_tags.join(", ");
             }
         }
 

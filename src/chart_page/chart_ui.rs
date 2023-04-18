@@ -170,19 +170,14 @@ pub fn chart_ui<B: Backend>(
         if let Some(val) = loop_remaining {
             if *val == 0 {
                 *loop_remaining = Some(total_loop - 1)
+            } else if *val - 1 != 0 {
+                *loop_remaining = Some(*val - 1)
             } else {
-                if *val - 1 != 0 {
-                    *loop_remaining = Some(*val - 1)
-                } else {
-                    *loop_remaining = None
-                }
+                *loop_remaining = None
             }
         }
 
-        let mut to_loop = match loop_remaining {
-            Some(val) => Some(total_loop - *val),
-            None => None,
-        };
+        let mut to_loop = loop_remaining.as_mut().map(|val| total_loop - *val);
 
         // labels of the x axis
         date_labels.push(checking_date.to_string());
@@ -230,7 +225,7 @@ pub fn chart_ui<B: Backend>(
                     } else {
                         let to_push = vec![(current_axis, current_balance)];
 
-                        if let Some(_) = datasets.get(method_index) {
+                        if datasets.get(method_index).is_some() {
                             datasets[method_index].extend(to_push);
                         } else {
                             datasets.push(to_push)
