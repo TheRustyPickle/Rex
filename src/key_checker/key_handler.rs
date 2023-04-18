@@ -817,8 +817,14 @@ impl<'a> InputKeyHandler<'a> {
 
     fn check_add_tx_tags(&mut self) {
         match self.key.code {
-            KeyCode::Enter => *self.add_tx_tab = TxTab::Nothing,
-            KeyCode::Esc => *self.add_tx_tab = TxTab::Nothing,
+            KeyCode::Enter => {
+                *self.add_tx_tab = TxTab::Nothing;
+                self.add_tx_data.check_tags();
+            }
+            KeyCode::Esc => {
+                *self.add_tx_tab = TxTab::Nothing;
+                self.add_tx_data.check_tags();
+            }
             KeyCode::Backspace => self.add_tx_data.edit_tags(None),
             KeyCode::Char(a) => self.add_tx_data.edit_tags(Some(a)),
             _ => {}
@@ -956,8 +962,14 @@ impl<'a> InputKeyHandler<'a> {
 
     fn check_transfer_tags(&mut self) {
         match self.key.code {
-            KeyCode::Enter => *self.transfer_tab = TxTab::Nothing,
-            KeyCode::Esc => *self.transfer_tab = TxTab::Nothing,
+            KeyCode::Enter => {
+                *self.transfer_tab = TxTab::Nothing;
+                self.transfer_data.check_tags()
+            }
+            KeyCode::Esc => {
+                *self.transfer_tab = TxTab::Nothing;
+                self.transfer_data.check_tags()
+            }
             KeyCode::Backspace => self.transfer_data.edit_tags(None),
             KeyCode::Char(a) => self.transfer_data.edit_tags(Some(a)),
             _ => {}
