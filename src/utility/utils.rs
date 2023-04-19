@@ -1,4 +1,4 @@
-use crate::db::{add_tags_column, create_db};
+use crate::db::{add_tags_column, create_db, update_balance_type};
 use crate::utility::get_user_tx_methods;
 use crossterm::execute;
 use crossterm::terminal::{
@@ -87,9 +87,7 @@ pub fn get_all_tags(conn: &Connection) -> Vec<String> {
 }
 
 /// Gets all columns inside the tx_all table. Used to determine if the database needs to be migrated
-pub fn get_all_tx_columns(file_name: &str) -> Vec<String> {
-    let conn = Connection::open(file_name).expect("Could not connect to database");
-
+pub fn get_all_tx_columns(conn: &Connection) -> Vec<String> {
     let column_names = conn
         .prepare("SELECT * FROM tx_all")
         .expect("could not prepare statement");
@@ -152,10 +150,10 @@ pub fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     (datetime_1, datetime_2)
 }
 
-pub fn check_old_sql() {
-    if !get_all_tx_columns("data.sqlite").contains(&"tags".to_string()) {
+pub fn check_old_sql(conn: &mut Connection) {
+    if !get_all_tx_columns(conn).contains(&"tags".to_string()) {
         println!("Old database detected. Starting migration...");
-        let status = add_tags_column("data.sqlite");
+        let status = add_tags_column(conn);
         match status {
             Ok(_) => {
                 println!("Database migration successfully complete. Restarting in 5 seconds...");
@@ -169,6 +167,42 @@ pub fn check_old_sql() {
             }
         }
     }
+
+    if check_old_balance_sql(conn) {
+        println!("Outdated balance type detected. Updating...");
+        let status = update_balance_type(conn);
+        match status {
+            Ok(_) => {
+                println!("Database updating successfully complete. Restarting in 5 seconds...");
+                // TODO update the timer with each passing second?
+                thread::sleep(Duration::from_millis(5000));
+            }
+            Err(e) => {
+                println!("Database updating failed. Try again. Error: {}", e);
+                println!("Commits reversed. Exiting...");
+                process::exit(1);
+            }
+        }
+    }
+}
+
+pub fn check_old_balance_sql(conn: &Connection) -> bool {
+    let mut query = conn.prepare("PRAGMA table_info(balance_all)").unwrap();
+
+    let columns = query
+        .query_map([], |row| Ok((row.get(1).unwrap(), row.get(2).unwrap())))
+        .unwrap();
+
+    let mut result = false;
+
+    for column in columns {
+        let (name, data_type): (String, String) = column.unwrap();
+        if name != "id_num" && data_type == "TEXT" {
+            result = true;
+            break;
+        }
+    }
+    result
 }
 
 pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {

@@ -49,8 +49,7 @@ pub fn get_last_time_balance(
 
                 // We don't know the amount of tx method so we need to loop
                 for i in 0..tx_method.len() {
-                    let to_push: String = row.get(i).unwrap();
-                    let final_value = to_push.parse::<f64>().unwrap();
+                    let final_value = row.get(i).unwrap();
                     final_data.push(final_value);
                 }
                 Ok(final_data)
@@ -263,7 +262,8 @@ pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<Stri
     let final_balance = conn.query_row(&query, [], |row| {
         let mut final_data: Vec<String> = Vec::new();
         for i in 0..tx_method.len() {
-            final_data.push(row.get(i).unwrap());
+            let row_data: f64 = row.get(i).unwrap();
+            final_data.push(row_data.to_string());
         }
         Ok(final_data)
     });
@@ -302,7 +302,6 @@ pub fn get_user_tx_methods(add_new_method: bool) -> Option<Vec<String>> {
         let mut line = String::new();
         let mut verify_line = String::new();
         let mut verify_input = "Inserted Transaction Methods:\n".to_string();
-
         if add_new_method {
             println!("{method_line}\n");
             println!("\nUser input required for Transaction Methods. Must be separated by one comma \

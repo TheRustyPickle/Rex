@@ -6,6 +6,7 @@ use crate::utility::{
 };
 use crate::{db::add_new_tx_methods, outputs::HandlingOutput};
 use atty::Stream;
+use rusqlite::Connection;
 use std::fs::File;
 use std::io::prelude::*;
 use std::{error::Error, process, thread, time::Duration};
@@ -19,12 +20,12 @@ pub fn initialize_app(verifying_path: &str, current_dir: &str) -> Result<(), Box
             process::exit(1);
         }
     }
-
+    let mut conn = Connection::open(verifying_path).unwrap();
     // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
     check_n_create_db(verifying_path)?;
 
     // initiates migration if old database is detected.
-    check_old_sql();
+    check_old_sql(&mut conn);
 
     loop {
         let mut terminal = enter_tui_interface()?;
