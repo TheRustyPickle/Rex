@@ -169,8 +169,12 @@ pub fn chart_ui<B: Backend>(
 
         if let Some(val) = loop_remaining {
             if *val == 0 {
-                *loop_remaining = Some(total_loop - 1)
-            } else if *val - 1 != 0 {
+                if total_loop > 1 {
+                    *loop_remaining = Some(total_loop - 1)
+                } else {
+                    *loop_remaining = None
+                }
+            } else if *val - 1 > 0 {
                 *loop_remaining = Some(*val - 1)
             } else {
                 *loop_remaining = None

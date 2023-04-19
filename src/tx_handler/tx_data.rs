@@ -729,7 +729,11 @@ impl TxData {
         }
 
         if self.tags.is_empty() {
-            self.tags = String::from(&tags[0]);
+            if !tags.is_empty() {
+                self.tags = String::from(&tags[0]);
+            } else {
+                return Err(SteppingError::InvalidTags);
+            }
         } else {
             let mut current_tags = self
                 .tags
@@ -775,7 +779,11 @@ impl TxData {
         }
 
         if self.tags.is_empty() {
-            self.tags = String::from(&tags[0]);
+            if !tags.is_empty() {
+                self.tags = String::from(&tags[0]);
+            } else {
+                return Err(SteppingError::InvalidTags);
+            }
         } else {
             let mut current_tags = self
                 .tags
