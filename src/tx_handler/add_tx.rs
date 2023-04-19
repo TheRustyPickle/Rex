@@ -18,11 +18,10 @@ pub fn add_tx(
     amount: &str,
     tx_type: &str,
     tags: &str,
-    path: &str,
     id_num: Option<&str>,
+    conn: &mut Connection,
 ) -> sqlResult<()> {
     // create a connection and a savepoint
-    let mut conn = Connection::open(path)?;
     let sp = conn.savepoint()?;
 
     if let Some(id) = id_num {
@@ -69,9 +68,9 @@ pub fn add_tx(
     let mut last_balance_data = HashMap::new();
 
     let all_tx_methods = get_all_tx_methods(&sp);
-    let last_balance = get_last_balances(&sp, &all_tx_methods);
+    let last_balance = get_last_balances(&all_tx_methods, &sp);
     let mut current_month_balance =
-        get_last_time_balance(&sp, month as usize, year as usize, &all_tx_methods);
+        get_last_time_balance(month as usize, year as usize, &all_tx_methods, &sp);
 
     let mut new_balance = 0.0;
     let int_amount = amount.parse::<f64>().unwrap();

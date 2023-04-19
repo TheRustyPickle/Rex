@@ -11,10 +11,10 @@ use std::process::Command;
 /// If all the previous month's balances are 0, returns 0
 /// return example: `{"source_1": 10.50, "source_2": 100.0}`
 pub fn get_last_time_balance(
-    conn: &Connection,
     month: usize,
     year: usize,
     tx_method: &Vec<String>,
+    conn: &Connection,
 ) -> HashMap<String, f64> {
     // We can get the id_num of the month which is saved in the database based on the
     // month and year index there is passed.
@@ -76,7 +76,7 @@ pub fn get_last_time_balance(
 }
 
 /// The functions sends all the changes that happened after transactions on the month and year provided
-pub fn get_all_changes(conn: &Connection, month: usize, year: usize) -> Vec<Vec<String>> {
+pub fn get_all_changes(month: usize, year: usize, conn: &Connection) -> Vec<Vec<String>> {
     // returns all balance changes recorded within a given date
 
     let mut final_result = Vec::new();
@@ -127,7 +127,7 @@ pub fn get_all_txs(
     // current month's transactions to the related tx method. After each tx calculation, add whatever
     // balance for each tx method inside a vec to finally return them
 
-    let mut last_month_balance = get_last_time_balance(conn, month, year, &all_tx_methods);
+    let mut last_month_balance = get_last_time_balance(month, year, &all_tx_methods, conn);
 
     let (datetime_1, datetime_2) = get_sql_dates(month + 1, year);
 
@@ -251,7 +251,7 @@ pub fn get_all_txs(
 
 /// Returns the absolute final balance which is the balance saved after each transaction was counted
 /// or the last row on balance_all table.
-pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<String> {
+pub fn get_last_balances(tx_method: &Vec<String>, conn: &Connection) -> Vec<String> {
     let mut query = format!(
         "SELECT {:?} FROM balance_all ORDER BY id_num DESC LIMIT 1",
         tx_method
@@ -274,7 +274,7 @@ pub fn get_last_balances(conn: &Connection, tx_method: &Vec<String>) -> Vec<Stri
 /// Once the collection is done sends to the database for adding the columns.
 /// This functions is both used when creating the initial db and when updating
 /// the database with new transaction methods.
-pub fn get_user_tx_methods(add_new_method: bool) -> Option<Vec<String>> {
+pub fn get_user_tx_methods(add_new_method: bool, conn: &Connection) -> Option<Vec<String>> {
     let mut stdout = io::stdout();
 
     // this command clears up the terminal. This is added so the terminal doesn't get
@@ -289,8 +289,7 @@ pub fn get_user_tx_methods(add_new_method: bool) -> Option<Vec<String>> {
     // if we are adding more tx methods to an existing database, we need to
     // to get the existing columns to prevent duplicates/error.
     if add_new_method {
-        let conn = Connection::open("data.sqlite").expect("Could not connect to database");
-        current_tx_methods = get_all_tx_methods(&conn);
+        current_tx_methods = get_all_tx_methods(conn);
         for i in &current_tx_methods {
             method_line.push_str(&format!("\n- {i}"))
         }
@@ -325,7 +324,7 @@ or ','. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:"
         }
 
         // split them and remove duplicates
-        let mut splitted = line.split(",").map(|s| s.trim()).collect::<Vec<&str>>();
+        let mut splitted = line.split(',').map(|s| s.trim()).collect::<Vec<&str>>();
         splitted.retain(|s| !s.is_empty());
 
         let mut seen = HashSet::new();

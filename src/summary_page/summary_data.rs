@@ -34,18 +34,18 @@ impl SummaryData {
 
         match mode.index {
             0 => {
-                default.collect_data(conn, month, year);
+                default.collect_data(month, year, conn);
             }
             1 => {
                 for i in 0..12 {
-                    default.collect_data(conn, i, year);
+                    default.collect_data(i, year, conn);
                 }
             }
             2 => {
                 // TODO: year handling
                 for x in 0..4 {
                     for i in 0..12 {
-                        default.collect_data(conn, i, x);
+                        default.collect_data(i, x, conn);
                     }
                 }
             }
@@ -104,7 +104,7 @@ impl SummaryData {
     }
 
     /// Collects data from the given month and year, updates SummaryData with relevant information
-    fn collect_data(&mut self, conn: &Connection, month: usize, year: usize) {
+    fn collect_data(&mut self, month: usize, year: usize, conn: &Connection) {
         let mut total_income = 0.0;
         let mut total_expense = 0.0;
 

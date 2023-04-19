@@ -254,7 +254,7 @@ impl TxData {
     }
 
     // TODO: Handle errors
-    pub fn add_tx(&mut self) -> String {
+    pub fn add_tx(&mut self, conn: &mut Connection) -> String {
         if let Some(output) = self.check_all_fields() {
             return output.to_string();
         }
@@ -263,7 +263,7 @@ impl TxData {
 
         if self.editing_tx {
             self.editing_tx = false;
-            let status = delete_tx(self.id_num as usize, "data.sqlite");
+            let status = delete_tx(self.id_num as usize, conn);
             match status {
                 Ok(_) => {}
                 Err(e) => {
@@ -281,8 +281,8 @@ impl TxData {
                 &self.amount,
                 &self.tx_type,
                 &self.tags,
-                "data.sqlite",
                 Some(&self.id_num.to_string()),
+                conn,
             );
 
             match status_add {
@@ -297,8 +297,8 @@ impl TxData {
                 &self.amount,
                 &self.tx_type,
                 &self.tags,
-                "data.sqlite",
                 None,
+                conn,
             );
             match status {
                 Ok(_) => String::new(),
@@ -355,7 +355,7 @@ impl TxData {
             let all_methods = get_all_tx_methods(conn);
 
             // get all the method's final balance, loop through the balances and match the tx method name
-            let last_balances = get_last_balances(conn, &all_methods);
+            let last_balances = get_last_balances(&all_methods, conn);
 
             for x in 0..all_methods.len() {
                 if all_methods[x] == self.from_method {
