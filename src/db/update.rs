@@ -1,6 +1,5 @@
-use rusqlite::{Connection, Result};
 use crate::utility::get_all_tx_methods;
-
+use rusqlite::{Connection, Result};
 
 /// This function is used for adding new column to the database when adding new
 /// Transaction Methods. Takes vector with transaction method names and commits them.
@@ -55,8 +54,7 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
 
     for i in &all_methods {
         query.push_str(&format!(r#", CAST("{i}" as REAL)"#))
-
-    }   
+    }
     query.push_str("FROM balance_all_old");
 
     sp.execute(&query, [])?;

@@ -60,7 +60,8 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
         let current_month_balance = sp.query_row(&query, [], |row| {
             let mut final_data: Vec<String> = Vec::new();
             for i in 0..tx_methods.len() {
-                final_data.push(row.get(i)?)
+                let row_data: f64 = row.get(i)?;
+                final_data.push(row_data.to_string())
             }
             Ok(final_data)
         })?;
