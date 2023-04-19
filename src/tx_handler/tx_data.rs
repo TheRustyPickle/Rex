@@ -648,10 +648,49 @@ impl TxData {
     }
 
     pub fn do_tx_type_up(&mut self) -> Result<(), SteppingError> {
+        let status = self.check_tx_type();
+        let data_len = self.get_data_len(&TxTab::TxType);
+        if self.current_index > data_len {
+            self.current_index = data_len
+        }
+
+        if self.tx_type == "" {
+            self.tx_type = "Income".to_string()
+        } else if self.tx_type == "Income" {
+            self.tx_type = "Expense".to_string()
+        } else if self.tx_type == "Expense" {
+            self.tx_type = "Income".to_string()
+        }
+        self.go_current_index(&TxTab::TxType);
+
+        if let VerifyingOutput::NotAccepted(_) = status {
+            return Err(SteppingError::InvalidTxType)
+        }
         Ok(())
     }
 
     pub fn do_tx_type_down(&mut self) -> Result<(), SteppingError> {
+        let status = self.check_tx_type();
+        let data_len = self.get_data_len(&TxTab::TxType);
+        if self.current_index > data_len {
+            self.current_index = data_len
+        }
+
+        if self.tx_type == "" {
+            self.tx_type = "Income".to_string()
+        } else if self.tx_type == "Income" {
+            self.tx_type = "Expense".to_string()
+        } else if self.tx_type == "Expense" {
+            self.tx_type = "Income".to_string()
+        }
+
+        self.go_current_index(&TxTab::TxType);
+
+        if let VerifyingOutput::NotAccepted(_) = status {
+            return Err(SteppingError::InvalidTxType)
+        }
+
+        
         Ok(())
     }
 
