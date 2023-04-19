@@ -182,9 +182,9 @@ fn check_getting_all_tx_2() {
 
 fn check_tx_columns() {
     let file_name = "tx_columns.sqlite";
-    create_test_db(&file_name);
+    let conn = create_test_db(&file_name);
 
-    let columns = get_all_tx_columns("tx_columns.sqlite");
+    let columns = get_all_tx_columns(&conn);
     let expected_data = vec![
         "date".to_string(),
         "details".to_string(),
