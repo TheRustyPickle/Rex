@@ -28,6 +28,7 @@ use tui::Terminal;
 pub fn start_app<B: Backend>(
     terminal: &mut Terminal<B>,
     new_version_available: bool,
+    conn: &mut Connection,
 ) -> Result<HandlingOutput, UiHandlingError> {
     // Setting up some default values. Let's go through all of them
 
@@ -60,13 +61,11 @@ pub fn start_app<B: Backend>(
     let mut home_tab = HomeTab::Months;
 
     // the database connection and the path of the db
-    let path = "data.sqlite";
-    let conn = Connection::open(path).expect("Could not connect to database");
     conn.execute("PRAGMA foreign_keys = ON", [])
         .expect("Could not enable foreign keys");
 
     // Stores all data relevant for home page such as balance, changes and txs
-    let mut all_tx_data = TransactionData::new(&conn, home_months.index, home_years.index);
+    let mut all_tx_data = TransactionData::new(home_months.index, home_years.index, conn);
     // data for the Home Page's tx table
     let mut table = TableData::new(all_tx_data.get_txs());
 
@@ -97,11 +96,11 @@ pub fn start_app<B: Backend>(
         &summary_modes,
         summary_months.index,
         summary_years.index,
-        &conn,
+        conn,
     );
 
     // Holds the data that will be/are inserted into the Chart Page
-    let mut chart_data = ChartData::set(&chart_modes, chart_months.index, chart_years.index);
+    let mut chart_data = ChartData::set(&chart_modes, chart_months.index, chart_years.index, conn);
 
     // data for the Summary Page's table
     let mut summary_table = TableData::new(summary_data.get_table_data());
@@ -121,7 +120,7 @@ pub fn start_app<B: Backend>(
         // balance variable contains all the 'rows' of the Balance widget in the home page.
         // So each line is inside a vector. "" represents empty placeholder.
         let mut balance: Vec<Vec<String>> = vec![vec!["".to_string()]];
-        balance[0].extend(get_all_tx_methods(&conn));
+        balance[0].extend(get_all_tx_methods(conn));
         balance[0].extend(vec!["Total".to_string()]);
 
         // save the % of space each column should take in the Balance section based on the total
@@ -144,14 +143,14 @@ pub fn start_app<B: Backend>(
             }
             // if none selected, get empty changes + the absolute final balance
             None => {
-                balance.push(all_tx_data.get_last_balance(&conn));
-                balance.push(get_empty_changes(&conn));
+                balance.push(all_tx_data.get_last_balance(conn));
+                balance.push(get_empty_changes(conn));
             }
         }
 
         // total_income & total_expense data changes on each month/year index change.
-        balance.push(all_tx_data.get_total_income(&conn, current_table_index));
-        balance.push(all_tx_data.get_total_expense(&conn, current_table_index));
+        balance.push(all_tx_data.get_total_income(current_table_index, conn));
+        balance.push(all_tx_data.get_total_expense(current_table_index, conn));
 
         // passing out relevant data to the ui function
 
@@ -183,6 +182,7 @@ pub fn start_app<B: Backend>(
                         &chart_tab,
                         chart_hidden_mode,
                         &mut chart_index,
+                        conn,
                     ),
 
                     CurrentUi::Summary => summary_ui(
@@ -258,7 +258,7 @@ pub fn start_app<B: Backend>(
                 &mut summary_modes,
                 &mut chart_index,
                 &mut chart_hidden_mode,
-                &conn,
+                conn,
             );
 
             let status = match handler.page {

@@ -2,7 +2,7 @@ use rusqlite::{Connection, Result};
 
 /// If the local database is not found, this is executed to create the initial database
 /// with the provided transaction methods.
-pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
+pub fn create_db(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
     let months = vec![
         "January",
         "February",
@@ -21,7 +21,6 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
     let years = vec!["2022", "2023", "2024", "2025"];
 
     // add a save point to reverse commits if failed
-    let mut conn = Connection::open(file_name)?;
     let sp = conn.savepoint().unwrap();
 
     sp.execute(

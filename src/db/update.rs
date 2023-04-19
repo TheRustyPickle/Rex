@@ -3,9 +3,8 @@ use rusqlite::{Connection, Result};
 
 /// This function is used for adding new column to the database when adding new
 /// Transaction Methods. Takes vector with transaction method names and commits them.
-pub fn add_new_tx_methods(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
+pub fn add_new_tx_methods(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
     // add a save point to reverse commits if failed
-    let mut conn = Connection::open(file_name)?;
     let sp = conn.savepoint().unwrap();
 
     for i in &tx_methods {
@@ -34,7 +33,7 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
 
     let sp = conn.savepoint().unwrap();
     let query = "ALTER TABLE balance_all RENAME TO balance_all_old";
-    sp.execute(&query, [])?;
+    sp.execute(query, [])?;
 
     let mut query = "CREATE TABLE balance_all (
         id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT"

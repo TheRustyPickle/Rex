@@ -36,7 +36,7 @@ pub struct InputKeyHandler<'a> {
     total_tags: usize,
     chart_index: &'a mut Option<usize>,
     chart_hidden_mode: &'a mut bool,
-    conn: &'a Connection,
+    conn: &'a mut Connection,
 }
 
 impl<'a> InputKeyHandler<'a> {
@@ -66,7 +66,7 @@ impl<'a> InputKeyHandler<'a> {
         summary_modes: &'a mut IndexedData,
         chart_index: &'a mut Option<usize>,
         chart_hidden_mode: &'a mut bool,
-        conn: &'a Connection,
+        conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data.get_table_data().len();
         InputKeyHandler {
@@ -175,7 +175,7 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     pub fn add_tx(&mut self) {
-        let status = self.add_tx_data.add_tx();
+        let status = self.add_tx_data.add_tx(self.conn);
         if status.is_empty() {
             self.go_home_reset();
             // we just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
@@ -228,7 +228,7 @@ impl<'a> InputKeyHandler<'a> {
 
     pub fn delete_tx(&mut self) {
         if let Some(index) = self.table.state.selected() {
-            let status = self.all_tx_data.del_tx(index);
+            let status = self.all_tx_data.del_tx(index, self.conn);
             match status {
                 Ok(_) => {
                     // transaction deleted so reload the data again
@@ -244,7 +244,7 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     pub fn add_transfer_tx(&mut self) {
-        let status = self.transfer_data.add_tx();
+        let status = self.transfer_data.add_tx(self.conn);
         if status == *"" {
             // reload home page and switch UI
             *self.home_tab = HomeTab::Months;
@@ -978,7 +978,7 @@ impl<'a> InputKeyHandler<'a> {
 
     fn reload_home_table(&mut self) {
         *self.all_tx_data =
-            TransactionData::new(self.conn, self.home_months.index, self.home_years.index);
+            TransactionData::new(self.home_months.index, self.home_years.index, self.conn);
         *self.table = TableData::new(self.all_tx_data.get_txs());
     }
 
@@ -998,6 +998,7 @@ impl<'a> InputKeyHandler<'a> {
             self.chart_modes,
             self.chart_months.index,
             self.chart_years.index,
+            self.conn,
         );
         *self.chart_index = Some(0);
     }

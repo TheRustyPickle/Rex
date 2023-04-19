@@ -22,21 +22,21 @@ pub fn initialize_app(verifying_path: &str, current_dir: &str) -> Result<(), Box
     }
     let mut conn = Connection::open(verifying_path).unwrap();
     // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
-    check_n_create_db(verifying_path)?;
+    check_n_create_db(verifying_path, &mut conn)?;
 
     // initiates migration if old database is detected.
     check_old_sql(&mut conn);
 
     loop {
         let mut terminal = enter_tui_interface()?;
-        let result = start_app(&mut terminal, new_version_available);
+        let result = start_app(&mut terminal, new_version_available, &mut conn);
         exit_tui_interface()?;
 
         match result {
             Ok(output) => match output {
-                HandlingOutput::AddTxMethod => match get_user_tx_methods(true) {
+                HandlingOutput::AddTxMethod => match get_user_tx_methods(true, &conn) {
                     Some(tx_methods) => {
-                        let status = add_new_tx_methods("data.sqlite", tx_methods);
+                        let status = add_new_tx_methods( tx_methods, &mut conn);
                         match status {
                             Ok(_) => {
                                 println!("Added Transaction Methods Successfully. The app will restart in 5 seconds");

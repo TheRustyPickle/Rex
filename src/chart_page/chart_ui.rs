@@ -20,6 +20,7 @@ pub fn chart_ui<B: Backend>(
     current_page: &ChartTab,
     chart_hidden_mode: bool,
     loop_remaining: &mut Option<usize>,
+    conn: &Connection,
 ) {
     let size = f.size();
 
@@ -127,8 +128,7 @@ pub fn chart_ui<B: Backend>(
         );
 
     // connect to the database and gather all the tx methods
-    let conn = Connection::open("data.sqlite").expect("Could not connect to database");
-    let all_tx_methods = get_all_tx_methods(&conn);
+    let all_tx_methods = get_all_tx_methods(conn);
 
     let mut datasets: Vec<Vec<(f64, f64)>> = Vec::new();
     let mut last_balances = Vec::new();

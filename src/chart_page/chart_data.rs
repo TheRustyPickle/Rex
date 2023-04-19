@@ -13,19 +13,17 @@ pub struct ChartData {
 
 impl ChartData {
     /// Gets all the transaction of the given year and saves them in the struct
-    pub fn set(mode: &IndexedData, month: usize, year: usize) -> Self {
-        let conn = Connection::open("data.sqlite").expect("Could not connect to database");
-
+    pub fn set(mode: &IndexedData, month: usize, year: usize, conn: &Connection) -> Self {
         let (all_txs, all_balance) = match mode.index {
             0 => {
-                let (txs, balance, _) = get_all_txs(&conn, month, year);
+                let (txs, balance, _) = get_all_txs(conn, month, year);
                 (txs, balance)
             }
             1 => {
                 let mut txs = vec![];
                 let mut balance = vec![];
                 for i in 0..12 {
-                    let (t, b, _) = get_all_txs(&conn, i, year);
+                    let (t, b, _) = get_all_txs(conn, i, year);
                     txs.extend(t);
                     balance.extend(b);
                 }
@@ -37,7 +35,7 @@ impl ChartData {
                 // TODO: year handling
                 for x in 0..4 {
                     for i in 0..12 {
-                        let (t, b, _) = get_all_txs(&conn, i, x);
+                        let (t, b, _) = get_all_txs(conn, i, x);
                         txs.extend(t);
                         balance.extend(b);
                     }

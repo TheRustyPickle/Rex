@@ -226,7 +226,10 @@ pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
+pub fn check_n_create_db(
+    verifying_path: &str,
+    conn: &mut Connection,
+) -> Result<(), Box<dyn Error>> {
     // checks the local folder and searches for data.sqlite
     let paths = fs::read_dir(".")?;
     let mut db_found = false;
@@ -237,9 +240,9 @@ pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
         }
     }
     if !db_found {
-        let db_tx_methods = get_user_tx_methods(false).unwrap();
+        let db_tx_methods = get_user_tx_methods(false, conn).unwrap();
         println!("Creating New Database. It may take some time...");
-        let status = create_db("data.sqlite", db_tx_methods);
+        let status = create_db(db_tx_methods, conn);
         match status {
             Ok(_) => {}
             Err(e) => {
