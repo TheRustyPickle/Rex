@@ -14,6 +14,7 @@ use rusqlite::Connection;
 /// - the inputted date is empty
 /// - contains any extra spaces
 /// - the date actually exists
+/// - removes any extra spaces and non-numeric characters
 ///
 /// Finally, tries to correct the date if it was not accepted by
 /// adding 0 if the beginning if the length is smaller than necessary
@@ -26,7 +27,7 @@ pub trait DataVerifier {
         if user_date.is_empty() {
             return VerifyingOutput::Nothing(AType::Date);
         }
-        *user_date = user_date.replace(' ', "");
+        *user_date = user_date.chars().filter(|c| c.is_numeric() || *c == '-').collect();
 
         // we will be splitting them into 3 parts to verify each part of the date
         let splitted_date = user_date
@@ -144,6 +145,7 @@ pub trait DataVerifier {
     /// - Amount is zero or below
     /// - Amount text contains a calculation symbol
     /// - contains any extra spaces
+    /// - removes any extra spaces and non-numeric characters
     ///
     /// if the value is not float, tries to make it float ending with double zero
 
@@ -153,7 +155,7 @@ pub trait DataVerifier {
             return VerifyingOutput::Nothing(AType::Amount);
         }
 
-        *amount = amount.replace(' ', "");
+        *amount = amount.chars().filter(|c| c.is_numeric() || *c == '.').collect();
 
         let calc_symbols = vec!["*", "/", "+", "-"];
 
@@ -368,10 +370,8 @@ pub trait DataVerifier {
     }
 
     fn verify_tags(&self, tags: &mut String) {
-        let mut splitted = tags.split(",").map(|s| s.trim()).collect::<Vec<&str>>();
+        let mut splitted = tags.split(',').map(|s| s.trim()).collect::<Vec<&str>>();
         splitted.retain(|s| !s.is_empty());
-
-        let new_string = format!("{}", splitted.join(", "));
-        *tags = new_string;
+        *tags = splitted.join(", ");
     }
 }
