@@ -6,8 +6,15 @@ use std::fs;
 //use std::collections::HashMap;
 
 fn create_test_db(file_name: &str) -> Connection {
-    create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
-    Connection::open(file_name).unwrap()
+    if let Ok(metadata) = fs::metadata(file_name) {
+        if metadata.is_file() {
+            fs::remove_file(file_name).expect("Failed to delete existing file");
+        }
+    }
+
+    let mut conn = Connection::open(file_name).unwrap();
+    create_db(vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    conn
 }
 
 #[test]
@@ -25,11 +32,11 @@ fn check_getting_tx_methods_1() {
 #[test]
 fn check_getting_tx_methods_2() {
     let file_name = "getting_tx_methods_2.sqlite";
-    let conn = create_test_db(file_name);
+    let mut conn = create_test_db(file_name);
 
     add_new_tx_methods(
-        file_name,
         vec!["new method 1".to_string(), "testing methods".to_string()],
+        &mut conn,
     )
     .unwrap();
 
