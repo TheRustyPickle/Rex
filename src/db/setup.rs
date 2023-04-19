@@ -56,20 +56,17 @@ pub fn create_db(file_name: &str, tx_methods: Vec<String>) -> Result<()> {
         id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT"
         .to_string();
     for i in &tx_methods {
-        query.push_str(&format!(r#","{i}" TEXT DEFAULT 0.00"#))
+        query.push_str(&format!(r#","{i}" REAL DEFAULT 0.00"#))
     }
     query.push_str(");");
 
     sp.execute(&query, [])?;
 
-    sp.execute(
-        "CREATE UNIQUE INDEX all_tx_date_IDX ON tx_all (id_num);",
-        [],
-    )
-    .unwrap();
+    sp.execute("CREATE UNIQUE INDEX all_tx_id_IDX ON tx_all (id_num);", [])
+        .unwrap();
 
     sp.execute(
-        "CREATE UNIQUE INDEX changes_all_date_IDX ON changes_all (id_num);",
+        "CREATE UNIQUE INDEX changes_all_id_IDX ON changes_all (id_num);",
         [],
     )
     .unwrap();
