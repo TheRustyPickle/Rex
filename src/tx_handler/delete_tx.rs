@@ -3,12 +3,11 @@ use rusqlite::{Connection, Result as sqlResult};
 
 /// Updates the absolute final balance, balance data and deletes the selected transaction.
 /// Foreign key cascade takes care of the Changes data in the database.
-pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
-    let mut conn = Connection::open(path)?;
+pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
     let sp = conn.savepoint()?;
 
     let tx_methods = get_all_tx_methods(&sp);
-    let last_balance = get_last_balances(&sp, &tx_methods);
+    let last_balance = get_last_balances(&tx_methods, &sp);
     let last_balance_id = get_last_balance_id(&sp)?;
 
     let mut final_last_balance = Vec::new();
@@ -65,6 +64,23 @@ pub fn delete_tx(id_num: usize, path: &str) -> sqlResult<()> {
             }
             Ok(final_data)
         })?;
+
+        let mut untouched = true;
+
+        for x in current_month_balance.iter() {
+            if x != "0" {
+                untouched = false;
+                break;
+            }
+        }
+
+        if untouched {
+            target_id_num += 1;
+            if target_id_num == 49 {
+                break;
+            }
+            continue;
+        }
 
         let mut updated_month_balance = vec![];
 
