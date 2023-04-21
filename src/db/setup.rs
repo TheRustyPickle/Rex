@@ -1,28 +1,34 @@
-use rusqlite::{Connection, Result};
+use rusqlite::{Connection, Result, Savepoint};
+
+pub const MONTHS: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+
+pub const YEARS: [&str; 16] = [
+    "2022", "2023", "2024", "2025", "2026", "2027", "2028", "2029", "2030", "2031", "2032", "2033",
+    "2034", "2035", "2036", "2037",
+];
+
+pub const MODES: [&str; 3] = ["Monthly", "Yearly", "All Time"];
 
 /// If the local database is not found, this is executed to create the initial database
 /// with the provided transaction methods.
 pub fn create_db(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
-    let months = vec![
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-    ];
-    // TODO: turn years into a CONST
-    let years = vec!["2022", "2023", "2024", "2025"];
-
     // add a save point to reverse commits if failed
-    let sp = conn.savepoint().unwrap();
+    let sp = conn.savepoint()?;
 
+    // tx_all table. Will contain all tx data
     sp.execute(
         "CREATE TABLE tx_all (
         date TEXT,
@@ -36,64 +42,82 @@ pub fn create_db(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
         [],
     )?;
 
-    let mut query = "CREATE TABLE changes_all (
-        date TEXT,
-        id_num INTEGER NOT NULL PRIMARY KEY,"
-        .to_string();
-    // we don't know how many tx methods there are, so we have to loop through them
-    for i in &tx_methods {
-        query.push_str(&format!(r#""{i}" TEXT DEFAULT 0.00,"#))
-    }
-    query.push_str(
-        "CONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
-);",
+    // changes_all column. Will contain all balance changes with up and down arrows
+    let columns = tx_methods
+        .iter()
+        .map(|column_name| format!(r#""{}" TEXT DEFAULT 0.00"#, column_name))
+        .collect::<Vec<String>>()
+        .join(",");
+
+    let query = format!(
+        "CREATE TABLE changes_all (
+            date TEXT,
+            id_num INTEGER NOT NULL PRIMARY KEY,
+            {},
+            CONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
+        );",
+        columns
     );
 
-    sp.execute(&query, [])?;
-
-    let mut query = "CREATE TABLE balance_all (
-        id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT"
-        .to_string();
-    for i in &tx_methods {
-        query.push_str(&format!(r#","{i}" REAL DEFAULT 0.00"#))
-    }
-    query.push_str(");");
+    create_balances_table(&tx_methods, &sp)?;
 
     sp.execute(&query, [])?;
 
-    sp.execute("CREATE UNIQUE INDEX all_tx_id_IDX ON tx_all (id_num);", [])
-        .unwrap();
+    sp.execute("CREATE UNIQUE INDEX all_tx_id_IDX ON tx_all (id_num);", [])?;
 
     sp.execute(
         "CREATE UNIQUE INDEX changes_all_id_IDX ON changes_all (id_num);",
         [],
-    )
-    .unwrap();
-
+    )?;
     sp.execute(
         "CREATE UNIQUE INDEX balance_all_id_num_IDX ON balance_all (id_num);",
         [],
-    )
-    .unwrap();
+    )?;
 
-    let mut q_marks = vec![];
-    for _i in &tx_methods {
-        q_marks.push("0.00")
-    }
+    // fill up balance_all table with total year * 12 + 1 rows with 0 balance
+    let zero_values = vec!["0.00"; tx_methods.len()];
 
-    let mut query = format!(
-        "INSERT INTO balance_all ({:?}) VALUES ({:?})",
-        tx_methods, q_marks
+    let highlighted_tx_methods = tx_methods
+        .iter()
+        .map(|method| format!("\"{}\"", method))
+        .collect::<Vec<String>>()
+        .join(",");
+
+    let query = format!(
+        "INSERT INTO balance_all ({}) VALUES ({})",
+        highlighted_tx_methods,
+        zero_values.join(",")
     );
-    // We are using :? to keep the commas inside the string and remove the other unnecessary characters
-    query = query.replace(['[', ']'], "");
 
-    for _i in years {
-        for _a in 0..months.len() {
+    for _i in YEARS {
+        for _a in 0..MONTHS.len() {
             sp.execute(&query, [])?;
         }
     }
+
     sp.execute(&query, [])?;
     sp.commit()?;
+    Ok(())
+}
+
+pub fn create_balances_table(tx_methods: &Vec<String>, sp: &Savepoint) -> Result<()> {
+    // balance_all table. Will contain tx methods as columns and their balances.
+    // each row represents 1 month.
+    let tx_methods_str = tx_methods
+        .iter()
+        .map(|method| format!(r#""{}" REAL DEFAULT 0.00"#, method))
+        .collect::<Vec<String>>()
+        .join(",");
+
+    let query = format!(
+        "CREATE TABLE balance_all (
+            id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            {}
+        );",
+        tx_methods_str
+    );
+
+    sp.execute(&query, [])?;
+
     Ok(())
 }
