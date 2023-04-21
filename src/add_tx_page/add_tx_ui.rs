@@ -7,40 +7,39 @@ use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph};
 use tui::Frame;
 
-/// The UI functions that draws the Add Transaction page of the interface.
-/// Takes arguments for user inputted data, status page data to process the details and turns them into
-/// the the interface.
-///
-/// - input_data : Contains all the data for all field that has been inserted by the user so far for the transaction
-///
-/// Example input_data : `["2020-10-10", "", "", "", "Expense"]`
-/// - currently_selected : For verifying the current selected widget to add a block box
-/// - status_data : Contains all the String to push into the Status widget
-
+/// The function draws the Add Transaction page of the interface.
 pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_selected: &TxTab) {
+    // get the data to insert into the Status widget of this page
     let status_data = add_tx_data.get_tx_status();
+    // The vector contains the data for each widget of the page
     let input_data = add_tx_data.get_all_texts();
+    // The index of the cursor position
     let current_index = add_tx_data.get_current_index();
+
     let size = f.size();
 
-    // divide the terminal into various chunks to draw the interface.
+    // divide the terminal into 4 parts vertically
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
         .constraints(
             [
+                // helper chunk
                 Constraint::Length(13),
+                // input chunk
                 Constraint::Length(3),
+                // details input chunk
                 Constraint::Length(3),
+                // status chunk
                 Constraint::Percentage(25),
             ]
             .as_ref(),
         )
         .split(size);
 
-    // This is a vertical chunk. We will basically be using this to divide the chunk[1]
-    // into another 4 chunks or 4 widgets
-    let another_chunk = Layout::default()
+    // divide the second chunk into 5 parts horizontally
+    // this chunk contains the input boxes take takes input
+    let input_chunk = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(
             [
@@ -96,7 +95,7 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_s
         }
     }
 
-    // We got all these data from the run_app function already so just assign them
+    // We already fetched the data for each of these. Assign them now and then use them to load the widget
     let date_text = vec![Spans::from(input_data[0])];
 
     let details_text = vec![Spans::from(input_data[1])];
@@ -196,29 +195,29 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_s
         .block(create_block("Tags"))
         .alignment(Alignment::Left);
 
-    // We will be adding a cursor/box based on which tab is selected.
+    // We will be adding a cursor based on which tab is selected + the selected index.
     // This was created utilizing the tui-rs example named user_input.rs
     match currently_selected {
         TxTab::Date => f.set_cursor(
-            another_chunk[0].x + current_index as u16 + 1,
-            another_chunk[0].y + 1,
+            input_chunk[0].x + current_index as u16 + 1,
+            input_chunk[0].y + 1,
         ),
         TxTab::Details => f.set_cursor(chunks[2].x + current_index as u16 + 1, chunks[2].y + 1),
         TxTab::FromMethod => f.set_cursor(
-            another_chunk[1].x + current_index as u16 + 1,
-            another_chunk[1].y + 1,
+            input_chunk[1].x + current_index as u16 + 1,
+            input_chunk[1].y + 1,
         ),
         TxTab::Amount => f.set_cursor(
-            another_chunk[2].x + current_index as u16 + 1,
-            another_chunk[2].y + 1,
+            input_chunk[2].x + current_index as u16 + 1,
+            input_chunk[2].y + 1,
         ),
         TxTab::TxType => f.set_cursor(
-            another_chunk[3].x + current_index as u16 + 1,
-            another_chunk[3].y + 1,
+            input_chunk[3].x + current_index as u16 + 1,
+            input_chunk[3].y + 1,
         ),
         TxTab::Tags => f.set_cursor(
-            another_chunk[4].x + current_index as u16 + 1,
-            another_chunk[4].y + 1,
+            input_chunk[4].x + current_index as u16 + 1,
+            input_chunk[4].y + 1,
         ),
         _ => {}
     }
@@ -227,10 +226,9 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_s
     f.render_widget(help_sec, chunks[0]);
     f.render_widget(details_sec, chunks[2]);
     f.render_widget(status_sec, chunks[3]);
-
-    f.render_widget(date_sec, another_chunk[0]);
-    f.render_widget(tx_method_sec, another_chunk[1]);
-    f.render_widget(amount_sec, another_chunk[2]);
-    f.render_widget(tx_type_sec, another_chunk[3]);
-    f.render_widget(tags_sec, another_chunk[4]);
+    f.render_widget(date_sec, input_chunk[0]);
+    f.render_widget(tx_method_sec, input_chunk[1]);
+    f.render_widget(amount_sec, input_chunk[2]);
+    f.render_widget(tx_type_sec, input_chunk[3]);
+    f.render_widget(tags_sec, input_chunk[4]);
 }
