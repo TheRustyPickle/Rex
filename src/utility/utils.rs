@@ -1,4 +1,4 @@
-use crate::db::{add_tags_column, create_db, update_balance_type};
+use crate::db::{add_tags_column, create_db, update_balance_type, MONTHS, YEARS};
 use crate::utility::get_user_tx_methods;
 use crossterm::execute;
 use crossterm::terminal::{
@@ -16,26 +16,9 @@ use tui::Terminal;
 
 /// Gives the month and year name by index
 pub fn get_month_name(month_index: usize, year_index: usize) -> (String, String) {
-    let month_names = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-    ];
-
-    let years = ["2022", "2023", "2024", "2025"];
-
     (
-        month_names[month_index].to_string(),
-        years[year_index].to_string(),
+        MONTHS[month_index].to_string(),
+        YEARS[year_index].to_string(),
     )
 }
 
@@ -135,18 +118,8 @@ pub fn get_last_balance_id(conn: &Connection) -> sqlResult<i32> {
 /// WHERE statement. Will return the 1st and the 31st date of the given month and year.
 /// return example: `(2022-01-01, 2022-01-31)`
 pub fn get_sql_dates(month: usize, year: usize) -> (String, String) {
-    let new_month: String = if month < 10 {
-        format!("0{}", month)
-    } else {
-        format!("{}", month)
-    };
-    let mut new_year = year.to_string();
-
-    if year + 1 < 10 {
-        new_year = format!("202{}", year + 2);
-    }
-    let datetime_1 = format!("{}-{}-01", new_year, new_month);
-    let datetime_2 = format!("{}-{}-31", new_year, new_month);
+    let datetime_1 = format!("{}-{:02}-01", YEARS[year], month + 1);
+    let datetime_2 = format!("{}-{:02}-31", YEARS[year], month + 1);
     (datetime_1, datetime_2)
 }
 

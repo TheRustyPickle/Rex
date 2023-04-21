@@ -41,21 +41,13 @@ pub fn start_app<B: Backend>(
     // contains the chart page year list that is indexed
     let mut chart_years = IndexedData::new_yearly();
     // contains the chart page mode selection list that is indexed
-    let mut chart_modes = IndexedData::new(vec![
-        "Monthly".to_string(),
-        "Yearly".to_string(),
-        "All Time".to_string(),
-    ]);
+    let mut chart_modes = IndexedData::new_modes();
     // contains the summary page month list that is indexed
     let mut summary_months = IndexedData::new_monthly();
     // contains the summary page year list that is indexed
     let mut summary_years = IndexedData::new_yearly();
     // contains the summary page mode selection list that is indexed
-    let mut summary_modes = IndexedData::new(vec![
-        "Monthly".to_string(),
-        "Yearly".to_string(),
-        "All Time".to_string(),
-    ]);
+    let mut summary_modes = IndexedData::new_modes();
 
     // the selected widget on the Home Page. Default set to the month selection
     let mut home_tab = HomeTab::Months;
