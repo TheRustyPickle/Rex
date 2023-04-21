@@ -29,7 +29,6 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
 
     let mut target_id_num = month + (year * 12);
 
-    //
     let mut from_method = "";
     let mut to_method = "";
 
@@ -76,7 +75,7 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
 
         if untouched {
             target_id_num += 1;
-            if target_id_num == 49 {
+            if target_id_num == 193 {
                 break;
             }
             continue;
@@ -133,9 +132,9 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
         balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
         sp.execute(&balance_query, [])?;
 
-        // 49 is the absolute final balance which we don't need to modify
+        // 193 is the absolute final balance which we don't need to modify
         target_id_num += 1;
-        if target_id_num == 49 {
+        if target_id_num == 193 {
             break;
         }
     }

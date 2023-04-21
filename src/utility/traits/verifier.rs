@@ -8,7 +8,7 @@ use rusqlite::Connection;
 /// Checks if:
 ///
 /// - the date length is 10 characters
-/// - the inputted year is between 2022 to 2025
+/// - the inputted year is between 2022 to 2037
 /// - the inputted month is between 01 to 12
 /// - the inputted date is between 01 to 31
 /// - the inputted date is empty
@@ -27,7 +27,10 @@ pub trait DataVerifier {
         if user_date.is_empty() {
             return VerifyingOutput::Nothing(AType::Date);
         }
-        *user_date = user_date.chars().filter(|c| c.is_numeric() || *c == '-').collect();
+        *user_date = user_date
+            .chars()
+            .filter(|c| c.is_numeric() || *c == '-')
+            .collect();
 
         // we will be splitting them into 3 parts to verify each part of the date
         let splitted_date = user_date
@@ -97,13 +100,12 @@ pub trait DataVerifier {
 
             return VerifyingOutput::NotAccepted(NAType::InvalidDay);
 
-        // checks if the year value is between 2022 and 2025
-        // TODO year check
-        } else if !(2022..=2025).contains(&int_year) {
+        // checks if the year value is between 2022 and 2037
+        } else if !(2022..=2037).contains(&int_year) {
             if int_year < 2022 {
                 *user_date = format!("2022-{}-{}", splitted_date[1], splitted_date[2]);
-            } else if int_year > 2025 {
-                *user_date = format!("2025-{}-{}", splitted_date[1], splitted_date[2]);
+            } else if int_year > 2037 {
+                *user_date = format!("2037-{}-{}", splitted_date[1], splitted_date[2]);
             }
 
             return VerifyingOutput::NotAccepted(NAType::YearTooBig);
@@ -155,12 +157,15 @@ pub trait DataVerifier {
             return VerifyingOutput::Nothing(AType::Amount);
         }
 
-        *amount = amount.chars().filter(|c| c.is_numeric() || *c == '.').collect();
+        let calc_symbols = vec!['*', '/', '+', '-'];
 
-        let calc_symbols = vec!["*", "/", "+", "-"];
+        *amount = amount
+            .chars()
+            .filter(|c| c.is_numeric() || *c == '.' || calc_symbols.contains(c))
+            .collect();
 
         // check if any of the symbols are present
-        if calc_symbols.iter().any(|s| amount.contains(s)) {
+        if calc_symbols.iter().any(|s| amount.contains(*s)) {
             // how it works:
             // the calc_symbol intentionally starts with * and / so these calculations are done first
             // start a main loop which will only run for the amount of times any one of them from calc_symbols is present
@@ -171,17 +176,14 @@ pub trait DataVerifier {
             // result: 1+50 => break the symbol checking loop and continue the main loop again so we start working with 1+50.
 
             // get the amount of time the symbols were found in the amount string
-            let count = amount
-                .chars()
-                .filter(|c| calc_symbols.contains(&c.to_string().as_str()))
-                .count();
+            let count = amount.chars().filter(|c| calc_symbols.contains(c)).count();
 
             // remove all spaces for easier indexing
             let mut working_value = amount.to_owned();
 
             for _i in 0..count {
                 for symbol in &calc_symbols {
-                    if let Some(location) = working_value.find(symbol) {
+                    if let Some(location) = working_value.find(*symbol) {
                         // if a symbol is found, we want to store the values to its side to these variables.
                         // example: 1+5 first_value = 1 last_value = 5
                         let mut first_value = String::new();
@@ -190,7 +192,7 @@ pub trait DataVerifier {
                         // skip to symbol location + 1 index value and start taking chars from here until the end
                         // of the string or until another cal symbol is encountered
                         for char in working_value.chars().skip(location + 1) {
-                            if !calc_symbols.contains(&String::from(char).as_str()) {
+                            if !calc_symbols.contains(&char) {
                                 last_value.push(char)
                             } else {
                                 break;
@@ -203,7 +205,7 @@ pub trait DataVerifier {
                             .rev()
                             .skip(working_value.len() - location)
                         {
-                            if !calc_symbols.contains(&String::from(char).as_str()) {
+                            if !calc_symbols.contains(&char) {
                                 first_value.push(char)
                             } else {
                                 break;
@@ -240,10 +242,10 @@ pub trait DataVerifier {
                             };
 
                             match *symbol {
-                                "*" => format!("{:.2}", (first_num * last_num)),
-                                "/" => format!("{:.2}", (first_num / last_num)),
-                                "+" => format!("{:.2}", (first_num + last_num)),
-                                "-" => format!("{:.2}", (first_num - last_num)),
+                                '*' => format!("{:.2}", (first_num * last_num)),
+                                '/' => format!("{:.2}", (first_num / last_num)),
+                                '+' => format!("{:.2}", (first_num + last_num)),
+                                '-' => format!("{:.2}", (first_num - last_num)),
                                 _ => String::new(),
                             }
                         };

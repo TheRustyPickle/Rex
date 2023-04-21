@@ -465,8 +465,7 @@ impl TxData {
 
         match status {
             VerifyingOutput::Accepted(_) => {
-                // TODO date here
-                let final_date = NaiveDate::parse_from_str("2025-12-31", "%Y-%m-%d").unwrap();
+                let final_date = NaiveDate::parse_from_str("2037-12-31", "%Y-%m-%d").unwrap();
                 let mut current_date = NaiveDate::parse_from_str(&self.date, "%Y-%m-%d").unwrap();
                 if current_date != final_date {
                     current_date += Duration::days(1);
@@ -654,7 +653,7 @@ impl TxData {
             self.current_index = data_len
         }
 
-        if self.tx_type == "" {
+        if self.tx_type.is_empty() {
             self.tx_type = "Income".to_string()
         } else if self.tx_type == "Income" {
             self.tx_type = "Expense".to_string()
@@ -664,7 +663,7 @@ impl TxData {
         self.go_current_index(&TxTab::TxType);
 
         if let VerifyingOutput::NotAccepted(_) = status {
-            return Err(SteppingError::InvalidTxType)
+            return Err(SteppingError::InvalidTxType);
         }
         Ok(())
     }
@@ -676,7 +675,7 @@ impl TxData {
             self.current_index = data_len
         }
 
-        if self.tx_type == "" {
+        if self.tx_type.is_empty() {
             self.tx_type = "Income".to_string()
         } else if self.tx_type == "Income" {
             self.tx_type = "Expense".to_string()
@@ -687,10 +686,9 @@ impl TxData {
         self.go_current_index(&TxTab::TxType);
 
         if let VerifyingOutput::NotAccepted(_) = status {
-            return Err(SteppingError::InvalidTxType)
+            return Err(SteppingError::InvalidTxType);
         }
 
-        
         Ok(())
     }
 
