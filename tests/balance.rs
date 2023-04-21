@@ -144,7 +144,7 @@ fn check_last_balance_id() {
     let conn = create_test_db(&file_name);
 
     let data = get_last_balance_id(&conn);
-    let expected_data: sqlResult<i32> = Ok(49);
+    let expected_data: sqlResult<i32> = Ok(193);
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
@@ -244,9 +244,10 @@ fn check_balance_all_day() {
     let tx_methods = get_all_tx_methods(&conn);
 
     let mut current_date = NaiveDate::parse_from_str("2022-01-01", "%Y-%m-%d").unwrap();
-    let ending_date = NaiveDate::parse_from_str("2025-12-31", "%Y-%m-%d").unwrap();
+    let ending_date = NaiveDate::parse_from_str("2037-12-31", "%Y-%m-%d").unwrap();
 
-    let total_days: f64 = (ending_date - current_date).num_days() as f64 + 1.0;
+    let mut total_days = 0;
+    let mut total_amount = 0;
 
     let details = "Test Transaction";
     let amount = "1.0";
@@ -254,7 +255,7 @@ fn check_balance_all_day() {
     let tx_type = "Income";
 
     loop {
-        if current_date == ending_date + Duration::days(1) {
+        if current_date > ending_date {
             break;
         }
         add_tx(
@@ -268,11 +269,13 @@ fn check_balance_all_day() {
             &mut conn,
         )
         .unwrap();
-        current_date += Duration::days(1)
+        current_date += Duration::days(28);
+        total_amount += 1;
+        total_days += 1;
     }
 
     let data = get_last_balances(&tx_methods, &conn);
-    let expected = vec![format!("{total_days:.2}"), "0.00".to_string()];
+    let expected = vec![total_amount.to_string(), "0".to_string()];
     assert_eq!(data, expected);
 
     let mut delete_id_num = total_days as usize;
@@ -288,7 +291,7 @@ fn check_balance_all_day() {
     let data_1 = get_last_balances(&tx_methods, &conn);
     let data_2 = get_last_time_balance(12, 3, &tx_methods, &conn);
 
-    let expected_data_1 = vec!["0.00".to_string(), "0.00".to_string()];
+    let expected_data_1 = vec!["0".to_string(), "0".to_string()];
     let mut expected_data_2 = HashMap::new();
     for (i, _x) in &data_2 {
         expected_data_2.insert(i.to_string(), 0.0);

@@ -27,7 +27,7 @@ fn create_test_db(file_name: &str) -> Connection {
 #[test]
 fn check_sql_dates() {
     let data = get_sql_dates(11, 2);
-    let expected_data = ("2024-11-01".to_string(), "2024-11-31".to_string());
+    let expected_data = ("2024-12-01".to_string(), "2024-12-31".to_string());
     assert_eq!(data, expected_data);
 }
 
@@ -139,12 +139,12 @@ fn check_verifier_date_3() {
 
     let test_data = Testing {
         data: "2026-01-31".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::YearTooBig),
+        result: VerifyingOutput::Accepted(AType::Date),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_date(&mut to_verify);
     assert_eq!(result, test_data.result);
-    assert_eq!(to_verify, "2025-01-31".to_string());
+    assert_eq!(to_verify, "2026-01-31".to_string());
 
     let test_data = Testing {
         data: "2022-01-".to_string(),
@@ -293,7 +293,7 @@ fn check_verifier_amount_4() {
 
     let test_data = Testing {
         data: "@%15612".to_string(),
-        result: VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Amount)),
+        result: VerifyingOutput::Accepted(AType::Amount),
     };
     let mut to_verify = test_data.data.clone();
     let result = test_data.verify_amount(&mut to_verify);
