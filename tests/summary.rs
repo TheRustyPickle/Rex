@@ -59,11 +59,7 @@ fn check_summary_data() {
     )
     .unwrap();
 
-    let mut summary_modes = IndexedData::new(vec![
-        "Monthly".to_string(),
-        "Yearly".to_string(),
-        "All Time".to_string(),
-    ]);
+    let mut summary_modes = IndexedData::new_modes();
     summary_modes.next();
     summary_modes.next();
 
