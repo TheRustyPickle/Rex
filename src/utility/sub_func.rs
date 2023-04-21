@@ -82,7 +82,7 @@ pub fn get_all_changes(month: usize, year: usize, conn: &Connection) -> Vec<Vec<
     let mut final_result = Vec::new();
     let tx_methods = get_all_tx_methods(conn);
 
-    let (datetime_1, datetime_2) = get_sql_dates(month + 1, year);
+    let (datetime_1, datetime_2) = get_sql_dates(month, year);
 
     let mut statement = conn
         .prepare("SELECT * FROM changes_all Where date BETWEEN date(?) AND date(?) ORDER BY date, id_num")
@@ -129,7 +129,7 @@ pub fn get_all_txs(
 
     let mut last_month_balance = get_last_time_balance(month, year, &all_tx_methods, conn);
 
-    let (datetime_1, datetime_2) = get_sql_dates(month + 1, year);
+    let (datetime_1, datetime_2) = get_sql_dates(month, year);
 
     // preparing the query for db, getting current month's all transactions
     let mut statement = conn
