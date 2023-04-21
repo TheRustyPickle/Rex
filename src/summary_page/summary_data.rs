@@ -1,3 +1,4 @@
+use crate::db::{MONTHS, YEARS};
 use crate::{
     page_handler::IndexedData,
     utility::{get_all_txs, get_month_name},
@@ -37,14 +38,13 @@ impl SummaryData {
                 default.collect_data(month, year, conn);
             }
             1 => {
-                for i in 0..12 {
+                for i in 0..MONTHS.len() {
                     default.collect_data(i, year, conn);
                 }
             }
             2 => {
-                // TODO: year handling
-                for x in 0..4 {
-                    for i in 0..12 {
+                for x in 0..YEARS.len() {
+                    for i in 0..MONTHS.len() {
                         default.collect_data(i, x, conn);
                     }
                 }

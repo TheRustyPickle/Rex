@@ -1,3 +1,4 @@
+use crate::db::{MODES, MONTHS, YEARS};
 use chrono::prelude::Local;
 use chrono::Datelike;
 use tui::widgets::TableState;
@@ -66,30 +67,10 @@ pub struct IndexedData {
 }
 
 impl IndexedData {
-    pub fn new(titles: Vec<String>) -> Self {
-        IndexedData { titles, index: 0 }
-    }
-
     pub fn new_monthly() -> Self {
         let month_index = Local::now().month() as usize - 1;
         IndexedData {
-            titles: vec![
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-            ]
-            .into_iter()
-            .map(|s| s.to_string())
-            .collect(),
+            titles: MONTHS.into_iter().map(|s| s.to_string()).collect(),
             index: month_index,
         }
     }
@@ -97,11 +78,15 @@ impl IndexedData {
     pub fn new_yearly() -> Self {
         let year_index = Local::now().year() as usize - 2022;
         IndexedData {
-            titles: vec!["2022", "2023", "2024", "2025"]
-                .into_iter()
-                .map(|s| s.to_string())
-                .collect(),
+            titles: YEARS.into_iter().map(|s| s.to_string()).collect(),
             index: year_index,
+        }
+    }
+
+    pub fn new_modes() -> Self {
+        IndexedData {
+            titles: MODES.into_iter().map(|s| s.to_string()).collect(),
+            index: 0,
         }
     }
 
