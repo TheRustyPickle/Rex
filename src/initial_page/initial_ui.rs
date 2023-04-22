@@ -1,7 +1,8 @@
+use crate::page_handler::{BACKGROUND, BOX, TEXT};
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::Span,
     widgets::{Block, Borders, Paragraph},
     Frame,
@@ -18,19 +19,11 @@ pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
         .constraints([Constraint::Length(8), Constraint::Min(5)].as_ref())
         .split(size);
 
-    let block = Block::default().style(
-        Style::default()
-            .bg(Color::Rgb(255, 255, 255))
-            .fg(Color::Rgb(50, 205, 50)),
-    );
+    let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
     let create_block = |title| {
         Block::default()
             .borders(Borders::ALL)
-            .style(
-                Style::default()
-                    .bg(Color::Rgb(255, 255, 255))
-                    .fg(Color::Rgb(50, 205, 50)),
-            )
+            .style(Style::default().bg(BACKGROUND).fg(BOX))
             .title(Span::styled(
                 title,
                 Style::default().add_modifier(Modifier::BOLD),
@@ -110,19 +103,11 @@ Esc: Stop editing a filed
 ";
 
     let paragraph = Paragraph::new(upper_text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .alignment(Alignment::Center);
 
     let paragraph_2 = Paragraph::new(second_text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(create_block("Help"));
 
     f.render_widget(paragraph, chunks[0]);

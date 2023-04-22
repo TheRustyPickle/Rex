@@ -1,4 +1,4 @@
-use crate::page_handler::TxTab;
+use crate::page_handler::{TxTab, BACKGROUND, BOX, TEXT};
 use crate::tx_handler::TxData;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
@@ -57,11 +57,7 @@ pub fn transfer_ui<B: Backend>(
         )
         .split(chunks[1]);
 
-    let block = Block::default().style(
-        Style::default()
-            .bg(Color::Rgb(255, 255, 255))
-            .fg(Color::Rgb(50, 205, 50)),
-    );
+    let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
     f.render_widget(block, size);
 
     // This is the details of the Help widget
@@ -117,11 +113,7 @@ pub fn transfer_ui<B: Backend>(
     let create_block = |title| {
         Block::default()
             .borders(Borders::ALL)
-            .style(
-                Style::default()
-                    .bg(Color::Rgb(255, 255, 255))
-                    .fg(Color::Rgb(50, 205, 50)),
-            )
+            .style(Style::default().bg(BACKGROUND).fg(BOX))
             .title(Span::styled(
                 title,
                 Style::default().add_modifier(Modifier::BOLD),
@@ -130,74 +122,42 @@ pub fn transfer_ui<B: Backend>(
 
     // creates the widgets to ready it for rendering
     let help_sec = Paragraph::new(help_text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(create_block("Help"))
         .alignment(Alignment::Left);
 
     let status_sec = Paragraph::new(status_text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(create_block("Status"))
         .alignment(Alignment::Left);
 
     let date_sec = Paragraph::new(date_text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(create_block("Date"))
         .alignment(Alignment::Left);
 
     let from_sec = Paragraph::new(from_text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(create_block("From Method"))
         .alignment(Alignment::Left);
 
     let to_sec = Paragraph::new(to_text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(create_block("To Method"))
         .alignment(Alignment::Left);
 
     let amount_sec = Paragraph::new(amount_text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(create_block("Amount"))
         .alignment(Alignment::Left);
 
     let details_sec = Paragraph::new(details_text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(create_block("Details"))
         .alignment(Alignment::Left);
 
     let tags_sec = Paragraph::new(tags_text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(create_block("Tags"))
         .alignment(Alignment::Left);
 

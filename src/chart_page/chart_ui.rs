@@ -1,5 +1,5 @@
 use crate::chart_page::ChartData;
-use crate::page_handler::{ChartTab, IndexedData};
+use crate::page_handler::{ChartTab, IndexedData, BACKGROUND, BOX, SELECTED, TEXT};
 use crate::utility::get_all_tx_methods;
 use chrono::{naive::NaiveDate, Duration};
 use rusqlite::Connection;
@@ -63,36 +63,32 @@ pub fn chart_ui<B: Backend>(
 
     let chunks = main_layout.split(size);
 
-    let block = Block::default().style(
-        Style::default()
-            .bg(Color::Rgb(255, 255, 255))
-            .fg(Color::Rgb(50, 205, 50)),
-    );
+    let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
     f.render_widget(block, size);
 
     let month_titles = months
         .titles
         .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
         .collect();
 
     let year_titles = years
         .titles
         .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
         .collect();
 
     let mode_selection_titles = mode_selection
         .titles
         .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
         .collect();
 
     // creates the widgets to ready it for rendering
     let mut month_tab = Tabs::new(month_titles)
         .block(Block::default().borders(Borders::ALL).title("Months"))
         .select(months.index)
-        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .style(Style::default().fg(BOX))
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
@@ -102,7 +98,7 @@ pub fn chart_ui<B: Backend>(
     let mut year_tab = Tabs::new(year_titles)
         .block(Block::default().borders(Borders::ALL).title("Years"))
         .select(years.index)
-        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .style(Style::default().fg(BOX))
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
@@ -116,7 +112,7 @@ pub fn chart_ui<B: Backend>(
                 .title("Mode Selection"),
         )
         .select(mode_selection.index)
-        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .style(Style::default().fg(BOX))
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
@@ -325,54 +321,26 @@ pub fn chart_ui<B: Backend>(
                 .style(
                     Style::default()
                         .fg(color_list.pop().unwrap())
-                        .bg(Color::Rgb(255, 255, 255)),
+                        .bg(BACKGROUND),
                 )
                 .data(&datasets[i]),
         )
     }
 
     let chart = Chart::new(final_dataset)
-        .block(
-            Block::default().style(
-                Style::default()
-                    .bg(Color::Rgb(255, 255, 255))
-                    .fg(Color::Rgb(50, 205, 50)),
-            ),
-        )
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
+        .block(Block::default().style(Style::default().bg(BACKGROUND).fg(BOX)))
+        .style(Style::default().bg(BACKGROUND).fg(BOX))
         .x_axis(
             Axis::default()
-                .title(Span::styled(
-                    "",
-                    Style::default()
-                        .bg(Color::Rgb(255, 255, 255))
-                        .fg(Color::Rgb(50, 205, 50)),
-                ))
-                .style(
-                    Style::default()
-                        .bg(Color::Rgb(255, 255, 255))
-                        .fg(Color::Rgb(50, 205, 50)),
-                )
+                .title(Span::styled("", Style::default().bg(BACKGROUND).fg(BOX)))
+                .style(Style::default().bg(BACKGROUND).fg(BOX))
                 .bounds([0.0, current_axis - 1.0])
                 .labels(date_labels.iter().cloned().map(Span::from).collect()),
         )
         .y_axis(
             Axis::default()
-                .title(Span::styled(
-                    "",
-                    Style::default()
-                        .bg(Color::Rgb(255, 255, 255))
-                        .fg(Color::Rgb(50, 205, 50)),
-                ))
-                .style(
-                    Style::default()
-                        .bg(Color::Rgb(255, 255, 255))
-                        .fg(Color::Rgb(50, 205, 50)),
-                )
+                .title(Span::styled("", Style::default().bg(BACKGROUND).fg(BOX)))
+                .style(Style::default().bg(BACKGROUND).fg(BOX))
                 .bounds([lowest_balance, highest_balance])
                 .labels(labels.iter().cloned().map(Span::from).collect()),
         );
@@ -381,26 +349,17 @@ pub fn chart_ui<B: Backend>(
         // previously added a black block to year and month widget if a value is not selected
         // Now we will turn that black block into green if a value is selected
         ChartTab::Months => {
-            month_tab = month_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(Color::Rgb(152, 251, 152)),
-            );
+            month_tab = month_tab
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
 
         ChartTab::Years => {
-            year_tab = year_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(Color::Rgb(152, 251, 152)),
-            );
+            year_tab = year_tab
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
         ChartTab::ModeSelection => {
-            mode_selection_tab = mode_selection_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(Color::Rgb(152, 251, 152)),
-            );
+            mode_selection_tab = mode_selection_tab
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
     }
 
