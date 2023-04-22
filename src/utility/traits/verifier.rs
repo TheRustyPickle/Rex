@@ -164,6 +164,12 @@ pub trait DataVerifier {
             .filter(|c| c.is_numeric() || *c == '.' || calc_symbols.contains(c))
             .collect();
 
+        // Already checked if the initial amount is empty.
+        // if it becomes empty after the filtering was done, there no number inside so return error
+        if amount.is_empty() {
+            return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Amount))
+        }
+
         // check if any of the symbols are present
         if calc_symbols.iter().any(|s| amount.contains(*s)) {
             // how it works:
