@@ -1,4 +1,4 @@
-use crate::page_handler::{IndexedData, SummaryTab, TableData};
+use crate::page_handler::{IndexedData, SummaryTab, TableData, BACKGROUND, BOX, SELECTED, TEXT};
 use crate::summary_page::SummaryData;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
@@ -25,7 +25,7 @@ pub fn summary_ui<B: Backend>(
 
     let header_cells = ["Tag", "Total Income", "Total Expense"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Rgb(255, 255, 255))));
+        .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
 
     let header = Row::new(header_cells)
         .style(normal_style)
@@ -73,31 +73,27 @@ pub fn summary_ui<B: Backend>(
 
     let chunks = main_layout.split(size);
 
-    let block = Block::default().style(
-        Style::default()
-            .bg(Color::Rgb(255, 255, 255))
-            .fg(Color::Rgb(50, 205, 50)),
-    );
+    let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
 
     f.render_widget(block, size);
 
     let month_titles = months
         .titles
         .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
         .collect();
 
     //color the first two letters of the year to blue
     let year_titles = years
         .titles
         .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
         .collect();
 
     let mode_selection_titles = mode_selection
         .titles
         .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
         .collect();
 
     // The default style for the select index in the month section if
@@ -105,7 +101,7 @@ pub fn summary_ui<B: Backend>(
     let mut month_tab = Tabs::new(month_titles)
         .block(Block::default().borders(Borders::ALL).title("Months"))
         .select(months.index)
-        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .style(Style::default().fg(BOX))
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
@@ -117,7 +113,7 @@ pub fn summary_ui<B: Backend>(
     let mut year_tab = Tabs::new(year_titles)
         .block(Block::default().borders(Borders::ALL).title("Years"))
         .select(years.index)
-        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .style(Style::default().fg(BOX))
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
@@ -131,7 +127,7 @@ pub fn summary_ui<B: Backend>(
                 .title("Mode Selection"),
         )
         .select(mode_selection.index)
-        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .style(Style::default().fg(BOX))
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
@@ -208,7 +204,10 @@ pub fn summary_ui<B: Backend>(
     let rows = table_data.items.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| Cell::from(c.to_string()));
-        Row::new(cells).height(height as u16).bottom_margin(0)
+        Row::new(cells)
+            .height(height as u16)
+            .bottom_margin(0)
+            .style(Style::default().fg(TEXT))
     });
 
     let mut table_area = Table::new(rows)
@@ -218,38 +217,26 @@ pub fn summary_ui<B: Backend>(
             Constraint::Percentage(33),
             Constraint::Percentage(33),
             Constraint::Percentage(33),
-        ]);
+        ])
+        .style(Style::default().fg(BOX));
 
-    let paragraph = Paragraph::new(text).style(
-        Style::default()
-            .bg(Color::Rgb(255, 255, 255))
-            .fg(Color::Rgb(50, 205, 50)),
-    );
+    let paragraph = Paragraph::new(text).style(Style::default().bg(BACKGROUND).fg(TEXT));
 
     match current_page {
         // previously added a black block to year and month widget if a value is not selected
         // Now we will turn that black block into green if a value is selected
         SummaryTab::Months => {
-            month_tab = month_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(Color::Rgb(152, 251, 152)),
-            );
+            month_tab = month_tab
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
 
         SummaryTab::Years => {
-            year_tab = year_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(Color::Rgb(152, 251, 152)),
-            );
+            year_tab = year_tab
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
         SummaryTab::ModeSelection => {
-            mode_selection_tab = mode_selection_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(Color::Rgb(152, 251, 152)),
-            );
+            mode_selection_tab = mode_selection_tab
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
         SummaryTab::Table => {
             table_area = table_area

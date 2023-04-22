@@ -21,7 +21,13 @@ use rusqlite::Connection;
 use std::time::Duration;
 use tui::backend::Backend;
 use tui::layout::Constraint;
+use tui::style::Color;
 use tui::Terminal;
+
+pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
+pub const TEXT: Color = Color::Rgb(153, 78, 236);
+pub const BOX: Color = Color::Rgb(255, 87, 51);
+pub const SELECTED: Color = Color::Rgb(151, 251, 152);
 
 /// The core part that makes the entire program run. It loops
 /// incredibly fast to refresh the terminal and passes the provided data to ui modules to draw them.

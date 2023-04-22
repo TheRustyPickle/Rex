@@ -1,10 +1,9 @@
-use tui::{
-    backend::Backend,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
-    widgets::{Block, Borders, Clear, Paragraph},
-    Frame,
-};
+use crate::page_handler::{BACKGROUND, BOX, TEXT};
+use tui::backend::Backend;
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use tui::style::Style;
+use tui::widgets::{Block, Borders, Clear, Paragraph};
+use tui::Frame;
 
 /// Creates a popup on top of a window with the given size, title and text attributes
 pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &[String]) {
@@ -16,11 +15,10 @@ pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &[String]) {
     let x_value = popup_data[2].parse::<u16>().unwrap();
     let y_value = popup_data[3].parse::<u16>().unwrap();
 
-    let block = Block::default().title(title).borders(Borders::ALL).style(
-        Style::default()
-            .bg(Color::Rgb(255, 255, 255))
-            .fg(Color::Rgb(50, 205, 50)),
-    );
+    let block = Block::default()
+        .title(title)
+        .borders(Borders::ALL)
+        .style(Style::default().bg(BACKGROUND).fg(BOX));
 
     // returns an area where we can add anything like a normal window.
     let area = centered_rect(x_value, y_value, size);
@@ -35,11 +33,7 @@ pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &[String]) {
     f.render_widget(block, area);
 
     let help_sec = Paragraph::new(text)
-        .style(
-            Style::default()
-                .bg(Color::Rgb(255, 255, 255))
-                .fg(Color::Rgb(50, 205, 50)),
-        )
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .alignment(Alignment::Left);
     f.render_widget(help_sec, new_chunks[0]);
 }

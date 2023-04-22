@@ -1,4 +1,4 @@
-use crate::page_handler::{HomeTab, IndexedData, TableData};
+use crate::page_handler::{HomeTab, IndexedData, TableData, BACKGROUND, BOX, SELECTED, TEXT};
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
@@ -51,7 +51,10 @@ pub fn home_ui<B: Backend>(
     let rows = table.items.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| Cell::from(c.to_string()));
-        Row::new(cells).height(height as u16).bottom_margin(0)
+        Row::new(cells)
+            .height(height as u16)
+            .bottom_margin(0)
+            .style(Style::default().fg(TEXT))
     });
 
     // Decides how many chunks of spaces in the terminal will be.
@@ -79,25 +82,21 @@ pub fn home_ui<B: Backend>(
         )
         .split(size);
 
-    let block = Block::default().style(
-        Style::default()
-            .bg(Color::Rgb(255, 255, 255))
-            .fg(Color::Rgb(50, 205, 50)),
-    );
+    let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
     f.render_widget(block, size);
 
     // color the first three letters of the month to blue
     let month_titles = months
         .titles
         .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
         .collect();
 
     //color the first two letters of the year to blue
     let year_titles = years
         .titles
         .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Blue))]))
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
         .collect();
 
     // The default style for the select index in the month section if
@@ -105,7 +104,7 @@ pub fn home_ui<B: Backend>(
     let mut month_tab = Tabs::new(month_titles)
         .block(Block::default().borders(Borders::ALL).title("Months"))
         .select(months.index)
-        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .style(Style::default().fg(BOX))
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
@@ -117,7 +116,7 @@ pub fn home_ui<B: Backend>(
     let mut year_tab = Tabs::new(year_titles)
         .block(Block::default().borders(Borders::ALL).title("Years"))
         .select(years.index)
-        .style(Style::default().fg(Color::Rgb(50, 205, 50)))
+        .style(Style::default().fg(BOX))
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
@@ -130,7 +129,12 @@ pub fn home_ui<B: Backend>(
 
     let mut table_area = Table::new(rows)
         .header(header)
-        .block(Block::default().borders(Borders::ALL).title("Transactions"))
+        .block(
+            Block::default()
+                .style(Style::default().fg(BOX))
+                .borders(Borders::ALL)
+                .title("Transactions"),
+        )
         .widths(&[
             Constraint::Percentage(10),
             Constraint::Percentage(37),
@@ -153,32 +157,30 @@ pub fn home_ui<B: Backend>(
                 Cell::from(c.to_string())
             }
         });
-        Row::new(cells).height(height as u16).bottom_margin(0)
+        Row::new(cells)
+            .height(height as u16)
+            .bottom_margin(0)
+            .style(Style::default().fg(TEXT))
     });
 
     // use the acquired width data to allocated spaces
     // between columns on Balance widget.
     let balance_area = Table::new(bal_data)
         .block(Block::default().borders(Borders::ALL).title("Balance"))
-        .widths(width_data);
+        .widths(width_data)
+        .style(Style::default().fg(BOX));
 
     match current_tab {
         // previously added a black block to year and month widget if a value is not selected
         // Now we will turn that black block into green if a value is selected
         HomeTab::Months => {
-            month_tab = month_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(Color::Rgb(152, 251, 152)),
-            );
+            month_tab = month_tab
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
 
         HomeTab::Years => {
-            year_tab = year_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(Color::Rgb(152, 251, 152)),
-            );
+            year_tab = year_tab
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
         // changes the color of row based on Expense or Income tx type on Transaction widget.
         HomeTab::Table => {
