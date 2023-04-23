@@ -1,4 +1,5 @@
 use crate::db::{add_tags_column, create_db, update_balance_type, MONTHS, YEARS};
+use crate::page_handler::{BACKGROUND, BOX};
 use crate::utility::get_user_tx_methods;
 use crossterm::execute;
 use crossterm::terminal::{
@@ -12,6 +13,9 @@ use std::io::{self, Stdout};
 use std::time::Duration;
 use std::{process, thread};
 use tui::backend::CrosstermBackend;
+use tui::style::{Modifier, Style};
+use tui::text::Span;
+use tui::widgets::{Block, Borders};
 use tui::Terminal;
 
 /// Gives the month and year name by index
@@ -227,4 +231,14 @@ pub fn check_n_create_db(
     }
 
     Ok(())
+}
+
+pub fn styled_block(title: &str) -> Block {
+    Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default().bg(BACKGROUND).fg(BOX))
+        .title(Span::styled(
+            title,
+            Style::default().add_modifier(Modifier::BOLD),
+        ))
 }

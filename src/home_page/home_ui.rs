@@ -2,11 +2,13 @@ use crate::page_handler::{
     HomeTab, IndexedData, TableData, BACKGROUND, BLUE, BOX, HEADER, HIGHLIGHTED, RED, SELECTED,
     TEXT,
 };
+use crate::utility::{get_all_tx_methods, styled_block};
+use rusqlite::Connection;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, Cell, Row, Table, Tabs};
+use tui::widgets::{Block, Cell, Row, Table, Tabs};
 use tui::Frame;
 
 /// This function is responsible for drawing all the widgets in the Home page,
@@ -21,7 +23,9 @@ pub fn home_ui<B: Backend>(
     balance: &mut [Vec<String>],
     current_tab: &HomeTab,
     width_data: &mut [Constraint],
+    conn: &Connection,
 ) {
+    let all_methods = get_all_tx_methods(conn);
     let size = f.size();
 
     // These two colors are used with the Changes value when a row is selected
@@ -91,11 +95,10 @@ pub fn home_ui<B: Backend>(
         .iter()
         .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
         .collect();
-
     // The default style for the select index in the month section if
     // the Month widget is not selected
     let mut month_tab = Tabs::new(month_titles)
-        .block(Block::default().borders(Borders::ALL).title("Months"))
+        .block(styled_block("Months"))
         .select(months.index)
         .style(Style::default().fg(BOX))
         .highlight_style(
@@ -107,7 +110,7 @@ pub fn home_ui<B: Backend>(
     // The default style for the select index in the year section if
     // the Year widget is not selected
     let mut year_tab = Tabs::new(year_titles)
-        .block(Block::default().borders(Borders::ALL).title("Years"))
+        .block(styled_block("Years"))
         .select(years.index)
         .style(Style::default().fg(BOX))
         .highlight_style(
@@ -122,12 +125,7 @@ pub fn home_ui<B: Backend>(
 
     let mut table_area = Table::new(rows)
         .header(header)
-        .block(
-            Block::default()
-                .style(Style::default().fg(BOX))
-                .borders(Borders::ALL)
-                .title("Transactions"),
-        )
+        .block(styled_block("Transactions"))
         .widths(&[
             Constraint::Percentage(10),
             Constraint::Percentage(37),
@@ -146,6 +144,14 @@ pub fn home_ui<B: Backend>(
                 Cell::from(c.to_string()).style(Style::default().fg(BLUE))
             } else if c.contains('↓') {
                 Cell::from(c.to_string()).style(Style::default().fg(RED))
+            } else if all_methods.contains(c)
+                || c == "Balance"
+                || c == "Changes"
+                || c == "Total"
+                || c == "Income"
+                || c == "Expense"
+            {
+                Cell::from(c.to_string()).style(Style::default().add_modifier(Modifier::BOLD))
             } else {
                 Cell::from(c.to_string())
             }
@@ -159,7 +165,7 @@ pub fn home_ui<B: Backend>(
     // use the acquired width data to allocated spaces
     // between columns on Balance widget.
     let balance_area = Table::new(bal_data)
-        .block(Block::default().borders(Borders::ALL).title("Balance"))
+        .block(styled_block("Balance"))
         .widths(width_data)
         .style(Style::default().fg(BOX));
 

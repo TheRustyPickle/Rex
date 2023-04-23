@@ -1,10 +1,10 @@
 use crate::page_handler::{BACKGROUND, BOX, RED, TEXT};
+use crate::utility::styled_block;
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Modifier, Style},
-    text::Span,
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Paragraph},
     Frame,
 };
 
@@ -27,15 +27,6 @@ pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
         .split(size);
 
     let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
-    let create_block = |title| {
-        Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().bg(BACKGROUND).fg(BOX))
-            .title(Span::styled(
-                title,
-                Style::default().add_modifier(Modifier::BOLD),
-            ))
-    };
     f.render_widget(block, size);
 
     // This is the text that is shown in the startup which is the project's name in ASCII format.
@@ -129,7 +120,7 @@ Esc: Stop editing a filed
 
     let paragraph_3 = Paragraph::new(second_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(create_block("Help"));
+        .block(styled_block("Help"));
 
     f.render_widget(paragraph, chunks[0]);
     f.render_widget(paragraph_2, chunks[1]);

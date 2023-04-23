@@ -3,11 +3,12 @@ use crate::page_handler::{
     TEXT,
 };
 use crate::summary_page::SummaryData;
+use crate::utility::styled_block;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, Cell, Paragraph, Row, Table, Tabs};
+use tui::widgets::{Block, Cell, Paragraph, Row, Table, Tabs};
 use tui::Frame;
 
 /// Renders the Summary UI page
@@ -99,7 +100,7 @@ pub fn summary_ui<B: Backend>(
     // The default style for the select index in the month section if
     // the Month widget is not selected
     let mut month_tab = Tabs::new(month_titles)
-        .block(Block::default().borders(Borders::ALL).title("Months"))
+        .block(styled_block("Months"))
         .select(months.index)
         .style(Style::default().fg(BOX))
         .highlight_style(
@@ -111,7 +112,7 @@ pub fn summary_ui<B: Backend>(
     // The default style for the select index in the year section if
     // the Year widget is not selected
     let mut year_tab = Tabs::new(year_titles)
-        .block(Block::default().borders(Borders::ALL).title("Years"))
+        .block(styled_block("Years"))
         .select(years.index)
         .style(Style::default().fg(BOX))
         .highlight_style(
@@ -121,11 +122,7 @@ pub fn summary_ui<B: Backend>(
         );
 
     let mut mode_selection_tab = Tabs::new(mode_selection_titles)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Mode Selection"),
-        )
+        .block(styled_block("Mode Selection"))
         .select(mode_selection.index)
         .style(Style::default().fg(BOX))
         .highlight_style(
@@ -206,7 +203,7 @@ pub fn summary_ui<B: Backend>(
 
     let mut table_area = Table::new(rows)
         .header(header)
-        .block(Block::default().borders(Borders::ALL).title("Tags"))
+        .block(styled_block("Tags"))
         .widths(&[
             Constraint::Percentage(33),
             Constraint::Percentage(33),
