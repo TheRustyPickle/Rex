@@ -21,11 +21,9 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
 
     let splitted = data[0].split('-').collect::<Vec<&str>>();
     let (year, month) = (
-        splitted[0].parse::<i32>().unwrap(),
+        splitted[0].parse::<i32>().unwrap() - 2022,
         splitted[1].parse::<i32>().unwrap(),
     );
-
-    let year = year - 2022;
 
     let mut target_id_num = month + (year * 12);
 
@@ -48,12 +46,11 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
 
     // loop through all rows in the balance_all table from the deletion point and update balance
     loop {
-        let mut query = format!(
-            "SELECT {:?} FROM balance_all WHERE id_num = {}",
-            tx_methods, target_id_num
+        let query = format!(
+            "SELECT {} FROM balance_all WHERE id_num = {}",
+            tx_methods.iter().map(|s| format!(r#""{}""#, s)).collect::<Vec<_>>().join(", "),
+            target_id_num
         );
-        query = query.replace('[', "");
-        query = query.replace(']', "");
 
         let current_month_balance = sp.query_row(&query, [], |row| {
             let mut final_data: Vec<String> = Vec::new();
@@ -113,23 +110,18 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
             }
         }
 
-        // the query kept on breaking for a single comma so had to follow this ugly way to do this.
-        // loop and add a comma until the last index and ignore it in the last time
-        let mut balance_query = "UPDATE balance_all SET ".to_string();
-        for i in 0..updated_month_balance.len() {
-            if i != updated_month_balance.len() - 1 {
-                balance_query.push_str(&format!(
-                    r#""{}" = "{}", "#,
-                    tx_methods[i], updated_month_balance[i]
-                ))
-            } else {
-                balance_query.push_str(&format!(
-                    r#""{}" = "{}" "#,
-                    tx_methods[i], updated_month_balance[i]
-                ))
-            }
-        }
-        balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
+        let set_values = tx_methods
+        .iter()
+        .zip(updated_month_balance.iter())
+        .map(|(method, value)| format!(r#""{}" = "{}""#, method, value))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+        let balance_query = format!(
+            "UPDATE balance_all SET {} WHERE id_num = {}",
+            set_values, target_id_num
+        );
+
         sp.execute(&balance_query, [])?;
 
         // 193 is the absolute final balance which we don't need to modify
@@ -160,21 +152,17 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
 
     let del_query = format!("DELETE FROM tx_all WHERE id_num = {id_num}");
 
-    let mut last_balance_query = "UPDATE balance_all SET ".to_string();
-    for i in 0..final_last_balance.len() {
-        if i != final_last_balance.len() - 1 {
-            last_balance_query.push_str(&format!(
-                r#""{}" = "{}", "#,
-                tx_methods[i], final_last_balance[i]
-            ))
-        } else {
-            last_balance_query.push_str(&format!(
-                r#""{}" = "{}" "#,
-                tx_methods[i], final_last_balance[i]
-            ))
-        }
-    }
-    last_balance_query.push_str(&format!("WHERE id_num = {last_balance_id}"));
+    let last_balance_query = format!(
+        "UPDATE balance_all SET {} WHERE id_num = {}",
+        tx_methods
+            .iter()
+            .zip(final_last_balance.iter())
+            .map(|(method, balance)| format!(r#""{}" = "{}""#, method, balance))
+            .collect::<Vec<_>>()
+            .join(", "),
+        last_balance_id
+    );
+
     sp.execute(&last_balance_query, [])?;
     sp.execute(&del_query, [])?;
 
