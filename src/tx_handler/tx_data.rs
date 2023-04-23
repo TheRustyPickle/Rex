@@ -779,7 +779,10 @@ impl TxData {
                 .collect::<Vec<String>>();
             let last_tag = current_tags.pop().unwrap();
 
-            if !tags.contains(&last_tag) {
+            if !tags
+                .iter()
+                .any(|tag| tag.to_lowercase() == last_tag.to_lowercase())
+            {
                 if last_tag.is_empty() {
                     current_tags.push(tags[0].to_owned());
                     self.tags = current_tags.join(", ");
@@ -796,7 +799,10 @@ impl TxData {
                         }
                     }
                 }
-            } else if let Some(index) = tags.iter().position(|tag| tag == &last_tag) {
+            } else if let Some(index) = tags
+                .iter()
+                .position(|tag| tag.to_lowercase() == last_tag.to_lowercase())
+            {
                 let next_index = (index + 1) % tags.len();
                 current_tags.push(tags[next_index].to_owned());
                 self.tags = current_tags.join(", ");
@@ -829,7 +835,10 @@ impl TxData {
                 .collect::<Vec<String>>();
             let last_tag = current_tags.pop().unwrap();
 
-            if !tags.contains(&last_tag) {
+            if !tags
+                .iter()
+                .any(|tag| tag.to_lowercase() == last_tag.to_lowercase())
+            {
                 if last_tag.is_empty() {
                     current_tags.push(tags[0].to_owned());
                     self.tags = current_tags.join(", ");
@@ -846,7 +855,10 @@ impl TxData {
                         }
                     }
                 }
-            } else if let Some(index) = tags.iter().position(|tag| tag == &last_tag) {
+            } else if let Some(index) = tags
+                .iter()
+                .position(|tag| tag.to_lowercase() == last_tag.to_lowercase())
+            {
                 let next_index = if index == 0 {
                     tags.len() - 1
                 } else {

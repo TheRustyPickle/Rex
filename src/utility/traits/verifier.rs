@@ -167,7 +167,7 @@ pub trait DataVerifier {
         // Already checked if the initial amount is empty.
         // if it becomes empty after the filtering was done, there no number inside so return error
         if amount.is_empty() {
-            return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Amount))
+            return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Amount));
         }
 
         // check if any of the symbols are present
