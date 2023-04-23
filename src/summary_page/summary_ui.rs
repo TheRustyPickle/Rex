@@ -1,4 +1,7 @@
-use crate::page_handler::{IndexedData, SummaryTab, TableData, BACKGROUND, BOX, SELECTED, TEXT};
+use crate::page_handler::{
+    IndexedData, SummaryTab, TableData, BACKGROUND, BLUE, BOX, HEADER, HIGHLIGHTED, RED, SELECTED,
+    TEXT,
+};
 use crate::summary_page::SummaryData;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
@@ -20,15 +23,12 @@ pub fn summary_ui<B: Backend>(
     let text_data = summary_data.get_tx_data();
     let size = f.size();
 
-    let normal_style = Style::default().bg(Color::LightBlue);
-    let selected_style = Style::default().bg(Color::Rgb(255, 245, 238));
-
     let header_cells = ["Tag", "Total Income", "Total Expense"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
 
     let header = Row::new(header_cells)
-        .style(normal_style)
+        .style(Style::default().bg(HEADER))
         .height(1)
         .bottom_margin(0);
 
@@ -105,7 +105,7 @@ pub fn summary_ui<B: Backend>(
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(Color::Black),
+                .bg(HIGHLIGHTED),
         );
 
     // The default style for the select index in the year section if
@@ -117,7 +117,7 @@ pub fn summary_ui<B: Backend>(
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(Color::Black),
+                .bg(HIGHLIGHTED),
         );
 
     let mut mode_selection_tab = Tabs::new(mode_selection_titles)
@@ -131,27 +131,23 @@ pub fn summary_ui<B: Backend>(
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(Color::Black),
+                .bg(HIGHLIGHTED),
         );
 
     // * contains the text for the upper side of the Summary UI
     let text = vec![
         Spans::from(Span::styled(
             format!("{} {:.2}", text_data[0].1, text_data[0].0),
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .fg(Color::Blue),
+            Style::default().add_modifier(Modifier::BOLD).fg(BLUE),
         )),
         Spans::from(Span::styled(
             format!("{} {:.2}", text_data[1].1, text_data[1].0),
-            Style::default().add_modifier(Modifier::BOLD).fg(Color::Red),
+            Style::default().add_modifier(Modifier::BOLD).fg(RED),
         )),
         Spans::from(vec![
             Span::styled(
                 format!("Largest Income: {:.2}, ", text_data[2].0),
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .fg(Color::Blue),
+                Style::default().add_modifier(Modifier::BOLD).fg(BLUE),
             ),
             Span::styled(
                 format!("Method: {}", text_data[2].1),
@@ -163,7 +159,7 @@ pub fn summary_ui<B: Backend>(
         Spans::from(vec![
             Span::styled(
                 format!("Largest Expense: {:.2}, ", text_data[3].0),
-                Style::default().add_modifier(Modifier::BOLD).fg(Color::Red),
+                Style::default().add_modifier(Modifier::BOLD).fg(RED),
             ),
             Span::styled(
                 format!("Method: {}", text_data[3].1),
@@ -181,9 +177,7 @@ pub fn summary_ui<B: Backend>(
             ),
             Span::styled(
                 format!("Income: {:.2}", text_data[4].0),
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .fg(Color::Blue),
+                Style::default().add_modifier(Modifier::BOLD).fg(BLUE),
             ),
         ]),
         Spans::from(vec![
@@ -195,7 +189,7 @@ pub fn summary_ui<B: Backend>(
             ),
             Span::styled(
                 format!("Expense: {:.2}", text_data[5].0),
-                Style::default().add_modifier(Modifier::BOLD).fg(Color::Red),
+                Style::default().add_modifier(Modifier::BOLD).fg(RED),
             ),
         ]),
     ];
@@ -240,7 +234,7 @@ pub fn summary_ui<B: Backend>(
         }
         SummaryTab::Table => {
             table_area = table_area
-                .highlight_style(selected_style)
+                .highlight_style(Style::default().bg(SELECTED))
                 .highlight_symbol(">> ")
         }
     }

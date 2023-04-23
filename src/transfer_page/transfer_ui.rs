@@ -1,8 +1,8 @@
-use crate::page_handler::{TxTab, BACKGROUND, BOX, TEXT};
+use crate::page_handler::{TxTab, BACKGROUND, BLUE, BOX, RED, TEXT};
 use crate::tx_handler::TxData;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
-use tui::style::{Color, Modifier, Style};
+use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph};
 use tui::Frame;
@@ -84,15 +84,9 @@ pub fn transfer_ui<B: Backend>(
     for i in status_data.iter().rev() {
         // we will color the status text based on whether it was an error or if the value was accepted
         if !i.contains("Accepted") && !i.contains("Nothing") {
-            status_text.push(Spans::from(Span::styled(
-                i,
-                Style::default().fg(Color::Red),
-            )));
+            status_text.push(Spans::from(Span::styled(i, Style::default().fg(RED))));
         } else {
-            status_text.push(Spans::from(Span::styled(
-                i,
-                Style::default().fg(Color::Blue),
-            )));
+            status_text.push(Spans::from(Span::styled(i, Style::default().fg(BLUE))));
         }
     }
 

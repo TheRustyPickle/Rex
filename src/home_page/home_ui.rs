@@ -1,7 +1,10 @@
-use crate::page_handler::{HomeTab, IndexedData, TableData, BACKGROUND, BOX, SELECTED, TEXT};
+use crate::page_handler::{
+    HomeTab, IndexedData, TableData, BACKGROUND, BLUE, BOX, HEADER, HIGHLIGHTED, RED, SELECTED,
+    TEXT,
+};
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
-use tui::style::{Color, Modifier, Style};
+use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Cell, Row, Table, Tabs};
 use tui::Frame;
@@ -23,27 +26,17 @@ pub fn home_ui<B: Backend>(
 
     // These two colors are used with the Changes value when a row is selected
     // to color the Changes row in Balance widget.
-    let selected_style_blue = Style::default()
-        .fg(Color::Blue)
-        .add_modifier(Modifier::REVERSED);
+    let selected_style_income = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
 
-    let selected_style_red = Style::default()
-        .fg(Color::Red)
-        .add_modifier(Modifier::REVERSED);
-
-    let selected_style_gray = Style::default()
-        .fg(Color::DarkGray)
-        .add_modifier(Modifier::REVERSED);
-
-    let normal_style = Style::default().bg(Color::LightBlue);
+    let selected_style_expense = Style::default().fg(RED).add_modifier(Modifier::REVERSED);
 
     // Transaction widget's top row/header to highlight what each data will mean
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Rgb(255, 255, 255))));
+        .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
 
     let header = Row::new(header_cells)
-        .style(normal_style)
+        .style(Style::default().bg(HEADER))
         .height(1)
         .bottom_margin(0);
 
@@ -54,7 +47,7 @@ pub fn home_ui<B: Backend>(
         Row::new(cells)
             .height(height as u16)
             .bottom_margin(0)
-            .style(Style::default().fg(TEXT))
+            .style(Style::default().bg(BACKGROUND).fg(TEXT))
     });
 
     // Decides how many chunks of spaces in the terminal will be.
@@ -108,7 +101,7 @@ pub fn home_ui<B: Backend>(
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(Color::Black),
+                .bg(HIGHLIGHTED),
         );
 
     // The default style for the select index in the year section if
@@ -120,7 +113,7 @@ pub fn home_ui<B: Backend>(
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(Color::Black),
+                .bg(HIGHLIGHTED),
         );
 
     // set up the table columns and their size
@@ -150,9 +143,9 @@ pub fn home_ui<B: Backend>(
         let height = 1;
         let cells = item.iter().map(|c| {
             if c.contains('↑') {
-                Cell::from(c.to_string()).style(Style::default().fg(Color::Blue))
+                Cell::from(c.to_string()).style(Style::default().fg(BLUE))
             } else if c.contains('↓') {
-                Cell::from(c.to_string()).style(Style::default().fg(Color::Red))
+                Cell::from(c.to_string()).style(Style::default().fg(RED))
             } else {
                 Cell::from(c.to_string())
             }
@@ -187,11 +180,11 @@ pub fn home_ui<B: Backend>(
             table_area = table_area.highlight_symbol(">> ");
             if let Some(a) = table.state.selected() {
                 if table.items[a][4] == "Expense" {
-                    table_area = table_area.highlight_style(selected_style_red)
+                    table_area = table_area.highlight_style(selected_style_expense)
                 } else if table.items[a][4] == "Income" {
-                    table_area = table_area.highlight_style(selected_style_blue)
+                    table_area = table_area.highlight_style(selected_style_income)
                 } else if table.items[a][4] == "Transfer" {
-                    table_area = table_area.highlight_style(selected_style_gray)
+                    table_area = table_area.highlight_style(Style::default().bg(SELECTED))
                 }
             }
         }

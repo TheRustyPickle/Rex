@@ -13,7 +13,7 @@ pub fn add_popup<B: Backend>(f: &mut Frame<B>, popup_type: &PopupState) {
             data.push("New Update".to_string());
             data.push(
                 "There is a new version available\n
-'Enter' : Redirect to the new version\nPress Any Key to dismiss"
+'Enter' : Redirect to the new version"
                     .to_string(),
             );
             data.push("50".to_string());
@@ -22,7 +22,7 @@ pub fn add_popup<B: Backend>(f: &mut Frame<B>, popup_type: &PopupState) {
         PopupState::Helper => {
             data.push("Help".to_string());
             data.push(
-                "Arrow Key : Navigate
+                "Arrow Key: Navigate
 A: Add Transaction Page
 T: Add Transfer Page
 R: Balance Chart (Follows your selected year)
@@ -41,8 +41,7 @@ Add Transaction/Transfer Page:
 
 S: Save inputted data as a Transaction
 Enter: Submit a field and continue
-Esc: Stop editing a filed\n
-Press Any Key To Dismiss"
+Esc: Stop editing a filed"
                     .to_string(),
             );
             data.push("50".to_string());
@@ -50,9 +49,7 @@ Press Any Key To Dismiss"
         }
         PopupState::DeleteFailed(err) => {
             data.push(format!("Deletion failed. Error: {}", err));
-            data.push(
-                "Error while deleting the transaction\n\nPress Any Key to dismiss".to_string(),
-            );
+            data.push("Error while deleting the transaction".to_string());
             data.push("40".to_string());
             data.push("25".to_string());
         }
