@@ -1,4 +1,4 @@
-use crate::page_handler::{BACKGROUND, BOX, TEXT};
+use crate::page_handler::{BACKGROUND, BOX, RED, TEXT};
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -16,7 +16,14 @@ pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints([Constraint::Length(8), Constraint::Min(5)].as_ref())
+        .constraints(
+            [
+                Constraint::Length(8),
+                Constraint::Length(1),
+                Constraint::Min(5),
+            ]
+            .as_ref(),
+        )
         .split(size);
 
     let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
@@ -77,10 +84,8 @@ pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
         }
         upper_text.push('\n');
     }
-    upper_text.push_str("\n  Press Any Key To Continue");
-
     // TODO add more informative stuff here
-    let second_text = "Arrow Key : Navigate
+    let second_text = "Arrow Key: Navigate
 A: Add Transaction Page
 T: Add Transfer Page
 R: Balance Chart (Follows your selected year)
@@ -102,14 +107,31 @@ Enter: Submit a field and continue
 Esc: Stop editing a filed
 ";
 
+    let middle_text = "Press Any Key To Continue";
+
     let paragraph = Paragraph::new(upper_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
+        .style(
+            Style::default()
+                .bg(BACKGROUND)
+                .fg(TEXT)
+                .add_modifier(Modifier::BOLD),
+        )
         .alignment(Alignment::Center);
 
-    let paragraph_2 = Paragraph::new(second_text)
+    let paragraph_2 = Paragraph::new(middle_text)
+        .style(
+            Style::default()
+                .bg(BACKGROUND)
+                .fg(RED)
+                .add_modifier(Modifier::BOLD),
+        )
+        .alignment(Alignment::Center);
+
+    let paragraph_3 = Paragraph::new(second_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(create_block("Help"));
 
     f.render_widget(paragraph, chunks[0]);
     f.render_widget(paragraph_2, chunks[1]);
+    f.render_widget(paragraph_3, chunks[2]);
 }

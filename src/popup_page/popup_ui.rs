@@ -1,7 +1,7 @@
-use crate::page_handler::{BACKGROUND, BOX, TEXT};
+use crate::page_handler::{BACKGROUND, BOX, RED, TEXT};
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::Style;
+use tui::style::{Modifier, Style};
 use tui::widgets::{Block, Borders, Clear, Paragraph};
 use tui::Frame;
 
@@ -26,7 +26,7 @@ pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &[String]) {
     let new_chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints([Constraint::Percentage(100)].as_ref())
+        .constraints([Constraint::Min(1), Constraint::Length(1)].as_ref())
         .split(area);
 
     f.render_widget(Clear, area);
@@ -35,7 +35,18 @@ pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &[String]) {
     let help_sec = Paragraph::new(text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .alignment(Alignment::Left);
+
+    let dismiss_sec = Paragraph::new("Press Any Key To Dismiss")
+        .style(
+            Style::default()
+                .bg(BACKGROUND)
+                .fg(RED)
+                .add_modifier(Modifier::BOLD),
+        )
+        .alignment(Alignment::Center);
+
     f.render_widget(help_sec, new_chunks[0]);
+    f.render_widget(dismiss_sec, new_chunks[1]);
 }
 
 /// The function takes certain parameters to create an empty space in the layout

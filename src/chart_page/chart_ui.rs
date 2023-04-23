@@ -1,5 +1,5 @@
 use crate::chart_page::ChartData;
-use crate::page_handler::{ChartTab, IndexedData, BACKGROUND, BOX, SELECTED, TEXT};
+use crate::page_handler::{ChartTab, IndexedData, BACKGROUND, BOX, HIGHLIGHTED, SELECTED, TEXT};
 use crate::utility::get_all_tx_methods;
 use chrono::{naive::NaiveDate, Duration};
 use rusqlite::Connection;
@@ -92,7 +92,7 @@ pub fn chart_ui<B: Backend>(
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(Color::Black),
+                .bg(HIGHLIGHTED),
         );
 
     let mut year_tab = Tabs::new(year_titles)
@@ -102,7 +102,7 @@ pub fn chart_ui<B: Backend>(
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(Color::Black),
+                .bg(HIGHLIGHTED),
         );
 
     let mut mode_selection_tab = Tabs::new(mode_selection_titles)
@@ -116,7 +116,7 @@ pub fn chart_ui<B: Backend>(
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(Color::Black),
+                .bg(HIGHLIGHTED),
         );
 
     // connect to the database and gather all the tx methods

@@ -27,7 +27,11 @@ use tui::Terminal;
 pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
 pub const TEXT: Color = Color::Rgb(153, 78, 236);
 pub const BOX: Color = Color::Rgb(255, 87, 51);
-pub const SELECTED: Color = Color::Rgb(151, 251, 152);
+pub const SELECTED: Color = Color::Rgb(151, 251, 151);
+pub const HIGHLIGHTED: Color = Color::Rgb(38, 38, 38);
+pub const HEADER: Color = Color::Rgb(0, 150, 255);
+pub const RED: Color = Color::Rgb(255, 51, 51);
+pub const BLUE: Color = Color::Rgb(51, 51, 255);
 
 /// The core part that makes the entire program run. It loops
 /// incredibly fast to refresh the terminal and passes the provided data to ui modules to draw them.

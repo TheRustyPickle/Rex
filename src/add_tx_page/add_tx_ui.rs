@@ -1,8 +1,8 @@
-use crate::page_handler::{TxTab, BACKGROUND, BOX, TEXT};
+use crate::page_handler::{TxTab, BACKGROUND, BLUE, BOX, RED, TEXT};
 use crate::tx_handler::TxData;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
-use tui::style::{Color, Modifier, Style};
+use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Paragraph};
 use tui::Frame;
@@ -79,15 +79,9 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_s
     // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
         if !i.contains("Accepted") && !i.contains("Nothing") {
-            status_text.push(Spans::from(Span::styled(
-                i,
-                Style::default().fg(Color::Red),
-            )));
+            status_text.push(Spans::from(Span::styled(i, Style::default().fg(RED))));
         } else {
-            status_text.push(Spans::from(Span::styled(
-                i,
-                Style::default().fg(Color::Blue),
-            )));
+            status_text.push(Spans::from(Span::styled(i, Style::default().fg(BLUE))));
         }
     }
 
