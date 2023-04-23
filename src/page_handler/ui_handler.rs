@@ -167,6 +167,7 @@ pub fn start_app<B: Backend>(
                         &mut balance,
                         &home_tab,
                         &mut width_data,
+                        conn,
                     ),
 
                     CurrentUi::AddTx => add_tx_ui(f, &add_tx_data, &add_tx_tab),

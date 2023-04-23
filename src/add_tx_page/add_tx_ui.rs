@@ -1,10 +1,11 @@
 use crate::page_handler::{TxTab, BACKGROUND, BLUE, BOX, RED, TEXT};
 use crate::tx_handler::TxData;
+use crate::utility::styled_block;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders, Paragraph};
+use tui::widgets::{Block, Paragraph};
 use tui::Frame;
 
 /// The function draws the Add Transaction page of the interface.
@@ -79,9 +80,15 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_s
     // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
         if !i.contains("Accepted") && !i.contains("Nothing") {
-            status_text.push(Spans::from(Span::styled(i, Style::default().fg(RED))));
+            status_text.push(Spans::from(Span::styled(
+                i,
+                Style::default().fg(RED).add_modifier(Modifier::BOLD),
+            )));
         } else {
-            status_text.push(Spans::from(Span::styled(i, Style::default().fg(BLUE))));
+            status_text.push(Spans::from(Span::styled(
+                i,
+                Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+            )));
         }
     }
 
@@ -98,55 +105,45 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_s
 
     let tags_text = vec![Spans::from(input_data[6])];
 
-    let create_block = |title| {
-        Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().bg(BACKGROUND).fg(BOX))
-            .title(Span::styled(
-                title,
-                Style::default().add_modifier(Modifier::BOLD),
-            ))
-    };
-
     // creates the widgets to ready it for rendering
     let help_sec = Paragraph::new(help_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(create_block("Help"))
+        .block(styled_block("Help"))
         .alignment(Alignment::Left);
 
     let status_sec = Paragraph::new(status_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(create_block("Status"))
+        .block(styled_block("Status"))
         .alignment(Alignment::Left);
 
     let date_sec = Paragraph::new(date_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(create_block("Date"))
+        .block(styled_block("Date"))
         .alignment(Alignment::Left);
 
     let tx_method_sec = Paragraph::new(tx_method_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(create_block("TX Method"))
+        .block(styled_block("TX Method"))
         .alignment(Alignment::Left);
 
     let amount_sec = Paragraph::new(amount_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(create_block("Amount"))
+        .block(styled_block("Amount"))
         .alignment(Alignment::Left);
 
     let tx_type_sec = Paragraph::new(tx_type_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(create_block("TX Type"))
+        .block(styled_block("TX Type"))
         .alignment(Alignment::Left);
 
     let details_sec = Paragraph::new(details_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(create_block("Details"))
+        .block(styled_block("Details"))
         .alignment(Alignment::Left);
 
     let tags_sec = Paragraph::new(tags_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(create_block("Tags"))
+        .block(styled_block("Tags"))
         .alignment(Alignment::Left);
 
     // We will be adding a cursor based on which tab is selected + the selected index.

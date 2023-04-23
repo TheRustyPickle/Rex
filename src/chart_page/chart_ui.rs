@@ -1,13 +1,13 @@
 use crate::chart_page::ChartData;
 use crate::page_handler::{ChartTab, IndexedData, BACKGROUND, BOX, HIGHLIGHTED, SELECTED, TEXT};
-use crate::utility::get_all_tx_methods;
+use crate::utility::{get_all_tx_methods, styled_block};
 use chrono::{naive::NaiveDate, Duration};
 use rusqlite::Connection;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans};
-use tui::widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Tabs};
+use tui::widgets::{Axis, Block, Chart, Dataset, GraphType, Tabs};
 use tui::{symbols, Frame};
 
 /// Creates the balance chart from the transactions
@@ -86,7 +86,7 @@ pub fn chart_ui<B: Backend>(
 
     // creates the widgets to ready it for rendering
     let mut month_tab = Tabs::new(month_titles)
-        .block(Block::default().borders(Borders::ALL).title("Months"))
+        .block(styled_block("Months"))
         .select(months.index)
         .style(Style::default().fg(BOX))
         .highlight_style(
@@ -96,7 +96,7 @@ pub fn chart_ui<B: Backend>(
         );
 
     let mut year_tab = Tabs::new(year_titles)
-        .block(Block::default().borders(Borders::ALL).title("Years"))
+        .block(styled_block("Years"))
         .select(years.index)
         .style(Style::default().fg(BOX))
         .highlight_style(
@@ -106,11 +106,7 @@ pub fn chart_ui<B: Backend>(
         );
 
     let mut mode_selection_tab = Tabs::new(mode_selection_titles)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Mode Selection"),
-        )
+        .block(styled_block("Mode Selection"))
         .select(mode_selection.index)
         .style(Style::default().fg(BOX))
         .highlight_style(
