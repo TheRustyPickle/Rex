@@ -33,12 +33,10 @@ pub fn add_tx(
     }
 
     let splitted = date.split('-').collect::<Vec<&str>>();
-    let mut mnth = splitted[1].to_string();
-    if &mnth[0..0] == "0" {
-        mnth = mnth.replace('0', "");
-    }
-    let month = mnth.parse::<i32>().unwrap();
-    let year = splitted[0][2..].parse::<i32>().unwrap() - 22;
+    let (year, month) = (
+        splitted[0].parse::<i32>().unwrap() - 2022,
+        splitted[1].parse::<i32>().unwrap(),
+    );
 
     let mut from_method = String::new();
     let mut to_method = String::new();
@@ -127,23 +125,17 @@ pub fn add_tx(
         new_changes_data.push(default_change);
     }
 
-    // the query kept on breaking for a single comma so had to follow this ugly way to do this.
-    // loop and add a comma until the last index and ignore it in the last time
-    let mut balance_query = "UPDATE balance_all SET ".to_string();
-    for i in 0..new_balance_data.len() {
-        if i != new_balance_data.len() - 1 {
-            balance_query.push_str(&format!(
-                r#""{}" = "{}", "#,
-                all_tx_methods[i], new_balance_data[i]
-            ))
-        } else {
-            balance_query.push_str(&format!(
-                r#""{}" = "{}" "#,
-                all_tx_methods[i], new_balance_data[i]
-            ))
-        }
-    }
-    balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
+    let set_values = all_tx_methods
+    .iter()
+    .zip(new_balance_data.iter())
+    .map(|(method, value)| format!(r#""{}" = "{}""#, method, value))
+    .collect::<Vec<_>>()
+    .join(", ");
+
+    let balance_query = format!(
+        "UPDATE balance_all SET {} WHERE id_num = {}",
+        set_values, target_id_num
+    );
 
     let last_balance_query: String = if tx_type == "Transfer" {
         format!(
@@ -158,9 +150,12 @@ pub fn add_tx(
         )
     };
 
-    let mut changes_query = format!("INSERT INTO changes_all (id_num, date, {all_tx_methods:?}) VALUES ({last_id}, ?, {new_changes_data:?})");
-    changes_query = changes_query.replace('[', "");
-    changes_query = changes_query.replace(']', "");
+    let changes_query = format!(
+        "INSERT INTO changes_all (id_num, date, {}) VALUES ({}, ?, {})",
+        all_tx_methods.iter().map(|s| format!(r#""{}""#, s)).collect::<Vec<_>>().join(", "),
+        last_id,
+        new_changes_data.iter().map(|s| format!(r#""{}""#, s)).collect::<Vec<_>>().join(", ")
+    );
 
     sp.execute(&balance_query, [])?;
     sp.execute(&last_balance_query, [])?;

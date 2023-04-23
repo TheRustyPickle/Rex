@@ -39,9 +39,8 @@ pub fn get_last_time_balance(
     }
     // we need to go till the first month of 2022 or until the last balance of all tx methods are found
     loop {
-        let mut query = format!("SELECT {:?} FROM balance_all WHERE id_num = ?", tx_method);
-        query = query.replace('[', "");
-        query = query.replace(']', "");
+        let tx_method_string = tx_method.iter().map(|m| format!("\"{}\"", m)).collect::<Vec<_>>().join(", ");
+        let query = format!("SELECT {} FROM balance_all WHERE id_num = ?", tx_method_string);
 
         let final_balance = conn
             .query_row(&query, [target_id_num], |row| {
@@ -161,9 +160,9 @@ pub fn get_all_txs(
         })
         .expect("Error");
 
-    for i in rows {
+    for i in rows.flatten() {
         // data contains all tx data of a transaction
-        let mut data = i.unwrap();
+        let mut data = i;
         let id_num = &data.pop().unwrap();
         all_id_num.push(id_num.to_string());
         final_all_txs.push(data);
@@ -275,6 +274,7 @@ pub fn get_last_balances(tx_method: &Vec<String>, conn: &Connection) -> Vec<Stri
 /// This functions is both used when creating the initial db and when updating
 /// the database with new transaction methods.
 pub fn get_user_tx_methods(add_new_method: bool, conn: &Connection) -> Option<Vec<String>> {
+    let restricted_methods = ["Total", "Balance", "Changes", "Income", "Expense"];
     let mut stdout = io::stdout();
 
     // this command clears up the terminal. This is added so the terminal doesn't get
@@ -325,7 +325,7 @@ or ','. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:"
 
         // split them and remove duplicates
         let mut splitted = line.split(',').map(|s| s.trim()).collect::<Vec<&str>>();
-        splitted.retain(|s| !s.is_empty());
+        splitted.retain(|s| !s.is_empty() && !restricted_methods.contains(s));
 
         let mut seen = HashSet::new();
         let mut unique = Vec::new();
