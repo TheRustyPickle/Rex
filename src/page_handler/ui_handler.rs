@@ -102,7 +102,7 @@ pub fn start_app<B: Backend>(
     );
 
     // Holds the data that will be/are inserted into the Chart Page
-    let mut chart_data = ChartData::set(&chart_modes, chart_months.index, chart_years.index, conn);
+    let mut chart_data = ChartData::set(conn);
 
     // data for the Summary Page's table
     let mut summary_table = TableData::new(summary_data.get_table_data());
@@ -110,7 +110,7 @@ pub fn start_app<B: Backend>(
     // the initial page REX loading index
     let mut starter_index = 0;
 
-    let mut chart_index: Option<usize> = None;
+    let mut chart_index: Option<f64> = None;
 
     let mut chart_hidden_mode = false;
 
@@ -211,15 +211,7 @@ pub fn start_app<B: Backend>(
             }
             CurrentUi::Chart => {
                 if chart_index.is_some() {
-                    let duration_time = match chart_modes.index {
-                        0 => 25,
-                        1 => 6,
-                        2 => 2,
-                        _ => 0,
-                    };
-                    if !poll(Duration::from_millis(duration_time))
-                        .map_err(UiHandlingError::PollingError)?
-                    {
+                    if !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)? {
                         continue;
                     }
                 }
