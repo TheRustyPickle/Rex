@@ -13,7 +13,7 @@ pub fn add_popup<B: Backend>(f: &mut Frame<B>, popup_type: &PopupState) {
             data.push("New Update".to_string());
             data.push(
                 "There is a new version available\n
-'Enter' : Redirect to the new version"
+Enter: Redirect to the new version"
                     .to_string(),
             );
             data.push("50".to_string());
@@ -25,13 +25,13 @@ pub fn add_popup<B: Backend>(f: &mut Frame<B>, popup_type: &PopupState) {
                 "Arrow Key: Navigate
 A: Add Transaction Page
 T: Add Transfer Page
-R: Balance Chart (Follows your selected year)
-Z: Get Transaction Summary
+R: Balance Chart
+Z: Transaction Summary
 F: Home Page
 D: Delete selected Transaction (Home Page)
 J: Add new Transaction Methods (Home Page)
 E: Edit Selected Transaction (Home Page)
-H: Open Hotkey Help
+H: Open Help
 Q: Quit
                 
 Add Transaction/Transfer Page:
