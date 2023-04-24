@@ -48,7 +48,11 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
     loop {
         let query = format!(
             "SELECT {} FROM balance_all WHERE id_num = {}",
-            tx_methods.iter().map(|s| format!(r#""{}""#, s)).collect::<Vec<_>>().join(", "),
+            tx_methods
+                .iter()
+                .map(|s| format!(r#""{}""#, s))
+                .collect::<Vec<_>>()
+                .join(", "),
             target_id_num
         );
 
@@ -111,11 +115,11 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
         }
 
         let set_values = tx_methods
-        .iter()
-        .zip(updated_month_balance.iter())
-        .map(|(method, value)| format!(r#""{}" = "{}""#, method, value))
-        .collect::<Vec<_>>()
-        .join(", ");
+            .iter()
+            .zip(updated_month_balance.iter())
+            .map(|(method, value)| format!(r#""{}" = "{}""#, method, value))
+            .collect::<Vec<_>>()
+            .join(", ");
 
         let balance_query = format!(
             "UPDATE balance_all SET {} WHERE id_num = {}",
