@@ -2,6 +2,11 @@
 name = "rex"
 version = "0.1.5"
 edition = "2021"
+authors = ["TheRustyPickle <rusty.pickle94@gmail.com>"]
+readme = "README.md"
+description = """
+A TUI for managing Incomes and Expenses
+"""
 
 [[bin]]
 name = "rex"
@@ -10,7 +15,7 @@ bench = false
 
 [dependencies]
 tui = "0.19.0"
-crossterm = "0.26.1"  
+crossterm = "0.26.1"
 rusqlite = { version = "0.29.0", features = ["bundled"] }
 chrono = "0.4.19"
 open = "4.0.0"

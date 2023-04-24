@@ -1,8 +1,6 @@
 use crate::db::{MONTHS, YEARS};
-use crate::{
-    page_handler::IndexedData,
-    utility::{get_all_txs, get_month_name},
-};
+use crate::page_handler::IndexedData;
+use crate::utility::{get_all_txs, get_month_name};
 use rusqlite::Connection;
 use std::collections::HashMap;
 /// Contains the necessary information to construct the Summary Page highlighting
@@ -51,13 +49,6 @@ impl SummaryData {
             }
             _ => {}
         };
-
-        // * start collecting transaction based on month
-        //for year in 0..4 {
-        //    for month in 0..12 {
-        //        default.collect_data(conn, month, year);
-        //    }
-        //}
 
         default
     }
