@@ -126,11 +126,11 @@ pub fn add_tx(
     }
 
     let set_values = all_tx_methods
-    .iter()
-    .zip(new_balance_data.iter())
-    .map(|(method, value)| format!(r#""{}" = "{}""#, method, value))
-    .collect::<Vec<_>>()
-    .join(", ");
+        .iter()
+        .zip(new_balance_data.iter())
+        .map(|(method, value)| format!(r#""{}" = "{}""#, method, value))
+        .collect::<Vec<_>>()
+        .join(", ");
 
     let balance_query = format!(
         "UPDATE balance_all SET {} WHERE id_num = {}",
@@ -152,9 +152,17 @@ pub fn add_tx(
 
     let changes_query = format!(
         "INSERT INTO changes_all (id_num, date, {}) VALUES ({}, ?, {})",
-        all_tx_methods.iter().map(|s| format!(r#""{}""#, s)).collect::<Vec<_>>().join(", "),
+        all_tx_methods
+            .iter()
+            .map(|s| format!(r#""{}""#, s))
+            .collect::<Vec<_>>()
+            .join(", "),
         last_id,
-        new_changes_data.iter().map(|s| format!(r#""{}""#, s)).collect::<Vec<_>>().join(", ")
+        new_changes_data
+            .iter()
+            .map(|s| format!(r#""{}""#, s))
+            .collect::<Vec<_>>()
+            .join(", ")
     );
 
     sp.execute(&balance_query, [])?;

@@ -39,8 +39,15 @@ pub fn get_last_time_balance(
     }
     // we need to go till the first month of 2022 or until the last balance of all tx methods are found
     loop {
-        let tx_method_string = tx_method.iter().map(|m| format!("\"{}\"", m)).collect::<Vec<_>>().join(", ");
-        let query = format!("SELECT {} FROM balance_all WHERE id_num = ?", tx_method_string);
+        let tx_method_string = tx_method
+            .iter()
+            .map(|m| format!("\"{}\"", m))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let query = format!(
+            "SELECT {} FROM balance_all WHERE id_num = ?",
+            tx_method_string
+        );
 
         let final_balance = conn
             .query_row(&query, [target_id_num], |row| {
