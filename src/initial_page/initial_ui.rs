@@ -1,5 +1,5 @@
 use crate::page_handler::{BACKGROUND, BOX, RED, TEXT};
-use crate::utility::styled_block;
+use crate::utility::{create_bolded_text, styled_block};
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout},
@@ -76,16 +76,16 @@ pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
         upper_text.push('\n');
     }
     // TODO add more informative stuff here
-    let second_text = "Arrow Key: Navigate
+    let unmodified_second_text = "Arrow Key: Navigate
 A: Add Transaction Page
 T: Add Transfer Page
-R: Balance Chart (Follows your selected year)
-Z: Get Transaction Summary
+R: Balance Chart
+Z: Transaction Summary
 F: Home Page
 D: Delete selected Transaction (Home Page)
 J: Add new Transaction Methods (Home Page)
 E: Edit Selected Transaction (Home Page)
-H: Open Hotkey Help
+H: Open Help
 Q: Quit
 
 Add Transaction/Transfer Page:
@@ -93,10 +93,14 @@ Add Transaction/Transfer Page:
 2: Edit TX details     5: Edit TX Type/Amount
 3: Edit TX/From Method 6: Edit Tags  
 
+Arrow Up/Down: Step up/down one value
+Arrow Left/Right: Move cursor left/right
 S: Save inputted data as a Transaction
 Enter: Submit a field and continue
 Esc: Stop editing a filed
 ";
+
+    let second_text = create_bolded_text(unmodified_second_text);
 
     let middle_text = "Press Any Key To Continue";
 

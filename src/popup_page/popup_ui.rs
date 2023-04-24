@@ -1,31 +1,21 @@
 use crate::page_handler::{BACKGROUND, BOX, RED, TEXT};
+use crate::utility::create_bolded_text;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Modifier, Style};
-use tui::text::{Span, Spans, Text};
+use tui::text::{Span, Text};
 use tui::widgets::{Block, Borders, Clear, Paragraph};
 use tui::Frame;
 
 /// Creates a popup on top of a window with the given size, title and text attributes
 pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &[String]) {
     let size = f.size();
-    
-    let title = Span::styled(&popup_data[0], Style::default().add_modifier(Modifier::BOLD));
-    let text = &popup_data[1];
 
-    let mut text_data = Vec::new();
-
-    for line in text.split("\n") {
-        let splitted = line.split_once(":");
-        if let Some((first_part, rest)) = splitted {
-            let first_data =
-                Span::styled(first_part, Style::default().add_modifier(Modifier::BOLD));
-            let rest_data = Span::from(format!(":{rest}"));
-            text_data.push(Spans::from(vec![first_data, rest_data]));
-        } else {
-            text_data.push(Spans::from(vec![Span::from(line)]))
-        }
-    }
+    let title = Span::styled(
+        &popup_data[0],
+        Style::default().add_modifier(Modifier::BOLD),
+    );
+    let text = create_bolded_text(&popup_data[1]);
 
     // determines the size of the popup window
     let x_value = popup_data[2].parse::<u16>().unwrap();
@@ -52,8 +42,7 @@ pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &[String]) {
     //    .style(Style::default().bg(BACKGROUND).fg(TEXT))
     //    .alignment(Alignment::Left);
 
-    let help_sec =
-        Paragraph::new(Text::from(text_data)).style(Style::default().bg(BACKGROUND).fg(TEXT));
+    let help_sec = Paragraph::new(Text::from(text)).style(Style::default().bg(BACKGROUND).fg(TEXT));
 
     let dismiss_sec = Paragraph::new("Press Any Key To Dismiss")
         .style(
