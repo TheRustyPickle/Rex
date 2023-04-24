@@ -14,7 +14,7 @@ use std::time::Duration;
 use std::{process, thread};
 use tui::backend::CrosstermBackend;
 use tui::style::{Modifier, Style};
-use tui::text::Span;
+use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders};
 use tui::Terminal;
 
@@ -241,4 +241,22 @@ pub fn styled_block(title: &str) -> Block {
             title,
             Style::default().add_modifier(Modifier::BOLD),
         ))
+}
+
+pub fn create_bolded_text(text: &str) -> Vec<Spans> {
+    let mut text_data = Vec::new();
+
+    for line in text.split("\n") {
+        let splitted = line.split_once(":");
+        if let Some((first_part, rest)) = splitted {
+            let first_data =
+                Span::styled(first_part, Style::default().add_modifier(Modifier::BOLD));
+            let rest_data = Span::from(format!(":{rest}"));
+            text_data.push(Spans::from(vec![first_data, rest_data]));
+        } else {
+            text_data.push(Spans::from(vec![Span::from(line)]))
+        }
+    }
+
+    text_data
 }

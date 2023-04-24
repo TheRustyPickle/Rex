@@ -1,6 +1,6 @@
 use crate::page_handler::{TxTab, BACKGROUND, BLUE, BOX, RED, TEXT};
 use crate::tx_handler::TxData;
-use crate::utility::styled_block;
+use crate::utility::{create_bolded_text, styled_block};
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Modifier, Style};
@@ -58,21 +58,19 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_s
     f.render_widget(block, size);
 
     // This is the details of the Help widget
-    let help_text = vec![
-        Spans::from("Press the respective keys to edit fields."),
-        Spans::from("1 : Date         Example: 2022-05-12, YYYY-MM-DD"),
-        Spans::from("2 : TX details   Example: For Grocery, Salary"),
-        Spans::from("3 : TX Method    Example: Cash, Bank, Card"),
-        Spans::from("4 : Amount       Example: 1000, 100+50, b - 100"),
-        Spans::from("5 : TX Type      Example: Income/Expense/I/E"),
-        Spans::from("6 : TX Tags      Example: Empty, Food, Car. Add Comma + Space for a new tag",
-        ),
-        Spans::from("S : Save the inputted data as a Transaction"),
-        Spans::from("Enter : Submit field and continue"),
-        Spans::from("Esc : Stop editing filed"),
-        Spans::from("Amount Field supports simple calculation using '+' '-' '*' '/'"),
-        Spans::from("Amount Field considers 'b' as the current balance of the method in Tx Method Box. Example: b - 100"),
-    ];
+    let unmodified_help_text = "Press the respective keys to edit fields.
+1: Date         Example: 2022-05-12, YYYY-MM-DD
+2: TX details   Example: For Grocery, Salary
+3: TX Method    Example: Cash, Bank, Card
+4: Amount       Example: 1000, 100+50, b - 100
+5: TX Type      Example: Income/Expense/I/E
+6: TX Tags      Example: Empty, Food, Car. Add a Comma for a new tag
+S: Save the inputted data as a Transaction
+H: Shows further detailed help info
+Enter: Submit field and continue
+Esc: Stop editing filed";
+
+    let help_text = create_bolded_text(unmodified_help_text);
 
     let mut status_text = vec![];
 
