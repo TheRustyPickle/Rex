@@ -34,7 +34,7 @@ pub struct InputKeyHandler<'a> {
     summary_years: &'a mut IndexedData,
     summary_modes: &'a mut IndexedData,
     total_tags: usize,
-    chart_index: &'a mut Option<usize>,
+    chart_index: &'a mut Option<f64>,
     chart_hidden_mode: &'a mut bool,
     conn: &'a mut Connection,
 }
@@ -64,7 +64,7 @@ impl<'a> InputKeyHandler<'a> {
         summary_months: &'a mut IndexedData,
         summary_years: &'a mut IndexedData,
         summary_modes: &'a mut IndexedData,
-        chart_index: &'a mut Option<usize>,
+        chart_index: &'a mut Option<f64>,
         chart_hidden_mode: &'a mut bool,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
@@ -180,7 +180,8 @@ impl<'a> InputKeyHandler<'a> {
             self.go_home_reset();
             // we just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
             *self.home_tab = HomeTab::Months;
-            self.reload_home_table()
+            self.reload_home_table();
+            self.reload_chart_data();
         } else {
             self.add_tx_data.add_tx_status(status);
         }
@@ -235,6 +236,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.reload_home_table();
                     self.table.state.select(None);
                     *self.home_tab = HomeTab::Months;
+                    self.reload_chart_data();
                 }
                 Err(err) => {
                     *self.popup = PopupState::DeleteFailed(err.to_string());
@@ -993,14 +995,12 @@ impl<'a> InputKeyHandler<'a> {
         self.total_tags = self.summary_data.get_table_data().len();
     }
 
+    fn reload_chart_data(&mut self) {
+        *self.chart_data = ChartData::set(self.conn);
+    }
+
     fn reload_chart(&mut self) {
-        *self.chart_data = ChartData::set(
-            self.chart_modes,
-            self.chart_months.index,
-            self.chart_years.index,
-            self.conn,
-        );
-        *self.chart_index = Some(0);
+        *self.chart_index = Some(0.0);
     }
 
     fn go_correct_index(&mut self) {

@@ -19,10 +19,11 @@ pub fn chart_ui<B: Backend>(
     chart_data: &ChartData,
     current_page: &ChartTab,
     chart_hidden_mode: bool,
-    loop_remaining: &mut Option<usize>,
+    loop_remaining: &mut Option<f64>,
     conn: &Connection,
 ) {
     let size = f.size();
+    let (all_txs, all_balance) = chart_data.get_data(mode_selection, months.index, years.index);
 
     // divide the terminal into various chunks to draw the interface. This is a vertical chunk
     let mut main_layout = Layout::default().direction(Direction::Vertical).margin(2);
@@ -123,7 +124,7 @@ pub fn chart_ui<B: Backend>(
     let mut last_balances = Vec::new();
 
     // adding default initial value if no data to load
-    if chart_data.all_txs.is_empty() {
+    if all_txs.is_empty() {
         for _i in &all_tx_methods {
             datasets.push(vec![(0.0, 0.0)]);
             last_balances.push(0.0);
@@ -136,40 +137,55 @@ pub fn chart_ui<B: Backend>(
     let mut date_labels: Vec<String> = vec![];
 
     let mut current_axis = 0.0;
-
+    let mut loop_data = vec![];
     // if there are no transactions, we will create an empty chart
-    if !chart_data.all_txs.is_empty() {
+    if !all_txs.is_empty() {
         // contains all dates of the transactions
-        let all_dates = chart_data.get_all_dates();
+        let all_dates = chart_data.get_all_dates(mode_selection, months.index, years.index);
 
         // Converting the first date string into a Date type
         // This is the current date that we are checking in the loop
-        let mut checking_date =
-            NaiveDate::parse_from_str(&chart_data.all_txs[0][0], "%d-%m-%Y").unwrap();
+        let mut checking_date = NaiveDate::parse_from_str(&all_txs[0][0], "%d-%m-%Y").unwrap();
 
         // The final date where the loop will stop
-        let final_date = NaiveDate::parse_from_str(
-            &chart_data.all_txs[chart_data.all_txs.len() - 1][0],
-            "%d-%m-%Y",
-        )
-        .unwrap();
+        let final_date =
+            NaiveDate::parse_from_str(&all_txs[all_txs.len() - 1][0], "%d-%m-%Y").unwrap();
 
-        // total times to loop in total based on the chart date
-        let total_loop = final_date.signed_duration_since(checking_date).num_days() as usize;
+        // total days = number of loops required to render everything
+        let total_loop = final_date.signed_duration_since(checking_date).num_days() as f64;
 
-        // default value = Some(0). When chart ui is selected, start by rendering 1 day worth of data,
-        // then 2, 3 and so on until the final day is reached, creating a small animation.
-        // After each loop this value goes down by 1. Once 0, turn it into None.
+        // When chart ui is selected, start by rendering this amount of day worth of data,
+        // then render_size * 2, 3 and so on until the final day is reached, creating a small animation.
+        // * Numbers were determined after checking with data filled db and with --release flag
+        let render_size = if total_loop > 4000.0 {
+            (total_loop * 0.7) / 100.0
+        } else if total_loop > 2000.0 {
+            (total_loop * 0.5) / 100.0
+        } else if total_loop > 1000.0 {
+            (total_loop * 0.4) / 100.0
+        } else if total_loop > 500.0 {
+            (total_loop * 0.3) / 100.0
+        } else if total_loop > 360.0 {
+            (total_loop * 0.4) / 100.0
+        } else if total_loop > 200.0 {
+            (total_loop * 0.2) / 100.0
+        } else if total_loop < 50.0 {
+            (total_loop * 0.5) / 100.0
+        } else {
+            1.0
+        };
+
+        // default value = Some(0). After each loop this value goes down by render_size. Once <=0, turn it into None.
         // When it's None, it won't stop the loop in the middle.
         if let Some(val) = loop_remaining {
-            if *val == 0 {
-                if total_loop > 1 {
-                    *loop_remaining = Some(total_loop - 1)
+            if *val == 0.0 {
+                if total_loop > render_size {
+                    *loop_remaining = Some(total_loop - render_size)
                 } else {
                     *loop_remaining = None
                 }
-            } else if *val - 1 > 0 {
-                *loop_remaining = Some(*val - 1)
+            } else if *val - render_size > 0.0 {
+                *loop_remaining = Some(*val - render_size)
             } else {
                 *loop_remaining = None
             }
@@ -177,6 +193,7 @@ pub fn chart_ui<B: Backend>(
 
         // total times to loop this time. If None, then render everything
         let mut to_loop = loop_remaining.as_mut().map(|val| total_loop - *val);
+        loop_data.push(vec![*loop_remaining, to_loop]);
 
         // labels of the x axis
         date_labels.push(checking_date.to_string());
@@ -190,15 +207,14 @@ pub fn chart_ui<B: Backend>(
         let mut data_num = 0;
         loop {
             if all_dates.contains(&checking_date) {
-                let current_balances = &chart_data.all_balance[data_num];
+                let current_balances = &all_balance[data_num];
 
                 // default next_date in case there is no more next_date
                 let mut next_date = NaiveDate::from_ymd_opt(2040, 1, 1).unwrap();
 
-                if chart_data.all_txs.len() > data_num + 1 {
+                if all_txs.len() > data_num + 1 {
                     next_date =
-                        NaiveDate::parse_from_str(&chart_data.all_txs[data_num + 1][0], "%d-%m-%Y")
-                            .unwrap();
+                        NaiveDate::parse_from_str(&all_txs[data_num + 1][0], "%d-%m-%Y").unwrap();
                 }
                 // new valid transactions so the earlier looped balance is not required.
                 // if no tx exists in a date, data from here/previous valid date is used to compensate for it
@@ -244,14 +260,6 @@ pub fn chart_ui<B: Backend>(
                     to_add_again = false;
                     current_axis += 1.0;
                     checking_date += Duration::days(1);
-
-                    if let Some(val) = to_loop {
-                        // break the loop if total day amount is reached
-                        if val == 0 {
-                            break;
-                        }
-                        to_loop = Some(val - 1);
-                    }
                 }
 
                 // successfully checked a transaction, we will check the new index in the next iteration
@@ -266,12 +274,23 @@ pub fn chart_ui<B: Backend>(
                 checking_date += Duration::days(1);
             }
 
+            if !to_add_again {
+                if let Some(val) = to_loop {
+                    // break the loop if total day amount is reached
+                    if val - 1.0 <= 0.0 {
+                        date_labels.pop().unwrap();
+                        date_labels.push(checking_date.to_string());
+                        break;
+                    }
+                    to_loop = Some(val - 1.0);
+                }
+            }
+
             if checking_date >= final_date + Duration::days(1) {
                 break;
             }
         }
     }
-
     // add a 10% extra value to the highest and the lowest balance
     // so the chart can properly render
     highest_balance += highest_balance * 10.0 / 100.0;
