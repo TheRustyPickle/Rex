@@ -22,8 +22,7 @@ pub const YEARS: [&str; 16] = [
 
 pub const MODES: [&str; 3] = ["Monthly", "Yearly", "All Time"];
 
-/// If the local database is not found, this is executed to create the initial database
-/// with the provided transaction methods.
+/// Creates the db that is used by this app
 pub fn create_db(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
     // add a save point to reverse commits if failed
     let sp = conn.savepoint()?;
@@ -100,7 +99,8 @@ pub fn create_db(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
     Ok(())
 }
 
-pub fn create_balances_table(tx_methods: &Vec<String>, sp: &Savepoint) -> Result<()> {
+/// creates the balance_all table of the DB
+pub fn create_balances_table(tx_methods: &[String], sp: &Savepoint) -> Result<()> {
     // balance_all table. Will contain tx methods as columns and their balances.
     // each row represents 1 month.
     let tx_methods_str = tx_methods

@@ -9,6 +9,9 @@ use crate::tx_handler::TxData;
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 
+/// Stores all the data that is required to handle
+/// every single possible key press event from the
+/// entire app
 pub struct InputKeyHandler<'a> {
     pub key: KeyEvent,
     pub page: &'a mut CurrentUi,
@@ -100,6 +103,9 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Moves the interface to Home page and
+    /// resets any selected widget/data from Add Tx or Transfer
+    /// page to Nothing
     pub fn go_home_reset(&mut self) {
         match self.page {
             CurrentUi::AddTx => {
@@ -115,18 +121,22 @@ impl<'a> InputKeyHandler<'a> {
         *self.page = CurrentUi::Home;
     }
 
+    /// Moves the interface to Home page
     pub fn go_home(&mut self) {
         *self.page = CurrentUi::Home;
     }
 
+    /// Moves the interface to Add Tx page
     pub fn go_add_tx(&mut self) {
         *self.page = CurrentUi::AddTx
     }
 
+    /// Moves the interface to Transfer page
     pub fn go_transfer(&mut self) {
         *self.page = CurrentUi::Transfer
     }
 
+    /// Moves the interface to Summary page
     pub fn go_summary(&mut self) {
         *self.page = CurrentUi::Summary;
         self.summary_modes.set_index_zero();
@@ -136,6 +146,7 @@ impl<'a> InputKeyHandler<'a> {
         self.reload_summary();
     }
 
+    /// Moves the interface to Chart page
     pub fn go_chart(&mut self) {
         *self.page = CurrentUi::Chart;
         self.chart_modes.set_index_zero();
@@ -146,26 +157,30 @@ impl<'a> InputKeyHandler<'a> {
         self.reload_chart();
     }
 
+    /// Turns on help popup
     pub fn do_help_popup(&mut self) {
         *self.popup = PopupState::Helper
     }
 
+    /// Removes popup status
     pub fn do_empty_popup(&mut self) {
         *self.popup = PopupState::Nothing
     }
 
+    /// Hides chart top widgets
     pub fn do_hidden_mode(&mut self) {
         *self.chart_hidden_mode = !*self.chart_hidden_mode;
     }
 
+    /// Handles Enter key press if there is a new update and the update popup is on
     pub fn handle_update_popup(&mut self) -> Result<(), HandlingOutput> {
         match self.key.code {
             KeyCode::Enter => {
                 // If there is a new version, Enter will try to open the default browser with this link
-                Ok(
-                    open::that("https://github.com/WaffleMixer/Rex/releases/latest")
-                        .map_err(|_| HandlingOutput::PrintNewUpdate)?,
-                )
+                open::that("https://github.com/WaffleMixer/Rex/releases/latest")
+                    .map_err(|_| HandlingOutput::PrintNewUpdate)?;
+                *self.popup = PopupState::Nothing;
+                Ok(())
             }
             _ => {
                 *self.popup = PopupState::Nothing;
@@ -174,6 +189,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Adds new tx and reloads home and chart data
     pub fn add_tx(&mut self) {
         let status = self.add_tx_data.add_tx(self.conn);
         if status.is_empty() {
@@ -187,6 +203,8 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Based on transaction Selected, opens Add Tx or Transfer Page and
+    /// allocates the data of the tx to the input boxes
     pub fn edit_tx(&mut self) {
         if let Some(a) = self.table.state.selected() {
             let target_data = &self.all_tx_data.get_txs()[a];
@@ -227,6 +245,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Deletes the selected transaction and reloads home and chart page
     pub fn delete_tx(&mut self) {
         if let Some(index) = self.table.state.selected() {
             let status = self.all_tx_data.del_tx(index, self.conn);
@@ -245,6 +264,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Adds a transfer transaction and reloads home and chart page
     pub fn add_transfer_tx(&mut self) {
         let status = self.transfer_data.add_tx(self.conn);
         if status == *"" {
@@ -252,11 +272,13 @@ impl<'a> InputKeyHandler<'a> {
             *self.home_tab = HomeTab::Months;
             self.go_home_reset();
             self.reload_home_table();
+            self.reload_chart_data();
         } else {
             self.transfer_data.add_tx_status(status);
         }
     }
 
+    /// Handles all number key presses and selects relevant input field
     pub fn handle_number_press(&mut self) {
         match self.page {
             CurrentUi::AddTx => {
@@ -287,6 +309,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handles left arrow key press for multiple pages
     pub fn handle_left_arrow(&mut self) {
         match self.page {
             CurrentUi::Home => match self.home_tab {
@@ -342,6 +365,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handles right arrow key press for multiple pages
     pub fn handle_right_arrow(&mut self) {
         match self.page {
             CurrentUi::Home => match self.home_tab {
@@ -397,6 +421,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handles up arrow key press for multiple pages
     pub fn handle_up_arrow(&mut self) {
         match self.page {
             CurrentUi::Home => self.do_home_up(),
@@ -408,6 +433,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handles down arrow key press for multiple pages
     pub fn handle_down_arrow(&mut self) {
         match self.page {
             CurrentUi::Home => self.do_home_down(),
@@ -419,6 +445,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Checks and verifies date for Add Tx and Transfer page
     pub fn handle_date(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_date(),
@@ -427,6 +454,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Checks and verifies details for Add Tx and Transfer page
     pub fn handle_details(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_details(),
@@ -435,6 +463,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Checks and verifies tx method for Add Tx and Transfer page
     pub fn handle_tx_method(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_method(),
@@ -447,6 +476,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Checks and verifies amount for Add Tx and Transfer page
     pub fn handle_amount(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_amount(),
@@ -455,6 +485,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    // Checks and verifies tx type for Add Tx page
     pub fn handle_tx_type(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_type(),
@@ -462,6 +493,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Checks and verifies tags for Add Tx and Transfer page
     pub fn handle_tags(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_tags(),
@@ -480,7 +512,8 @@ impl<'a> InputKeyHandler<'a> {
                 if self.all_tx_data.all_tx.is_empty() {
                     *self.home_tab = self.home_tab.change_tab_up();
                 }
-                // executes when going from first table row to month widget
+                // if arrow key up is pressed and table index is 0, select the Month widget
+                // else just select the upper index of the table
                 else if self.table.state.selected() == Some(0) {
                     *self.home_tab = HomeTab::Months;
                     self.table.state.select(None);
@@ -494,7 +527,7 @@ impl<'a> InputKeyHandler<'a> {
                 if self.all_tx_data.all_tx.is_empty() {
                     *self.home_tab = self.home_tab.change_tab_up();
                 } else {
-                    // Move to the selected value on table/Transaction widget
+                    // Move to the selected value on table widget
                     // to the last row if pressed up on Year section
                     self.table.state.select(Some(self.table.items.len() - 1));
                     *self.home_tab = self.home_tab.change_tab_up();
@@ -515,8 +548,8 @@ impl<'a> InputKeyHandler<'a> {
                 if self.all_tx_data.all_tx.is_empty() {
                     *self.home_tab = self.home_tab.change_tab_down();
                 }
-                // executes when pressed on last row of the table
-                // moves to the year widget
+                // if arrow key down is pressed and table index is final, select the year widget
+                // else just select the next index of the table
                 else if self.table.state.selected() == Some(self.table.items.len() - 1) {
                     *self.home_tab = HomeTab::Years;
                     self.table.state.select(None);
@@ -525,6 +558,8 @@ impl<'a> InputKeyHandler<'a> {
                 }
             }
             HomeTab::Months => {
+                // Do not select any table rows in the table section If
+                // there is no transaction
                 if self.all_tx_data.all_tx.is_empty() {
                     *self.home_tab = self.home_tab.change_tab_up();
                 } else {

@@ -11,7 +11,7 @@ use tui::text::{Span, Spans};
 use tui::widgets::{Block, Cell, Paragraph, Row, Table, Tabs};
 use tui::Frame;
 
-/// Renders the Summary UI page
+/// The function draws the Summary page of the interface.
 pub fn summary_ui<B: Backend>(
     f: &mut Frame<B>,
     months: &IndexedData,

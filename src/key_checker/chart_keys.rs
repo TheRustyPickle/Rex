@@ -3,6 +3,7 @@ use crate::outputs::HandlingOutput;
 use crate::page_handler::PopupState;
 use crossterm::event::KeyCode;
 
+/// Tracks the keys of the Chart page and calls relevant function based on it
 pub fn chart_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
         PopupState::Nothing => match handler.key.code {

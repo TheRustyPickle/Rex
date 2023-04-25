@@ -3,6 +3,7 @@ use crate::outputs::HandlingOutput;
 use crate::page_handler::{PopupState, TxTab};
 use crossterm::event::KeyCode;
 
+/// Tracks the keys of the Transfer page and calls relevant function based on it
 pub fn transfer_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
         PopupState::Nothing => match handler.transfer_tab {

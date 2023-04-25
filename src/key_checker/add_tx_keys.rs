@@ -3,8 +3,7 @@ use crate::outputs::HandlingOutput;
 use crate::page_handler::{PopupState, TxTab};
 use crossterm::event::KeyCode;
 
-/// Tracks the keys once interacting with the Add Transaction interface. Based on the key pressed,
-/// calls functions and passes them to a struct
+/// Tracks the keys of the Add Tx page and calls relevant function based on it
 pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
         // we don't want to move this interface while the popup is on

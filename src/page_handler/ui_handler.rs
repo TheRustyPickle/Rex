@@ -33,8 +33,7 @@ pub const HEADER: Color = Color::Rgb(0, 150, 255);
 pub const RED: Color = Color::Rgb(255, 51, 51);
 pub const BLUE: Color = Color::Rgb(51, 51, 255);
 
-/// The core part that makes the entire program run. It loops
-/// incredibly fast to refresh the terminal and passes the provided data to ui modules to draw them.
+/// Starts the interface and run the app
 pub fn start_app<B: Backend>(
     terminal: &mut Terminal<B>,
     new_version_available: bool,
@@ -114,8 +113,14 @@ pub fn start_app<B: Backend>(
 
     let mut chart_hidden_mode = false;
 
-    // The loop begins at this point and before the loop starts, multiple variables are initiated
-    // with the default values which will quickly be changing once the loop starts.
+    // how it work:
+    // Default value from above -> Goes to an interface page and render -> Wait for an event key press.
+    //
+    // If no keypress is detected in certain position it will start the next iteration -> interface -> Key check
+    // Otherwise it will poll for keypress and locks the position
+    //
+    // If keypress is detected, send most of the &mut values to InputKeyHandler -> Gets mutated based on key press
+    // -> loop ends -> start from beginning -> Send the new mutated values to the interface -> Keep up
     loop {
         let current_table_index = table.state.selected();
 
@@ -155,7 +160,6 @@ pub fn start_app<B: Backend>(
         balance.push(all_tx_data.get_total_expense(current_table_index, conn));
 
         // passing out relevant data to the ui function
-
         terminal
             .draw(|f| {
                 match page {
@@ -202,6 +206,7 @@ pub fn start_app<B: Backend>(
             })
             .map_err(UiHandlingError::DrawingError)?;
 
+        // poll for key press on two page for a duration. If not found, start next loop
         match page {
             CurrentUi::Initial => {
                 if !poll(Duration::from_millis(40)).map_err(UiHandlingError::PollingError)? {
@@ -210,22 +215,17 @@ pub fn start_app<B: Backend>(
                 }
             }
             CurrentUi::Chart => {
-                if chart_index.is_some() {
-                    if !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)? {
-                        continue;
-                    }
+                if chart_index.is_some()
+                    && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
+                {
+                    continue;
                 }
             }
+
             _ => {}
         }
 
-        if let CurrentUi::Initial = page {
-            if !poll(Duration::from_millis(40)).map_err(UiHandlingError::PollingError)? {
-                starter_index = (starter_index + 1) % 28;
-                continue;
-            }
-        }
-
+        // if not inside one of the duration polling, wait for keypress
         if let Event::Key(key) = event::read().map_err(UiHandlingError::PollingError)? {
             let mut handler = InputKeyHandler::new(
                 key,
