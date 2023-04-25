@@ -9,7 +9,7 @@ use rusqlite::{Connection, Result as sqlResult};
 use std::collections::HashSet;
 use std::error::Error;
 use std::fs;
-use std::io::{self, Stdout};
+use std::io::{self, Stdout, Write};
 use std::time::Duration;
 use std::{process, thread};
 use tui::backend::CrosstermBackend;
@@ -127,15 +127,25 @@ pub fn get_sql_dates(month: usize, year: usize) -> (String, String) {
     (datetime_1, datetime_2)
 }
 
+/// Verifies the db version is up to date
 pub fn check_old_sql(conn: &mut Connection) {
+    // * earlier version of the database didn't had the Tag column
     if !get_all_tx_columns(conn).contains(&"tags".to_string()) {
         println!("Old database detected. Starting migration...");
         let status = add_tags_column(conn);
         match status {
             Ok(_) => {
-                println!("Database migration successfully complete. Restarting in 5 seconds...");
-                // TODO update the timer with each passing second?
-                thread::sleep(Duration::from_millis(5000));
+                let stdout = std::io::stdout();
+                let mut handle = stdout.lock();
+                for i in (1..6).rev() {
+                    write!(
+                        handle,
+                        "\rDatabase migration successfully complete. Restarting in {i} seconds"
+                    )
+                    .unwrap();
+                    handle.flush().unwrap();
+                    thread::sleep(Duration::from_millis(1000));
+                }
             }
             Err(e) => {
                 println!("Database migration failed. Try again. Error: {}", e);
@@ -145,14 +155,24 @@ pub fn check_old_sql(conn: &mut Connection) {
         }
     }
 
+    // * earlier version of the database's balance_all columns were all TEXT type.
+    // * Convert to REAL type if found
     if check_old_balance_sql(conn) {
-        println!("Outdated balance type detected. Updating...");
+        println!("Outdated database detected. Updating...");
         let status = update_balance_type(conn);
         match status {
             Ok(_) => {
-                println!("Database updating successfully complete. Restarting in 5 seconds...");
-                // TODO update the timer with each passing second?
-                thread::sleep(Duration::from_millis(5000));
+                let stdout = std::io::stdout();
+                let mut handle = stdout.lock();
+                for i in (1..6).rev() {
+                    write!(
+                        handle,
+                        "\rDatabase updating successfully complete. Restarting in {i} seconds"
+                    )
+                    .unwrap();
+                    handle.flush().unwrap();
+                    thread::sleep(Duration::from_millis(1000));
+                }
             }
             Err(e) => {
                 println!("Database updating failed. Try again. Error: {}", e);
@@ -163,7 +183,7 @@ pub fn check_old_sql(conn: &mut Connection) {
     }
 }
 
-pub fn check_old_balance_sql(conn: &Connection) -> bool {
+fn check_old_balance_sql(conn: &Connection) -> bool {
     let mut query = conn.prepare("PRAGMA table_info(balance_all)").unwrap();
 
     let columns = query
@@ -182,6 +202,7 @@ pub fn check_old_balance_sql(conn: &Connection) -> bool {
     result
 }
 
+/// Enters raw mode so the Tui can render properly
 pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -191,7 +212,7 @@ pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<d
     Ok(terminal)
 }
 
-/// The function is used to exit out of the interface and alternate screen
+/// Exits raw mode so the terminal starts working normally
 pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
@@ -203,10 +224,7 @@ pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn check_n_create_db(
-    verifying_path: &str,
-    conn: &mut Connection,
-) -> Result<(), Box<dyn Error>> {
+pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
     // checks the local folder and searches for data.sqlite
     let paths = fs::read_dir(".")?;
     let mut db_found = false;
@@ -217,22 +235,36 @@ pub fn check_n_create_db(
         }
     }
     if !db_found {
-        let db_tx_methods = get_user_tx_methods(false, conn).unwrap();
+        let mut conn = Connection::open(verifying_path).unwrap();
+        let db_tx_methods = get_user_tx_methods(false, &conn).unwrap();
         println!("Creating New Database. It may take some time...");
-        let status = create_db(db_tx_methods, conn);
+        let status = create_db(db_tx_methods, &mut conn);
         match status {
-            Ok(_) => {}
+            Ok(_) => {
+                let stdout = std::io::stdout();
+                let mut handle = stdout.lock();
+                for i in (1..6).rev() {
+                    write!(
+                        handle,
+                        "\rDatabase creation successfully complete. Restarting in {i} seconds"
+                    )
+                    .unwrap();
+                    handle.flush().unwrap();
+                    thread::sleep(Duration::from_millis(1000));
+                }
+            }
             Err(e) => {
                 println!("Database creation failed. Try again. Error: {}", e);
                 fs::remove_file("data.sqlite")?;
                 process::exit(1);
             }
         }
+        conn.close().unwrap();
     }
-
     Ok(())
 }
 
+/// Returns a styled block for ui to use
 pub fn styled_block(title: &str) -> Block {
     Block::default()
         .borders(Borders::ALL)
@@ -243,11 +275,12 @@ pub fn styled_block(title: &str) -> Block {
         ))
 }
 
+/// takes a string and makes any word before the first occurrence of : to Bold
 pub fn create_bolded_text(text: &str) -> Vec<Spans> {
     let mut text_data = Vec::new();
 
-    for line in text.split("\n") {
-        let splitted = line.split_once(":");
+    for line in text.split('\n') {
+        let splitted = line.split_once(':');
         if let Some((first_part, rest)) = splitted {
             let first_data =
                 Span::styled(first_part, Style::default().add_modifier(Modifier::BOLD));

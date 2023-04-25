@@ -7,9 +7,9 @@ use std::collections::{HashMap, HashSet};
 use std::io;
 use std::process::Command;
 
-/// Gathers all the balance of all sources from the previous month or from earlier.
-/// If all the previous month's balances are 0, returns 0
-/// return example: `{"source_1": 10.50, "source_2": 100.0}`
+/// Returns the balance of all methods based on year and month point.
+/// if the balance is empty/0 at the given point for any one of the methods
+/// it will try to find the balance for that method from one of the earlier points.
 pub fn get_last_time_balance(
     month: usize,
     year: usize,
@@ -18,73 +18,68 @@ pub fn get_last_time_balance(
 ) -> HashMap<String, f64> {
     // We can get the id_num of the month which is saved in the database based on the
     // month and year index there is passed.
-    let mut target_id_num = month as i32 + (year as i32 * 12);
+    let target_id_num = month as i32 + (year as i32 * 12);
 
     let mut final_value = HashMap::new();
     for i in tx_method {
         final_value.insert(i.to_string(), 0.0);
     }
 
+    // balance_all starts at point 1. 1 means month 1, year 2022/0.
+    // There is no earlier balance than this
     if target_id_num == 0 {
         return final_value;
     }
 
-    // keep track of how many method's balances were discovered.
-    // If all of them are found, break the loop
-    let mut checked_methods: Vec<&str> = vec![];
+    let mut checked_methods: Vec<&str> = Vec::new();
 
-    let mut breaking_vec = vec![];
-    for _i in tx_method {
-        breaking_vec.push(0.0)
-    }
-    // we need to go till the first month of 2022 or until the last balance of all tx methods are found
-    loop {
-        let tx_method_string = tx_method
-            .iter()
-            .map(|m| format!("\"{}\"", m))
-            .collect::<Vec<_>>()
-            .join(", ");
-        let query = format!(
-            "SELECT {} FROM balance_all WHERE id_num = ?",
-            tx_method_string
-        );
+    let tx_method_string = tx_method
+        .iter()
+        .map(|m| format!("\"{}\"", m))
+        .collect::<Vec<_>>()
+        .join(", ");
 
-        let final_balance = conn
-            .query_row(&query, [target_id_num], |row| {
-                let mut final_data: Vec<f64> = Vec::new();
+    // the process goes like this
+    // m1  m2  m3  id
+    //  0   0  10   1
+    // 10  10   0   2
+    // 10   0   0   3
+    // fetch all three rows, start checking from id 3
+    // m1 is already found, save that, go to the previous row, save m2,
+    // go to the previous row, save m3 -> break -> return the data
 
-                // We don't know the amount of tx method so we need to loop
-                for i in 0..tx_method.len() {
-                    let final_value = row.get(i).unwrap();
-                    final_data.push(final_value);
-                }
-                Ok(final_data)
-            })
-            .unwrap();
+    let query = format!(
+        "SELECT {} FROM balance_all WHERE id_num <= ? ORDER BY id_num DESC",
+        tx_method_string
+    );
 
-        target_id_num -= 1;
+    let mut stmt = conn.prepare(&query).unwrap();
+    let mut rows = stmt.query([target_id_num]).unwrap();
 
-        // add the data in the return variable only if the value is not 0 and has not been previously discovered
-        for i in 0..tx_method.len() {
-            if !checked_methods.contains(&tx_method[i].as_ref()) && final_balance[i] != 0.0 {
-                *final_value.get_mut(&tx_method[i]).unwrap() = final_balance[i];
-                checked_methods.push(&tx_method[i]);
-            }
-        }
-
-        // We will keep the loop ongoing until we hit a non-zero balance for all tx method or
-        // the id number goes to zero.
-        if target_id_num == 0 || checked_methods.len() == tx_method.len() {
+    while let Some(row) = rows.next().unwrap() {
+        // all methods checked = no longer necessary to check any more rows
+        if checked_methods.len() == tx_method.len() {
             break;
         }
+        // check each tx_method column in the current row
+        for i in 0..tx_method.len() {
+            if !checked_methods.contains(&tx_method[i].as_str()) {
+                let balance: f64 = row.get(i).unwrap();
+
+                // we only need non-zero balance
+                if balance != 0.0 {
+                    *final_value.get_mut(&tx_method[i]).unwrap() = balance;
+                    checked_methods.push(&tx_method[i]);
+                }
+            }
+        }
     }
+
     final_value
 }
 
 /// The functions sends all the changes that happened after transactions on the month and year provided
 pub fn get_all_changes(month: usize, year: usize, conn: &Connection) -> Vec<Vec<String>> {
-    // returns all balance changes recorded within a given date
-
     let mut final_result = Vec::new();
     let tx_methods = get_all_tx_methods(conn);
 
@@ -111,11 +106,7 @@ pub fn get_all_changes(month: usize, year: usize, conn: &Connection) -> Vec<Vec<
     final_result
 }
 
-/// This is a multi-use function used to retrieving all Transaction within a given date, balance and the id_num related to them.
-/// Once the transactions are fetched, we immediately start calculating the current balance values after each transaction happened
-/// and finally return all of them in a tuple
-
-// * month and year starts from 0
+/// Used to retrieving all Transaction within a given date, balance and the id_num related to them.
 pub fn get_all_txs(
     conn: &Connection,
     month: usize,
@@ -178,7 +169,6 @@ pub fn get_all_txs(
     for i in &final_all_txs {
         // this is where the calculation for the balance happens. We will loop through each tx,
         // look at the tx type, tx method and add/subtract the amount on last month balance which was fetched earlier
-        // while adding the balance data after each calculation is done inside a vector.
 
         // collect data inside variables
         let tx_type = &i[4];
@@ -209,6 +199,7 @@ pub fn get_all_txs(
 
         // make changes to the balance map based on the tx
         // for transfer TX first block executes
+        // * new_balance_to != 0 means it's a transfer transaction
         if new_balance_to != 0.0 {
             *last_month_balance.get_mut(&from_method).unwrap() = new_balance_from;
             *last_month_balance.get_mut(&to_method).unwrap() = new_balance_to;
@@ -225,29 +216,21 @@ pub fn get_all_txs(
         final_all_balances.push(to_push);
     }
 
-    // This one here is added as an insurance. If somehow the balance table is corrupted,
-    // this will correct the balance amount on that month's balance row. This checks the final index balance
-    // in the previously generated vector and pushes it to the db on the relevant row
+    // pushes the final balance that was calculated just now to the db on the balance_all table
     if !final_all_balances.is_empty() {
+        let target_id_num = month as i32 + 1 + (year as i32 * 12);
         let final_index = final_all_balances.len() - 1;
 
-        let mut balance_query = "UPDATE balance_all SET ".to_string();
-
-        for i in 0..final_all_balances[final_index].len() {
-            if i != final_all_balances[final_index].len() - 1 {
-                balance_query.push_str(&format!(
-                    r#""{}" = "{}", "#,
-                    all_tx_methods[i], final_all_balances[final_index][i]
-                ))
-            } else {
-                balance_query.push_str(&format!(
-                    r#""{}" = "{}" "#,
-                    all_tx_methods[i], final_all_balances[final_index][i]
-                ))
-            }
-        }
-        let target_id_num = month as i32 + 1 + (year as i32 * 12);
-        balance_query.push_str(&format!("WHERE id_num = {target_id_num}"));
+        let balance_query = format!(
+            "UPDATE balance_all SET {} WHERE id_num = {}",
+            final_all_balances[final_index]
+                .iter()
+                .enumerate()
+                .map(|(i, balance)| format!(r#""{}" = "{}""#, all_tx_methods[i], balance))
+                .collect::<Vec<String>>()
+                .join(", "),
+            target_id_num
+        );
         conn.execute(&balance_query, [])
             .expect("Error updating balance query");
     }
@@ -255,8 +238,7 @@ pub fn get_all_txs(
     (final_all_txs, final_all_balances, all_id_num)
 }
 
-/// Returns the absolute final balance which is the balance saved after each transaction was counted
-/// or the last row on balance_all table.
+/// Returns the absolute final balance or the last row on balance_all table.
 pub fn get_last_balances(tx_method: &Vec<String>, conn: &Connection) -> Vec<String> {
     let mut query = format!(
         "SELECT {:?} FROM balance_all ORDER BY id_num DESC LIMIT 1",
@@ -401,6 +383,7 @@ or ','. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:"
     Some(db_tx_methods)
 }
 
+/// Tries to open terminal/cmd and run this app
 pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> {
     if cfg!(target_os = "windows") {
         Command::new("cmd.exe")

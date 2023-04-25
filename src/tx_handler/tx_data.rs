@@ -8,6 +8,7 @@ use chrono::{Duration, NaiveDate};
 use rusqlite::Connection;
 use std::cmp::Ordering;
 
+/// Contains all data for a Transaction to work
 pub struct TxData {
     date: String,
     details: String,
@@ -96,6 +97,7 @@ impl TxData {
         }
     }
 
+    /// Returns all the data saved
     pub fn get_all_texts(&self) -> Vec<&str> {
         vec![
             &self.date,
@@ -120,6 +122,7 @@ impl TxData {
         &self.tx_status
     }
 
+    /// Insert or remove from date field according to the index point
     pub fn edit_date(&mut self, to_add: Option<char>) {
         if self.current_index > self.date.len() {
             self.current_index = self.date.len();
@@ -139,6 +142,7 @@ impl TxData {
         }
     }
 
+    /// Insert or remove from details field according to the index point
     pub fn edit_details(&mut self, to_add: Option<char>) {
         if self.current_index > self.details.len() {
             self.current_index = self.details.len();
@@ -158,6 +162,7 @@ impl TxData {
         }
     }
 
+    /// Insert or remove from from method field according to the index point
     pub fn edit_from_method(&mut self, to_add: Option<char>) {
         if self.current_index > self.from_method.len() {
             self.current_index = self.from_method.len();
@@ -177,6 +182,7 @@ impl TxData {
         }
     }
 
+    /// Insert or remove from to method field according to the index point
     pub fn edit_to_method(&mut self, to_add: Option<char>) {
         if self.current_index > self.to_method.len() {
             self.current_index = self.to_method.len();
@@ -196,6 +202,7 @@ impl TxData {
         }
     }
 
+    /// Insert or remove from amount field according to the index point
     pub fn edit_amount(&mut self, to_add: Option<char>) {
         if self.current_index > self.amount.len() {
             self.current_index = self.amount.len();
@@ -215,6 +222,7 @@ impl TxData {
         }
     }
 
+    /// Insert or remove from tx type field according to the index point
     pub fn edit_tx_type(&mut self, to_add: Option<char>) {
         if self.current_index > self.tx_type.len() {
             self.current_index = self.tx_type.len();
@@ -234,6 +242,7 @@ impl TxData {
         }
     }
 
+    /// Insert or remove from tags field according to the index point
     pub fn edit_tags(&mut self, to_add: Option<char>) {
         if self.current_index > self.tags.len() {
             self.current_index = self.tags.len();
@@ -254,6 +263,7 @@ impl TxData {
     }
 
     // TODO: Handle errors
+    /// Takes all data and adds it as a transaction
     pub fn add_tx(&mut self, conn: &mut Connection) -> String {
         if let Some(output) = self.check_all_fields() {
             return output.to_string();
@@ -263,6 +273,10 @@ impl TxData {
 
         if self.editing_tx {
             self.editing_tx = false;
+            // how saving an edited tx works
+            // delete the tx that was being edited from the db using the id_num ->
+            // add another tx using the new data but take the earlier id to add to the db
+
             let status = delete_tx(self.id_num as usize, conn);
             match status {
                 Ok(_) => {}
@@ -307,6 +321,7 @@ impl TxData {
         }
     }
 
+    /// Adds a value to tx status
     pub fn add_tx_status(&mut self, data: String) {
         if self.tx_status.len() == 30 {
             self.tx_status.remove(0);
@@ -324,7 +339,7 @@ impl TxData {
         status
     }
 
-    /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
+    /// Checks the inputted From Method by the user upon pressing Enter/Esc for various error.
     pub fn check_from_method(&mut self, conn: &Connection) -> VerifyingOutput {
         let mut current_method = self.from_method.clone();
 
@@ -335,7 +350,7 @@ impl TxData {
         status
     }
 
-    /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
+    /// Checks the inputted To Method by the user upon pressing Enter/Esc for various error.
     pub fn check_to_method(&mut self, conn: &Connection) -> VerifyingOutput {
         let mut current_method = self.to_method.clone();
 
@@ -346,7 +361,7 @@ impl TxData {
         status
     }
 
-    /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
+    /// Checks the inputted Amount by the user upon pressing Enter/Esc for various error.
     pub fn check_amount(&mut self, conn: &Connection) -> VerifyingOutput {
         let mut user_amount = self.amount.clone().to_lowercase();
 
@@ -374,7 +389,7 @@ impl TxData {
         status
     }
 
-    /// Checks the inputted Transaction Method by the user upon pressing Enter/Esc for various error.
+    /// Checks the inputted Transaction Type by the user upon pressing Enter/Esc for various error.
     pub fn check_tx_type(&mut self) -> VerifyingOutput {
         let mut tx_type = self.tx_type.clone();
 
@@ -385,14 +400,17 @@ impl TxData {
         status
     }
 
+    /// Checks the inputted tags to make sure it's properly separated by a comma
     pub fn check_tags(&mut self) {
         let mut tags = self.tags.clone();
 
         self.verify_tags(&mut tags);
+
         self.tags = tags;
         self.go_current_index(&TxTab::Tags);
     }
 
+    /// Checks all field and verifies anything important is not empty
     pub fn check_all_fields(&mut self) -> Option<CheckingError> {
         if self.date.is_empty() {
             return Some(CheckingError::EmptyDate);
@@ -409,16 +427,19 @@ impl TxData {
         {
             return Some(CheckingError::EmptyMethod);
         }
+        // * empty tags in a tx becomes as unknown
         if self.tags.is_empty() {
             self.tags = "Unknown".to_string();
         }
         None
     }
 
+    /// Returns the current index
     pub fn get_current_index(&self) -> usize {
         self.current_index
     }
 
+    /// Returns the length of the data based on which TxTab is selected
     fn get_data_len(&self, current_tab: &TxTab) -> usize {
         match current_tab {
             TxTab::Date => self.date.len(),
@@ -432,6 +453,7 @@ impl TxData {
         }
     }
 
+    /// Moves index by one value to left
     pub fn move_index_left(&mut self, current_tab: &TxTab) {
         let data_len = self.get_data_len(current_tab);
 
@@ -442,6 +464,7 @@ impl TxData {
         }
     }
 
+    /// Moves index by one value to right
     pub fn move_index_right(&mut self, current_tab: &TxTab) {
         let data_len = self.get_data_len(current_tab);
 
@@ -452,10 +475,12 @@ impl TxData {
         }
     }
 
+    /// Set current index to max point based on TxTab
     pub fn go_current_index(&mut self, current_tab: &TxTab) {
         self.current_index = self.get_data_len(current_tab)
     }
 
+    /// Steps up Date value by one
     pub fn do_date_up(&mut self) -> Result<(), SteppingError> {
         let status = self.check_date();
         let data_len = self.get_data_len(&TxTab::Date);
@@ -476,15 +501,19 @@ impl TxData {
                 self.go_current_index(&TxTab::Date);
                 return Err(SteppingError::InvalidDate);
             }
+            // * Nothing -> Empty box.
+            // If nothing and pressed Up, make it the first possible date
             VerifyingOutput::Nothing(_) => {
                 self.date = String::from("2022-01-01");
             }
         }
 
+        // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Date);
         Ok(())
     }
 
+    /// Steps down Date value by one
     pub fn do_date_down(&mut self) -> Result<(), SteppingError> {
         let status = self.check_date();
         let data_len = self.get_data_len(&TxTab::Date);
@@ -505,15 +534,19 @@ impl TxData {
                 self.go_current_index(&TxTab::Date);
                 return Err(SteppingError::InvalidDate);
             }
+            // * Nothing -> Empty box.
+            // If nothing and pressed Up, make it the first possible date
             VerifyingOutput::Nothing(_) => {
                 self.date = String::from("2022-01-01");
             }
         }
 
+        // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Date);
         Ok(())
     }
 
+    /// Steps up From Method value by one
     pub fn do_from_method_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let all_methods = get_all_tx_methods(conn);
 
@@ -529,6 +562,8 @@ impl TxData {
                     .iter()
                     .position(|e| e == &self.from_method)
                     .unwrap();
+
+                // if reached final index, start from beginning
                 let next_method_index = (current_method_index + 1) % all_methods.len();
                 self.from_method = String::from(&all_methods[next_method_index]);
             }
@@ -536,15 +571,19 @@ impl TxData {
                 self.go_current_index(&TxTab::FromMethod);
                 return Err(SteppingError::InvalidTxMethod);
             }
+            // * Nothing -> Empty box.
+            // If nothing and pressed Up, make it the first possible method
             VerifyingOutput::Nothing(_) => {
                 self.from_method = String::from(&all_methods[0]);
             }
         }
 
+        // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::FromMethod);
         Ok(())
     }
 
+    /// Steps down From Method value by one
     pub fn do_from_method_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let all_methods = get_all_tx_methods(conn);
 
@@ -560,6 +599,8 @@ impl TxData {
                     .iter()
                     .position(|e| e == &self.from_method)
                     .unwrap();
+
+                // if reached final index, start from beginning
                 let next_method_index = if current_method_index == 0 {
                     all_methods.len() - 1
                 } else {
@@ -571,15 +612,19 @@ impl TxData {
                 self.go_current_index(&TxTab::FromMethod);
                 return Err(SteppingError::InvalidTxMethod);
             }
+            // * Nothing -> Empty box.
+            // If nothing and pressed Up, make it the first possible method
             VerifyingOutput::Nothing(_) => {
                 self.from_method = String::from(&all_methods[0]);
             }
         }
 
+        // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::FromMethod);
         Ok(())
     }
 
+    /// Steps up To Value value by one
     pub fn do_to_method_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let all_methods = get_all_tx_methods(conn);
 
@@ -595,6 +640,8 @@ impl TxData {
                     .iter()
                     .position(|e| e == &self.to_method)
                     .unwrap();
+
+                // if reached final index, start from beginning
                 let next_method_index = (current_method_index + 1) % all_methods.len();
                 self.to_method = String::from(&all_methods[next_method_index]);
             }
@@ -602,15 +649,19 @@ impl TxData {
                 self.go_current_index(&TxTab::ToMethod);
                 return Err(SteppingError::InvalidTxMethod);
             }
+            // * Nothing -> Empty box.
+            // If nothing and pressed Up, make it the first possible method
             VerifyingOutput::Nothing(_) => {
                 self.to_method = String::from(&all_methods[0]);
             }
         }
 
+        // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::ToMethod);
         Ok(())
     }
 
+    /// Steps down To Method value by one
     pub fn do_to_method_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let all_methods = get_all_tx_methods(conn);
 
@@ -626,6 +677,8 @@ impl TxData {
                     .iter()
                     .position(|e| e == &self.to_method)
                     .unwrap();
+
+                // if reached final index, start from beginning
                 let next_method_index = if current_method_index == 0 {
                     all_methods.len() - 1
                 } else {
@@ -637,15 +690,19 @@ impl TxData {
                 self.go_current_index(&TxTab::ToMethod);
                 return Err(SteppingError::InvalidTxMethod);
             }
+            // * Nothing -> Empty box.
+            // If nothing and pressed Up, make it the first possible method
             VerifyingOutput::Nothing(_) => {
                 self.to_method = String::from(&all_methods[0]);
             }
         }
 
+        // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::ToMethod);
         Ok(())
     }
 
+    /// Steps up Tx Type value by one
     pub fn do_tx_type_up(&mut self) -> Result<(), SteppingError> {
         let status = self.check_tx_type();
         let data_len = self.get_data_len(&TxTab::TxType);
@@ -653,6 +710,7 @@ impl TxData {
             self.current_index = data_len
         }
 
+        // * there's only 2 possible values of tx type
         if self.tx_type.is_empty() {
             self.tx_type = "Income".to_string()
         } else if self.tx_type == "Income" {
@@ -660,14 +718,17 @@ impl TxData {
         } else if self.tx_type == "Expense" {
             self.tx_type = "Income".to_string()
         }
-        self.go_current_index(&TxTab::TxType);
 
         if let VerifyingOutput::NotAccepted(_) = status {
             return Err(SteppingError::InvalidTxType);
         }
+
+        // reload index to the final point as some data just got added/changed
+        self.go_current_index(&TxTab::TxType);
         Ok(())
     }
 
+    /// Steps down Tx Type value by one
     pub fn do_tx_type_down(&mut self) -> Result<(), SteppingError> {
         let status = self.check_tx_type();
         let data_len = self.get_data_len(&TxTab::TxType);
@@ -675,6 +736,7 @@ impl TxData {
             self.current_index = data_len
         }
 
+        // * there's only 2 possible values of tx type
         if self.tx_type.is_empty() {
             self.tx_type = "Income".to_string()
         } else if self.tx_type == "Income" {
@@ -683,15 +745,16 @@ impl TxData {
             self.tx_type = "Income".to_string()
         }
 
-        self.go_current_index(&TxTab::TxType);
-
         if let VerifyingOutput::NotAccepted(_) = status {
             return Err(SteppingError::InvalidTxType);
         }
 
+        // reload index to the final point as some data just got added/changed
+        self.go_current_index(&TxTab::TxType);
         Ok(())
     }
 
+    /// Steps up Amount value by one
     pub fn do_amount_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let status = self.check_amount(conn);
         let data_len = self.get_data_len(&TxTab::Amount);
@@ -703,16 +766,15 @@ impl TxData {
             VerifyingOutput::Accepted(_) => {
                 let mut current_amount: f64 = self.amount.parse().unwrap();
 
-                if 1000000000.00 > current_amount + 1.0 {
+                if 9999999999.99 > current_amount + 1.0 {
                     current_amount += 1.0;
                     self.amount = format!("{current_amount:.2}");
                 }
             }
             VerifyingOutput::NotAccepted(err_type) => match err_type {
+                // if value went below 0, make it 1
                 NAType::AmountBelowZero => {
-                    let mut current_amount: f64 = self.amount.parse().unwrap();
-                    current_amount += 1.0;
-                    self.amount = format!("{current_amount:.2}");
+                    self.amount = String::from("1.00");
                 }
                 _ => {
                     self.go_current_index(&TxTab::Amount);
@@ -722,10 +784,12 @@ impl TxData {
             VerifyingOutput::Nothing(_) => self.amount = "1.00".to_string(),
         }
 
+        // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Amount);
         Ok(())
     }
 
+    /// Steps down Amount value by one
     pub fn do_amount_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let status = self.check_amount(conn);
 
@@ -738,7 +802,7 @@ impl TxData {
             VerifyingOutput::Accepted(_) => {
                 let mut current_amount: f64 = self.amount.parse().unwrap();
 
-                if (current_amount - 1.0) > 0.00 {
+                if (current_amount - 1.0) >= 0.00 {
                     current_amount -= 1.0;
                     self.amount = format!("{current_amount:.2}");
                 }
@@ -753,10 +817,12 @@ impl TxData {
             VerifyingOutput::Nothing(_) => self.amount = "1.00".to_string(),
         }
 
+        // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Amount);
         Ok(())
     }
 
+    /// Steps up Tags value by one
     pub fn do_tags_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let tags = get_all_tags(conn);
 
@@ -765,6 +831,8 @@ impl TxData {
             self.current_index = data_len
         }
 
+        // if current tag is empty but up is pressed,
+        // select the first possible tag if available
         if self.tags.is_empty() {
             if !tags.is_empty() {
                 self.tags = String::from(&tags[0]);
@@ -772,47 +840,67 @@ impl TxData {
                 return Err(SteppingError::InvalidTags);
             }
         } else {
+            // tags are separated by comma. Collect all the tags
             let mut current_tags = self
                 .tags
                 .split(',')
                 .map(|s| s.trim().to_string())
                 .collect::<Vec<String>>();
+
+            // tag1, tag2, tag3
+            // in this case, only work with tag3, keep the rest as it is
             let last_tag = current_tags.pop().unwrap();
 
+            // check if the working tag exists inside all tag list
             if !tags
                 .iter()
                 .any(|tag| tag.to_lowercase() == last_tag.to_lowercase())
             {
+                // tag3, tag2,
+                // if kept like this with extra comma, the last_tag would be empty. In this case
+                // select the first tag available in the list or just join the first two tag with , + space
                 if last_tag.is_empty() {
-                    current_tags.push(tags[0].to_owned());
-                    self.tags = current_tags.join(", ");
+                    if !tags.is_empty() {
+                        current_tags.push(tags[0].to_owned());
+                        self.tags = current_tags.join(", ");
+                    } else {
+                        self.tags = current_tags.join(", ");
+                    }
                 } else {
+                    // as the tag didn't match with any existing tags
+                    // whatever tag matches the first character in the existing list,
+                    // make that the new tag -> join with comma + space
                     for tag in tags {
                         if tag
                             .to_lowercase()
                             .starts_with(&last_tag.to_lowercase()[..1])
                         {
                             current_tags.push(tag);
-                            self.tags = current_tags.join(", ");
-                            self.go_current_index(&TxTab::Tags);
-                            return Err(SteppingError::InvalidTags);
+                            break;
                         }
                     }
+                    self.tags = current_tags.join(", ");
+                    self.go_current_index(&TxTab::Tags);
+                    return Err(SteppingError::InvalidTags);
                 }
             } else if let Some(index) = tags
                 .iter()
                 .position(|tag| tag.to_lowercase() == last_tag.to_lowercase())
             {
+                // if the tag matches with something, get the index, select the next one.
+                // start from beginning if reached at the end -> Join
                 let next_index = (index + 1) % tags.len();
                 current_tags.push(tags[next_index].to_owned());
                 self.tags = current_tags.join(", ");
             }
         }
 
+        // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Tags);
         Ok(())
     }
 
+    /// Steps down Tags value by one
     pub fn do_tags_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let tags = get_all_tags(conn);
 
@@ -821,6 +909,8 @@ impl TxData {
             self.current_index = data_len
         }
 
+        // if current tag is empty but down is pressed,
+        // select the first possible tag if available
         if self.tags.is_empty() {
             if !tags.is_empty() {
                 self.tags = String::from(&tags[0]);
@@ -828,37 +918,57 @@ impl TxData {
                 return Err(SteppingError::InvalidTags);
             }
         } else {
+            // tags are separated by comma. Collect all the tags
             let mut current_tags = self
                 .tags
                 .split(',')
                 .map(|s| s.trim().to_string())
                 .collect::<Vec<String>>();
+
+            // tag1, tag2, tag3
+            // in this case, only work with tag3, keep the rest as it is
             let last_tag = current_tags.pop().unwrap();
 
+            // check if the working tag exists inside all tag list
             if !tags
                 .iter()
                 .any(|tag| tag.to_lowercase() == last_tag.to_lowercase())
             {
+                // tag3, tag2,
+                // if kept like this with extra comma, the last_tag would be empty. In this case
+                // select the first tag available in the list or just join the first two tag with , + space
                 if last_tag.is_empty() {
+                    if !tags.is_empty() {
+                        current_tags.push(tags[0].to_owned());
+                        self.tags = current_tags.join(", ");
+                    } else {
+                        self.tags = current_tags.join(", ");
+                    }
                     current_tags.push(tags[0].to_owned());
                     self.tags = current_tags.join(", ");
                 } else {
+                    // as the tag didn't match with any existing tags
+                    // whatever tag matches the first character in the existing list,
+                    // make that the new tag -> join with comma + space
                     for tag in tags {
                         if tag
                             .to_lowercase()
                             .starts_with(&last_tag.to_lowercase()[..1])
                         {
                             current_tags.push(tag);
-                            self.tags = current_tags.join(", ");
-                            self.go_current_index(&TxTab::Tags);
-                            return Err(SteppingError::InvalidTags);
+                            break;
                         }
                     }
+                    self.tags = current_tags.join(", ");
+                    self.go_current_index(&TxTab::Tags);
+                    return Err(SteppingError::InvalidTags);
                 }
             } else if let Some(index) = tags
                 .iter()
                 .position(|tag| tag.to_lowercase() == last_tag.to_lowercase())
             {
+                // if the tag matches with something, get the index, select the next one.
+                // start from beginning if reached at the end -> Join
                 let next_index = if index == 0 {
                     tags.len() - 1
                 } else {
@@ -869,6 +979,7 @@ impl TxData {
             }
         }
 
+        // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Tags);
         Ok(())
     }

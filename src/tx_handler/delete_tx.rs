@@ -7,9 +7,12 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
     let sp = conn.savepoint()?;
 
     let tx_methods = get_all_tx_methods(&sp);
+
+    // contains the data of the final row data before the tx gets deleted
     let last_balance = get_last_balances(&tx_methods, &sp);
     let last_balance_id = get_last_balance_id(&sp)?;
 
+    // will contain data of the updated final balance row data
     let mut final_last_balance = Vec::new();
 
     // get the deletion tx data
@@ -19,6 +22,10 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
         Ok(final_data)
     })?;
 
+    // 2025-05-10
+    // take 2025 and subtract 2022 = 3, means the year number 3
+    // take 05 -> 5 -> 5th month. 5 + (3 * 12) =  the row of this month's balance on balance_all table
+    // we are not subtracting 1 from month because balance_all table starts at 1
     let splitted = data[0].split('-').collect::<Vec<&str>>();
     let (year, month) = (
         splitted[0].parse::<i32>().unwrap() - 2022,
@@ -30,7 +37,7 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
     let mut from_method = "";
     let mut to_method = "";
 
-    // the tx_method of the tx
+    // the tx_method of the tx we will delete
     let source = &data[1];
 
     // execute this block to get block tx method if the tx type is a Transfer
@@ -45,6 +52,15 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
     let tx_type: &str = &data[3];
 
     // loop through all rows in the balance_all table from the deletion point and update balance
+    // basically there are 193 rows(at the time of writing) on balance_all table. each row = 1 month. if month 4 had balance of 100,
+    // month 5 will also have the balance of 100 if no tx was added on month 5.
+    // if the tx deletion happens on row/month 5, that means month 4 balance is correct but from the month from
+    // 5 to the final row needs to be deduct that amount.
+
+    // there are 3 steps in deleting a tx
+    // Update balance_all table with the amount
+    // Delete the tx itself from tx_all table
+    // Update balance_all table final balance row data which holds the absolute final amount after all tx
     loop {
         let query = format!(
             "SELECT {} FROM balance_all WHERE id_num = {}",
@@ -84,7 +100,6 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
 
         let mut updated_month_balance = vec![];
 
-        // reverse that amount that was previously added and commit them to db
         // add or subtract based on the tx type to the relevant method
 
         // check the month balance as not zero because if it is 0, there was never any transaction
@@ -135,9 +150,9 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
         }
     }
 
-    // we are deleting 1 transaction, so loop through all tx methods, and whichever method matches
-    // with the one we are deleting, add/subtract from the amount.
-    // Calculate the balance/s for the absolute final balance and create the query
+    // we need to update the 193 row with the latest balance.
+    // Based on the tx_type and method, edit the amount from the 193 row's balance
+    // we fetched earlier
     for i in 0..tx_methods.len() {
         let mut current_balance = last_balance[i].parse::<f64>().unwrap();
         if &tx_methods[i] == source && tx_type != "Transfer" {

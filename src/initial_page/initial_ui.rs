@@ -8,9 +8,7 @@ use tui::{
     Frame,
 };
 
-/// The initial UI that starts on the startup of the program. The function
-/// draws 2 widgets with the intention to show the hotkeys of the program.
-/// Takes an additional vector parameter to show pop up if necessary.
+/// The function draws the Initial page of the interface.
 pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
     let size = f.size();
     let chunks = Layout::default()
@@ -75,7 +73,6 @@ pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
         }
         upper_text.push('\n');
     }
-    // TODO add more informative stuff here
     let unmodified_second_text = "Arrow Key: Navigate
 A: Add Transaction Page
 T: Add Transfer Page
@@ -100,6 +97,7 @@ Enter: Submit a field and continue
 Esc: Stop editing a filed
 ";
 
+    // bold a part of the text before rendering
     let second_text = create_bolded_text(unmodified_second_text);
 
     let middle_text = "Press Any Key To Continue";

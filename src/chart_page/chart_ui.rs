@@ -64,6 +64,7 @@ pub fn chart_ui<B: Backend>(
 
     let chunks = main_layout.split(size);
 
+    // creates border around the entire terminal
     let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
     f.render_widget(block, size);
 
@@ -116,10 +117,9 @@ pub fn chart_ui<B: Backend>(
                 .bg(HIGHLIGHTED),
         );
 
-    // connect to the database and gather all the tx methods
     let all_tx_methods = get_all_tx_methods(conn);
 
-    // a vector containing another vector with X Y coordinate of where to render chart points
+    // * a vector containing another vector with vec![X, Y] coordinate of where to render chart points
     let mut datasets: Vec<Vec<(f64, f64)>> = Vec::new();
     let mut last_balances = Vec::new();
 
@@ -137,14 +137,12 @@ pub fn chart_ui<B: Backend>(
     let mut date_labels: Vec<String> = vec![];
 
     let mut current_axis = 0.0;
-    let mut loop_data = vec![];
+
     // if there are no transactions, we will create an empty chart
     if !all_txs.is_empty() {
         // contains all dates of the transactions
         let all_dates = chart_data.get_all_dates(mode_selection, months.index, years.index);
 
-        // Converting the first date string into a Date type
-        // This is the current date that we are checking in the loop
         let mut checking_date = NaiveDate::parse_from_str(&all_txs[0][0], "%d-%m-%Y").unwrap();
 
         // The final date where the loop will stop
@@ -193,15 +191,14 @@ pub fn chart_ui<B: Backend>(
 
         // total times to loop this time. If None, then render everything
         let mut to_loop = loop_remaining.as_mut().map(|val| total_loop - *val);
-        loop_data.push(vec![*loop_remaining, to_loop]);
 
         // labels of the x axis
         date_labels.push(checking_date.to_string());
         date_labels.push(final_date.to_string());
 
         // data_num represents which index to check out from all the txs and balances data.
-        // to_add_again will become true in cases where two or more transactions shares the same date.
-        // So same date transactions movements will be combined together for one day
+        // to_add_again will become true in cases where two or more transactions shares the same date simultaneously.
+        // * Same date transactions movements will be combined together into 1 chart location
 
         let mut to_add_again = false;
         let mut data_num = 0;
@@ -217,7 +214,7 @@ pub fn chart_ui<B: Backend>(
                         NaiveDate::parse_from_str(&all_txs[data_num + 1][0], "%d-%m-%Y").unwrap();
                 }
                 // new valid transactions so the earlier looped balance is not required.
-                // if no tx exists in a date, data from here/previous valid date is used to compensate for it
+                // * if no tx exists in a date, data from last_balances/previous valid date is used to compensate for it
                 last_balances = Vec::new();
 
                 for method_index in 0..all_tx_methods.len() {
@@ -290,6 +287,8 @@ pub fn chart_ui<B: Backend>(
                 break;
             }
         }
+    } else {
+        *loop_remaining = None;
     }
     // add a 10% extra value to the highest and the lowest balance
     // so the chart can properly render
@@ -302,6 +301,7 @@ pub fn chart_ui<B: Backend>(
 
     // go through the lowest balance and keep adding the difference until the highest point
     let mut labels = vec![lowest_balance.to_string()];
+    // 10 labels, so loop 10 times
     for _i in 0..10 {
         to_add += diff;
         labels.push(format!("{:.2}", to_add));

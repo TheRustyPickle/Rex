@@ -11,10 +11,7 @@ use tui::text::{Span, Spans};
 use tui::widgets::{Block, Cell, Row, Table, Tabs};
 use tui::Frame;
 
-/// This function is responsible for drawing all the widgets in the Home page,
-/// coloring everything and all related things.  This function takes several arguments
-/// from the run_app function with the necessary data and fields.
-
+/// The function draws the Home page of the interface.
 pub fn home_ui<B: Backend>(
     f: &mut Frame<B>,
     months: &IndexedData,
@@ -28,10 +25,8 @@ pub fn home_ui<B: Backend>(
     let all_methods = get_all_tx_methods(conn);
     let size = f.size();
 
-    // These two colors are used with the Changes value when a row is selected
-    // to color the Changes row in Balance widget.
+    // Used to highlight Changes on Balance section of Home Page
     let selected_style_income = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
-
     let selected_style_expense = Style::default().fg(RED).add_modifier(Modifier::REVERSED);
 
     // Transaction widget's top row/header to highlight what each data will mean
@@ -82,21 +77,20 @@ pub fn home_ui<B: Backend>(
     let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
     f.render_widget(block, size);
 
-    // color the first three letters of the month to blue
     let month_titles = months
         .titles
         .iter()
         .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
         .collect();
 
-    //color the first two letters of the year to blue
     let year_titles = years
         .titles
         .iter()
         .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
         .collect();
-    // The default style for the select index in the month section if
-    // the Month widget is not selected
+
+    // The default style for the selected index in the month section if
+    // the month widget itself is not selected.
     let mut month_tab = Tabs::new(month_titles)
         .block(styled_block("Months"))
         .select(months.index)
@@ -107,8 +101,8 @@ pub fn home_ui<B: Backend>(
                 .bg(HIGHLIGHTED),
         );
 
-    // The default style for the select index in the year section if
-    // the Year widget is not selected
+    // The default style for the selected index in the year section if
+    // the year widget itself is not selected.
     let mut year_tab = Tabs::new(year_titles)
         .block(styled_block("Years"))
         .select(years.index)
@@ -135,8 +129,7 @@ pub fn home_ui<B: Backend>(
             Constraint::Percentage(18),
         ]);
 
-    // This is what makes the Changes row in the Balance widget red or blue based on
-    // a selected transaction inside the Table/Transaction widget
+    // go through all data of the Balance widget and style it as necessary
     let bal_data = balance.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| {

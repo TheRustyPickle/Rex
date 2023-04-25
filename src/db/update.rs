@@ -2,8 +2,8 @@ use crate::db::create_balances_table;
 use crate::utility::get_all_tx_methods;
 use rusqlite::{Connection, Result, Savepoint};
 
-/// This function is used for adding new column to the database when adding new
-/// Transaction Methods. Takes vector with transaction method names and commits them.
+/// adds new tx methods as columns on balance_all and changes_all tables. Gets called after
+/// successful handling of 'J' from the app
 pub fn add_new_tx_methods(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
     // add a save point to reverse commits if failed
     let sp = conn.savepoint().unwrap();
@@ -29,15 +29,18 @@ pub fn add_tags_column(conn: &mut Connection) -> Result<()> {
     Ok(())
 }
 
+/// Migrates existing database's balance_all column's data type from TEXT to REAL
 pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
     let all_methods = get_all_tx_methods(conn);
 
     let sp = conn.savepoint().unwrap();
     let old_last_balance = get_last_balance(&sp, &all_methods);
 
+    // rename table
     let query = "ALTER TABLE balance_all RENAME TO balance_all_old";
     sp.execute(query, [])?;
 
+    // create the new updated balance_all table
     create_balances_table(&all_methods, &sp)?;
 
     let columns = all_methods
@@ -52,6 +55,7 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
         .collect::<Vec<_>>()
         .join(",");
 
+    // insert everything from old table to the new balance_all
     let query = format!(
         "INSERT INTO balance_all ({}, {}) SELECT id_num, {} FROM balance_all_old",
         "id_num", columns, values
@@ -64,7 +68,7 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
         [],
     )?;
 
-    // fill up balance_all table with total year * 12 + 1 rows with 0 balance
+    // fill up balance_all table with total year * 12 + 1 rows with 0 balance for all columns
     let zero_values = vec!["0.00"; all_methods.len()];
 
     let highlighted_tx_methods = all_methods
@@ -79,10 +83,12 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
         zero_values.join(",")
     );
 
+    // * the old db had 49 rows. So add 144 more to match total year * 12 + 1 rows
     for _a in 0..144 {
         sp.execute(&query, [])?;
     }
 
+    // swap the values from 49 row of the old table to the new table at 193
     let new_values = old_last_balance
         .iter()
         .enumerate()
@@ -106,6 +112,7 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
     Ok(())
 }
 
+/// return the last balance from the db
 fn get_last_balance(sp: &Savepoint, all_methods: &Vec<String>) -> Vec<String> {
     let mut query = format!(
         "SELECT {:?} FROM balance_all ORDER BY id_num DESC LIMIT 1",
