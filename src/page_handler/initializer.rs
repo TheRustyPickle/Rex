@@ -20,9 +20,11 @@ pub fn initialize_app(verifying_path: &str, current_dir: &str) -> Result<(), Box
             process::exit(1);
         }
     }
-    let mut conn = Connection::open(verifying_path).unwrap();
+
     // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
-    check_n_create_db(verifying_path, &mut conn)?;
+    check_n_create_db(verifying_path)?;
+
+    let mut conn = Connection::open(verifying_path).unwrap();
 
     // initiates migration if old database is detected.
     check_old_sql(&mut conn);
@@ -39,20 +41,33 @@ pub fn initialize_app(verifying_path: &str, current_dir: &str) -> Result<(), Box
                         let status = add_new_tx_methods( tx_methods, &mut conn);
                         match status {
                             Ok(_) => {
-                                println!("Added Transaction Methods Successfully. The app will restart in 5 seconds");
-                                thread::sleep(Duration::from_millis(5000));
+                                let stdout = std::io::stdout();
+                                let mut handle = stdout.lock();
+                                for i in (1..6).rev() {
+                                    write!(handle, "\rAdded Transaction Methods Successfully. Restarting in {i} seconds").unwrap();
+                                    handle.flush().unwrap();
+                                    thread::sleep(Duration::from_millis(1000));
+                                }
                             }
                             Err(e) => {
-                                println!(
-                                    "Error while adding new Transaction Methods. Error: {e:?}. Restarting in 5 seconds"
-                                );
-                                thread::sleep(Duration::from_millis(5000));
+                                let stdout = std::io::stdout();
+                                let mut handle = stdout.lock();
+                                for i in (1..6).rev() {
+                                    write!(handle, "\rError while adding new Transaction Methods. Error: {e:?}. Restarting in {i} seconds").unwrap();
+                                    handle.flush().unwrap();
+                                    thread::sleep(Duration::from_millis(1000));
+                                }
                             }
                         }
                     }
                     None => {
-                        println!("Operation Cancelled. Restarting in 5 seconds");
-                        thread::sleep(Duration::from_millis(5000));
+                        let stdout = std::io::stdout();
+                        let mut handle = stdout.lock();
+                        for i in (1..6).rev() {
+                            write!(handle, "\rOperation Cancelled. Restarting in {i} seconds").unwrap();
+                            handle.flush().unwrap();
+                            thread::sleep(Duration::from_millis(1000));
+                        }
                     }
                 },
                 HandlingOutput::QuitUi => break,
