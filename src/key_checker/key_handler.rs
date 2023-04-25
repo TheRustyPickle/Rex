@@ -487,9 +487,8 @@ impl<'a> InputKeyHandler<'a> {
 
     // Checks and verifies tx type for Add Tx page
     pub fn handle_tx_type(&mut self) {
-        match self.page {
-            CurrentUi::AddTx => self.check_add_tx_type(),
-            _ => {}
+        if let CurrentUi::AddTx = self.page {
+            self.check_add_tx_type()
         }
     }
 
@@ -509,12 +508,11 @@ impl<'a> InputKeyHandler<'a> {
             HomeTab::Table => {
                 // Do not select any table rows in the table section If
                 // there is no transaction
-                if self.all_tx_data.all_tx.is_empty() {
-                    *self.home_tab = self.home_tab.change_tab_up();
-                }
                 // if arrow key up is pressed and table index is 0, select the Month widget
                 // else just select the upper index of the table
-                else if self.table.state.selected() == Some(0) {
+                if self.all_tx_data.all_tx.is_empty() {
+                    *self.home_tab = self.home_tab.change_tab_up();
+                } else if self.table.state.selected() == Some(0) {
                     *self.home_tab = HomeTab::Months;
                     self.table.state.select(None);
                 } else if !self.all_tx_data.all_tx.is_empty() {
@@ -545,12 +543,11 @@ impl<'a> InputKeyHandler<'a> {
             HomeTab::Table => {
                 // Do not proceed to the table section If
                 // there is no transaction
-                if self.all_tx_data.all_tx.is_empty() {
-                    *self.home_tab = self.home_tab.change_tab_down();
-                }
                 // if arrow key down is pressed and table index is final, select the year widget
                 // else just select the next index of the table
-                else if self.table.state.selected() == Some(self.table.items.len() - 1) {
+                if self.all_tx_data.all_tx.is_empty() {
+                    *self.home_tab = self.home_tab.change_tab_down();
+                } else if self.table.state.selected() == Some(self.table.items.len() - 1) {
                     *self.home_tab = HomeTab::Years;
                     self.table.state.select(None);
                 } else if !self.all_tx_data.all_tx.is_empty() {

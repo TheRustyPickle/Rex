@@ -73,7 +73,7 @@ Esc: Stop editing filed
     // * iter through the data in reverse mode because we want the latest status text
     // * to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
-        let (initial, rest) = i.split_once(":").unwrap();
+        let (initial, rest) = i.split_once(':').unwrap();
         if !i.contains("Accepted") && !i.contains("Nothing") {
             status_text.push(Spans::from(vec![
                 Span::styled(
