@@ -229,11 +229,52 @@ fn check_last_month_balance_2() {
     let expected_data_2 =
         HashMap::from([("test 2".to_string(), 0.0), ("test1".to_string(), 300.0)]);
 
+    add_tx(
+        "2028-08-19",
+        "Testing transaction",
+        "test1",
+        "100.00",
+        "Income",
+        "Unknown",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2025-09-19",
+        "Testing transaction",
+        "test1",
+        "100.00",
+        "Income",
+        "Unknown",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2025-10-19",
+        "Testing transaction",
+        "test1",
+        "100.00",
+        "Income",
+        "Unknown",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    let data_3 = get_last_time_balance(10, 4, &tx_methods, &conn);
+    let expected_data_3 =
+        HashMap::from([("test 2".to_string(), 0.0), ("test1".to_string(), 500.0)]);
+
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(data_1, expected_data_1);
     assert_eq!(data_2, expected_data_2);
+    assert_eq!(data_3, expected_data_3);
 }
 
 #[test]
