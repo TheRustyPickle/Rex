@@ -3,21 +3,12 @@ use crate::tx_handler::TxData;
 use crate::utility::{create_bolded_text, styled_block};
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
-use tui::style::Style;
+use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Paragraph};
 use tui::Frame;
 
-/// The UI functions that draws the Transfer page of the interface.
-/// Takes arguments for user inputted data, status page data to process the details and turns them into
-/// the the interface.
-///
-/// - input_data : Contains all the data for all field that has been inserted by the user so far for the transaction
-///
-/// Example input_data : `["2020-10-10", "", "", "", "Expense"]`
-/// - currently_selected : For verifying the current selected widget to add a block box
-/// - status_data : Contains all the String to push into the Status widget
-
+/// The function draws the Transfer page of the interface.
 pub fn transfer_ui<B: Backend>(
     f: &mut Frame<B>,
     transfer_data: &TxData,
@@ -79,18 +70,29 @@ Esc: Stop editing filed
 
     let mut status_text = vec![];
 
-    // iter through the data in reverse mode because we want the latest status text
-    // to be at the top which is the final value of the vector.
+    // * iter through the data in reverse mode because we want the latest status text
+    // * to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
-        // we will color the status text based on whether it was an error or if the value was accepted
+        let (initial, rest) = i.split_once(":").unwrap();
         if !i.contains("Accepted") && !i.contains("Nothing") {
-            status_text.push(Spans::from(Span::styled(i, Style::default().fg(RED))));
+            status_text.push(Spans::from(vec![
+                Span::styled(
+                    initial,
+                    Style::default().fg(RED).add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(format!(":{rest}"), Style::default().fg(RED)),
+            ]));
         } else {
-            status_text.push(Spans::from(Span::styled(i, Style::default().fg(BLUE))));
+            status_text.push(Spans::from(vec![
+                Span::styled(
+                    initial,
+                    Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(format!(":{rest}"), Style::default().fg(BLUE)),
+            ]));
         }
     }
-
-    // We got all these data from the run_app function already so just assign them
+    // We already fetched the data for each of these. Assign them now and then use them to load the widget
     let date_text = vec![Spans::from(input_data[0])];
 
     let details_text = vec![Spans::from(input_data[1])];
