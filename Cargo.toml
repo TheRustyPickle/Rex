@@ -1,6 +1,6 @@
 [package]
 name = "rex"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 authors = ["TheRustyPickle <rusty.pickle94@gmail.com>"]
 readme = "README.md"
