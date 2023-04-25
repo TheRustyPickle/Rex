@@ -12,7 +12,8 @@ use tui::Frame;
 pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_selected: &TxTab) {
     // get the data to insert into the Status widget of this page
     let status_data = add_tx_data.get_tx_status();
-    // The vector contains the data for each widget of the page
+    // * Contains date, details, from method, to method, amount, tx type, tags.
+    // Except to method, rest will be used for the widgets
     let input_data = add_tx_data.get_all_texts();
     // The index of the cursor position
     let current_index = add_tx_data.get_current_index();
@@ -54,6 +55,7 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_s
         )
         .split(chunks[1]);
 
+    // creates border around the entire terminal
     let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
     f.render_widget(block, size);
 
@@ -70,23 +72,31 @@ H: Shows further detailed help info
 Enter: Submit field and continue
 Esc: Stop editing filed";
 
+    // highlight texts before the first color to Bold
     let help_text = create_bolded_text(unmodified_help_text);
 
     let mut status_text = vec![];
 
-    // iter through the data in reverse mode because we want the latest status text
-    // to be at the top which is the final value of the vector.
+    // * iter through the data in reverse mode because we want the latest status text
+    // * to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
+        let (initial, rest) = i.split_once(":").unwrap();
         if !i.contains("Accepted") && !i.contains("Nothing") {
-            status_text.push(Spans::from(Span::styled(
-                i,
-                Style::default().fg(RED).add_modifier(Modifier::BOLD),
-            )));
+            status_text.push(Spans::from(vec![
+                Span::styled(
+                    initial,
+                    Style::default().fg(RED).add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(format!(":{rest}"), Style::default().fg(RED)),
+            ]));
         } else {
-            status_text.push(Spans::from(Span::styled(
-                i,
-                Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
-            )));
+            status_text.push(Spans::from(vec![
+                Span::styled(
+                    initial,
+                    Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(format!(":{rest}"), Style::default().fg(BLUE)),
+            ]));
         }
     }
 
