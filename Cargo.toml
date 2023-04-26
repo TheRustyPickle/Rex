@@ -1,5 +1,5 @@
 [package]
-name = "rex"
+name = "rex-tui"
 version = "0.1.6"
 edition = "2021"
 authors = ["TheRustyPickle <rusty.pickle94@gmail.com>"]
@@ -7,9 +7,15 @@ readme = "README.md"
 description = """
 A TUI for managing Incomes and Expenses
 """
+homepage = "https://github.com/TheRustyPickle/Rex"
+repository = "https://github.com/TheRustyPickle/Rex"
+license = "MIT"
+keywords = ["tui", "terminal", "tui-app", "money", "budget"]
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "rex"
+path = "src/main.rs"
 test = false
 bench = false
 

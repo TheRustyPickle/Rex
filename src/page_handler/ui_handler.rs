@@ -10,7 +10,7 @@ use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
     ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SummaryTab, TableData, TxTab,
 };
-use crate::popup_page::add_popup;
+use crate::popup_page::PopupData;
 use crate::summary_page::{summary_ui, SummaryData};
 use crate::transfer_page::transfer_ui;
 use crate::tx_handler::TxData;
@@ -73,7 +73,7 @@ pub fn start_app<B: Backend>(
     // The page which is currently selected. Default is the initial page
     let mut page = CurrentUi::Initial;
     // stores current popup status
-    let mut popup = if new_version_available {
+    let mut popup_state = if new_version_available {
         PopupState::NewUpdate
     } else {
         PopupState::Nothing
@@ -102,6 +102,9 @@ pub fn start_app<B: Backend>(
 
     // Holds the data that will be/are inserted into the Chart Page
     let mut chart_data = ChartData::set(conn);
+
+    // Holds the popup data that will be/are inserted into the Popup page
+    let mut popup_data = PopupData::new();
 
     // data for the Summary Page's table
     let mut summary_table = TableData::new(summary_data.get_table_data());
@@ -202,7 +205,7 @@ pub fn start_app<B: Backend>(
                         &summary_tab,
                     ),
                 }
-                add_popup(f, &popup);
+                popup_data.create_popup(f, &popup_state)
             })
             .map_err(UiHandlingError::DrawingError)?;
 
@@ -230,7 +233,7 @@ pub fn start_app<B: Backend>(
             let mut handler = InputKeyHandler::new(
                 key,
                 &mut page,
-                &mut popup,
+                &mut popup_state,
                 &mut add_tx_tab,
                 &mut transfer_tab,
                 &mut chart_tab,

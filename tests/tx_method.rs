@@ -1,6 +1,6 @@
-extern crate rex;
-use rex::db::*;
-use rex::utility::get_all_tx_methods;
+extern crate rex_tui;
+use rex_tui::db::*;
+use rex_tui::utility::get_all_tx_methods;
 use rusqlite::Connection;
 use std::fs;
 //use std::collections::HashMap;
