@@ -1,32 +1,24 @@
-use crate::home_page::{CurrentUi, PopupState};
-use crossterm::event::{KeyCode, KeyEvent};
-use std::error::Error;
+use crate::key_checker::InputKeyHandler;
+use crate::outputs::HandlingOutput;
+use crate::page_handler::PopupState;
+use crossterm::event::KeyCode;
 
-pub fn initial_keys(
-    key: KeyEvent,
-    cu_page: &mut CurrentUi,
-    cu_popup: &mut PopupState,
-) -> Result<String, Box<dyn Error>> {
-    match cu_popup {
-        PopupState::Nothing => match key.code {
-            KeyCode::Char('q') => return Ok("".to_string()),
-            _ => *cu_page = CurrentUi::Home,
+/// Tracks the keys of the Initial page and calls relevant function based on it
+pub fn initial_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
+    match handler.popup {
+        PopupState::Nothing => match handler.key.code {
+            KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
+            _ => handler.go_home(),
         },
-        PopupState::NewUpdate => {
-            match key.code {
-                KeyCode::Enter => {
-                    // If there is a new version, Enter will try to open the default browser with this link
-                    match open::that("https://github.com/WaffleMixer/Rex/releases/latest") {
-                        Ok(_) => *cu_popup = PopupState::Nothing,
-
-                        // if it fails for any reason, break interface and print the link
-                        Err(_) => return Ok("Link".to_string()),
-                    }
+        PopupState::NewUpdate => match handler.key.code {
+            KeyCode::Enter => {
+                if let Err(e) = handler.handle_update_popup() {
+                    return Some(e);
                 }
-                _ => *cu_popup = PopupState::Nothing,
             }
-        }
-        _ => *cu_popup = PopupState::Nothing,
+            _ => handler.do_empty_popup(),
+        },
+        _ => handler.do_empty_popup(),
     }
-    Ok("0".to_string())
+    None
 }

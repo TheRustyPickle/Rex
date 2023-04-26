@@ -1,9 +1,5 @@
-mod table_data;
-mod table_ui;
-mod ui_data_state;
+mod home_data;
+mod home_ui;
 
-pub use table_data::TransactionData;
-pub use table_ui::ui;
-pub use ui_data_state::{
-    CurrentUi, PopupState, SelectedTab, TableData, TimeData, TransferTab, TxTab,
-};
+pub use home_data::TransactionData;
+pub use home_ui::home_ui;

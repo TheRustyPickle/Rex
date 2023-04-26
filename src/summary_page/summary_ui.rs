@@ -1,66 +1,150 @@
-use tui::{
-    backend::Backend,
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::{Span, Spans},
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table},
-    Frame,
+use crate::page_handler::{
+    IndexedData, SummaryTab, TableData, BACKGROUND, BLUE, BOX, HEADER, HIGHLIGHTED, RED, SELECTED,
+    TEXT,
 };
+use crate::summary_page::SummaryData;
+use crate::utility::styled_block;
+use tui::backend::Backend;
+use tui::layout::{Constraint, Direction, Layout};
+use tui::style::{Color, Modifier, Style};
+use tui::text::{Span, Spans};
+use tui::widgets::{Block, Cell, Paragraph, Row, Table, Tabs};
+use tui::Frame;
 
-use crate::home_page::TableData;
-
-/// Renders the Summary UI page
+/// The function draws the Summary page of the interface.
 pub fn summary_ui<B: Backend>(
     f: &mut Frame<B>,
+    months: &IndexedData,
+    years: &IndexedData,
+    mode_selection: &IndexedData,
+    summary_data: &SummaryData,
     table_data: &mut TableData,
-    text_data: &Vec<(f64, String)>,
+    current_page: &SummaryTab,
 ) {
+    let text_data = summary_data.get_tx_data();
     let size = f.size();
-
-    let normal_style = Style::default().bg(Color::LightBlue);
-    let selected_style = Style::default().bg(Color::Rgb(255, 245, 238));
 
     let header_cells = ["Tag", "Total Income", "Total Expense"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Rgb(255, 255, 255))));
+        .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
 
     let header = Row::new(header_cells)
-        .style(normal_style)
+        .style(Style::default().bg(HEADER))
         .height(1)
         .bottom_margin(0);
 
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .margin(2)
-        .constraints([Constraint::Length(7), Constraint::Min(5)].as_ref())
-        .split(size);
+    let mut main_layout = Layout::default().direction(Direction::Vertical).margin(2);
 
-    let block = Block::default().style(
-        Style::default()
-            .bg(Color::Rgb(255, 255, 255))
-            .fg(Color::Rgb(50, 205, 50)),
-    );
+    match mode_selection.index {
+        0 => {
+            main_layout = main_layout.constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(7),
+                    Constraint::Min(0),
+                ]
+                .as_ref(),
+            )
+        }
+        1 => {
+            main_layout = main_layout.constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(7),
+                    Constraint::Min(0),
+                ]
+                .as_ref(),
+            )
+        }
+        2 => {
+            main_layout = main_layout.constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Length(7),
+                    Constraint::Min(0),
+                ]
+                .as_ref(),
+            )
+        }
+        _ => {}
+    };
+
+    let chunks = main_layout.split(size);
+
+    let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
 
     f.render_widget(block, size);
+
+    let month_titles = months
+        .titles
+        .iter()
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
+        .collect();
+
+    //color the first two letters of the year to blue
+    let year_titles = years
+        .titles
+        .iter()
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
+        .collect();
+
+    let mode_selection_titles = mode_selection
+        .titles
+        .iter()
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
+        .collect();
+
+    // The default style for the select index in the month section if
+    // the Month widget is not selected
+    let mut month_tab = Tabs::new(month_titles)
+        .block(styled_block("Months"))
+        .select(months.index)
+        .style(Style::default().fg(BOX))
+        .highlight_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .bg(HIGHLIGHTED),
+        );
+
+    // The default style for the select index in the year section if
+    // the Year widget is not selected
+    let mut year_tab = Tabs::new(year_titles)
+        .block(styled_block("Years"))
+        .select(years.index)
+        .style(Style::default().fg(BOX))
+        .highlight_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .bg(HIGHLIGHTED),
+        );
+
+    let mut mode_selection_tab = Tabs::new(mode_selection_titles)
+        .block(styled_block("Mode Selection"))
+        .select(mode_selection.index)
+        .style(Style::default().fg(BOX))
+        .highlight_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .bg(HIGHLIGHTED),
+        );
 
     // * contains the text for the upper side of the Summary UI
     let text = vec![
         Spans::from(Span::styled(
             format!("{} {:.2}", text_data[0].1, text_data[0].0),
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .fg(Color::Blue),
+            Style::default().add_modifier(Modifier::BOLD).fg(BLUE),
         )),
         Spans::from(Span::styled(
             format!("{} {:.2}", text_data[1].1, text_data[1].0),
-            Style::default().add_modifier(Modifier::BOLD).fg(Color::Red),
+            Style::default().add_modifier(Modifier::BOLD).fg(RED),
         )),
         Spans::from(vec![
             Span::styled(
                 format!("Largest Income: {:.2}, ", text_data[2].0),
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .fg(Color::Blue),
+                Style::default().add_modifier(Modifier::BOLD).fg(BLUE),
             ),
             Span::styled(
                 format!("Method: {}", text_data[2].1),
@@ -72,7 +156,7 @@ pub fn summary_ui<B: Backend>(
         Spans::from(vec![
             Span::styled(
                 format!("Largest Expense: {:.2}, ", text_data[3].0),
-                Style::default().add_modifier(Modifier::BOLD).fg(Color::Red),
+                Style::default().add_modifier(Modifier::BOLD).fg(RED),
             ),
             Span::styled(
                 format!("Method: {}", text_data[3].1),
@@ -90,9 +174,7 @@ pub fn summary_ui<B: Backend>(
             ),
             Span::styled(
                 format!("Income: {:.2}", text_data[4].0),
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .fg(Color::Blue),
+                Style::default().add_modifier(Modifier::BOLD).fg(BLUE),
             ),
         ]),
         Spans::from(vec![
@@ -104,7 +186,7 @@ pub fn summary_ui<B: Backend>(
             ),
             Span::styled(
                 format!("Expense: {:.2}", text_data[5].0),
-                Style::default().add_modifier(Modifier::BOLD).fg(Color::Red),
+                Style::default().add_modifier(Modifier::BOLD).fg(RED),
             ),
         ]),
     ];
@@ -113,26 +195,65 @@ pub fn summary_ui<B: Backend>(
     let rows = table_data.items.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| Cell::from(c.to_string()));
-        Row::new(cells).height(height as u16).bottom_margin(0)
+        Row::new(cells)
+            .height(height as u16)
+            .bottom_margin(0)
+            .style(Style::default().fg(TEXT))
     });
 
-    let table_area = Table::new(rows)
+    let mut table_area = Table::new(rows)
         .header(header)
-        .block(Block::default().borders(Borders::ALL).title("Tags"))
+        .block(styled_block("Tags"))
         .widths(&[
             Constraint::Percentage(33),
             Constraint::Percentage(33),
             Constraint::Percentage(33),
         ])
-        .highlight_symbol(">> ")
-        .highlight_style(selected_style);
+        .style(Style::default().fg(BOX));
 
-    let paragraph = Paragraph::new(text).style(
-        Style::default()
-            .bg(Color::Rgb(255, 255, 255))
-            .fg(Color::Rgb(50, 205, 50)),
-    );
+    let paragraph = Paragraph::new(text).style(Style::default().bg(BACKGROUND).fg(TEXT));
 
-    f.render_widget(paragraph, chunks[0]);
-    f.render_stateful_widget(table_area, chunks[1], &mut table_data.state)
+    match current_page {
+        // previously added a black block to year and month widget if a value is not selected
+        // Now we will turn that black block into green if a value is selected
+        SummaryTab::Months => {
+            month_tab = month_tab
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+        }
+
+        SummaryTab::Years => {
+            year_tab = year_tab
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+        }
+        SummaryTab::ModeSelection => {
+            mode_selection_tab = mode_selection_tab
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+        }
+        SummaryTab::Table => {
+            table_area = table_area
+                .highlight_style(Style::default().bg(SELECTED))
+                .highlight_symbol(">> ")
+        }
+    }
+
+    f.render_widget(mode_selection_tab, chunks[0]);
+
+    match mode_selection.index {
+        0 => {
+            f.render_widget(year_tab, chunks[1]);
+            f.render_widget(month_tab, chunks[2]);
+            f.render_widget(paragraph, chunks[3]);
+            f.render_stateful_widget(table_area, chunks[4], &mut table_data.state)
+        }
+        1 => {
+            f.render_widget(year_tab, chunks[1]);
+            f.render_widget(paragraph, chunks[2]);
+            f.render_stateful_widget(table_area, chunks[3], &mut table_data.state)
+        }
+        2 => {
+            f.render_widget(paragraph, chunks[1]);
+            f.render_stateful_widget(table_area, chunks[2], &mut table_data.state)
+        }
+        _ => {}
+    }
 }
