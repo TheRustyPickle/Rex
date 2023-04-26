@@ -863,7 +863,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rex"
+name = "rex-tui"
 version = "0.1.6"
 dependencies = [
  "atty",

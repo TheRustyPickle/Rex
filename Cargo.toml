@@ -1,5 +1,5 @@
 [package]
-name = "rex"
+name = "rex-tui"
 version = "0.1.6"
 edition = "2021"
 authors = ["TheRustyPickle <rusty.pickle94@gmail.com>"]
@@ -15,6 +15,7 @@ categories = ["command-line-utilities"]
 
 [[bin]]
 name = "rex"
+path = "src/main.rs"
 test = false
 bench = false
 
