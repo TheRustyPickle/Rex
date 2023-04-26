@@ -8,18 +8,21 @@ use tui::widgets::{Block, Borders, Clear, Paragraph};
 use tui::Frame;
 
 /// Creates a popup on top of a window with the given size, title and text attributes
-pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &[String]) {
+pub fn create_popup<B: Backend>(
+    f: &mut Frame<B>,
+    x_value: u16,
+    y_value: u16,
+    title: &str,
+    text: String,
+) {
     let size = f.size();
 
-    let title = Span::styled(
-        &popup_data[0],
-        Style::default().add_modifier(Modifier::BOLD),
-    );
-    let text = create_bolded_text(&popup_data[1]);
+    let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
+    let text = create_bolded_text(&text);
 
     // determines the size of the popup window
-    let x_value = popup_data[2].parse::<u16>().unwrap();
-    let y_value = popup_data[3].parse::<u16>().unwrap();
+    let x_value = x_value;
+    let y_value = y_value;
 
     let block = Block::default()
         .title(title)
@@ -37,10 +40,6 @@ pub fn create_popup<B: Backend>(f: &mut Frame<B>, popup_data: &[String]) {
 
     f.render_widget(Clear, area);
     f.render_widget(block, area);
-
-    //let help_sec = Paragraph::new(text)
-    //    .style(Style::default().bg(BACKGROUND).fg(TEXT))
-    //    .alignment(Alignment::Left);
 
     let help_sec = Paragraph::new(Text::from(text)).style(Style::default().bg(BACKGROUND).fg(TEXT));
 
