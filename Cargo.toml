@@ -7,6 +7,11 @@ readme = "README.md"
 description = """
 A TUI for managing Incomes and Expenses
 """
+homepage = "https://github.com/TheRustyPickle/Rex"
+repository = "https://github.com/TheRustyPickle/Rex"
+license = "MIT"
+keywords = ["tui", "terminal", "tui-app", "money", "budget"]
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "rex"
