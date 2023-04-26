@@ -1,11 +1,20 @@
 extern crate rex;
-use rex::db::*;
+use rex::db::create_db;
+use rex::tx_handler::add_tx;
+use rex::utility::*;
 use rusqlite::{Connection, Result as sqlResult};
 use std::fs;
 
 fn create_test_db(file_name: &str) -> Connection {
-    create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
-    Connection::open(file_name).unwrap()
+    if let Ok(metadata) = fs::metadata(file_name) {
+        if metadata.is_file() {
+            fs::remove_file(file_name).expect("Failed to delete existing file");
+        }
+    }
+
+    let mut conn = Connection::open(file_name).unwrap();
+    create_db(vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    conn
 }
 
 #[test]
@@ -25,17 +34,17 @@ fn check_last_tx_id_1() {
 #[test]
 fn check_last_tx_id_2() {
     let file_name = "last_tx_id_2.sqlite";
-    let conn = create_test_db(&file_name);
+    let mut conn = create_test_db(&file_name);
 
-    add_new_tx(
+    add_tx(
         "2022-09-19",
         "Testing transaction",
         "test1",
         "100.00",
         "Income",
         "Unknown",
-        &file_name,
         None,
+        &mut conn,
     )
     .unwrap();
 
@@ -65,53 +74,53 @@ fn check_getting_all_tx_1() {
 #[test]
 fn check_getting_all_tx_2() {
     let file_name = "getting_tx_2.sqlite";
-    let conn = create_test_db(&file_name);
+    let mut conn = create_test_db(&file_name);
 
-    add_new_tx(
+    add_tx(
         "2022-07-19",
         "Testing transaction",
         "test1",
         "100.00",
         "Expense",
         "Unknown",
-        &file_name,
         None,
+        &mut conn,
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-07-19",
         "Testing transaction",
         "test 2",
         "100.00",
         "Expense",
         "Unknown",
-        &file_name,
         None,
+        &mut conn,
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-05-15",
         "Testing transaction",
         "test 2",
         "100.00",
         "Expense",
         "Unknown",
-        &file_name,
         None,
+        &mut conn,
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2022-05-20",
         "Testing transaction",
         "test 2",
         "100.00",
         "Income",
         "Unknown",
-        &file_name,
         None,
+        &mut conn,
     )
     .unwrap();
 
@@ -181,9 +190,9 @@ fn check_getting_all_tx_2() {
 
 fn check_tx_columns() {
     let file_name = "tx_columns.sqlite";
-    create_test_db(&file_name);
+    let conn = create_test_db(&file_name);
 
-    let columns = get_all_tx_columns("tx_columns.sqlite");
+    let columns = get_all_tx_columns(&conn);
     let expected_data = vec![
         "date".to_string(),
         "details".to_string(),

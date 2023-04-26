@@ -1,4 +1,6 @@
-use crate::db::{get_all_txs, get_month_name};
+use crate::db::{MONTHS, YEARS};
+use crate::page_handler::IndexedData;
+use crate::utility::{get_all_txs, get_month_name};
 use rusqlite::Connection;
 use std::collections::HashMap;
 /// Contains the necessary information to construct the Summary Page highlighting
@@ -16,7 +18,7 @@ pub struct SummaryData {
 
 impl SummaryData {
     /// Goes through all transactions to collect data for the summary
-    pub fn new(conn: &Connection) -> Self {
+    pub fn new(mode: &IndexedData, month: usize, year: usize, conn: &Connection) -> Self {
         // * create a default value in case of no data available
         let mut default = SummaryData {
             tags_income: HashMap::new(),
@@ -29,12 +31,24 @@ impl SummaryData {
             total_expense: 0.0,
         };
 
-        // * start collecting transaction based on month
-        for year in 0..4 {
-            for month in 0..12 {
-                default.collect_data(conn, month, year);
+        match mode.index {
+            0 => {
+                default.collect_data(month, year, conn);
             }
-        }
+            1 => {
+                for i in 0..MONTHS.len() {
+                    default.collect_data(i, year, conn);
+                }
+            }
+            2 => {
+                for x in 0..YEARS.len() {
+                    for i in 0..MONTHS.len() {
+                        default.collect_data(i, x, conn);
+                    }
+                }
+            }
+            _ => {}
+        };
 
         default
     }
@@ -81,11 +95,11 @@ impl SummaryData {
     }
 
     /// Collects data from the given month and year, updates SummaryData with relevant information
-    fn collect_data(&mut self, conn: &Connection, month: usize, year: usize) {
+    fn collect_data(&mut self, month: usize, year: usize, conn: &Connection) {
         let mut total_income = 0.0;
         let mut total_expense = 0.0;
 
-        let (cu_month, cu_year) = get_month_name(month, year);
+        let (current_month, current_year) = get_month_name(month, year);
 
         let (all_tx, ..) = get_all_txs(conn, month, year);
         for tx in all_tx {
@@ -127,13 +141,19 @@ impl SummaryData {
         }
 
         if total_income > self.income_date.0 {
-            self.income_date = (total_income, format!("{} of {}", cu_month, cu_year));
+            self.income_date = (
+                total_income,
+                format!("{} of {}", current_month, current_year),
+            );
         }
         if total_expense > self.expense_date.0 {
-            self.expense_date = (total_expense, format!("{} of {}", cu_month, cu_year));
+            self.expense_date = (
+                total_expense,
+                format!("{} of {}", current_month, current_year),
+            );
         }
 
-        self.total_income = total_income + self.total_income;
-        self.total_expense = total_expense + self.total_expense;
+        self.total_income += total_income;
+        self.total_expense += total_expense;
     }
 }

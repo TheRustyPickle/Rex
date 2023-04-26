@@ -1,56 +1,69 @@
 extern crate rex;
 use rex::db::*;
+use rex::page_handler::IndexedData;
 use rex::summary_page::SummaryData;
+use rex::tx_handler::add_tx;
 use rusqlite::Connection;
 use std::fs;
 
 fn create_test_db(file_name: &str) -> Connection {
-    create_db(file_name, vec!["test1".to_string(), "test 2".to_string()]).unwrap();
-    Connection::open(file_name).unwrap()
+    if let Ok(metadata) = fs::metadata(file_name) {
+        if metadata.is_file() {
+            fs::remove_file(file_name).expect("Failed to delete existing file");
+        }
+    }
+
+    let mut conn = Connection::open(file_name).unwrap();
+    create_db(vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    conn
 }
 
 #[test]
 fn check_summary_data() {
     let file_name = "summary_data.sqlite";
-    let conn = create_test_db(&file_name);
+    let mut conn = create_test_db(&file_name);
 
-    add_new_tx(
+    add_tx(
         "2022-08-19",
         "Testing transaction",
         "test1",
         "159.00",
         "Expense",
         "Car",
-        file_name,
         None,
+        &mut conn,
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2023-07-19",
         "Testing transaction",
         "test 2",
         "159.19",
         "Income",
         "Food",
-        file_name,
         None,
+        &mut conn,
     )
     .unwrap();
 
-    add_new_tx(
+    add_tx(
         "2024-07-19",
         "Testing transaction",
         "test1",
         "159.19",
         "Income",
         "Food",
-        file_name,
         None,
+        &mut conn,
     )
     .unwrap();
 
-    let my_summary = SummaryData::new(&conn);
+    let mut summary_modes = IndexedData::new_modes();
+    summary_modes.next();
+    summary_modes.next();
+
+    let my_summary = SummaryData::new(&summary_modes, 0, 0, &conn);
     let my_summary_text = my_summary.get_table_data();
     let my_summary_text_2 = my_summary.get_tx_data();
 

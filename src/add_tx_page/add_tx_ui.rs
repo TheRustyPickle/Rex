@@ -8,34 +8,40 @@ use tui::text::{Span, Spans};
 use tui::widgets::{Block, Paragraph};
 use tui::Frame;
 
-/// The function draws the Transfer page of the interface.
-pub fn transfer_ui<B: Backend>(
-    f: &mut Frame<B>,
-    transfer_data: &TxData,
-    currently_selected: &TxTab,
-) {
-    let input_data = transfer_data.get_all_texts();
-    let status_data = transfer_data.get_tx_status();
-    let current_index = transfer_data.get_current_index();
+/// The function draws the Add Transaction page of the interface.
+pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_selected: &TxTab) {
+    // get the data to insert into the Status widget of this page
+    let status_data = add_tx_data.get_tx_status();
+    // * Contains date, details, from method, to method, amount, tx type, tags.
+    // Except to method, rest will be used for the widgets
+    let input_data = add_tx_data.get_all_texts();
+    // The index of the cursor position
+    let current_index = add_tx_data.get_current_index();
+
     let size = f.size();
 
-    // divide the terminal into various chunks to draw the interface. This is a vertical chunk
+    // divide the terminal into 4 parts vertically
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
         .constraints(
             [
+                // helper chunk
                 Constraint::Length(13),
+                // input chunk
                 Constraint::Length(3),
+                // details input chunk
                 Constraint::Length(3),
+                // status chunk
                 Constraint::Percentage(25),
             ]
             .as_ref(),
         )
         .split(size);
 
-    // We will now cut down a single vertical chunk into multiple horizontal chunk.
-    let first_chunk = Layout::default()
+    // divide the second chunk into 5 parts horizontally
+    // this chunk contains the input boxes take takes input
+    let input_chunk = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(
             [
@@ -49,6 +55,7 @@ pub fn transfer_ui<B: Backend>(
         )
         .split(chunks[1]);
 
+    // creates border around the entire terminal
     let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
     f.render_widget(block, size);
 
@@ -56,16 +63,16 @@ pub fn transfer_ui<B: Backend>(
     let unmodified_help_text = "Press the respective keys to edit fields.
 1: Date         Example: 2022-05-12, YYYY-MM-DD
 2: TX details   Example: For Grocery, Salary
-3: From Method  Example: Cash, Bank, Card
-4: To Method    Example: Cash, Bank, Card
-5: Amount       Example: 1000, 100+50
+3: TX Method    Example: Cash, Bank, Card
+4: Amount       Example: 1000, 100+50, b - 100
+5: TX Type      Example: Income/Expense/I/E
 6: TX Tags      Example: Empty, Food, Car. Add a Comma for a new tag
 S: Save the inputted data as a Transaction
 H: Shows further detailed help info
 Enter: Submit field and continue
-Esc: Stop editing filed
-";
+Esc: Stop editing filed";
 
+    // highlight texts before the first color to Bold
     let help_text = create_bolded_text(unmodified_help_text);
 
     let mut status_text = vec![];
@@ -92,99 +99,95 @@ Esc: Stop editing filed
             ]));
         }
     }
+
     // We already fetched the data for each of these. Assign them now and then use them to load the widget
     let date_text = vec![Spans::from(input_data[0])];
 
     let details_text = vec![Spans::from(input_data[1])];
 
-    let from_text = vec![Spans::from(input_data[2])];
-
-    let to_text = vec![Spans::from(input_data[3])];
+    let tx_method_text = vec![Spans::from(input_data[2])];
 
     let amount_text = vec![Spans::from(input_data[4])];
 
-    // * 5th index is the tx type which is not necessary for the transfer ui
+    let tx_type_text = vec![Spans::from(input_data[5])];
+
     let tags_text = vec![Spans::from(input_data[6])];
 
     // creates the widgets to ready it for rendering
-    let help_sec = Paragraph::new(help_text)
+    let help_sec = Paragraph::new(help_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Help"))
         .alignment(Alignment::Left);
 
-    let status_sec = Paragraph::new(status_text)
+    let status_sec = Paragraph::new(status_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Status"))
         .alignment(Alignment::Left);
 
-    let date_sec = Paragraph::new(date_text)
+    let date_sec = Paragraph::new(date_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Date"))
         .alignment(Alignment::Left);
 
-    let from_sec = Paragraph::new(from_text)
+    let tx_method_sec = Paragraph::new(tx_method_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("From Method"))
+        .block(styled_block("TX Method"))
         .alignment(Alignment::Left);
 
-    let to_sec = Paragraph::new(to_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("To Method"))
-        .alignment(Alignment::Left);
-
-    let amount_sec = Paragraph::new(amount_text)
+    let amount_sec = Paragraph::new(amount_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Amount"))
         .alignment(Alignment::Left);
 
-    let details_sec = Paragraph::new(details_text)
+    let tx_type_sec = Paragraph::new(tx_type_text.clone())
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
+        .block(styled_block("TX Type"))
+        .alignment(Alignment::Left);
+
+    let details_sec = Paragraph::new(details_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Details"))
         .alignment(Alignment::Left);
 
-    let tags_sec = Paragraph::new(tags_text)
+    let tags_sec = Paragraph::new(tags_text.clone())
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Tags"))
         .alignment(Alignment::Left);
 
-    // We will be adding a cursor/box based on which tab is selected.
+    // We will be adding a cursor based on which tab is selected + the selected index.
     // This was created utilizing the tui-rs example named user_input.rs
     match currently_selected {
         TxTab::Date => f.set_cursor(
-            first_chunk[0].x + current_index as u16 + 1,
-            first_chunk[0].y + 1,
+            input_chunk[0].x + current_index as u16 + 1,
+            input_chunk[0].y + 1,
         ),
         TxTab::Details => f.set_cursor(chunks[2].x + current_index as u16 + 1, chunks[2].y + 1),
         TxTab::FromMethod => f.set_cursor(
-            first_chunk[1].x + current_index as u16 + 1,
-            first_chunk[1].y + 1,
+            input_chunk[1].x + current_index as u16 + 1,
+            input_chunk[1].y + 1,
         ),
-        TxTab::ToMethod => f.set_cursor(
-            first_chunk[2].x + current_index as u16 + 1,
-            first_chunk[2].y + 1,
-        ),
-        // The text of this goes into the middle so couldn't find a better place to insert the input box
         TxTab::Amount => f.set_cursor(
-            first_chunk[3].x + current_index as u16 + 1,
-            first_chunk[3].y + 1,
+            input_chunk[2].x + current_index as u16 + 1,
+            input_chunk[2].y + 1,
+        ),
+        TxTab::TxType => f.set_cursor(
+            input_chunk[3].x + current_index as u16 + 1,
+            input_chunk[3].y + 1,
         ),
         TxTab::Tags => f.set_cursor(
-            first_chunk[4].x + current_index as u16 + 1,
-            first_chunk[4].y + 1,
+            input_chunk[4].x + current_index as u16 + 1,
+            input_chunk[4].y + 1,
         ),
         _ => {}
     }
 
     // render the previously generated data into an interface
-    f.render_widget(date_sec, first_chunk[0]);
-    f.render_widget(details_sec, chunks[2]);
-    f.render_widget(tags_sec, first_chunk[4]);
-
     f.render_widget(help_sec, chunks[0]);
+    f.render_widget(details_sec, chunks[2]);
     f.render_widget(status_sec, chunks[3]);
-
-    f.render_widget(from_sec, first_chunk[1]);
-    f.render_widget(to_sec, first_chunk[2]);
-
-    f.render_widget(amount_sec, first_chunk[3]);
+    f.render_widget(date_sec, input_chunk[0]);
+    f.render_widget(tx_method_sec, input_chunk[1]);
+    f.render_widget(amount_sec, input_chunk[2]);
+    f.render_widget(tx_type_sec, input_chunk[3]);
+    f.render_widget(tags_sec, input_chunk[4]);
 }

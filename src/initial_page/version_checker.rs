@@ -6,9 +6,8 @@ struct Version {
 }
 
 /// Uses Github API to get the latest release version number to check if the current version matches with it.
-/// If not, we will start the new version pop up
 pub fn check_version() -> Result<bool, reqwest::Error> {
-    let cu_version = "v0.1.5".to_string();
+    let current_version = "v0.1.6".to_string();
     static APP_USER_AGENT: &str = "Rex";
 
     let client = reqwest::blocking::Client::builder()
@@ -17,10 +16,10 @@ pub fn check_version() -> Result<bool, reqwest::Error> {
         .build()?;
 
     let caller: Version = client
-        .get("https://api.github.com/repos/WaffleMixer/Rex/releases/latest")
+        .get("https://api.github.com/repos/TheRustyPickle/Rex/releases/latest")
         .send()?
         .json()?;
-    if cu_version != caller.name {
+    if current_version != caller.name {
         Ok(true)
     } else {
         Ok(false)
