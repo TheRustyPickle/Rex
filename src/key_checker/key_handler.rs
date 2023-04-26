@@ -159,7 +159,14 @@ impl<'a> InputKeyHandler<'a> {
 
     /// Turns on help popup
     pub fn do_help_popup(&mut self) {
-        *self.popup = PopupState::Helper
+        match self.page {
+            CurrentUi::Home => *self.popup = PopupState::HomeHelp,
+            CurrentUi::AddTx => *self.popup = PopupState::AddTxHelp,
+            CurrentUi::Transfer => *self.popup = PopupState::TransferHelp,
+            CurrentUi::Chart => *self.popup = PopupState::ChartHelp,
+            CurrentUi::Summary => *self.popup = PopupState::SummaryHelp,
+            _ => {}
+        }
     }
 
     /// Removes popup status

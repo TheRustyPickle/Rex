@@ -1,5 +1,5 @@
-extern crate rex;
-use rex::db::{add_new_tx_methods, create_db};
+extern crate rex_tui;
+use rex_tui::db::{add_new_tx_methods, create_db};
 use rusqlite::Connection;
 use std::fs;
 

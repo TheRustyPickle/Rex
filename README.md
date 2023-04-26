@@ -1,41 +1,39 @@
 <div align="center"><h1>Rex</h1></div>
 <p align=center><a href="https://wakatime.com/badge/github/TheRustyPickle/Rex.svg"><img src="https://wakatime.com/badge/github/TheRustyPickle/Rex.svg" alt="wakatime"></a></p>
 
-A terminal based interface to keep track of income, expense and transactions, written in Rust and uses tui-rs for the interface. Stores the data in a local sqlite database and works fully offline.
+Rex is a terminal user interface app for managing income, expenses, and transactions. Built with Rust and tui-rs with a simple interface that's easy to use.
 
-<img src="https://dl.dropboxusercontent.com/s/ecnixug3vus2bj7/Rex_1.png" alt="Rex_1" width="48%" > <img src="https://dl.dropboxusercontent.com/s/uzi0ft4aw5u68gf/Rex_2.png" alt="Rex_2" width="48%" >
+![new_rex](https://user-images.githubusercontent.com/35862475/234666900-317aaece-6955-4e15-a92b-b4cb2d3daf4a.png)
 
 
+<h2>Getting Started</h2>
 
-<h4>How to run Option 1</h4>
-
-- Clone the repository
+**1. Run from Source Code:**
+* Clone the repository
 `
 git clone https://github.com/TheRustyPickle/Rex
 `
-- Run with Cargo
+* Run with Cargo
 `
-cargo run
+cargo run -- release
 `
 
-<h4>How to run Option 2</h4>
-
-- Download the latest executable from [Releases](https://github.com/TheRustyPickle/Rex/releases).
-  - Open terminal/CMD and start the program by the command `./rex` or `rex` depending on the OS at the correct directory.
+**2. Run the Latest Release:**
+* Download the latest executable from [Releases](https://github.com/TheRustyPickle/Rex/releases).
+  * Open terminal/CMD and start the program by the command `./rex` or `rex` depending on the OS at the correct directory.
   
   or
   
-  - Double click the executable which will try to open a terminal/CMD by itself. 
+  * Double click the executable which will try to open a terminal/CMD by itself. 
 
-<h4>How to run Option 3</h4>
+**3. Install from Cargo:**
+* Run `cargo install --git https://github.com/TheRustyPickle/Rex.git`
+* Make sure `~/.cargo/bin` is on path if you're on linux
 
-- Run `cargo install --git https://github.com/TheRustyPickle/Rex.git`
-- Make sure `~/.cargo/bin` is on path if you're on linux
+<h2>App Data Location</h2>
 
-<h4>App Data Location</h4>
+See [here](https://docs.rs/dirs/latest/dirs/fn.data_local_dir.html) for location info where Rex data is saved which is determined based on the OS. 
 
-[See Here](https://docs.rs/dirs/latest/dirs/fn.data_local_dir.html) for location info which is determined based on the OS. If you are using an old version, you can manually move `data.sqlite` to the directory above to use it with existing data.
+<h2>Feedback & Bug Reports</h2>
 
-<h4>Status</h4>
-
-More features are unlikely to be added unless something useful is suggested. 
+For any feedback, improvement suggestions or bugs please [open an issue](https://github.com/TheRustyPickle/Rex/issues/new)

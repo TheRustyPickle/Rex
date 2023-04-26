@@ -1,8 +1,8 @@
-extern crate rex;
-use rex::db::*;
-use rex::page_handler::IndexedData;
-use rex::summary_page::SummaryData;
-use rex::tx_handler::add_tx;
+extern crate rex_tui;
+use rex_tui::db::*;
+use rex_tui::page_handler::IndexedData;
+use rex_tui::summary_page::SummaryData;
+use rex_tui::tx_handler::add_tx;
 use rusqlite::Connection;
 use std::fs;
 

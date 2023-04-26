@@ -1,5 +1,5 @@
 use dirs::data_local_dir;
-use rex::page_handler::initialize_app;
+use rex_tui::page_handler::initialize_app;
 use std::env::{current_dir, set_current_dir};
 use std::fs;
 

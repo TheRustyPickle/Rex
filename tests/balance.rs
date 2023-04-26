@@ -1,8 +1,8 @@
-extern crate rex;
+extern crate rex_tui;
 use chrono::{naive::NaiveDate, Duration};
-use rex::db::create_db;
-use rex::tx_handler::*;
-use rex::utility::*;
+use rex_tui::db::create_db;
+use rex_tui::tx_handler::*;
+use rex_tui::utility::*;
 use rusqlite::{Connection, Result as sqlResult};
 use std::collections::HashMap;
 use std::fs;
