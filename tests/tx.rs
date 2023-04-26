@@ -1,7 +1,7 @@
-extern crate rex;
-use rex::db::create_db;
-use rex::tx_handler::add_tx;
-use rex::utility::*;
+extern crate rex_tui;
+use rex_tui::db::create_db;
+use rex_tui::tx_handler::add_tx;
+use rex_tui::utility::*;
 use rusqlite::{Connection, Result as sqlResult};
 use std::fs;
 

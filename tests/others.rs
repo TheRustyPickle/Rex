@@ -1,8 +1,8 @@
-extern crate rex;
-use rex::db::create_db;
-use rex::outputs::{AType, NAType, VerifyingOutput};
-use rex::utility::traits::DataVerifier;
-use rex::utility::*;
+extern crate rex_tui;
+use rex_tui::db::create_db;
+use rex_tui::outputs::{AType, NAType, VerifyingOutput};
+use rex_tui::utility::traits::DataVerifier;
+use rex_tui::utility::*;
 use rusqlite::Connection;
 use std::fs;
 
