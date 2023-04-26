@@ -74,27 +74,31 @@ pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
         upper_text.push('\n');
     }
     let unmodified_second_text = "Arrow Key: Navigate
+F: Home Page
 A: Add Transaction Page
 T: Add Transfer Page
-R: Balance Chart
-Z: Transaction Summary
-F: Home Page
+R: Chart Page
+Z: Summary Page
 D: Delete selected Transaction (Home Page)
 J: Add new Transaction Methods (Home Page)
 E: Edit Selected Transaction (Home Page)
-H: Open Help
+H: Open Help (Use for detailed help)
 Q: Quit
 
 Add Transaction/Transfer Page:
-1: Edit Date           4: Edit Amount/To Method
-2: Edit TX details     5: Edit TX Type/Amount
-3: Edit TX/From Method 6: Edit Tags  
-
-Arrow Up/Down: Step up/down one value
-Arrow Left/Right: Move cursor left/right
+1: Edit Date           
+2: Edit TX details     
+3: Edit TX/From Method
+4: Edit Amount/To Method 
+5: Edit TX Type/Amount
+6: Edit Tags  
 S: Save inputted data as a Transaction
 Enter: Submit a field and continue
 Esc: Stop editing a filed
+
+Other Pages:
+Arrow Up/Down: Cycle widgets
+Arrow Left/Right: Move value of the widget
 ";
 
     // bold a part of the text before rendering
