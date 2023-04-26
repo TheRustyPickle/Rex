@@ -1,6 +1,13 @@
 <div align="center"><h1>Rex</h1></div>
-<p align=center><a href="https://wakatime.com/badge/github/TheRustyPickle/Rex.svg"><img src="https://wakatime.com/badge/github/TheRustyPickle/Rex.svg" alt="wakatime"></a></p>
-
+<div align="center">
+<a href="https://wakatime.com/@RustyPickle"><img src="https://wakatime.com/badge/github/TheRustyPickle/Rex.svg" alt="wakatime"></a>
+<a href="https://crates.io/crates/rex-tui">
+<img src="https://img.shields.io/crates/v/rex-tui.svg?style=flat-square&logo=rust&color=orange"/></a>
+<a href="https://github.com/TheRustyPickle/Rex/releases">
+<img src="https://img.shields.io/github/v/release/TheRustyPickle/Rex?style=flat-square&logo=github&color=orange"/></a>
+<a href="https://crates.io/crates/rex-tui">
+<img src="https://img.shields.io/crates/d/rex-tui.svg?style=flat-square"/></a>
+</div>
 Rex is a terminal user interface app for managing income, expenses, and transactions. Built with Rust and tui-rs with a simple interface that's easy to use.
 
 ![new_rex](https://user-images.githubusercontent.com/35862475/234666900-317aaece-6955-4e15-a92b-b4cb2d3daf4a.png)
