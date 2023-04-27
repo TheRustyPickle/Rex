@@ -6,7 +6,7 @@
 <a href="https://github.com/TheRustyPickle/Rex/releases">
 <img src="https://img.shields.io/github/v/release/TheRustyPickle/Rex?style=flat-square&logo=github&color=orange"/></a>
 <a href="https://crates.io/crates/rex-tui">
-<img src="https://img.shields.io/crates/d/rex-tui.svg?style=flat-square"/></a>
+<img src="https://img.shields.io/crates/d/rex-tui?style=flat-square"/></a>
 </div>
 Rex is a terminal user interface app for managing income, expenses, and transactions. Built with Rust and tui-rs with a simple interface that's easy to use.
 
