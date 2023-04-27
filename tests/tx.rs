@@ -203,6 +203,7 @@ fn check_tx_columns() {
         "tags".to_string(),
     ];
 
+    conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(columns, expected_data);
