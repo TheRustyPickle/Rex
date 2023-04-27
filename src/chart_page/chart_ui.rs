@@ -168,7 +168,7 @@ pub fn chart_ui<B: Backend>(
         } else if total_loop > 200.0 {
             (total_loop * 0.2) / 100.0
         } else if total_loop < 50.0 {
-            (total_loop * 0.5) / 100.0
+            (total_loop * 2.0) / 100.0
         } else {
             1.0
         };

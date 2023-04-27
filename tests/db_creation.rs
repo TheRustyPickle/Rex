@@ -23,6 +23,7 @@ fn check_db_creation() {
             db_found = true;
         }
     }
+    conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert!(db_found)
@@ -41,6 +42,7 @@ fn check_adding_new_tx_method() {
     create_db(vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
 
     let status = add_new_tx_methods(vec!["test3".to_string(), "test 4".to_string()], &mut conn);
+    conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(status, Ok(()))
