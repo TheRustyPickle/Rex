@@ -22,7 +22,7 @@ git clone https://github.com/TheRustyPickle/Rex
 `
 * Run with Cargo
 `
-cargo run -- release
+cargo run --release
 `
 
 **2. Run the Latest Release:**
@@ -34,7 +34,7 @@ cargo run -- release
   * Double click the executable which will try to open a terminal/CMD by itself. 
 
 **3. Install from Cargo:**
-* Run `cargo install --git https://github.com/TheRustyPickle/Rex.git`
+* Run `cargo install rex-tui`
 * Make sure `~/.cargo/bin` is on path if you're on linux
 
 <h2>App Data Location</h2>
