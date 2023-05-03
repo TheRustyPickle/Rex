@@ -2,13 +2,14 @@ use crate::page_handler::{
     HomeTab, IndexedData, TableData, BACKGROUND, BLUE, BOX, HEADER, HIGHLIGHTED, RED, SELECTED,
     TEXT,
 };
-use crate::utility::{get_all_tx_methods, styled_block};
+use crate::utility::{get_all_tx_methods, main_block, styled_block};
 use rusqlite::Connection;
+use thousands::Separable;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
-use tui::widgets::{Block, Cell, Row, Table, Tabs};
+use tui::widgets::{Cell, Row, Table, Tabs};
 use tui::Frame;
 
 /// The function draws the Home page of the interface.
@@ -42,7 +43,9 @@ pub fn home_ui<B: Backend>(
     // iter through table data and turn them into rows and columns
     let rows = table.items.iter().map(|item| {
         let height = 1;
-        let cells = item.iter().map(|c| Cell::from(c.to_string()));
+        let cells = item
+            .iter()
+            .map(|c| Cell::from(c.to_string().separate_with_commas()));
         Row::new(cells)
             .height(height as u16)
             .bottom_margin(0)
@@ -74,8 +77,7 @@ pub fn home_ui<B: Backend>(
         )
         .split(size);
 
-    let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
-    f.render_widget(block, size);
+    f.render_widget(main_block(), size);
 
     let month_titles = months
         .titles
@@ -133,11 +135,12 @@ pub fn home_ui<B: Backend>(
     let bal_data = balance.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| {
+            let c = c.separate_with_commas();
             if c.contains('↑') {
                 Cell::from(c.to_string()).style(Style::default().fg(BLUE))
             } else if c.contains('↓') {
                 Cell::from(c.to_string()).style(Style::default().fg(RED))
-            } else if all_methods.contains(c)
+            } else if all_methods.contains(&c)
                 || c == "Balance"
                 || c == "Changes"
                 || c == "Total"
