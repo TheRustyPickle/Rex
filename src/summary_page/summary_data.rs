@@ -1,6 +1,6 @@
 use crate::db::{MONTHS, YEARS};
 use crate::page_handler::IndexedData;
-use crate::utility::get_all_txs;
+use crate::utility::{get_all_tx_methods, get_all_txs};
 use rusqlite::Connection;
 use std::collections::HashMap;
 /// Contains the necessary information to construct the Summary Page highlighting
@@ -24,9 +24,12 @@ impl SummaryData {
         SummaryData { all_txs }
     }
 
+    /// Iters through the given transactions to collect earning and expense data
     fn get_data(
         &self,
         txs: &Vec<Vec<String>>,
+        method_earning: &mut HashMap<String, f64>,
+        method_expense: &mut HashMap<String, f64>,
     ) -> (
         f64,
         f64,
@@ -57,6 +60,8 @@ impl SummaryData {
                     }
                     total_income += tx_amount;
                     monthly_earning += tx_amount;
+
+                    *method_earning.get_mut(tx_method).unwrap() += tx_amount;
                 }
                 "Expense" => {
                     if tx_amount > biggest_expense.0 {
@@ -64,6 +69,8 @@ impl SummaryData {
                     }
                     total_expense += tx_amount;
                     monthly_expense += tx_amount;
+
+                    *method_expense.get_mut(tx_method).unwrap() += tx_amount;
                 }
                 _ => {}
             }
@@ -81,7 +88,6 @@ impl SummaryData {
 
     /// Returns a vector that will be used to creating table in the Summary UI
     /// The vector contains tags and their income and expense data
-    /// TODO % column
     pub fn get_table_data(
         &self,
         mode: &IndexedData,
@@ -210,24 +216,38 @@ impl SummaryData {
         mode: &IndexedData,
         month: usize,
         year: usize,
+        conn: &Connection,
     ) -> (
         Vec<Vec<String>>,
         Vec<Vec<String>>,
         Vec<Vec<String>>,
         Vec<Vec<String>>,
+        Vec<Vec<String>>,
     ) {
+        let all_methods = get_all_tx_methods(conn);
         let mut total_income: f64 = 0.0;
         let mut total_expense: f64 = 0.0;
-        // (100.0, bank, date)
+
+        // (Amount, Method, date)
         let mut biggest_earning = (0.0, String::from("-"), String::from("-"));
         let mut biggest_expense = (0.0, String::from("-"), String::from("-"));
-        // (100.0, month of year)
+
         let mut largest_monthly_earning = 0.0;
         let mut largest_monthly_expense = 0.0;
 
+        // (Amount, Method, date)
         let mut peak_earning = (0.0, String::from("-"));
         let mut peak_expense = (0.0, String::from("-"));
         let mut total_year_checked = 0.0;
+
+        // {Method Name, Amount}
+        let mut method_earning = HashMap::new();
+        let mut method_expense = HashMap::new();
+
+        for method in &all_methods {
+            method_earning.insert(method.to_string(), 0.0);
+            method_expense.insert(method.to_string(), 0.0);
+        }
 
         match mode.index {
             0 => {
@@ -247,6 +267,8 @@ impl SummaryData {
                     &mut largest_monthly_expense,
                     &mut peak_earning,
                     &mut peak_expense,
+                    &mut method_earning,
+                    &mut method_expense,
                     month,
                     year,
                 )
@@ -269,6 +291,8 @@ impl SummaryData {
                         &mut largest_monthly_expense,
                         &mut peak_earning,
                         &mut peak_expense,
+                        &mut method_earning,
+                        &mut method_expense,
                         i,
                         year,
                     )
@@ -293,6 +317,8 @@ impl SummaryData {
                             &mut largest_monthly_expense,
                             &mut peak_earning,
                             &mut peak_expense,
+                            &mut method_earning,
+                            &mut method_expense,
                             i,
                             x,
                         )
@@ -316,6 +342,43 @@ impl SummaryData {
         } else {
             0.0
         };
+
+        let mut method_data = Vec::new();
+
+        for method in all_methods.iter() {
+            let earning_percentage = if method_earning[method] != 0.0 {
+                format!("{:.2}%", (method_earning[method] / total_income) * 100.0)
+            } else {
+                format!("{:.2}", 0.0)
+            };
+
+            let expense_percentage = if method_expense[method] != 0.0 {
+                format!("{:.2}%", (method_expense[method] / total_expense) * 100.0)
+            } else {
+                format!("{:.2}", 0.0)
+            };
+
+            let average_earning = if method_earning[method] != 0.0 {
+                format!("{:.2}", method_earning[method] / total_year_checked)
+            } else {
+                format!("{:.2}", 0.0)
+            };
+
+            let average_expense = if method_expense[method] != 0.0 {
+                format!("{:.2}", method_expense[method] / total_year_checked)
+            } else {
+                format!("{:.2}", 0.0)
+            };
+            method_data.push(vec![
+                method.to_string(),
+                format!("{:.2}", method_earning[method]),
+                format!("{:.2}", method_expense[method]),
+                earning_percentage,
+                expense_percentage,
+                average_earning,
+                average_expense,
+            ])
+        }
 
         let summary_data_1 = vec![
             vec![
@@ -383,6 +446,7 @@ impl SummaryData {
             summary_data_2,
             summary_data_3,
             summary_data_4,
+            method_data,
         )
     }
 
@@ -398,9 +462,12 @@ impl SummaryData {
         largest_monthly_expense: &mut f64,
         peak_earning: &mut (f64, String),
         peak_expense: &mut (f64, String),
+        method_earning: &mut HashMap<String, f64>,
+        method_expense: &mut HashMap<String, f64>,
         month: usize,
         year: usize,
     ) {
+        // gather all data from the given tx data
         let (
             current_total_income,
             current_total_expense,
@@ -408,7 +475,7 @@ impl SummaryData {
             current_biggest_expense,
             current_monthly_earning,
             current_monthly_expense,
-        ) = self.get_data(tx_data);
+        ) = self.get_data(tx_data, method_earning, method_expense);
 
         *total_income += current_total_income;
         *total_expense += current_total_expense;
@@ -445,15 +512,19 @@ impl SummaryData {
         expense_tags: HashMap<&str, f64>,
     ) -> Vec<Vec<String>> {
         let mut to_return = Vec::new();
+        let mut total_income = 0.0;
+        let mut total_expense = 0.0;
 
         for (key, value) in income_tags.iter() {
             let mut to_push = vec![key.to_string(), format!("{:.2}", value)];
+            total_income += value;
 
             // if the same tag already exists on expense, get that value as well
             if expense_tags.contains_key(key) {
                 to_push.push(format!("{:.2}", expense_tags[key]));
+                total_expense += expense_tags[key];
             } else {
-                to_push.push("0.00".to_string())
+                to_push.push(format!("{:.2}", 0.0))
             }
             to_return.push(to_push);
         }
@@ -463,11 +534,33 @@ impl SummaryData {
             if !income_tags.contains_key(key) {
                 to_return.push(vec![
                     key.to_string(),
-                    "0.00".to_string(),
+                    format!("{:.2}", 0.0),
                     format!("{:.2}", value),
-                ])
+                ]);
+                total_expense += value;
             }
         }
+        // we got the income and expense data earlier. Now need to loop again
+        // to gather the % data
+        for x in to_return.iter_mut() {
+            let income_percentage = if &x[1] != "0.00" {
+                let income = &x[1].parse::<f64>().unwrap();
+                format!("{:.3}", ((income / total_income) * 100.0))
+            } else {
+                format!("{:.2}", 0.0)
+            };
+
+            let expense_percentage = if &x[2] != "0.00" {
+                let expense = &x[2].parse::<f64>().unwrap();
+                format!("{:.3}", ((expense / total_expense) * 100.0))
+            } else {
+                format!("{:.2}", 0.0)
+            };
+
+            x.push(income_percentage);
+            x.push(expense_percentage);
+        }
+
         to_return
     }
 
