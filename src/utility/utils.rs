@@ -15,9 +15,10 @@ use std::{process, thread};
 use tui::backend::CrosstermBackend;
 use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders};
+use tui::widgets::{Block, BorderType, Borders};
 use tui::Terminal;
 
+// TODO rename
 /// Gives the month and year name by index
 pub fn get_month_name(month_index: usize, year_index: usize) -> (String, String) {
     (
@@ -268,6 +269,7 @@ pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
 pub fn styled_block(title: &str) -> Block {
     Block::default()
         .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
         .style(Style::default().bg(BACKGROUND).fg(BOX))
         .title(Span::styled(
             title,
@@ -275,7 +277,12 @@ pub fn styled_block(title: &str) -> Block {
         ))
 }
 
+pub fn main_block<'a>() -> Block<'a> {
+    Block::default().style(Style::default().bg(BACKGROUND).fg(BOX))
+}
+
 /// takes a string and makes any word before the first occurrence of : to Bold
+/// Used for rendering
 pub fn create_bolded_text(text: &str) -> Vec<Spans> {
     let mut text_data = Vec::new();
 

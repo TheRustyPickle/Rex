@@ -1,6 +1,6 @@
 use crate::chart_page::ChartData;
 use crate::page_handler::{ChartTab, IndexedData, BACKGROUND, BOX, HIGHLIGHTED, SELECTED, TEXT};
-use crate::utility::{get_all_tx_methods, styled_block};
+use crate::utility::{get_all_tx_methods, main_block, styled_block};
 use chrono::{naive::NaiveDate, Duration};
 use rusqlite::Connection;
 use tui::backend::Backend;
@@ -65,8 +65,7 @@ pub fn chart_ui<B: Backend>(
     let chunks = main_layout.split(size);
 
     // creates border around the entire terminal
-    let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
-    f.render_widget(block, size);
+    f.render_widget(main_block(), size);
 
     let month_titles = months
         .titles

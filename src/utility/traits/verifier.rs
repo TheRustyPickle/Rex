@@ -1,27 +1,25 @@
-use std::cmp::Ordering;
-
 use crate::outputs::{AType, NAType, VerifyingOutput};
 use crate::utility::get_all_tx_methods;
 use chrono::naive::NaiveDate;
 use rusqlite::Connection;
-
-/// Checks if:
-///
-/// - the date length is 10 characters
-/// - the inputted year is between 2022 to 2037
-/// - the inputted month is between 01 to 12
-/// - the inputted date is between 01 to 31
-/// - the inputted date is empty
-/// - contains any extra spaces
-/// - the date actually exists
-/// - removes any extra spaces and non-numeric characters
-///
-/// Finally, tries to correct the date if it was not accepted by
-/// adding 0 if the beginning if the length is smaller than necessary
-/// or restores to the smallest or the largest date if date is beyond the
-/// accepted value.
+use std::cmp::Ordering;
 
 pub trait DataVerifier {
+    /// Checks if:
+    ///
+    /// - the date length is 10 characters
+    /// - the inputted year is between 2022 to 2037
+    /// - the inputted month is between 01 to 12
+    /// - the inputted date is between 01 to 31
+    /// - the inputted date is empty
+    /// - contains any extra spaces
+    /// - the date actually exists
+    /// - removes any extra spaces and non-numeric characters
+    ///
+    /// Finally, tries to correct the date if it was not accepted by
+    /// adding 0 if the beginning if the length is smaller than necessary
+    /// or restores to the smallest or the largest date if date is beyond the
+    /// accepted value.
     fn verify_date(&self, user_date: &mut String) -> VerifyingOutput {
         // cancel other verification if there is no text
         if user_date.is_empty() {
