@@ -1,12 +1,10 @@
-use crate::page_handler::{BACKGROUND, BOX, RED, TEXT};
-use crate::utility::{create_bolded_text, styled_block};
-use tui::{
-    backend::Backend,
-    layout::{Alignment, Constraint, Direction, Layout},
-    style::{Modifier, Style},
-    widgets::{Block, Paragraph},
-    Frame,
-};
+use crate::page_handler::{BACKGROUND, RED, TEXT};
+use crate::utility::{create_bolded_text, main_block, styled_block};
+use tui::backend::Backend;
+use tui::layout::{Alignment, Constraint, Direction, Layout};
+use tui::style::{Modifier, Style};
+use tui::widgets::Paragraph;
+use tui::Frame;
 
 /// The function draws the Initial page of the interface.
 pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
@@ -24,8 +22,7 @@ pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
         )
         .split(size);
 
-    let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
-    f.render_widget(block, size);
+    f.render_widget(main_block(), size);
 
     // This is the text that is shown in the startup which is the project's name in ASCII format.
     let text = r#"   _____    ______  __   __

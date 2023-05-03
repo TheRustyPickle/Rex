@@ -71,7 +71,9 @@ impl<'a> InputKeyHandler<'a> {
         chart_hidden_mode: &'a mut bool,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
-        let total_tags = summary_data.get_table_data().len();
+        let total_tags = summary_data
+            .get_table_data(summary_modes, summary_months.index, summary_years.index)
+            .len();
         InputKeyHandler {
             key,
             page,
@@ -205,6 +207,7 @@ impl<'a> InputKeyHandler<'a> {
             *self.home_tab = HomeTab::Months;
             self.reload_home_table();
             self.reload_chart_data();
+            self.reload_summary_data();
         } else {
             self.add_tx_data.add_tx_status(status);
         }
@@ -263,6 +266,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.table.state.select(None);
                     *self.home_tab = HomeTab::Months;
                     self.reload_chart_data();
+                    self.reload_summary_data();
                 }
                 Err(err) => {
                     *self.popup = PopupState::DeleteFailed(err.to_string());
@@ -280,6 +284,7 @@ impl<'a> InputKeyHandler<'a> {
             self.go_home_reset();
             self.reload_home_table();
             self.reload_chart_data();
+            self.reload_summary_data();
         } else {
             self.transfer_data.add_tx_status(status);
         }
@@ -1024,18 +1029,21 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     fn reload_summary(&mut self) {
-        *self.summary_data = SummaryData::new(
+        let summary_table = self.summary_data.get_table_data(
             self.summary_modes,
             self.summary_months.index,
             self.summary_years.index,
-            self.conn,
         );
-        *self.summary_table = TableData::new(self.summary_data.get_table_data());
-        self.total_tags = self.summary_data.get_table_data().len();
+        self.total_tags = summary_table.len();
+        *self.summary_table = TableData::new(summary_table);
+    }
+
+    fn reload_summary_data(&mut self) {
+        *self.summary_data = SummaryData::new(self.conn);
     }
 
     fn reload_chart_data(&mut self) {
-        *self.chart_data = ChartData::set(self.conn);
+        *self.chart_data = ChartData::new(self.conn);
     }
 
     fn reload_chart(&mut self) {

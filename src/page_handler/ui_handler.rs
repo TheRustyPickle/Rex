@@ -93,21 +93,20 @@ pub fn start_app<B: Backend>(
     // Holds the data that will be/are inserted into the Transfer Tx page's input fields
     let mut transfer_data = TxData::new_transfer();
     // Holds the data that will be/are inserted into the Summary Page
-    let mut summary_data = SummaryData::new(
-        &summary_modes,
-        summary_months.index,
-        summary_years.index,
-        conn,
-    );
+    let mut summary_data = SummaryData::new(conn);
 
     // Holds the data that will be/are inserted into the Chart Page
-    let mut chart_data = ChartData::set(conn);
+    let mut chart_data = ChartData::new(conn);
 
     // Holds the popup data that will be/are inserted into the Popup page
     let mut popup_data = PopupData::new();
 
     // data for the Summary Page's table
-    let mut summary_table = TableData::new(summary_data.get_table_data());
+    let mut summary_table = TableData::new(summary_data.get_table_data(
+        &summary_modes,
+        summary_months.index,
+        summary_years.index,
+    ));
 
     // the initial page REX loading index
     let mut starter_index = 0;
