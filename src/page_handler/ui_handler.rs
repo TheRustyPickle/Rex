@@ -115,6 +115,8 @@ pub fn start_app<B: Backend>(
 
     let mut chart_hidden_mode = false;
 
+    let mut summary_hidden_mode = false;
+
     // how it work:
     // Default value from above -> Goes to an interface page and render -> Wait for an event key press.
     //
@@ -202,6 +204,8 @@ pub fn start_app<B: Backend>(
                         &summary_data,
                         &mut summary_table,
                         &summary_tab,
+                        summary_hidden_mode,
+                        conn,
                     ),
                 }
                 popup_data.create_popup(f, &popup_state)
@@ -255,6 +259,7 @@ pub fn start_app<B: Backend>(
                 &mut summary_modes,
                 &mut chart_index,
                 &mut chart_hidden_mode,
+                &mut summary_hidden_mode,
                 conn,
             );
 
