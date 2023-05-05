@@ -238,7 +238,7 @@ impl SummaryData {
         // (Amount, Method, date)
         let mut peak_earning = (0.0, String::from("-"));
         let mut peak_expense = (0.0, String::from("-"));
-        let mut total_year_checked = 0.0;
+        let mut total_month_checked = 0.0;
 
         // {Method Name, Amount}
         let mut method_earning = HashMap::new();
@@ -254,7 +254,7 @@ impl SummaryData {
                 let target_id = month as i32 + (year as i32 * 12);
                 let tx_data = &self.all_txs[&target_id];
                 if !tx_data.is_empty() {
-                    total_year_checked += 1.0;
+                    total_month_checked += 1.0;
                 }
 
                 self.update_tx_data(
@@ -278,7 +278,7 @@ impl SummaryData {
                     let target_id = i as i32 + (year as i32 * 12);
                     let tx_data = &self.all_txs[&target_id];
                     if !tx_data.is_empty() {
-                        total_year_checked += 1.0;
+                        total_month_checked += 1.0;
                     }
 
                     self.update_tx_data(
@@ -304,7 +304,7 @@ impl SummaryData {
                         let target_id = i as i32 + (x as i32 * 12);
                         let tx_data = &self.all_txs[&target_id];
                         if !tx_data.is_empty() {
-                            total_year_checked += 1.0;
+                            total_month_checked += 1.0;
                         }
 
                         self.update_tx_data(
@@ -332,13 +332,13 @@ impl SummaryData {
             self.get_percentages(total_income, total_expense);
 
         let average_income = if total_income != 0.0 {
-            total_income / total_year_checked
+            total_income / total_month_checked
         } else {
             0.0
         };
 
         let average_expense = if total_income != 0.0 {
-            total_expense / total_year_checked
+            total_expense / total_month_checked
         } else {
             0.0
         };
@@ -359,13 +359,13 @@ impl SummaryData {
             };
 
             let average_earning = if method_earning[method] != 0.0 {
-                format!("{:.2}", method_earning[method] / total_year_checked)
+                format!("{:.2}", method_earning[method] / total_month_checked)
             } else {
                 format!("{:.2}", 0.0)
             };
 
             let average_expense = if method_expense[method] != 0.0 {
-                format!("{:.2}", method_expense[method] / total_year_checked)
+                format!("{:.2}", method_expense[method] / total_month_checked)
             } else {
                 format!("{:.2}", 0.0)
             };
@@ -423,6 +423,12 @@ impl SummaryData {
                 biggest_expense.2,
                 format!("{:.2}", biggest_expense.0),
                 biggest_expense.1,
+            ],
+            vec![
+                String::from("Months Checked"),
+                total_month_checked.to_string(),
+                String::from("-"),
+                String::from("-"),
             ],
         ];
 
@@ -545,14 +551,14 @@ impl SummaryData {
         for x in to_return.iter_mut() {
             let income_percentage = if &x[1] != "0.00" {
                 let income = &x[1].parse::<f64>().unwrap();
-                format!("{:.3}", ((income / total_income) * 100.0))
+                format!("{:.2}", ((income / total_income) * 100.0))
             } else {
                 format!("{:.2}", 0.0)
             };
 
             let expense_percentage = if &x[2] != "0.00" {
                 let expense = &x[2].parse::<f64>().unwrap();
-                format!("{:.3}", ((expense / total_expense) * 100.0))
+                format!("{:.2}", ((expense / total_expense) * 100.0))
             } else {
                 format!("{:.2}", 0.0)
             };
