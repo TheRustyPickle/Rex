@@ -666,13 +666,11 @@ impl<'a> InputKeyHandler<'a> {
                 },
                 _ => {}
             }
-        } else {
-            if self.total_tags > 0 {
-                if self.summary_table.state.selected() == Some(0) {
-                    self.summary_table.state.select(Some(self.total_tags - 1));
-                } else {
-                    self.summary_table.previous()
-                }
+        } else if self.total_tags > 0 {
+            if self.summary_table.state.selected() == Some(0) {
+                self.summary_table.state.select(Some(self.total_tags - 1));
+            } else {
+                self.summary_table.previous()
             }
         }
     }
@@ -742,13 +740,11 @@ impl<'a> InputKeyHandler<'a> {
                 },
                 _ => {}
             }
-        } else {
-            if self.total_tags > 0 {
-                if self.summary_table.state.selected() == Some(self.total_tags - 1) {
-                    self.summary_table.state.select(Some(0));
-                } else {
-                    self.summary_table.next()
-                }
+        } else if self.total_tags > 0 {
+            if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                self.summary_table.state.select(Some(0));
+            } else {
+                self.summary_table.next()
             }
         }
     }

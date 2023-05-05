@@ -158,9 +158,7 @@ pub fn summary_ui<B: Backend>(
     // Goes through all tags provided and creates row for the table
     let rows = table_data.items.iter().map(|item| {
         let height = 1;
-        let cells = item
-            .iter()
-            .map(|c| Cell::from(c.to_string().separate_with_commas()));
+        let cells = item.iter().map(|c| Cell::from(c.separate_with_commas()));
         Row::new(cells)
             .height(height as u16)
             .bottom_margin(0)
@@ -170,7 +168,7 @@ pub fn summary_ui<B: Backend>(
     let summary_rows_1 = summary_table_1.items.iter().map(|item| {
         let height = 1;
         let cells = item.iter().enumerate().map(|(j, c)| {
-            let mut cell = Cell::from(c.to_string().separate_with_commas());
+            let mut cell = Cell::from(c.separate_with_commas());
             if j == 0 {
                 cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
             }
@@ -185,7 +183,7 @@ pub fn summary_ui<B: Backend>(
     let summary_rows_2 = summary_table_2.items.iter().map(|item| {
         let height = 1;
         let cells = item.iter().enumerate().map(|(j, c)| {
-            let mut cell = Cell::from(c.to_string().separate_with_commas());
+            let mut cell = Cell::from(c.separate_with_commas());
             if j == 0 {
                 cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
             }
@@ -200,7 +198,7 @@ pub fn summary_ui<B: Backend>(
     let summary_rows_3 = summary_table_3.items.iter().map(|item| {
         let height = 1;
         let cells = item.iter().enumerate().map(|(j, c)| {
-            let mut cell = Cell::from(c.to_string().separate_with_commas());
+            let mut cell = Cell::from(c.separate_with_commas());
             if j == 0 {
                 cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
             }
@@ -215,7 +213,7 @@ pub fn summary_ui<B: Backend>(
     let summary_rows_4 = summary_table_4.items.iter().map(|item| {
         let height = 1;
         let cells = item.iter().enumerate().map(|(j, c)| {
-            let mut cell = Cell::from(c.to_string().separate_with_commas());
+            let mut cell = Cell::from(c.separate_with_commas());
             if j == 0 {
                 cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
             }
@@ -230,7 +228,7 @@ pub fn summary_ui<B: Backend>(
     let method_rows = method_table.items.iter().map(|item| {
         let height = 1;
         let cells = item.iter().enumerate().map(|(j, c)| {
-            let mut cell = Cell::from(c.to_string().separate_with_commas());
+            let mut cell = Cell::from(c.separate_with_commas());
             if j == 0 {
                 cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
             }

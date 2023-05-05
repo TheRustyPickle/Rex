@@ -41,9 +41,7 @@ pub fn home_ui<B: Backend>(
     // iter through table data and turn them into rows and columns
     let rows = table.items.iter().map(|item| {
         let height = 1;
-        let cells = item
-            .iter()
-            .map(|c| Cell::from(c.to_string().separate_with_commas()));
+        let cells = item.iter().map(|c| Cell::from(c.separate_with_commas()));
         Row::new(cells)
             .height(height as u16)
             .bottom_margin(0)
@@ -103,9 +101,9 @@ pub fn home_ui<B: Backend>(
         let cells = item.iter().map(|c| {
             let c = c.separate_with_commas();
             if c.contains('↑') {
-                Cell::from(c.to_string()).style(Style::default().fg(BLUE))
+                Cell::from(c).style(Style::default().fg(BLUE))
             } else if c.contains('↓') {
-                Cell::from(c.to_string()).style(Style::default().fg(RED))
+                Cell::from(c).style(Style::default().fg(RED))
             } else if all_methods.contains(&c)
                 || c == "Balance"
                 || c == "Changes"
@@ -113,9 +111,9 @@ pub fn home_ui<B: Backend>(
                 || c == "Income"
                 || c == "Expense"
             {
-                Cell::from(c.to_string()).style(Style::default().add_modifier(Modifier::BOLD))
+                Cell::from(c).style(Style::default().add_modifier(Modifier::BOLD))
             } else {
-                Cell::from(c.to_string())
+                Cell::from(c)
             }
         });
         Row::new(cells)
