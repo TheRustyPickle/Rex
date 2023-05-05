@@ -1,15 +1,14 @@
 use crate::page_handler::{
-    IndexedData, SummaryTab, TableData, BACKGROUND, BOX, HEADER, HIGHLIGHTED, SELECTED, TEXT,
+    IndexedData, SummaryTab, TableData, BACKGROUND, BOX, HEADER, SELECTED, TEXT,
 };
 use crate::summary_page::SummaryData;
-use crate::utility::{get_all_tx_methods, main_block, styled_block};
+use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block};
 use rusqlite::Connection;
 use thousands::Separable;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Modifier, Style};
-use tui::text::{Span, Spans};
-use tui::widgets::{Cell, Row, Table, Tabs};
+use tui::widgets::{Cell, Row, Table};
 use tui::Frame;
 
 /// The function draws the Summary page of the interface.
@@ -150,57 +149,11 @@ pub fn summary_ui<B: Backend>(
 
     f.render_widget(main_block(), size);
 
-    let month_titles = months
-        .titles
-        .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
-        .collect();
+    let mut month_tab = create_tab(months, "Months");
 
-    let year_titles = years
-        .titles
-        .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
-        .collect();
+    let mut year_tab = create_tab(years, "Years");
 
-    let mode_selection_titles = mode_selection
-        .titles
-        .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
-        .collect();
-
-    // The default style for the select index in the month section if
-    // the Month widget is not selected
-    let mut month_tab = Tabs::new(month_titles)
-        .block(styled_block("Months"))
-        .select(months.index)
-        .style(Style::default().fg(BOX))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(HIGHLIGHTED),
-        );
-
-    // The default style for the select index in the year section if
-    // the Year widget is not selected
-    let mut year_tab = Tabs::new(year_titles)
-        .block(styled_block("Years"))
-        .select(years.index)
-        .style(Style::default().fg(BOX))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(HIGHLIGHTED),
-        );
-
-    let mut mode_selection_tab = Tabs::new(mode_selection_titles)
-        .block(styled_block("Mode Selection"))
-        .select(mode_selection.index)
-        .style(Style::default().fg(BOX))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(HIGHLIGHTED),
-        );
+    let mut mode_selection_tab = create_tab(mode_selection, "Modes");
 
     // Goes through all tags provided and creates row for the table
     let rows = table_data.items.iter().map(|item| {
