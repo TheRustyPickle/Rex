@@ -124,7 +124,7 @@ fn check_summary_data() {
                 "test1".to_string(),
             ],
             vec![
-                "Total Months Checked".to_string(),
+                "Months Checked".to_string(),
                 "3".to_string(),
                 "-".to_string(),
                 "-".to_string(),
