@@ -1,13 +1,13 @@
 use crate::chart_page::ChartData;
-use crate::page_handler::{ChartTab, IndexedData, BACKGROUND, BOX, HIGHLIGHTED, SELECTED, TEXT};
-use crate::utility::{get_all_tx_methods, main_block, styled_block};
+use crate::page_handler::{ChartTab, IndexedData, BACKGROUND, BOX, SELECTED};
+use crate::utility::{create_tab, get_all_tx_methods, main_block};
 use chrono::{naive::NaiveDate, Duration};
 use rusqlite::Connection;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
-use tui::text::{Span, Spans};
-use tui::widgets::{Axis, Block, Chart, Dataset, GraphType, Tabs};
+use tui::text::Span;
+use tui::widgets::{Axis, Block, Chart, Dataset, GraphType};
 use tui::{symbols, Frame};
 
 /// Creates the balance chart from the transactions
@@ -67,54 +67,11 @@ pub fn chart_ui<B: Backend>(
     // creates border around the entire terminal
     f.render_widget(main_block(), size);
 
-    let month_titles = months
-        .titles
-        .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
-        .collect();
+    let mut month_tab = create_tab(months, "Months");
 
-    let year_titles = years
-        .titles
-        .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
-        .collect();
+    let mut year_tab = create_tab(years, "Years");
 
-    let mode_selection_titles = mode_selection
-        .titles
-        .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
-        .collect();
-
-    // creates the widgets to ready it for rendering
-    let mut month_tab = Tabs::new(month_titles)
-        .block(styled_block("Months"))
-        .select(months.index)
-        .style(Style::default().fg(BOX))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(HIGHLIGHTED),
-        );
-
-    let mut year_tab = Tabs::new(year_titles)
-        .block(styled_block("Years"))
-        .select(years.index)
-        .style(Style::default().fg(BOX))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(HIGHLIGHTED),
-        );
-
-    let mut mode_selection_tab = Tabs::new(mode_selection_titles)
-        .block(styled_block("Mode Selection"))
-        .select(mode_selection.index)
-        .style(Style::default().fg(BOX))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(HIGHLIGHTED),
-        );
+    let mut mode_selection_tab = create_tab(mode_selection, "Modes");
 
     let all_tx_methods = get_all_tx_methods(conn);
 
