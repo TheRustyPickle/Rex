@@ -1,11 +1,11 @@
-use crate::page_handler::{TxTab, BACKGROUND, BLUE, BOX, RED, TEXT};
+use crate::page_handler::{TxTab, BACKGROUND, BLUE, RED, TEXT};
 use crate::tx_handler::TxData;
-use crate::utility::{create_bolded_text, styled_block};
+use crate::utility::{create_bolded_text, main_block, styled_block};
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
-use tui::widgets::{Block, Paragraph};
+use tui::widgets::Paragraph;
 use tui::Frame;
 
 /// The function draws the Add Transaction page of the interface.
@@ -56,8 +56,7 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_s
         .split(chunks[1]);
 
     // creates border around the entire terminal
-    let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
-    f.render_widget(block, size);
+    f.render_widget(main_block(), size);
 
     // This is the details of the Help widget
     let unmodified_help_text = "Press the respective keys to edit fields.

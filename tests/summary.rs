@@ -27,7 +27,7 @@ fn check_summary_data() {
         "2022-08-19",
         "Testing transaction",
         "test1",
-        "159.00",
+        "100.00",
         "Expense",
         "Car",
         None,
@@ -39,7 +39,7 @@ fn check_summary_data() {
         "2023-07-19",
         "Testing transaction",
         "test 2",
-        "159.19",
+        "100.00",
         "Income",
         "Food",
         None,
@@ -51,7 +51,7 @@ fn check_summary_data() {
         "2024-07-19",
         "Testing transaction",
         "test1",
-        "159.19",
+        "100.00",
         "Income",
         "Food",
         None,
@@ -63,23 +63,108 @@ fn check_summary_data() {
     summary_modes.next();
     summary_modes.next();
 
-    let my_summary = SummaryData::new(&summary_modes, 0, 0, &conn);
-    let my_summary_text = my_summary.get_table_data();
-    let my_summary_text_2 = my_summary.get_tx_data();
+    let my_summary = SummaryData::new(&conn);
+    let my_summary_text = my_summary.get_table_data(&summary_modes, 0, 1);
+    let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 0, 1, &conn);
 
     let expected_data_1 = vec![
-        vec!["Car".to_string(), "0.00".to_string(), "159.00".to_string()],
-        vec!["Food".to_string(), "318.38".to_string(), "0.00".to_string()],
+        vec![
+            "Car".to_string(),
+            "0.00".to_string(),
+            "100.00".to_string(),
+            "0.00".to_string(),
+            "100.00".to_string(),
+        ],
+        vec![
+            "Food".to_string(),
+            "200.00".to_string(),
+            "0.00".to_string(),
+            "100.00".to_string(),
+            "0.00".to_string(),
+        ],
     ];
 
-    let expected_data_2 = vec![
-        (318.38, "Total Income:".to_string()),
-        (159.00, "Total Expense:".to_string()),
-        (159.19, "test 2, Date: 19-07-2023".to_string()),
-        (159.00, "test1, Date: 19-08-2022".to_string()),
-        (159.19, "July of 2023".to_string()),
-        (159.00, "August of 2022".to_string()),
-    ];
+    let expected_data_2 = (
+        vec![
+            vec![
+                "Total Income".to_string(),
+                "200.00".to_string(),
+                "66.67%".to_string(),
+            ],
+            vec![
+                "Total Expense".to_string(),
+                "100.00".to_string(),
+                "33.33%".to_string(),
+            ],
+            vec!["Net".to_string(), "100.00".to_string(), "-".to_string()],
+        ],
+        vec![
+            vec![
+                "Average Income".to_string(),
+                "66.67".to_string(),
+                "-".to_string(),
+            ],
+            vec![
+                "Average Expense".to_string(),
+                "33.33".to_string(),
+                "-".to_string(),
+            ],
+        ],
+        vec![
+            vec![
+                "Largest Income".to_string(),
+                "19-07-2023".to_string(),
+                "100.00".to_string(),
+                "test 2".to_string(),
+            ],
+            vec![
+                "Largest Expense".to_string(),
+                "19-08-2022".to_string(),
+                "100.00".to_string(),
+                "test1".to_string(),
+            ],
+            vec![
+                "Months Checked".to_string(),
+                "3".to_string(),
+                "-".to_string(),
+                "-".to_string(),
+            ],
+        ],
+        vec![
+            vec![
+                "Peak Earning".to_string(),
+                "7-2023".to_string(),
+                "100.00".to_string(),
+                "-".to_string(),
+            ],
+            vec![
+                "Peak Expense".to_string(),
+                "8-2022".to_string(),
+                "100.00".to_string(),
+                "-".to_string(),
+            ],
+        ],
+        vec![
+            vec![
+                "test1".to_string(),
+                "100.00".to_string(),
+                "100.00".to_string(),
+                "50.00%".to_string(),
+                "100.00%".to_string(),
+                "33.33".to_string(),
+                "33.33".to_string(),
+            ],
+            vec![
+                "test 2".to_string(),
+                "100.00".to_string(),
+                "0.00".to_string(),
+                "50.00%".to_string(),
+                "0.00".to_string(),
+                "33.33".to_string(),
+                "0.00".to_string(),
+            ],
+        ],
+    );
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();

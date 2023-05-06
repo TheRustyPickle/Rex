@@ -1,14 +1,13 @@
 use crate::page_handler::{
-    HomeTab, IndexedData, TableData, BACKGROUND, BLUE, BOX, HEADER, HIGHLIGHTED, RED, SELECTED,
-    TEXT,
+    HomeTab, IndexedData, TableData, BACKGROUND, BLUE, BOX, HEADER, RED, SELECTED, TEXT,
 };
-use crate::utility::{get_all_tx_methods, styled_block};
+use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block};
 use rusqlite::Connection;
+use thousands::Separable;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Modifier, Style};
-use tui::text::{Span, Spans};
-use tui::widgets::{Block, Cell, Row, Table, Tabs};
+use tui::widgets::{Cell, Row, Table};
 use tui::Frame;
 
 /// The function draws the Home page of the interface.
@@ -42,7 +41,7 @@ pub fn home_ui<B: Backend>(
     // iter through table data and turn them into rows and columns
     let rows = table.items.iter().map(|item| {
         let height = 1;
-        let cells = item.iter().map(|c| Cell::from(c.to_string()));
+        let cells = item.iter().map(|c| Cell::from(c.separate_with_commas()));
         Row::new(cells)
             .height(height as u16)
             .bottom_margin(0)
@@ -74,44 +73,11 @@ pub fn home_ui<B: Backend>(
         )
         .split(size);
 
-    let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
-    f.render_widget(block, size);
+    f.render_widget(main_block(), size);
 
-    let month_titles = months
-        .titles
-        .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
-        .collect();
+    let mut month_tab = create_tab(months, "Months");
 
-    let year_titles = years
-        .titles
-        .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
-        .collect();
-
-    // The default style for the selected index in the month section if
-    // the month widget itself is not selected.
-    let mut month_tab = Tabs::new(month_titles)
-        .block(styled_block("Months"))
-        .select(months.index)
-        .style(Style::default().fg(BOX))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(HIGHLIGHTED),
-        );
-
-    // The default style for the selected index in the year section if
-    // the year widget itself is not selected.
-    let mut year_tab = Tabs::new(year_titles)
-        .block(styled_block("Years"))
-        .select(years.index)
-        .style(Style::default().fg(BOX))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(HIGHLIGHTED),
-        );
+    let mut year_tab = create_tab(years, "Years");
 
     // set up the table columns and their size
     // resizing the table headers to match a % of the
@@ -133,20 +99,21 @@ pub fn home_ui<B: Backend>(
     let bal_data = balance.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| {
+            let c = c.separate_with_commas();
             if c.contains('↑') {
-                Cell::from(c.to_string()).style(Style::default().fg(BLUE))
+                Cell::from(c).style(Style::default().fg(BLUE))
             } else if c.contains('↓') {
-                Cell::from(c.to_string()).style(Style::default().fg(RED))
-            } else if all_methods.contains(c)
+                Cell::from(c).style(Style::default().fg(RED))
+            } else if all_methods.contains(&c)
                 || c == "Balance"
                 || c == "Changes"
                 || c == "Total"
                 || c == "Income"
                 || c == "Expense"
             {
-                Cell::from(c.to_string()).style(Style::default().add_modifier(Modifier::BOLD))
+                Cell::from(c).style(Style::default().add_modifier(Modifier::BOLD))
             } else {
-                Cell::from(c.to_string())
+                Cell::from(c)
             }
         });
         Row::new(cells)

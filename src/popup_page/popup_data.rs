@@ -142,14 +142,16 @@ Q: Quit
     }
 
     fn get_summary_help_text(&mut self) -> String {
-        self.set("Help", 50, 40);
-        "This page is for tracking expense and income amount based on Tx Tags.
+        self.set("Help", 50, 45);
+        "This page shows various information based on all transactions
+and is for tracking incomes and expenses based on tags
 Transfer Transaction are not shown here
 
 Following are the supported keys here
 
 Arrow Up/Down: Cycle widgets/table value
 Arrow Left/Right: Move value of the widget
+Z: Hides the top widgets for full view
 
 Other Keys:
 F: Home Page
