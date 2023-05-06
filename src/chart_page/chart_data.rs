@@ -9,13 +9,13 @@ use std::collections::HashMap;
 /// all balance amount after each transaction was committed
 /// * Gets reloaded only after a new tx is added/removed/edited
 pub struct ChartData {
-    pub all_txs: HashMap<i32, Vec<Vec<String>>>,
-    pub all_balance: HashMap<i32, Vec<Vec<String>>>,
+    all_txs: HashMap<i32, Vec<Vec<String>>>,
+    all_balance: HashMap<i32, Vec<Vec<String>>>,
 }
 
 impl ChartData {
     /// Fetches and stores all tx and balance information for all months and years
-    pub fn set(conn: &Connection) -> Self {
+    pub fn new(conn: &Connection) -> Self {
         let mut all_txs = HashMap::new();
         let mut all_balance = HashMap::new();
         for x in 0..YEARS.len() {

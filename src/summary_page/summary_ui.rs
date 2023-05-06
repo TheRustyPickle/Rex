@@ -1,14 +1,14 @@
 use crate::page_handler::{
-    IndexedData, SummaryTab, TableData, BACKGROUND, BLUE, BOX, HEADER, HIGHLIGHTED, RED, SELECTED,
-    TEXT,
+    IndexedData, SummaryTab, TableData, BACKGROUND, BOX, HEADER, SELECTED, TEXT,
 };
 use crate::summary_page::SummaryData;
-use crate::utility::styled_block;
+use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block};
+use rusqlite::Connection;
+use thousands::Separable;
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
-use tui::style::{Color, Modifier, Style};
-use tui::text::{Span, Spans};
-use tui::widgets::{Block, Cell, Paragraph, Row, Table, Tabs};
+use tui::style::{Modifier, Style};
+use tui::widgets::{Cell, Row, Table};
 use tui::Frame;
 
 /// The function draws the Summary page of the interface.
@@ -20,181 +20,220 @@ pub fn summary_ui<B: Backend>(
     summary_data: &SummaryData,
     table_data: &mut TableData,
     current_page: &SummaryTab,
+    summary_hidden_mode: bool,
+    conn: &Connection,
 ) {
-    let text_data = summary_data.get_tx_data();
+    let (summary_data_1, summary_data_2, summary_data_3, summary_data_4, method_data) =
+        summary_data.get_tx_data(mode_selection, months.index, years.index, conn);
+
+    let mut summary_table_1 = TableData::new(summary_data_1);
+    let mut summary_table_2 = TableData::new(summary_data_2);
+    let mut summary_table_3 = TableData::new(summary_data_3);
+    let mut summary_table_4 = TableData::new(summary_data_4);
+    let mut method_table = TableData::new(method_data);
+
     let size = f.size();
 
-    let header_cells = ["Tag", "Total Income", "Total Expense"]
-        .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
+    let header_cells = [
+        "Tag",
+        "Total Income",
+        "Total Expense",
+        "Income %",
+        "Expense %",
+    ]
+    .iter()
+    .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
+
+    let method_header_cells = [
+        "Method",
+        "Total Income",
+        "Total Expense",
+        "Income %",
+        "Expense %",
+        "Average Income",
+        "Average Expense",
+    ]
+    .iter()
+    .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
 
     let header = Row::new(header_cells)
         .style(Style::default().bg(HEADER))
         .height(1)
         .bottom_margin(0);
 
-    let mut main_layout = Layout::default().direction(Direction::Vertical).margin(2);
+    let method_header = Row::new(method_header_cells)
+        .style(Style::default().bg(HEADER))
+        .height(1)
+        .bottom_margin(0);
 
-    match mode_selection.index {
-        0 => {
-            main_layout = main_layout.constraints(
-                [
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(7),
-                    Constraint::Min(0),
-                ]
-                .as_ref(),
-            )
-        }
-        1 => {
-            main_layout = main_layout.constraints(
-                [
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(7),
-                    Constraint::Min(0),
-                ]
-                .as_ref(),
-            )
-        }
-        2 => {
-            main_layout = main_layout.constraints(
-                [
-                    Constraint::Length(3),
-                    Constraint::Length(7),
-                    Constraint::Min(0),
-                ]
-                .as_ref(),
-            )
-        }
-        _ => {}
-    };
+    let method_len = get_all_tx_methods(conn).len() as u16;
+
+    let mut main_layout = Layout::default().direction(Direction::Vertical).margin(2);
+    let mut summary_layout = Layout::default().direction(Direction::Horizontal);
+
+    if summary_hidden_mode {
+        main_layout = main_layout.constraints(
+            [
+                Constraint::Length(method_len + 3),
+                Constraint::Length(9),
+                Constraint::Min(0),
+            ]
+            .as_ref(),
+        );
+        summary_layout =
+            summary_layout.constraints([Constraint::Percentage(50), Constraint::Percentage(50)]);
+    } else {
+        match mode_selection.index {
+            0 => {
+                main_layout = main_layout.constraints(
+                    [
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                        Constraint::Length(method_len + 3),
+                        Constraint::Length(9),
+                        Constraint::Min(0),
+                    ]
+                    .as_ref(),
+                );
+                summary_layout = summary_layout
+                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)]);
+            }
+            1 => {
+                main_layout = main_layout.constraints(
+                    [
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                        Constraint::Length(method_len + 3),
+                        Constraint::Length(9),
+                        Constraint::Min(0),
+                    ]
+                    .as_ref(),
+                );
+                summary_layout = summary_layout
+                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)]);
+            }
+            2 => {
+                main_layout = main_layout.constraints(
+                    [
+                        Constraint::Length(3),
+                        Constraint::Length(method_len + 3),
+                        Constraint::Length(9),
+                        Constraint::Min(0),
+                    ]
+                    .as_ref(),
+                );
+                summary_layout = summary_layout
+                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)]);
+            }
+            _ => {}
+        };
+    }
 
     let chunks = main_layout.split(size);
+    let summary_chunk = if summary_hidden_mode {
+        summary_layout.split(chunks[1])
+    } else {
+        summary_layout.split(chunks[4 - mode_selection.index])
+    };
 
-    let block = Block::default().style(Style::default().bg(BACKGROUND).fg(BOX));
+    let left_summary = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+        .split(summary_chunk[0]);
 
-    f.render_widget(block, size);
+    let right_summary = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+        .split(summary_chunk[1]);
 
-    let month_titles = months
-        .titles
-        .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
-        .collect();
+    f.render_widget(main_block(), size);
 
-    //color the first two letters of the year to blue
-    let year_titles = years
-        .titles
-        .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
-        .collect();
+    let mut month_tab = create_tab(months, "Months");
 
-    let mode_selection_titles = mode_selection
-        .titles
-        .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
-        .collect();
+    let mut year_tab = create_tab(years, "Years");
 
-    // The default style for the select index in the month section if
-    // the Month widget is not selected
-    let mut month_tab = Tabs::new(month_titles)
-        .block(styled_block("Months"))
-        .select(months.index)
-        .style(Style::default().fg(BOX))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(HIGHLIGHTED),
-        );
+    let mut mode_selection_tab = create_tab(mode_selection, "Modes");
 
-    // The default style for the select index in the year section if
-    // the Year widget is not selected
-    let mut year_tab = Tabs::new(year_titles)
-        .block(styled_block("Years"))
-        .select(years.index)
-        .style(Style::default().fg(BOX))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(HIGHLIGHTED),
-        );
-
-    let mut mode_selection_tab = Tabs::new(mode_selection_titles)
-        .block(styled_block("Mode Selection"))
-        .select(mode_selection.index)
-        .style(Style::default().fg(BOX))
-        .highlight_style(
-            Style::default()
-                .add_modifier(Modifier::BOLD)
-                .bg(HIGHLIGHTED),
-        );
-
-    // * contains the text for the upper side of the Summary UI
-    let text = vec![
-        Spans::from(Span::styled(
-            format!("{} {:.2}", text_data[0].1, text_data[0].0),
-            Style::default().add_modifier(Modifier::BOLD).fg(BLUE),
-        )),
-        Spans::from(Span::styled(
-            format!("{} {:.2}", text_data[1].1, text_data[1].0),
-            Style::default().add_modifier(Modifier::BOLD).fg(RED),
-        )),
-        Spans::from(vec![
-            Span::styled(
-                format!("Largest Income: {:.2}, ", text_data[2].0),
-                Style::default().add_modifier(Modifier::BOLD).fg(BLUE),
-            ),
-            Span::styled(
-                format!("Method: {}", text_data[2].1),
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .fg(Color::Rgb(205, 133, 63)),
-            ),
-        ]),
-        Spans::from(vec![
-            Span::styled(
-                format!("Largest Expense: {:.2}, ", text_data[3].0),
-                Style::default().add_modifier(Modifier::BOLD).fg(RED),
-            ),
-            Span::styled(
-                format!("Method: {}", text_data[3].1),
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .fg(Color::Rgb(205, 133, 63)),
-            ),
-        ]),
-        Spans::from(vec![
-            Span::styled(
-                format!("Most Earning Month: {}, ", text_data[4].1),
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .fg(Color::Rgb(100, 149, 237)),
-            ),
-            Span::styled(
-                format!("Income: {:.2}", text_data[4].0),
-                Style::default().add_modifier(Modifier::BOLD).fg(BLUE),
-            ),
-        ]),
-        Spans::from(vec![
-            Span::styled(
-                format!("Most Expensive Month: {}, ", text_data[5].1),
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .fg(Color::Rgb(205, 92, 92)),
-            ),
-            Span::styled(
-                format!("Expense: {:.2}", text_data[5].0),
-                Style::default().add_modifier(Modifier::BOLD).fg(RED),
-            ),
-        ]),
-    ];
-
-    // * Goes through all tags provided and creates row for the table
+    // Goes through all tags provided and creates row for the table
     let rows = table_data.items.iter().map(|item| {
         let height = 1;
-        let cells = item.iter().map(|c| Cell::from(c.to_string()));
+        let cells = item.iter().map(|c| Cell::from(c.separate_with_commas()));
+        Row::new(cells)
+            .height(height as u16)
+            .bottom_margin(0)
+            .style(Style::default().fg(TEXT))
+    });
+
+    let summary_rows_1 = summary_table_1.items.iter().map(|item| {
+        let height = 1;
+        let cells = item.iter().enumerate().map(|(j, c)| {
+            let mut cell = Cell::from(c.separate_with_commas());
+            if j == 0 {
+                cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
+            }
+            cell
+        });
+        Row::new(cells)
+            .height(height as u16)
+            .bottom_margin(0)
+            .style(Style::default().fg(TEXT))
+    });
+
+    let summary_rows_2 = summary_table_2.items.iter().map(|item| {
+        let height = 1;
+        let cells = item.iter().enumerate().map(|(j, c)| {
+            let mut cell = Cell::from(c.separate_with_commas());
+            if j == 0 {
+                cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
+            }
+            cell
+        });
+        Row::new(cells)
+            .height(height as u16)
+            .bottom_margin(0)
+            .style(Style::default().fg(TEXT))
+    });
+
+    let summary_rows_3 = summary_table_3.items.iter().map(|item| {
+        let height = 1;
+        let cells = item.iter().enumerate().map(|(j, c)| {
+            let mut cell = Cell::from(c.separate_with_commas());
+            if j == 0 {
+                cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
+            }
+            cell
+        });
+        Row::new(cells)
+            .height(height as u16)
+            .bottom_margin(0)
+            .style(Style::default().fg(TEXT))
+    });
+
+    let summary_rows_4 = summary_table_4.items.iter().map(|item| {
+        let height = 1;
+        let cells = item.iter().enumerate().map(|(j, c)| {
+            let mut cell = Cell::from(c.separate_with_commas());
+            if j == 0 {
+                cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
+            }
+            cell
+        });
+        Row::new(cells)
+            .height(height as u16)
+            .bottom_margin(0)
+            .style(Style::default().fg(TEXT))
+    });
+
+    let method_rows = method_table.items.iter().map(|item| {
+        let height = 1;
+        let cells = item.iter().enumerate().map(|(j, c)| {
+            let mut cell = Cell::from(c.separate_with_commas());
+            if j == 0 {
+                cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
+            }
+            cell
+        });
         Row::new(cells)
             .height(height as u16)
             .bottom_margin(0)
@@ -205,13 +244,65 @@ pub fn summary_ui<B: Backend>(
         .header(header)
         .block(styled_block("Tags"))
         .widths(&[
+            Constraint::Percentage(20),
+            Constraint::Percentage(20),
+            Constraint::Percentage(20),
+            Constraint::Percentage(20),
+            Constraint::Percentage(20),
+        ])
+        .style(Style::default().fg(BOX));
+
+    let summary_area_1 = Table::new(summary_rows_1)
+        .block(styled_block(""))
+        .widths(&[
             Constraint::Percentage(33),
             Constraint::Percentage(33),
             Constraint::Percentage(33),
         ])
         .style(Style::default().fg(BOX));
 
-    let paragraph = Paragraph::new(text).style(Style::default().bg(BACKGROUND).fg(TEXT));
+    let summary_area_2 = Table::new(summary_rows_2)
+        .block(styled_block(""))
+        .widths(&[
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+        ])
+        .style(Style::default().fg(BOX));
+
+    let summary_area_3 = Table::new(summary_rows_3)
+        .block(styled_block(""))
+        .widths(&[
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+        ])
+        .style(Style::default().fg(BOX));
+
+    let summary_area_4 = Table::new(summary_rows_4)
+        .block(styled_block(""))
+        .widths(&[
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+        ])
+        .style(Style::default().fg(BOX));
+
+    let method_area = Table::new(method_rows)
+        .header(method_header)
+        .block(styled_block(""))
+        .widths(&[
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+        ])
+        .style(Style::default().fg(BOX));
 
     match current_page {
         // previously added a black block to year and month widget if a value is not selected
@@ -236,24 +327,37 @@ pub fn summary_ui<B: Backend>(
         }
     }
 
-    f.render_widget(mode_selection_tab, chunks[0]);
+    if summary_hidden_mode {
+        f.render_stateful_widget(summary_area_1, left_summary[0], &mut summary_table_1.state);
+        f.render_stateful_widget(summary_area_2, left_summary[1], &mut summary_table_2.state);
+        f.render_stateful_widget(summary_area_3, right_summary[0], &mut summary_table_3.state);
+        f.render_stateful_widget(summary_area_4, right_summary[1], &mut summary_table_4.state);
+        f.render_stateful_widget(table_area, chunks[2], &mut table_data.state);
+        f.render_stateful_widget(method_area, chunks[0], &mut method_table.state);
+    } else {
+        f.render_widget(mode_selection_tab, chunks[0]);
+        f.render_stateful_widget(summary_area_1, left_summary[0], &mut summary_table_1.state);
+        f.render_stateful_widget(summary_area_2, left_summary[1], &mut summary_table_2.state);
+        f.render_stateful_widget(summary_area_3, right_summary[0], &mut summary_table_3.state);
+        f.render_stateful_widget(summary_area_4, right_summary[1], &mut summary_table_4.state);
 
-    match mode_selection.index {
-        0 => {
-            f.render_widget(year_tab, chunks[1]);
-            f.render_widget(month_tab, chunks[2]);
-            f.render_widget(paragraph, chunks[3]);
-            f.render_stateful_widget(table_area, chunks[4], &mut table_data.state)
+        match mode_selection.index {
+            0 => {
+                f.render_widget(year_tab, chunks[1]);
+                f.render_widget(month_tab, chunks[2]);
+                f.render_stateful_widget(table_area, chunks[5], &mut table_data.state);
+                f.render_stateful_widget(method_area, chunks[3], &mut method_table.state);
+            }
+            1 => {
+                f.render_widget(year_tab, chunks[1]);
+                f.render_stateful_widget(table_area, chunks[4], &mut table_data.state);
+                f.render_stateful_widget(method_area, chunks[2], &mut method_table.state);
+            }
+            2 => {
+                f.render_stateful_widget(table_area, chunks[3], &mut table_data.state);
+                f.render_stateful_widget(method_area, chunks[1], &mut method_table.state);
+            }
+            _ => {}
         }
-        1 => {
-            f.render_widget(year_tab, chunks[1]);
-            f.render_widget(paragraph, chunks[2]);
-            f.render_stateful_widget(table_area, chunks[3], &mut table_data.state)
-        }
-        2 => {
-            f.render_widget(paragraph, chunks[1]);
-            f.render_stateful_widget(table_area, chunks[2], &mut table_data.state)
-        }
-        _ => {}
     }
 }

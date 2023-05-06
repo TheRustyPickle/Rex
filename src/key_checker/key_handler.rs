@@ -39,6 +39,7 @@ pub struct InputKeyHandler<'a> {
     total_tags: usize,
     chart_index: &'a mut Option<f64>,
     chart_hidden_mode: &'a mut bool,
+    summary_hidden_mode: &'a mut bool,
     conn: &'a mut Connection,
 }
 
@@ -69,9 +70,12 @@ impl<'a> InputKeyHandler<'a> {
         summary_modes: &'a mut IndexedData,
         chart_index: &'a mut Option<f64>,
         chart_hidden_mode: &'a mut bool,
+        summary_hidden_mode: &'a mut bool,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
-        let total_tags = summary_data.get_table_data().len();
+        let total_tags = summary_data
+            .get_table_data(summary_modes, summary_months.index, summary_years.index)
+            .len();
         InputKeyHandler {
             key,
             page,
@@ -98,6 +102,7 @@ impl<'a> InputKeyHandler<'a> {
             summary_modes,
             total_tags,
             chart_index,
+            summary_hidden_mode,
             chart_hidden_mode,
             conn,
         }
@@ -143,6 +148,7 @@ impl<'a> InputKeyHandler<'a> {
         self.summary_months.set_index_zero();
         self.summary_years.set_index_zero();
         *self.summary_tab = SummaryTab::ModeSelection;
+        *self.summary_hidden_mode = false;
         self.reload_summary();
     }
 
@@ -175,8 +181,21 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     /// Hides chart top widgets
-    pub fn do_hidden_mode(&mut self) {
+    pub fn do_chart_hidden_mode(&mut self) {
         *self.chart_hidden_mode = !*self.chart_hidden_mode;
+    }
+
+    pub fn do_summary_hidden_mode(&mut self) {
+        *self.summary_hidden_mode = !*self.summary_hidden_mode;
+
+        if *self.summary_hidden_mode {
+            *self.summary_tab = SummaryTab::Table;
+            if self.total_tags > 0 {
+                self.summary_table.state.select(Some(0));
+            }
+        } else {
+            *self.summary_tab = SummaryTab::ModeSelection
+        }
     }
 
     /// Handles Enter key press if there is a new update and the update popup is on
@@ -205,6 +224,7 @@ impl<'a> InputKeyHandler<'a> {
             *self.home_tab = HomeTab::Months;
             self.reload_home_table();
             self.reload_chart_data();
+            self.reload_summary_data();
         } else {
             self.add_tx_data.add_tx_status(status);
         }
@@ -263,6 +283,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.table.state.select(None);
                     *self.home_tab = HomeTab::Months;
                     self.reload_chart_data();
+                    self.reload_summary_data();
                 }
                 Err(err) => {
                     *self.popup = PopupState::DeleteFailed(err.to_string());
@@ -280,6 +301,7 @@ impl<'a> InputKeyHandler<'a> {
             self.go_home_reset();
             self.reload_home_table();
             self.reload_chart_data();
+            self.reload_summary_data();
         } else {
             self.transfer_data.add_tx_status(status);
         }
@@ -352,22 +374,26 @@ impl<'a> InputKeyHandler<'a> {
                     }
                 }
             }
-            CurrentUi::Summary => match self.summary_tab {
-                SummaryTab::ModeSelection => {
-                    self.summary_modes.previous();
-                    self.reload_summary();
+            CurrentUi::Summary => {
+                if !*self.summary_hidden_mode {
+                    match self.summary_tab {
+                        SummaryTab::ModeSelection => {
+                            self.summary_modes.previous();
+                            self.reload_summary();
+                        }
+                        SummaryTab::Years => {
+                            self.summary_months.set_index_zero();
+                            self.summary_years.previous();
+                            self.reload_summary();
+                        }
+                        SummaryTab::Months => {
+                            self.summary_months.previous();
+                            self.reload_summary();
+                        }
+                        _ => {}
+                    }
                 }
-                SummaryTab::Years => {
-                    self.summary_months.set_index_zero();
-                    self.summary_years.previous();
-                    self.reload_summary();
-                }
-                SummaryTab::Months => {
-                    self.summary_months.previous();
-                    self.reload_summary();
-                }
-                _ => {}
-            },
+            }
             _ => {}
         }
     }
@@ -576,134 +602,150 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     fn do_summary_up(&mut self) {
-        match self.summary_modes.index {
-            0 => match self.summary_tab {
-                SummaryTab::Table => {
-                    if self.summary_table.state.selected() == Some(0) {
-                        *self.summary_tab = self.summary_tab.change_tab_up_monthly();
-                    } else {
-                        self.summary_table.previous()
+        if !*self.summary_hidden_mode {
+            match self.summary_modes.index {
+                0 => match self.summary_tab {
+                    SummaryTab::Table => {
+                        if self.summary_table.state.selected() == Some(0) {
+                            *self.summary_tab = self.summary_tab.change_tab_up_monthly();
+                        } else {
+                            self.summary_table.previous()
+                        }
                     }
-                }
-                SummaryTab::ModeSelection => {
-                    if self.total_tags > 0 {
-                        self.summary_table.state.select(Some(self.total_tags - 1));
-                        *self.summary_tab = self.summary_tab.change_tab_up_monthly();
-                    } else {
-                        *self.summary_tab = self.summary_tab.change_tab_up_monthly();
-                        *self.summary_tab = self.summary_tab.change_tab_up_monthly();
-                        self.summary_table.state.select(None)
+                    SummaryTab::ModeSelection => {
+                        if self.total_tags > 0 {
+                            self.summary_table.state.select(Some(self.total_tags - 1));
+                            *self.summary_tab = self.summary_tab.change_tab_up_monthly();
+                        } else {
+                            *self.summary_tab = self.summary_tab.change_tab_up_monthly();
+                            *self.summary_tab = self.summary_tab.change_tab_up_monthly();
+                            self.summary_table.state.select(None)
+                        }
                     }
-                }
-                _ => *self.summary_tab = self.summary_tab.change_tab_up_monthly(),
-            },
-            1 => match self.summary_tab {
-                SummaryTab::Table => {
-                    if self.summary_table.state.selected() == Some(0) {
-                        *self.summary_tab = self.summary_tab.change_tab_up_yearly();
-                    } else {
-                        self.summary_table.previous()
+                    _ => *self.summary_tab = self.summary_tab.change_tab_up_monthly(),
+                },
+                1 => match self.summary_tab {
+                    SummaryTab::Table => {
+                        if self.summary_table.state.selected() == Some(0) {
+                            *self.summary_tab = self.summary_tab.change_tab_up_yearly();
+                        } else {
+                            self.summary_table.previous()
+                        }
                     }
-                }
-                SummaryTab::ModeSelection => {
-                    if self.total_tags > 0 {
-                        self.summary_table.state.select(Some(self.total_tags - 1));
-                        *self.summary_tab = self.summary_tab.change_tab_up_yearly()
-                    } else {
-                        *self.summary_tab = self.summary_tab.change_tab_up_yearly();
-                        *self.summary_tab = self.summary_tab.change_tab_up_yearly();
-                        self.summary_table.state.select(None)
+                    SummaryTab::ModeSelection => {
+                        if self.total_tags > 0 {
+                            self.summary_table.state.select(Some(self.total_tags - 1));
+                            *self.summary_tab = self.summary_tab.change_tab_up_yearly()
+                        } else {
+                            *self.summary_tab = self.summary_tab.change_tab_up_yearly();
+                            *self.summary_tab = self.summary_tab.change_tab_up_yearly();
+                            self.summary_table.state.select(None)
+                        }
                     }
-                }
-                _ => *self.summary_tab = self.summary_tab.change_tab_up_yearly(),
-            },
-            2 => match self.summary_tab {
-                SummaryTab::Table => {
-                    if self.summary_table.state.selected() == Some(0) {
-                        *self.summary_tab = self.summary_tab.change_tab_up_all_time();
-                    } else {
-                        self.summary_table.previous()
+                    _ => *self.summary_tab = self.summary_tab.change_tab_up_yearly(),
+                },
+                2 => match self.summary_tab {
+                    SummaryTab::Table => {
+                        if self.summary_table.state.selected() == Some(0) {
+                            *self.summary_tab = self.summary_tab.change_tab_up_all_time();
+                        } else {
+                            self.summary_table.previous()
+                        }
                     }
-                }
-                SummaryTab::ModeSelection => {
-                    if self.total_tags > 0 {
-                        self.summary_table.state.select(Some(self.total_tags - 1));
-                        *self.summary_tab = self.summary_tab.change_tab_up_all_time();
-                    } else {
-                        *self.summary_tab = self.summary_tab.change_tab_up_all_time();
-                        *self.summary_tab = self.summary_tab.change_tab_up_all_time();
-                        self.summary_table.state.select(None)
+                    SummaryTab::ModeSelection => {
+                        if self.total_tags > 0 {
+                            self.summary_table.state.select(Some(self.total_tags - 1));
+                            *self.summary_tab = self.summary_tab.change_tab_up_all_time();
+                        } else {
+                            *self.summary_tab = self.summary_tab.change_tab_up_all_time();
+                            *self.summary_tab = self.summary_tab.change_tab_up_all_time();
+                            self.summary_table.state.select(None)
+                        }
                     }
-                }
+                    _ => {}
+                },
                 _ => {}
-            },
-            _ => {}
+            }
+        } else if self.total_tags > 0 {
+            if self.summary_table.state.selected() == Some(0) {
+                self.summary_table.state.select(Some(self.total_tags - 1));
+            } else {
+                self.summary_table.previous()
+            }
         }
     }
 
     fn do_summary_down(&mut self) {
-        match self.summary_modes.index {
-            0 => match self.summary_tab {
-                SummaryTab::Table => {
-                    if self.summary_table.state.selected() == Some(self.total_tags - 1) {
-                        *self.summary_tab = self.summary_tab.change_tab_down_monthly();
-                    } else {
-                        self.summary_table.next()
+        if !*self.summary_hidden_mode {
+            match self.summary_modes.index {
+                0 => match self.summary_tab {
+                    SummaryTab::Table => {
+                        if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                            *self.summary_tab = self.summary_tab.change_tab_down_monthly();
+                        } else {
+                            self.summary_table.next()
+                        }
                     }
-                }
-                SummaryTab::Months => {
-                    if self.total_tags > 0 {
-                        self.summary_table.state.select(Some(0));
-                        *self.summary_tab = self.summary_tab.change_tab_down_monthly();
-                    } else {
-                        *self.summary_tab = self.summary_tab.change_tab_down_monthly();
-                        *self.summary_tab = self.summary_tab.change_tab_down_monthly();
-                        self.summary_table.state.select(None)
+                    SummaryTab::Months => {
+                        if self.total_tags > 0 {
+                            self.summary_table.state.select(Some(0));
+                            *self.summary_tab = self.summary_tab.change_tab_down_monthly();
+                        } else {
+                            *self.summary_tab = self.summary_tab.change_tab_down_monthly();
+                            *self.summary_tab = self.summary_tab.change_tab_down_monthly();
+                            self.summary_table.state.select(None)
+                        }
                     }
-                }
-                _ => *self.summary_tab = self.summary_tab.change_tab_down_monthly(),
-            },
-            1 => match self.summary_tab {
-                SummaryTab::Table => {
-                    if self.summary_table.state.selected() == Some(self.total_tags - 1) {
-                        *self.summary_tab = self.summary_tab.change_tab_down_yearly();
-                    } else {
-                        self.summary_table.next()
+                    _ => *self.summary_tab = self.summary_tab.change_tab_down_monthly(),
+                },
+                1 => match self.summary_tab {
+                    SummaryTab::Table => {
+                        if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                            *self.summary_tab = self.summary_tab.change_tab_down_yearly();
+                        } else {
+                            self.summary_table.next()
+                        }
                     }
-                }
-                SummaryTab::Years => {
-                    if self.total_tags > 0 {
-                        self.summary_table.state.select(Some(0));
-                        *self.summary_tab = self.summary_tab.change_tab_down_yearly()
-                    } else {
-                        *self.summary_tab = self.summary_tab.change_tab_down_yearly();
-                        *self.summary_tab = self.summary_tab.change_tab_down_yearly();
-                        self.summary_table.state.select(None)
+                    SummaryTab::Years => {
+                        if self.total_tags > 0 {
+                            self.summary_table.state.select(Some(0));
+                            *self.summary_tab = self.summary_tab.change_tab_down_yearly()
+                        } else {
+                            *self.summary_tab = self.summary_tab.change_tab_down_yearly();
+                            *self.summary_tab = self.summary_tab.change_tab_down_yearly();
+                            self.summary_table.state.select(None)
+                        }
                     }
-                }
-                _ => *self.summary_tab = self.summary_tab.change_tab_down_yearly(),
-            },
-            2 => match self.summary_tab {
-                SummaryTab::Table => {
-                    if self.summary_table.state.selected() == Some(self.total_tags - 1) {
-                        *self.summary_tab = self.summary_tab.change_tab_down_all_time();
-                    } else {
-                        self.summary_table.next()
+                    _ => *self.summary_tab = self.summary_tab.change_tab_down_yearly(),
+                },
+                2 => match self.summary_tab {
+                    SummaryTab::Table => {
+                        if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                            *self.summary_tab = self.summary_tab.change_tab_down_all_time();
+                        } else {
+                            self.summary_table.next()
+                        }
                     }
-                }
-                SummaryTab::ModeSelection => {
-                    if self.total_tags > 0 {
-                        self.summary_table.state.select(Some(0));
-                        *self.summary_tab = self.summary_tab.change_tab_down_all_time();
-                    } else {
-                        *self.summary_tab = self.summary_tab.change_tab_down_all_time();
-                        *self.summary_tab = self.summary_tab.change_tab_down_all_time();
-                        self.summary_table.state.select(None)
+                    SummaryTab::ModeSelection => {
+                        if self.total_tags > 0 {
+                            self.summary_table.state.select(Some(0));
+                            *self.summary_tab = self.summary_tab.change_tab_down_all_time();
+                        } else {
+                            *self.summary_tab = self.summary_tab.change_tab_down_all_time();
+                            *self.summary_tab = self.summary_tab.change_tab_down_all_time();
+                            self.summary_table.state.select(None)
+                        }
                     }
-                }
+                    _ => {}
+                },
                 _ => {}
-            },
-            _ => {}
+            }
+        } else if self.total_tags > 0 {
+            if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                self.summary_table.state.select(Some(0));
+            } else {
+                self.summary_table.next()
+            }
         }
     }
 
@@ -1024,18 +1066,21 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     fn reload_summary(&mut self) {
-        *self.summary_data = SummaryData::new(
+        let summary_table = self.summary_data.get_table_data(
             self.summary_modes,
             self.summary_months.index,
             self.summary_years.index,
-            self.conn,
         );
-        *self.summary_table = TableData::new(self.summary_data.get_table_data());
-        self.total_tags = self.summary_data.get_table_data().len();
+        self.total_tags = summary_table.len();
+        *self.summary_table = TableData::new(summary_table);
+    }
+
+    fn reload_summary_data(&mut self) {
+        *self.summary_data = SummaryData::new(self.conn);
     }
 
     fn reload_chart_data(&mut self) {
-        *self.chart_data = ChartData::set(self.conn);
+        *self.chart_data = ChartData::new(self.conn);
     }
 
     fn reload_chart(&mut self) {

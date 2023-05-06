@@ -1,5 +1,5 @@
-use crate::db::{add_tags_column, create_db, update_balance_type, MONTHS, YEARS};
-use crate::page_handler::{BACKGROUND, BOX};
+use crate::db::{add_tags_column, create_db, update_balance_type, YEARS};
+use crate::page_handler::{IndexedData, BACKGROUND, BOX, HIGHLIGHTED, TEXT};
 use crate::utility::get_user_tx_methods;
 use crossterm::execute;
 use crossterm::terminal::{
@@ -15,16 +15,8 @@ use std::{process, thread};
 use tui::backend::CrosstermBackend;
 use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
-use tui::widgets::{Block, Borders};
+use tui::widgets::{Block, BorderType, Borders, Tabs};
 use tui::Terminal;
-
-/// Gives the month and year name by index
-pub fn get_month_name(month_index: usize, year_index: usize) -> (String, String) {
-    (
-        MONTHS[month_index].to_string(),
-        YEARS[year_index].to_string(),
-    )
-}
 
 /// Makes a call to the database to find out all the columns in the balance_all section
 /// so we can determine the number of TX Methods that has been added.
@@ -268,6 +260,7 @@ pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
 pub fn styled_block(title: &str) -> Block {
     Block::default()
         .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
         .style(Style::default().bg(BACKGROUND).fg(BOX))
         .title(Span::styled(
             title,
@@ -275,7 +268,12 @@ pub fn styled_block(title: &str) -> Block {
         ))
 }
 
+pub fn main_block<'a>() -> Block<'a> {
+    Block::default().style(Style::default().bg(BACKGROUND).fg(BOX))
+}
+
 /// takes a string and makes any word before the first occurrence of : to Bold
+/// Used for rendering
 pub fn create_bolded_text(text: &str) -> Vec<Spans> {
     let mut text_data = Vec::new();
 
@@ -292,4 +290,22 @@ pub fn create_bolded_text(text: &str) -> Vec<Spans> {
     }
 
     text_data
+}
+
+pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
+    let titles = data
+        .titles
+        .iter()
+        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
+        .collect();
+
+    Tabs::new(titles)
+        .block(styled_block(name))
+        .select(data.index)
+        .style(Style::default().fg(BOX))
+        .highlight_style(
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .bg(HIGHLIGHTED),
+        )
 }
