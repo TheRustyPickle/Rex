@@ -119,7 +119,7 @@ impl<'a> InputKeyHandler<'a> {
             }
             CurrentUi::Transfer => {
                 *self.transfer_tab = TxTab::Nothing;
-                *self.transfer_data = TxData::new();
+                *self.transfer_data = TxData::new_transfer();
             }
             _ => {}
         }
