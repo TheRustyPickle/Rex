@@ -7,7 +7,7 @@ struct Version {
 
 /// Uses Github API to get the latest release version number to check if the current version matches with it.
 pub fn check_version() -> Result<bool, reqwest::Error> {
-    let current_version = "v0.1.8".to_string();
+    let current_version = format!("v{}", env!("CARGO_PKG_VERSION"));
     static APP_USER_AGENT: &str = "Rex";
 
     let client = reqwest::blocking::Client::builder()
