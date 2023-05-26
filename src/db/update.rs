@@ -131,3 +131,18 @@ fn get_last_balance(sp: &Savepoint, all_methods: &Vec<String>) -> Vec<String> {
     });
     final_balance.unwrap()
 }
+
+pub fn rename_column(conn: &mut Connection, old_name: &str, new_name: &str) -> Result<()> {
+    let sp = conn.savepoint().unwrap();
+    let query = format!("ALTER TABLE balance_all RENAME COLUMN {old_name} TO {new_name}");
+    sp.execute(&query, [])?;
+
+    let query = format!("ALTER TABLE changes_all RENAME COLUMN {old_name} TO {new_name}");
+    sp.execute(&query, [])?;
+
+    let query = format!(r#"UPDATE tx_all SET tx_method="{new_name}" WHERE tx_method="{old_name}""#);
+    sp.execute(&query, [])?;
+
+    sp.commit()?;
+    Ok(())
+}
