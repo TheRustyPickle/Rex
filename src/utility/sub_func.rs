@@ -1,10 +1,11 @@
 use crate::outputs::TerminalExecutionError;
+use crate::page_handler::UserInputType;
 use crate::utility::{get_all_tx_methods, get_sql_dates};
 use crossterm::execute;
 use crossterm::terminal::{Clear, ClearType};
 use rusqlite::Connection;
 use std::collections::{HashMap, HashSet};
-use std::io;
+use std::io::{self, Write};
 use std::process::Command;
 
 /// Returns the balance of all methods based on year and month point.
@@ -256,6 +257,38 @@ pub fn get_last_balances(tx_method: &Vec<String>, conn: &Connection) -> Vec<Stri
         Ok(final_data)
     });
     final_balance.unwrap()
+}
+
+pub fn take_input(conn: &Connection) -> UserInputType {
+    let mut to_return = UserInputType::CancelledOperation;
+    let mut stdout = io::stdout();
+    execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
+
+    loop {
+        println!("Enter an option number to proceed. Input 'Cancel' to cancel the operation\n\n1. Add New Tx Method\n2. Rename Existing Tx Method\n");
+        print!("Proceed with option number: ");
+        let mut handle = stdout.lock();
+        handle.flush().unwrap();
+
+        let mut user_input = String::new();
+        std::io::stdin().read_line(&mut user_input).unwrap();
+        let input_type = UserInputType::from_string(user_input.to_lowercase().trim());
+
+        match input_type {
+            UserInputType::AddNewTxMethod(_) => {
+                let data = get_user_tx_methods(true, conn);
+                to_return = UserInputType::AddNewTxMethod(data);
+                break;
+            }
+            UserInputType::RenameTxMethod(_) => {}
+            UserInputType::CancelledOperation => break,
+            UserInputType::InvalidInput => {
+                execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap()
+            }
+        }
+    }
+
+    to_return
 }
 
 /// This function asks user to input one or more Transaction Method names.

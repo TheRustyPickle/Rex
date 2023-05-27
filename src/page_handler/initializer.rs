@@ -1,15 +1,17 @@
 use crate::initial_page::check_version;
 use crate::page_handler::start_app;
 use crate::utility::{
-    check_n_create_db, check_old_sql, enter_tui_interface, exit_tui_interface, get_user_tx_methods,
-    start_terminal,
+    check_n_create_db, check_old_sql, enter_tui_interface, exit_tui_interface, start_terminal,
+    start_timer, take_input,
 };
 use crate::{db::add_new_tx_methods, outputs::HandlingOutput};
 use atty::Stream;
 use rusqlite::Connection;
 use std::fs::File;
 use std::io::prelude::*;
-use std::{error::Error, process, thread, time::Duration};
+use std::{error::Error, process};
+
+use super::UserInputType;
 
 pub fn initialize_app(verifying_path: &str, current_dir: &str) -> Result<(), Box<dyn Error>> {
     let new_version_available = check_version()?;
@@ -36,39 +38,29 @@ pub fn initialize_app(verifying_path: &str, current_dir: &str) -> Result<(), Box
 
         match result {
             Ok(output) => match output {
-                HandlingOutput::AddTxMethod => match get_user_tx_methods(true, &conn) {
-                    Some(tx_methods) => {
-                        let status = add_new_tx_methods( tx_methods, &mut conn);
-                        match status {
-                            Ok(_) => {
-                                let stdout = std::io::stdout();
-                                let mut handle = stdout.lock();
-                                for i in (1..6).rev() {
-                                    write!(handle, "\rAdded Transaction Methods Successfully. Restarting in {i} seconds").unwrap();
-                                    handle.flush().unwrap();
-                                    thread::sleep(Duration::from_millis(1000));
+                HandlingOutput::TakeUserInput => match take_input( &conn) {
+                    UserInputType::AddNewTxMethod(data) => {
+                        match data {
+                            Some(tx_methods) => {
+                                let status = add_new_tx_methods( tx_methods, &mut conn);
+                                match status {
+                                    Ok(_) => {
+                                        start_timer("Added Transaction Methods Successfully.")
+                                    }
+                                    Err(e) => {
+                                        start_timer(format!("Error while adding new Transaction Methods. Error: {e:?}."))
+                                    }
                                 }
                             }
-                            Err(e) => {
-                                let stdout = std::io::stdout();
-                                let mut handle = stdout.lock();
-                                for i in (1..6).rev() {
-                                    write!(handle, "\rError while adding new Transaction Methods. Error: {e:?}. Restarting in {i} seconds").unwrap();
-                                    handle.flush().unwrap();
-                                    thread::sleep(Duration::from_millis(1000));
-                                }
+                            None => {
+                                start_timer("Operation Cancelled.")
                             }
                         }
                     }
-                    None => {
-                        let stdout = std::io::stdout();
-                        let mut handle = stdout.lock();
-                        for i in (1..6).rev() {
-                            write!(handle, "\rOperation Cancelled. Restarting in {i} seconds").unwrap();
-                            handle.flush().unwrap();
-                            thread::sleep(Duration::from_millis(1000));
-                        }
+                    UserInputType::CancelledOperation => {
+                        start_timer("Operation Cancelled.")
                     }
+                    _ => {}
                 },
                 HandlingOutput::QuitUi => break,
                 HandlingOutput::PrintNewUpdate => println!("Could not open browser.\n\nLatest Version Link: https://github.com/TheRustyPickle/Rex/releases/latest")
