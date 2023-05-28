@@ -19,13 +19,13 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
       - uses: actions/checkout@v3
-      - name: Add rust format
+      - name: Run rust format
         uses: actions-rs/toolchain@v1.0.6
         with:
           profile: minimal
           default: true
           components: rustfmt
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.4.0
       - run: cargo fmt -- --check
 
   run_test:
@@ -35,7 +35,7 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
       - uses: actions/checkout@v3
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.4.0
       - name: Install tarpaulin
         run: |
           curl -s https://api.github.com/repos/xd009642/tarpaulin/releases/latest | \
