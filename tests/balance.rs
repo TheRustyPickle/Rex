@@ -43,7 +43,7 @@ fn check_last_balances_2() {
         "2022-07-19",
         "Testing transaction",
         "test1",
-        "159.00",
+        "159.50",
         "Expense",
         "Unknown",
         None,
