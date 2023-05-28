@@ -2,7 +2,7 @@ use std::fmt;
 
 pub enum HandlingOutput {
     QuitUi,
-    AddTxMethod,
+    TakeUserInput,
     PrintNewUpdate,
 }
 
