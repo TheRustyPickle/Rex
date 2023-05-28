@@ -3,11 +3,6 @@ use rex_tui::page_handler::initialize_app;
 use std::env::{current_dir, set_current_dir};
 use std::fs;
 
-
-
-
-
-
 fn main() {
     if let Some(dir) = data_local_dir() {
         let current_dir = current_dir().unwrap().display().to_string();
