@@ -45,4 +45,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.3
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test --verbose
+      - name: Install nextest
+        run: cargo install cargo-nextest --locked
+      - name: Run nextest tests
+        run: cargo nextest run
