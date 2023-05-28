@@ -38,15 +38,19 @@ jobs:
       - run: cargo fmt -- --check
 
   run_test:
-    name: Run tests and upload coverage
+    name: Run tests
     runs-on: ubuntu-latest
     steps:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
-      - run: cargo test --verbose
+      - name: Install tarpaulin
+        run: cargo install cargo-tarpaulin --locked
+      - name: Run tests with tarpaulin
+        run: cargo tarpaulin --verbose --out Xml
       - name: Codecov
         uses: codecov/codecov-action@v2
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+            token: ${{ secrets.CODECOV_TOKEN }}
+            file: ./target/debug/coverage.xml
