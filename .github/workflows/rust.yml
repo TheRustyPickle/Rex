@@ -1,0 +1,52 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  SCCACHE_GHA_ENABLED: "true"
+  RUSTC_WRAPPER: "sccache"
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust_fmt:
+    name: Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
+      - uses: actions/checkout@v3
+      - name: Run rust format
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+          profile: minimal
+          default: true
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2.4.0
+      - run: cargo fmt -- --check
+
+  run_test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
+      - uses: actions/checkout@v3
+      - uses: Swatinem/rust-cache@v2.4.0
+      - name: Install tarpaulin
+        run: |
+          curl -s https://api.github.com/repos/xd009642/tarpaulin/releases/latest | \
+          grep "browser_download_url.*x86_64-unknown-linux-musl.tar.gz" | cut -d : -f 2,3 | tr -d \" | wget -qi -
+          tar -xzf cargo-tarpaulin-*.tar.gz
+          mv cargo-tarpaulin ~/.cargo/bin/
+      - name: Run tests with tarpaulin
+        run: cargo tarpaulin --out Xml --verbose
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+            token: ${{ secrets.CODECOV_TOKEN }}
+            file: cobertura.xml
+            verbose: true
