@@ -12,15 +12,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  rust_check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.3
-      - uses: actions/checkout@v3
-      - name: Check
-        run: cargo check --verbose
-
   rust_fmt:
     name: Formatting
     runs-on: ubuntu-latest
