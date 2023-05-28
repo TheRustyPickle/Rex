@@ -300,3 +300,21 @@ impl SummaryTab {
         }
     }
 }
+
+pub enum UserInputType {
+    AddNewTxMethod(Option<Vec<String>>),
+    RenameTxMethod(Option<String>),
+    CancelledOperation,
+    InvalidInput,
+}
+
+impl UserInputType {
+    pub fn from_string(input: &str) -> Self {
+        match input {
+            "1" => UserInputType::AddNewTxMethod(None),
+            "2" => UserInputType::RenameTxMethod(None),
+            "cancel" => UserInputType::CancelledOperation,
+            _ => UserInputType::InvalidInput,
+        }
+    }
+}

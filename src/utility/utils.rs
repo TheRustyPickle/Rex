@@ -309,3 +309,13 @@ pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
                 .bg(HIGHLIGHTED),
         )
 }
+
+pub fn start_timer<T: std::fmt::Display>(input: T) {
+    let stdout = std::io::stdout();
+    let mut handle = stdout.lock();
+    for i in (1..6).rev() {
+        write!(handle, "\r{input} Restarting in {i} seconds").unwrap();
+        handle.flush().unwrap();
+        thread::sleep(Duration::from_millis(1000));
+    }
+}
