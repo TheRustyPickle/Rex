@@ -132,15 +132,30 @@ fn get_last_balance(sp: &Savepoint, all_methods: &Vec<String>) -> Vec<String> {
     final_balance.unwrap()
 }
 
+/// Updates the DB with the new tx method name
 pub fn rename_column(conn: &mut Connection, old_name: &str, new_name: &str) -> Result<()> {
     let sp = conn.savepoint().unwrap();
-    let query = format!("ALTER TABLE balance_all RENAME COLUMN {old_name} TO {new_name}");
+    let query = format!(r#"ALTER TABLE balance_all RENAME COLUMN "{old_name}" TO "{new_name}""#);
     sp.execute(&query, [])?;
 
-    let query = format!("ALTER TABLE changes_all RENAME COLUMN {old_name} TO {new_name}");
+    let query = format!(r#"ALTER TABLE changes_all RENAME COLUMN "{old_name}" TO "{new_name}""#);
     sp.execute(&query, [])?;
 
-    let query = format!(r#"UPDATE tx_all SET tx_method="{new_name}" WHERE tx_method="{old_name}""#);
+    // Follows 3 cases
+    // 1. old_name == new_name. Replace old name with the new name
+    // 2. If the tx method = old_name to tx_method. Replace the old name part but keep to tx_method
+    // 3. If the tx method = tx_method to old_name. Replace the old name part but keep tx_method to
+    // last 2 are used for transfer tx
+    let query = format!(
+        r#"UPDATE tx_all SET tx_method =
+            CASE
+                WHEN tx_method = "{old_name}" THEN "{new_name}"
+                WHEN tx_method LIKE "{old_name} %" THEN REPLACE(tx_method, "{old_name}", "{new_name}")
+                WHEN tx_method LIKE "% {old_name}" THEN REPLACE(tx_method, " {old_name}", " {new_name}")
+                ELSE tx_method
+            END
+        WHERE tx_method LIKE "%{old_name}%""#
+    );
     sp.execute(&query, [])?;
 
     sp.commit()?;
