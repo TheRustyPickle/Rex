@@ -303,7 +303,7 @@ impl SummaryTab {
 
 pub enum UserInputType {
     AddNewTxMethod(Option<Vec<String>>),
-    RenameTxMethod(Option<String>),
+    RenameTxMethod(Option<Vec<String>>),
     CancelledOperation,
     InvalidInput,
 }
