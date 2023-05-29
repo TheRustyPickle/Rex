@@ -1,11 +1,9 @@
 use crate::outputs::TerminalExecutionError;
 use crate::page_handler::UserInputType;
-use crate::utility::{get_all_tx_methods, get_sql_dates};
-use crossterm::execute;
-use crossterm::terminal::{Clear, ClearType};
+use crate::utility::{clear_terminal, flush_output, get_all_tx_methods, get_sql_dates, take_input};
 use rusqlite::Connection;
 use std::collections::{HashMap, HashSet};
-use std::io::{self, Write};
+use std::io::stdout;
 use std::process::Command;
 
 /// Returns the balance of all methods based on year and month point.
@@ -259,20 +257,19 @@ pub fn get_last_balances(tx_method: &Vec<String>, conn: &Connection) -> Vec<Stri
     final_balance.unwrap()
 }
 
-pub fn take_input(conn: &Connection) -> UserInputType {
+/// Prompts the user to select and option and start taking relevant inputs
+pub fn start_taking_input(conn: &Connection) -> UserInputType {
     let mut to_return = UserInputType::CancelledOperation;
-    let mut stdout = io::stdout();
-    execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
+    let mut stdout = stdout();
+    clear_terminal(&mut stdout);
 
     loop {
         println!("Enter an option number to proceed. Input 'Cancel' to cancel the operation\n\n1. Add New Tx Method\n2. Rename Existing Tx Method\n");
         print!("Proceed with option number: ");
-        let mut handle = stdout.lock();
-        handle.flush().unwrap();
+        flush_output(&stdout);
 
-        let mut user_input = String::new();
-        std::io::stdin().read_line(&mut user_input).unwrap();
-        let input_type = UserInputType::from_string(user_input.to_lowercase().trim());
+        let user_input = take_input();
+        let input_type = UserInputType::from_string(&user_input.to_lowercase());
 
         match input_type {
             UserInputType::AddNewTxMethod(_) => {
@@ -280,10 +277,14 @@ pub fn take_input(conn: &Connection) -> UserInputType {
                 to_return = UserInputType::AddNewTxMethod(data);
                 break;
             }
-            UserInputType::RenameTxMethod(_) => {}
+            UserInputType::RenameTxMethod(_) => {
+                let data = get_rename_data(conn);
+                to_return = UserInputType::RenameTxMethod(data);
+                break;
+            }
             UserInputType::CancelledOperation => break,
             UserInputType::InvalidInput => {
-                execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap()
+                clear_terminal(&mut stdout);
             }
         }
     }
@@ -297,11 +298,11 @@ pub fn take_input(conn: &Connection) -> UserInputType {
 /// the database with new transaction methods.
 pub fn get_user_tx_methods(add_new_method: bool, conn: &Connection) -> Option<Vec<String>> {
     let restricted_methods = ["Total", "Balance", "Changes", "Income", "Expense"];
-    let mut stdout = io::stdout();
+    let mut stdout = stdout();
 
     // this command clears up the terminal. This is added so the terminal doesn't get
     //filled up with previous unnecessary texts.
-    execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
+    clear_terminal(&mut stdout);
 
     let mut current_tx_methods: Vec<String> = Vec::new();
     let mut db_tx_methods = vec![];
@@ -320,8 +321,8 @@ pub fn get_user_tx_methods(add_new_method: bool, conn: &Connection) -> Option<Ve
     // we will take input from the user and use the input data to create a new database
     // keep on looping until the methods are approved by sending y.
     loop {
-        let mut line = String::new();
-        let mut verify_line = String::new();
+        
+        
         let mut verify_input = "Inserted Transaction Methods:\n".to_string();
         if add_new_method {
             println!("{method_line}\n");
@@ -336,10 +337,7 @@ or ','. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:"
         }
 
         // take user input for transaction methods
-        std::io::stdin().read_line(&mut line).unwrap();
-
-        // extremely important to prevent crashes on Windows
-        line = line.trim().to_string();
+        let line = take_input();
 
         if line.to_lowercase().starts_with("cancel") && add_new_method {
             return None;
@@ -376,7 +374,7 @@ or ','. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:"
         if (splitted.is_empty() || add_new_method)
             && (filtered_splitted.is_empty() || !add_new_method)
         {
-            execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
+            clear_terminal(&mut stdout);
             println!("\nTransaction Method input cannot be empty and existing Transaction Methods cannot be used twice");
         } else {
             if add_new_method {
@@ -391,9 +389,7 @@ or ','. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:"
             verify_input.push_str("Accept the values? y/n");
             println!("\n{verify_input}");
 
-            std::io::stdin().read_line(&mut verify_line).unwrap();
-
-            verify_line = verify_line.trim().to_string();
+            let verify_line = take_input();
 
             // until the answer is y/yes/cancel continue the loop
             if verify_line.to_lowercase().starts_with('y') {
@@ -409,11 +405,105 @@ or ','. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:"
                 }
                 break;
             } else {
-                execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
+                clear_terminal(&mut stdout);
             }
         }
     }
     Some(db_tx_methods)
+}
+
+/// Gets a new tx method name from the user to replace an existing method
+pub fn get_rename_data(conn: &Connection) -> Option<Vec<String>> {
+    let restricted_methods = ["Total", "Balance", "Changes", "Income", "Expense"];
+    let mut stdout = stdout();
+
+    clear_terminal(&mut stdout);
+    let mut rename_data = Vec::new();
+
+    let tx_methods = get_all_tx_methods(conn);
+
+    loop {
+        let mut method_line = "Select a Transaction Method to proceed. Input 'Cancel' to cancel the operation.\n\nCurrently added Transaction Methods: ".to_string();
+
+        for i in 0..tx_methods.len() {
+            method_line.push_str(&format!("\n{}. {}", i + 1, tx_methods[i]))
+        }
+        println!("{method_line}");
+        print!("\nEnter the method number to edit: ");
+        flush_output(&stdout);
+
+        let user_input = take_input();
+
+        // If no input, start from the beginning
+        if user_input.is_empty() {
+            clear_terminal(&mut stdout);
+            continue;
+        }
+
+        // cancel the process on cancel input
+        if user_input.to_lowercase().starts_with("cancel") {
+            return None;
+        }
+
+        let method_number_result = user_input.parse::<usize>();
+
+        let method_number = match method_number_result {
+            Ok(num) => num,
+            Err(_) => {
+                clear_terminal(&mut stdout);
+                println!("Invalid method number. Example input: 1\n");
+                continue;
+            }
+        };
+
+        // Start from the beginning if the number is beyond the tx method total index 
+        if method_number > tx_methods.len() {
+            clear_terminal(&mut stdout);
+            println!("Invalid method number. Example input: 1\n");
+            continue;
+        }
+
+        println!(
+            "\nSelected method: {}. Enter the new name for this Transaction Method.",
+            tx_methods[method_number - 1]
+        );
+        print!("New method name: ");
+        flush_output(&stdout);
+
+        let new_method_name = take_input();
+
+        // Start from the beginning if the given tx method already exists
+        if tx_methods.contains(&new_method_name) {
+            clear_terminal(&mut stdout);
+            println!("Tx Method already exists. Use a different value\n");
+            continue;
+        }
+
+        // The tx method cannot be in the list of the restricted words otherwise UI may glitch
+        if restricted_methods.contains(&new_method_name.as_str()) {
+            clear_terminal(&mut stdout);
+            println!("Restricted method name. Value cannot be accepted.\n");
+            continue;
+        }
+
+        println!(
+            "\nRename {} to {new_method_name}.",
+            tx_methods[method_number - 1]
+        );
+        print!("Accept the values? y/n: ");
+        flush_output(&stdout);
+
+        let confirm_operation = take_input();
+
+        if confirm_operation.to_lowercase().starts_with('y') {
+            rename_data.push(tx_methods[method_number - 1].to_owned());
+            rename_data.push(new_method_name);
+            break;
+        } else {
+            clear_terminal(&mut stdout);
+        }
+    }
+    Some(rename_data)
 }
 
 /// Tries to open terminal/cmd and run this app
