@@ -1,10 +1,11 @@
+use crate::db::{add_new_tx_methods, rename_column};
 use crate::initial_page::check_version;
+use crate::outputs::HandlingOutput;
 use crate::page_handler::start_app;
 use crate::utility::{
-    check_n_create_db, check_old_sql, enter_tui_interface, exit_tui_interface, start_terminal,
-    start_timer, take_input,
+    check_n_create_db, check_old_sql, enter_tui_interface, exit_tui_interface, start_taking_input,
+    start_terminal, start_timer,
 };
-use crate::{db::add_new_tx_methods, outputs::HandlingOutput};
 use atty::Stream;
 use rusqlite::Connection;
 use std::fs::File;
@@ -38,23 +39,38 @@ pub fn initialize_app(verifying_path: &str, current_dir: &str) -> Result<(), Box
 
         match result {
             Ok(output) => match output {
-                HandlingOutput::TakeUserInput => match take_input( &conn) {
+                HandlingOutput::TakeUserInput => match start_taking_input( &conn) {
                     UserInputType::AddNewTxMethod(data) => {
                         match data {
                             Some(tx_methods) => {
-                                let status = add_new_tx_methods( tx_methods, &mut conn);
+                                let status = add_new_tx_methods(tx_methods, &mut conn);
                                 match status {
-                                    Ok(_) => {
-                                        start_timer("Added Transaction Methods Successfully.")
-                                    }
+                                    Ok(_) => start_timer("Added Transaction Methods Successfully."),
                                     Err(e) => {
-                                        start_timer(format!("Error while adding new Transaction Methods. Error: {e:?}."))
+                                        println!("Error while adding new Transaction Methods. Error: {e:?}.");
+                                        start_timer("")}
+                                }
+                            }
+                            None => start_timer("Operation Cancelled.") 
+                        }
+                    }
+                    UserInputType::RenameTxMethod(data) => {
+                        match data {
+                            Some(rename_data) => {
+                                let old_name = &rename_data[0];
+                                let new_name = &rename_data[1];
+
+                                let status = rename_column(&mut conn, old_name, new_name);
+
+                                match status {
+                                    Ok(_) => start_timer("Tx Method renamed successfully."),
+                                    Err(e) => {
+                                        println!("Error while renaming tx method. Error: {e:?}.");
+                                        start_timer("")
                                     }
                                 }
                             }
-                            None => {
-                                start_timer("Operation Cancelled.")
-                            }
+                            None => start_timer("Operation Cancelled.")
                         }
                     }
                     UserInputType::CancelledOperation => {

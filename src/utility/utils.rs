@@ -3,13 +3,13 @@ use crate::page_handler::{IndexedData, BACKGROUND, BOX, HIGHLIGHTED, TEXT};
 use crate::utility::get_user_tx_methods;
 use crossterm::execute;
 use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+    disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen,
 };
 use rusqlite::{Connection, Result as sqlResult};
 use std::collections::HashSet;
 use std::error::Error;
 use std::fs;
-use std::io::{self, Stdout, Write};
+use std::io::{stdout, Stdout, Write};
 use std::time::Duration;
 use std::{process, thread};
 use tui::backend::CrosstermBackend;
@@ -126,19 +126,7 @@ pub fn check_old_sql(conn: &mut Connection) {
         println!("Old database detected. Starting migration...");
         let status = add_tags_column(conn);
         match status {
-            Ok(_) => {
-                let stdout = std::io::stdout();
-                let mut handle = stdout.lock();
-                for i in (1..6).rev() {
-                    write!(
-                        handle,
-                        "\rDatabase migration successfully complete. Restarting in {i} seconds"
-                    )
-                    .unwrap();
-                    handle.flush().unwrap();
-                    thread::sleep(Duration::from_millis(1000));
-                }
-            }
+            Ok(_) => start_timer("Database migration successfully complete."),
             Err(e) => {
                 println!("Database migration failed. Try again. Error: {}", e);
                 println!("Commits reversed. Exiting...");
@@ -153,19 +141,7 @@ pub fn check_old_sql(conn: &mut Connection) {
         println!("Outdated database detected. Updating...");
         let status = update_balance_type(conn);
         match status {
-            Ok(_) => {
-                let stdout = std::io::stdout();
-                let mut handle = stdout.lock();
-                for i in (1..6).rev() {
-                    write!(
-                        handle,
-                        "\rDatabase updating successfully complete. Restarting in {i} seconds"
-                    )
-                    .unwrap();
-                    handle.flush().unwrap();
-                    thread::sleep(Duration::from_millis(1000));
-                }
-            }
+            Ok(_) => start_timer("Database updating successfully complete."),
             Err(e) => {
                 println!("Database updating failed. Try again. Error: {}", e);
                 println!("Commits reversed. Exiting...");
@@ -197,7 +173,7 @@ fn check_old_balance_sql(conn: &Connection) -> bool {
 /// Enters raw mode so the Tui can render properly
 pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
     enable_raw_mode()?;
-    let mut stdout = io::stdout();
+    let mut stdout = stdout();
     execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
     let terminal = Terminal::new(backend)?;
@@ -206,7 +182,7 @@ pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<d
 
 /// Exits raw mode so the terminal starts working normally
 pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
-    let stdout = io::stdout();
+    let stdout = stdout();
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
@@ -232,19 +208,7 @@ pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
         println!("Creating New Database. It may take some time...");
         let status = create_db(db_tx_methods, &mut conn);
         match status {
-            Ok(_) => {
-                let stdout = std::io::stdout();
-                let mut handle = stdout.lock();
-                for i in (1..6).rev() {
-                    write!(
-                        handle,
-                        "\rDatabase creation successfully complete. Restarting in {i} seconds"
-                    )
-                    .unwrap();
-                    handle.flush().unwrap();
-                    thread::sleep(Duration::from_millis(1000));
-                }
-            }
+            Ok(_) => start_timer("Database creation successfully complete."),
             Err(e) => {
                 println!("Database creation failed. Try again. Error: {}", e);
                 fs::remove_file("data.sqlite")?;
@@ -292,6 +256,7 @@ pub fn create_bolded_text(text: &str) -> Vec<Spans> {
     text_data
 }
 
+/// Tabs from some given data for the UI
 pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
     let titles = data
         .titles
@@ -310,6 +275,7 @@ pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
         )
 }
 
+/// Does the 5 second timer after input taking ends 
 pub fn start_timer<T: std::fmt::Display>(input: T) {
     let stdout = std::io::stdout();
     let mut handle = stdout.lock();
@@ -318,4 +284,22 @@ pub fn start_timer<T: std::fmt::Display>(input: T) {
         handle.flush().unwrap();
         thread::sleep(Duration::from_millis(1000));
     }
+}
+
+/// Takes a user input and returns the trimmed input as String
+pub fn take_input() -> String {
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    input.trim().to_string()
+}
+
+/// Clears the terminal of all text
+pub fn clear_terminal(stdout: &mut Stdout) {
+    execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
+}
+
+/// Flushes output to the terminal
+pub fn flush_output(stdout: &Stdout) {
+    let mut handle = stdout.lock();
+    handle.flush().unwrap();
 }
