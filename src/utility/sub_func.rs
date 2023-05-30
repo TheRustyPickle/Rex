@@ -267,8 +267,8 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
             "Enter an option number to proceed. Input 'Cancel' to cancel the operation
 
 1. Add New Transaction Methods
-2. Rename Existing Transaction Methods
-3. Reformat Transaction Methods Position\n"
+2. Rename Transaction Method
+3. Reposition Transactions Methods\n"
         );
         print!("Proceed with option number: ");
         flush_output(&stdout);
@@ -279,7 +279,7 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
         match input_type {
             UserInputType::AddNewTxMethod(_) => return get_user_tx_methods(true, conn),
             UserInputType::RenameTxMethod(_) => return get_rename_data(conn),
-            UserInputType::ReformatTxMethod(_) => return get_reformat_data(conn),
+            UserInputType::ReformatTxMethod(_) => return get_reposition_data(conn),
             UserInputType::CancelledOperation => return input_type,
             UserInputType::InvalidInput => clear_terminal(&mut stdout),
         }
@@ -506,11 +506,11 @@ Currently added Transaction Methods: \n"
 }
 
 /// Gets a new sequence of tx methods to reformat their location
-pub fn get_reformat_data(conn: &Connection) -> UserInputType {
+pub fn get_reposition_data(conn: &Connection) -> UserInputType {
     let mut stdout = stdout();
 
     clear_terminal(&mut stdout);
-    let mut reformat_data = Vec::new();
+    let mut reposition_data = Vec::new();
 
     let tx_methods = get_all_tx_methods(conn);
 
@@ -552,23 +552,23 @@ Currently added Transaction Methods: \n".to_string();
             match sequence_num {
                 Some(num) => {
                     if num as usize > tx_methods.len() {
-                        reformat_data.clear();
+                        reposition_data.clear();
                         clear_terminal(&mut stdout);
                         println!("Invalid sequence number given.\n");
                         continue 'outer_loop;
                     }
 
-                    if reformat_data.contains(&tx_methods[num as usize - 1]) {
-                        reformat_data.clear();
+                    if reposition_data.contains(&tx_methods[num as usize - 1]) {
+                        reposition_data.clear();
                         clear_terminal(&mut stdout);
                         println!("Cannot enter the same Transaction Method position twice.\n");
                         continue 'outer_loop;
                     }
 
-                    reformat_data.push(tx_methods[num as usize - 1].to_string());
+                    reposition_data.push(tx_methods[num as usize - 1].to_string());
                 }
                 None => {
-                    reformat_data.clear();
+                    reposition_data.clear();
                     clear_terminal(&mut stdout);
                     println!("Invalid sequence number given.\n");
                     continue 'outer_loop;
@@ -576,16 +576,16 @@ Currently added Transaction Methods: \n".to_string();
             }
         }
 
-        if reformat_data == tx_methods {
-            reformat_data.clear();
+        if reposition_data == tx_methods {
+            reposition_data.clear();
             clear_terminal(&mut stdout);
             println!("No positions to change.\n");
             continue;
         }
 
         println!("\nNew Transaction Methods positions: ");
-        for i in 0..reformat_data.len() {
-            print!("\n{}. {}", i + 1, reformat_data[i]);
+        for i in 0..reposition_data.len() {
+            print!("\n{}. {}", i + 1, reposition_data[i]);
         }
 
         print!("\n\nAccept the values? y/n: ");
@@ -596,12 +596,12 @@ Currently added Transaction Methods: \n".to_string();
         if confirm_operation.to_lowercase().starts_with('y') {
             break;
         } else {
-            reformat_data.clear();
+            reposition_data.clear();
             clear_terminal(&mut stdout);
         }
     }
 
-    UserInputType::ReformatTxMethod(reformat_data)
+    UserInputType::ReformatTxMethod(reposition_data)
 }
 
 /// Tries to open terminal/cmd and run this app

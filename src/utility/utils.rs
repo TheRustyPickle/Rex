@@ -1,5 +1,5 @@
 use crate::db::{add_tags_column, create_db, update_balance_type, YEARS};
-use crate::page_handler::{IndexedData, BACKGROUND, BOX, HIGHLIGHTED, TEXT};
+use crate::page_handler::{IndexedData, UserInputType, BACKGROUND, BOX, HIGHLIGHTED, TEXT};
 use crate::utility::get_user_tx_methods;
 use crossterm::execute;
 use crossterm::terminal::{
@@ -203,8 +203,13 @@ pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
         }
     }
     if !db_found {
-        let mut conn = Connection::open(verifying_path).unwrap();
-        let db_tx_methods = get_user_tx_methods(false, &conn).unwrap();
+        let mut conn = Connection::open(verifying_path)?;
+        let db_tx_methods =
+            if let UserInputType::AddNewTxMethod(inner_value) = get_user_tx_methods(false, &conn) {
+                inner_value
+            } else {
+                return Err("Failed to get tx methods.".into());
+            };
         println!("Creating New Database. It may take some time...");
         let status = create_db(db_tx_methods, &mut conn);
         match status {
@@ -275,7 +280,7 @@ pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
         )
 }
 
-/// Does the 5 second timer after input taking ends 
+/// Does the 5 second timer after input taking ends
 pub fn start_timer<T: std::fmt::Display>(input: T) {
     let stdout = std::io::stdout();
     let mut handle = stdout.lock();

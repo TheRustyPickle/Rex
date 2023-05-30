@@ -302,8 +302,9 @@ impl SummaryTab {
 }
 
 pub enum UserInputType {
-    AddNewTxMethod(Option<Vec<String>>),
-    RenameTxMethod(Option<Vec<String>>),
+    AddNewTxMethod(Vec<String>),
+    RenameTxMethod(Vec<String>),
+    ReformatTxMethod(Vec<String>),
     CancelledOperation,
     InvalidInput,
 }
@@ -311,8 +312,9 @@ pub enum UserInputType {
 impl UserInputType {
     pub fn from_string(input: &str) -> Self {
         match input {
-            "1" => UserInputType::AddNewTxMethod(None),
-            "2" => UserInputType::RenameTxMethod(None),
+            "1" => UserInputType::AddNewTxMethod(Vec::new()),
+            "2" => UserInputType::RenameTxMethod(Vec::new()),
+            "3" => UserInputType::ReformatTxMethod(Vec::new()),
             "cancel" => UserInputType::CancelledOperation,
             _ => UserInputType::InvalidInput,
         }
