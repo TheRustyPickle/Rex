@@ -259,12 +259,17 @@ pub fn get_last_balances(tx_method: &Vec<String>, conn: &Connection) -> Vec<Stri
 
 /// Prompts the user to select and option and start taking relevant inputs
 pub fn start_taking_input(conn: &Connection) -> UserInputType {
-    let mut to_return = UserInputType::CancelledOperation;
     let mut stdout = stdout();
     clear_terminal(&mut stdout);
 
     loop {
-        println!("Enter an option number to proceed. Input 'Cancel' to cancel the operation\n\n1. Add New Tx Method\n2. Rename Existing Tx Method\n");
+        println!(
+            "Enter an option number to proceed. Input 'Cancel' to cancel the operation
+
+1. Add New Transaction Methods
+2. Rename Existing Transaction Methods
+3. Reformat Transaction Methods Position\n"
+        );
         print!("Proceed with option number: ");
         flush_output(&stdout);
 
@@ -272,31 +277,21 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
         let input_type = UserInputType::from_string(&user_input.to_lowercase());
 
         match input_type {
-            UserInputType::AddNewTxMethod(_) => {
-                let data = get_user_tx_methods(true, conn);
-                to_return = UserInputType::AddNewTxMethod(data);
-                break;
-            }
-            UserInputType::RenameTxMethod(_) => {
-                let data = get_rename_data(conn);
-                to_return = UserInputType::RenameTxMethod(data);
-                break;
-            }
-            UserInputType::CancelledOperation => break,
-            UserInputType::InvalidInput => {
-                clear_terminal(&mut stdout);
-            }
+            UserInputType::AddNewTxMethod(_) => return get_user_tx_methods(true, conn),
+            UserInputType::RenameTxMethod(_) => return get_rename_data(conn),
+            UserInputType::ReformatTxMethod(_) => return get_reformat_data(conn),
+            UserInputType::CancelledOperation => return input_type,
+            UserInputType::InvalidInput => clear_terminal(&mut stdout),
         }
     }
-
-    to_return
 }
 
+// TODO check if it's working properly when creating fresh db
 /// This function asks user to input one or more Transaction Method names.
 /// Once the collection is done sends to the database for adding the columns.
 /// This functions is both used when creating the initial db and when updating
 /// the database with new transaction methods.
-pub fn get_user_tx_methods(add_new_method: bool, conn: &Connection) -> Option<Vec<String>> {
+pub fn get_user_tx_methods(add_new_method: bool, conn: &Connection) -> UserInputType {
     let restricted_methods = ["Total", "Balance", "Changes", "Income", "Expense"];
     let mut stdout = stdout();
 
@@ -307,7 +302,7 @@ pub fn get_user_tx_methods(add_new_method: bool, conn: &Connection) -> Option<Ve
     let mut current_tx_methods: Vec<String> = Vec::new();
     let mut db_tx_methods = vec![];
 
-    let mut method_line = "Currently added Transaction Methods: ".to_string();
+    let mut method_line = "Currently added Transaction Methods: \n".to_string();
 
     // if we are adding more tx methods to an existing database, we need to
     // to get the existing columns to prevent duplicates/error.
@@ -321,26 +316,25 @@ pub fn get_user_tx_methods(add_new_method: bool, conn: &Connection) -> Option<Ve
     // we will take input from the user and use the input data to create a new database
     // keep on looping until the methods are approved by sending y.
     loop {
-        
-        
-        let mut verify_input = "Inserted Transaction Methods:\n".to_string();
+        let mut verify_input = "Inserted Transaction Methods:\n\n".to_string();
         if add_new_method {
             println!("{method_line}\n");
-            println!("\nUser input required for Transaction Methods. Must be separated by one comma \
+            println!("User input required for Transaction Methods. Must be separated by one comma \
 or ','. Example: Bank, Cash, PayPal.\n\nInput 'Cancel' to cancel the operation\n\nEnter Transaction Methods:");
         } else {
             println!("Database not found. Follow the guide below to start the app.");
-            println!(
+            print!(
                 "\nUser input required for Transaction Methods. Must be separated by one comma \
 or ','. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:"
             );
         }
+        flush_output(&stdout);
 
         // take user input for transaction methods
         let line = take_input();
 
         if line.to_lowercase().starts_with("cancel") && add_new_method {
-            return None;
+            return UserInputType::CancelledOperation;
         }
 
         // split them and remove duplicates
@@ -386,8 +380,9 @@ or ','. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:"
                     verify_input.push_str(&format!("- {i}\n"));
                 }
             }
-            verify_input.push_str("Accept the values? y/n");
             println!("\n{verify_input}");
+            print!("Accept the values? y/n: ");
+            flush_output(&stdout);
 
             let verify_line = take_input();
 
@@ -409,11 +404,11 @@ or ','. Example: Bank, Cash, PayPal.\n\nEnter Transaction Methods:"
             }
         }
     }
-    Some(db_tx_methods)
+    UserInputType::AddNewTxMethod(db_tx_methods)
 }
 
 /// Gets a new tx method name from the user to replace an existing method
-pub fn get_rename_data(conn: &Connection) -> Option<Vec<String>> {
+pub fn get_rename_data(conn: &Connection) -> UserInputType {
     let restricted_methods = ["Total", "Balance", "Changes", "Income", "Expense"];
     let mut stdout = stdout();
 
@@ -423,7 +418,11 @@ pub fn get_rename_data(conn: &Connection) -> Option<Vec<String>> {
     let tx_methods = get_all_tx_methods(conn);
 
     loop {
-        let mut method_line = "Select a Transaction Method to proceed. Input 'Cancel' to cancel the operation.\n\nCurrently added Transaction Methods: ".to_string();
+        let mut method_line =
+            "Select a Transaction Method to proceed. Input 'Cancel' to cancel the operation.
+        
+Currently added Transaction Methods: \n"
+                .to_string();
 
         for i in 0..tx_methods.len() {
             method_line.push_str(&format!("\n{}. {}", i + 1, tx_methods[i]))
@@ -442,7 +441,7 @@ pub fn get_rename_data(conn: &Connection) -> Option<Vec<String>> {
 
         // cancel the process on cancel input
         if user_input.to_lowercase().starts_with("cancel") {
-            return None;
+            return UserInputType::CancelledOperation;
         }
 
         let method_number_result = user_input.parse::<usize>();
@@ -456,7 +455,7 @@ pub fn get_rename_data(conn: &Connection) -> Option<Vec<String>> {
             }
         };
 
-        // Start from the beginning if the number is beyond the tx method total index 
+        // Start from the beginning if the number is beyond the tx method total index
         if method_number > tx_methods.len() {
             clear_terminal(&mut stdout);
             println!("Invalid method number. Example input: 1\n");
@@ -475,7 +474,7 @@ pub fn get_rename_data(conn: &Connection) -> Option<Vec<String>> {
         // Start from the beginning if the given tx method already exists
         if tx_methods.contains(&new_method_name) {
             clear_terminal(&mut stdout);
-            println!("Tx Method already exists. Use a different value\n");
+            println!("Transaction Methods already exists. Use a different value\n");
             continue;
         }
 
@@ -503,7 +502,106 @@ pub fn get_rename_data(conn: &Connection) -> Option<Vec<String>> {
             clear_terminal(&mut stdout);
         }
     }
-    Some(rename_data)
+    UserInputType::RenameTxMethod(rename_data)
+}
+
+/// Gets a new sequence of tx methods to reformat their location
+pub fn get_reformat_data(conn: &Connection) -> UserInputType {
+    let mut stdout = stdout();
+
+    clear_terminal(&mut stdout);
+    let mut reformat_data = Vec::new();
+
+    let tx_methods = get_all_tx_methods(conn);
+
+    'outer_loop: loop {
+        let mut method_line = "Select Transaction Method number sequence to proceed. Input 'Cancel' to cancel the operation.
+
+Example input: 4 2 1 3, 3412
+        
+Currently added Transaction Methods: \n".to_string();
+
+        for i in 0..tx_methods.len() {
+            method_line.push_str(&format!("\n{}. {}", i + 1, tx_methods[i]))
+        }
+        println!("{method_line}");
+        print!("\nEnter Transaction Methods sequence: ");
+        flush_output(&stdout);
+
+        let sequence_input = take_input().replace(" ", "");
+
+        if sequence_input.is_empty() {
+            continue;
+        }
+
+        if sequence_input.to_lowercase().starts_with("cancel") {
+            return UserInputType::CancelledOperation;
+        }
+
+        if sequence_input.len() > tx_methods.len() {
+            clear_terminal(&mut stdout);
+            println!(
+                "Sequence number length cannot be greater than existing Transaction Methods.\n"
+            );
+            continue;
+        }
+
+        for char in sequence_input.chars() {
+            let sequence_num = char.to_digit(10);
+
+            match sequence_num {
+                Some(num) => {
+                    if num as usize > tx_methods.len() {
+                        reformat_data.clear();
+                        clear_terminal(&mut stdout);
+                        println!("Invalid sequence number given.\n");
+                        continue 'outer_loop;
+                    }
+
+                    if reformat_data.contains(&tx_methods[num as usize - 1]) {
+                        reformat_data.clear();
+                        clear_terminal(&mut stdout);
+                        println!("Cannot enter the same Transaction Method position twice.\n");
+                        continue 'outer_loop;
+                    }
+
+                    reformat_data.push(tx_methods[num as usize - 1].to_string());
+                }
+                None => {
+                    reformat_data.clear();
+                    clear_terminal(&mut stdout);
+                    println!("Invalid sequence number given.\n");
+                    continue 'outer_loop;
+                }
+            }
+        }
+
+        if reformat_data == tx_methods {
+            reformat_data.clear();
+            clear_terminal(&mut stdout);
+            println!("No positions to change.\n");
+            continue;
+        }
+
+        println!("\nNew Transaction Methods positions: ");
+        for i in 0..reformat_data.len() {
+            print!("\n{}. {}", i + 1, reformat_data[i]);
+        }
+
+        print!("\n\nAccept the values? y/n: ");
+        flush_output(&stdout);
+
+        let confirm_operation = take_input();
+
+        if confirm_operation.to_lowercase().starts_with('y') {
+            break;
+        } else {
+            reformat_data.clear();
+            clear_terminal(&mut stdout);
+        }
+    }
+
+    UserInputType::ReformatTxMethod(reformat_data)
 }
 
 /// Tries to open terminal/cmd and run this app
