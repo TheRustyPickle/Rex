@@ -1,4 +1,4 @@
-use crate::db::create_balances_table;
+use crate::db::{create_balances_table, create_changes_table};
 use crate::utility::get_all_tx_methods;
 use rusqlite::{Connection, Result, Savepoint};
 
@@ -6,7 +6,7 @@ use rusqlite::{Connection, Result, Savepoint};
 /// successful handling of 'J' from the app
 pub fn add_new_tx_methods(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
     // add a save point to reverse commits if failed
-    let sp = conn.savepoint().unwrap();
+    let sp = conn.savepoint()?;
 
     for i in &tx_methods {
         let query = format!(r#"ALTER TABLE balance_all ADD COLUMN "{i}" REAL DEFAULT 0.00"#);
@@ -23,7 +23,7 @@ pub fn add_new_tx_methods(tx_methods: Vec<String>, conn: &mut Connection) -> Res
 
 /// Adds the tags column inside the database. Used when the old database without the tags column is detected
 pub fn add_tags_column(conn: &mut Connection) -> Result<()> {
-    let sp = conn.savepoint().unwrap();
+    let sp = conn.savepoint()?;
     sp.execute("ALTER TABLE tx_all ADD tags TEXT DEFAULT Unknown;", [])?;
     sp.commit()?;
     Ok(())
@@ -33,7 +33,7 @@ pub fn add_tags_column(conn: &mut Connection) -> Result<()> {
 pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
     let all_methods = get_all_tx_methods(conn);
 
-    let sp = conn.savepoint().unwrap();
+    let sp = conn.savepoint()?;
     let old_last_balance = get_last_balance(&sp, &all_methods);
 
     // rename table
@@ -57,8 +57,8 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
 
     // insert everything from old table to the new balance_all
     let query = format!(
-        "INSERT INTO balance_all ({}, {}) SELECT id_num, {} FROM balance_all_old",
-        "id_num", columns, values
+        "INSERT INTO balance_all (id_num, {}) SELECT id_num, {} FROM balance_all_old",
+        columns, values
     );
 
     sp.execute(&query, [])?;
@@ -133,8 +133,8 @@ fn get_last_balance(sp: &Savepoint, all_methods: &Vec<String>) -> Vec<String> {
 }
 
 /// Updates the DB with the new tx method name
-pub fn rename_column(conn: &mut Connection, old_name: &str, new_name: &str) -> Result<()> {
-    let sp = conn.savepoint().unwrap();
+pub fn rename_column(old_name: &str, new_name: &str, conn: &mut Connection) -> Result<()> {
+    let sp = conn.savepoint()?;
     let query = format!(r#"ALTER TABLE balance_all RENAME COLUMN "{old_name}" TO "{new_name}""#);
     sp.execute(&query, [])?;
 
@@ -159,5 +159,43 @@ pub fn rename_column(conn: &mut Connection, old_name: &str, new_name: &str) -> R
     sp.execute(&query, [])?;
 
     sp.commit()?;
+    Ok(())
+}
+
+pub fn reposition_column(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
+    let sp = conn.savepoint()?;
+
+    let query = "ALTER TABLE balance_all RENAME TO balance_all_old";
+    sp.execute(query, [])?;
+
+    let query = "ALTER TABLE changes_all RENAME TO changes_all_old";
+    sp.execute(query, [])?;
+
+    create_balances_table(&tx_methods, &sp)?;
+    create_changes_table(&tx_methods, &sp)?;
+
+    let columns = tx_methods
+        .iter()
+        .map(|column_name| format!(r#""{}""#, column_name))
+        .collect::<Vec<String>>()
+        .join(",");
+
+    let query = format!(
+        "INSERT INTO balance_all (id_num, {}) SELECT id_num, {} FROM balance_all_old",
+        columns, columns
+    );
+    sp.execute(&query, [])?;
+
+    let query = format!(
+        "INSERT INTO changes_all (date, id_num, {}) SELECT date, id_num, {} FROM changes_all_old",
+        columns, columns
+    );
+    sp.execute(&query, [])?;
+
+    sp.execute("DROP TABLE balance_all_old", [])?;
+    sp.execute("DROP TABLE changes_all_old", [])?;
+
+    sp.commit()?;
+
     Ok(())
 }
