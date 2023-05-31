@@ -279,7 +279,7 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
         match input_type {
             UserInputType::AddNewTxMethod(_) => return get_user_tx_methods(true, conn),
             UserInputType::RenameTxMethod(_) => return get_rename_data(conn),
-            UserInputType::ReformatTxMethod(_) => return get_reposition_data(conn),
+            UserInputType::RepositionTxMethod(_) => return get_reposition_data(conn),
             UserInputType::CancelledOperation => return input_type,
             UserInputType::InvalidInput => clear_terminal(&mut stdout),
         }
@@ -601,7 +601,7 @@ Currently added Transaction Methods: \n".to_string();
         }
     }
 
-    UserInputType::ReformatTxMethod(reposition_data)
+    UserInputType::RepositionTxMethod(reposition_data)
 }
 
 /// Tries to open terminal/cmd and run this app
