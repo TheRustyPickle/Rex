@@ -18,6 +18,8 @@ use tui::text::{Span, Spans};
 use tui::widgets::{Block, BorderType, Borders, Tabs};
 use tui::Terminal;
 
+const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense", "Cancel"];
+
 /// Makes a call to the database to find out all the columns in the balance_all section
 /// so we can determine the number of TX Methods that has been added.
 /// return example: `["source_1", "source_2", "source_3"]`
@@ -203,24 +205,25 @@ pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
         }
     }
     if !db_found {
-        let mut conn = Connection::open(verifying_path)?;
         let db_tx_methods =
-            if let UserInputType::AddNewTxMethod(inner_value) = get_user_tx_methods(false, &conn) {
+            if let UserInputType::AddNewTxMethod(inner_value) = get_user_tx_methods(false, None) {
                 inner_value
             } else {
                 return Err("Failed to get tx methods.".into());
             };
         println!("Creating New Database. It may take some time...");
+
+        let mut conn = Connection::open(verifying_path)?;
         let status = create_db(db_tx_methods, &mut conn);
+        conn.close().unwrap();
         match status {
-            Ok(_) => start_timer("Database creation successfully complete."),
+            Ok(_) => start_timer("Database creation successful."),
             Err(e) => {
                 println!("Database creation failed. Try again. Error: {}", e);
                 fs::remove_file("data.sqlite")?;
                 process::exit(1);
             }
         }
-        conn.close().unwrap();
     }
     Ok(())
 }
@@ -307,4 +310,22 @@ pub fn clear_terminal(stdout: &mut Stdout) {
 pub fn flush_output(stdout: &Stdout) {
     let mut handle = stdout.lock();
     handle.flush().unwrap();
+}
+
+pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
+    if let Some(restricted_words) = restricted {
+        for restricted_item in restricted_words.iter() {
+            if restricted_item.to_lowercase() == item.to_lowercase() {
+                return true;
+            }
+        }
+    } else {
+        for &restricted_item in &RESTRICTED {
+            if restricted_item.to_lowercase() == item.to_lowercase() {
+                return true;
+            }
+        }
+    }
+
+    false
 }
