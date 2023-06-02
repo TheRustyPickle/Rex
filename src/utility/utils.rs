@@ -153,7 +153,7 @@ pub fn check_old_sql(conn: &mut Connection) {
     }
 }
 
-fn check_old_balance_sql(conn: &Connection) -> bool {
+pub fn check_old_balance_sql(conn: &Connection) -> bool {
     let mut query = conn.prepare("PRAGMA table_info(balance_all)").unwrap();
 
     let columns = query
