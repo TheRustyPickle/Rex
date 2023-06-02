@@ -1,6 +1,7 @@
 extern crate rex_tui;
 use rex_tui::db::{add_new_tx_methods, create_db, rename_column, reposition_column};
-use rex_tui::utility::get_all_tx_methods;
+use rex_tui::utility::{get_all_tx_methods, get_last_balances};
+use rex_tui::tx_handler::add_tx;
 use rusqlite::Connection;
 use std::fs;
 
@@ -77,13 +78,31 @@ fn check_repositioning_columns() {
     let file_name = "test_db_4.sqlite";
     let mut conn = create_test_db(file_name);
 
+    add_tx(
+        "2022-07-19",
+        "Testing transaction",
+        "test1",
+        "159.00",
+        "Income",
+        "Unknown",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    let old_last_balances = get_last_balances(&conn);
+
     let status = reposition_column(vec!["test 2".to_string(), "test1".to_string()], &mut conn);
     let tx_methods = get_all_tx_methods(&conn);
     let expected_tx_methods = vec!["test 2".to_string(), "test1".to_string()];
+
+    let last_balances = get_last_balances(&conn);
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(status, Ok(()));
     assert_eq!(expected_tx_methods, tx_methods);
+    assert_eq!(old_last_balances, vec!["159", "0"]);
+    assert_eq!(last_balances, vec!["0", "159"]);
 }
