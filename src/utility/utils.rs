@@ -329,3 +329,11 @@ pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
 
     false
 }
+
+pub fn parse_github_body(body: String) -> String {
+    let body = body.replace("## Updates", "");
+    let body = body.replace("*", "•");
+    let body = body.replace("\r", "");
+    let end_point = body.find("## Changes").unwrap();
+    format!("\n{}\n", &body[..end_point].trim())
+}

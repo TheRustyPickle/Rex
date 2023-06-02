@@ -27,7 +27,7 @@ impl<'a> PopupData<'a> {
 
     pub fn create_popup<B: Backend>(&mut self, f: &mut Frame<B>, popup_type: &PopupState) {
         let status = match popup_type {
-            PopupState::NewUpdate => self.get_new_update_text(),
+            PopupState::NewUpdate(data) => self.get_new_update_text(data),
             PopupState::HomeHelp => self.get_home_help_text(),
             PopupState::AddTxHelp => self.get_add_tx_help_text(),
             PopupState::TransferHelp => self.get_transfer_help_text(),
@@ -42,11 +42,16 @@ impl<'a> PopupData<'a> {
         }
     }
 
-    fn get_new_update_text(&mut self) -> String {
-        self.set("New Update", 30, 25);
-        "There is a new version available\n
-Enter: Redirect to the new version"
-            .to_string()
+    fn get_new_update_text(&mut self, data: &Vec<String>) -> String {
+        let update_data_len = data[1].split("\n").collect::<Vec<&str>>().len() * 3;
+        self.set("New Update", 50, 25 + update_data_len as u16);
+        format!(
+            "New version {} is now available\n
+Updates:
+{}
+Enter: Redirect to the new version",
+            data[0], data[1]
+        )
     }
 
     fn get_add_tx_help_text(&mut self) -> String {
