@@ -78,7 +78,7 @@ pub fn add_tx(
     let mut last_balance_data = HashMap::new();
 
     let all_tx_methods = get_all_tx_methods(&sp);
-    let last_balance = get_last_balances(&all_tx_methods, &sp);
+    let last_balance = get_last_balances(&sp);
 
     // Retrieve the current month's balance for each transaction method.
     let mut current_month_balance =

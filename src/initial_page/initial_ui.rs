@@ -77,7 +77,7 @@ T: Add Transfer Page
 R: Chart Page
 Z: Summary Page
 D: Delete selected Transaction (Home Page)
-J: Add new Transaction Methods (Home Page)
+J: Add/Rename/Reposition Transaction Methods (Home Page)
 E: Edit Selected Transaction (Home Page)
 H: Open Help (Use for detailed help)
 Q: Quit
@@ -90,6 +90,7 @@ Add Transaction/Transfer Page:
 5: Edit TX Type/Amount
 6: Edit Tags  
 S: Save inputted data as a Transaction
+C: Clear all fields
 Enter: Submit a field and continue
 Esc: Stop editing a filed
 

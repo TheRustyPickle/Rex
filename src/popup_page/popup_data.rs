@@ -65,6 +65,7 @@ Esc: Stop editing filed
 
 Arrow Up/Down: Steps value up/down by 1
 Arrow Left/Right: Move cursor on input fields
+C: Clear all fields
 b: On amount field 'b' gets replaced with the current balance of Tx Method field
 Calculation: Amount field supports simple calculation with +, -, *, /
 Tags: This field can be treated as the category of this transaction.
@@ -102,6 +103,7 @@ Esc: Stop editing filed
 
 Arrow Up/Down: Steps value up/down by 1
 Arrow Left/Right: Move cursor on input fields
+C: Clear all fields
 b: On amount field 'b' gets replaced with the current balance of From Method field
 Calculation: Amount field supports simple calculation with +, -, *, /
 Tags: This field can be treated as the category of this transaction
@@ -172,7 +174,7 @@ Following are the supported keys here
 
 Arrow Up/Down: Cycle widgets/table value
 Arrow Left/Right: Move value of the widget
-J: Starts taking input to add one or more new Transaction Method
+J: Starts taking input to add/rename/reposition Transaction Method
 E: Edit the selected transaction on the table
 D: Delete the selected transaction on the table
 
