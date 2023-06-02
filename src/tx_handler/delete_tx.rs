@@ -9,7 +9,7 @@ pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
     let tx_methods = get_all_tx_methods(&sp);
 
     // contains the data of the final row data before the tx gets deleted
-    let last_balance = get_last_balances(&tx_methods, &sp);
+    let last_balance = get_last_balances(&sp);
     let last_balance_id = get_last_balance_id(&sp)?;
 
     // will contain data of the updated final balance row data

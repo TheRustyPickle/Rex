@@ -240,7 +240,8 @@ pub fn get_all_txs(
 }
 
 /// Returns the absolute final balance or the last row on balance_all table.
-pub fn get_last_balances(tx_method: &Vec<String>, conn: &Connection) -> Vec<String> {
+pub fn get_last_balances(conn: &Connection) -> Vec<String> {
+    let tx_method = get_all_tx_methods(conn);
     let mut query = format!(
         "SELECT {:?} FROM balance_all ORDER BY id_num DESC LIMIT 1",
         tx_method
