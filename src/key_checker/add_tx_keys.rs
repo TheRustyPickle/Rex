@@ -14,6 +14,7 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 KeyCode::Char('f') => handler.go_home(),
                 KeyCode::Char('h') => handler.do_help_popup(),
                 KeyCode::Char('s') => handler.add_tx(),
+                KeyCode::Char('c') => handler.clear_input(),
                 KeyCode::Char(c) => {
                     if c.is_numeric() {
                         handler.handle_number_press()
