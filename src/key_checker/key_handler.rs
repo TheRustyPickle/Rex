@@ -533,6 +533,15 @@ impl<'a> InputKeyHandler<'a> {
             _ => {}
         }
     }
+
+    /// Resets all input boxes on Add Tx and Transfer page
+    pub fn clear_input(&mut self) {
+        match self.page {
+            CurrentUi::AddTx => *self.add_tx_data = TxData::new(),
+            CurrentUi::Transfer => *self.transfer_data = TxData::new_transfer(),
+            _ => {}
+        }
+    }
 }
 
 impl<'a> InputKeyHandler<'a> {
