@@ -23,8 +23,7 @@ fn create_test_db(file_name: &str) -> Connection {
 fn check_last_balances_1() {
     let file_name = "last_balances_1.sqlite";
     let conn = create_test_db(file_name);
-    let tx_methods = get_all_tx_methods(&conn);
-    let data = get_last_balances(&tx_methods, &conn);
+    let data = get_last_balances(&conn);
     let expected_data = vec!["0".to_string(), "0".to_string()];
     conn.close().unwrap();
 
@@ -37,7 +36,6 @@ fn check_last_balances_1() {
 fn check_last_balances_2() {
     let file_name = "last_balances_2.sqlite";
     let mut conn = create_test_db(file_name);
-    let tx_methods = get_all_tx_methods(&conn);
 
     add_tx(
         "2022-07-19",
@@ -63,12 +61,12 @@ fn check_last_balances_2() {
     )
     .unwrap();
 
-    let data = get_last_balances(&tx_methods, &conn);
+    let data = get_last_balances(&conn);
     let expected_data = vec!["-159".to_string(), "159.19".to_string()];
 
     delete_tx(1, &mut conn).unwrap();
 
-    let data_2 = get_last_balances(&tx_methods, &conn);
+    let data_2 = get_last_balances(&conn);
     let expected_data_2 = vec!["0".to_string(), "159.19".to_string()];
 
     conn.close().unwrap();
@@ -82,7 +80,6 @@ fn check_last_balances_2() {
 fn check_last_balances_3() {
     let file_name = "last_balances_3.sqlite";
     let mut conn = create_test_db(file_name);
-    let tx_methods = get_all_tx_methods(&conn);
 
     add_tx(
         "2022-07-19",
@@ -108,12 +105,12 @@ fn check_last_balances_3() {
     )
     .unwrap();
 
-    let data = get_last_balances(&tx_methods, &conn);
+    let data = get_last_balances(&conn);
     let expected_data = vec!["0".to_string(), "0".to_string()];
 
     delete_tx(1, &mut conn).unwrap();
 
-    let data_2 = get_last_balances(&tx_methods, &conn);
+    let data_2 = get_last_balances(&conn);
     let expected_data_2 = vec!["159".to_string(), "-159".to_string()];
 
     conn.close().unwrap();
@@ -315,7 +312,7 @@ fn check_balance_all_day() {
         total_days += 1;
     }
 
-    let data = get_last_balances(&tx_methods, &conn);
+    let data = get_last_balances(&conn);
     let expected = vec![total_amount.to_string(), "0".to_string()];
     assert_eq!(data, expected);
 
@@ -329,7 +326,7 @@ fn check_balance_all_day() {
         delete_id_num -= 1;
     }
 
-    let data_1 = get_last_balances(&tx_methods, &conn);
+    let data_1 = get_last_balances(&conn);
     let data_2 = get_last_time_balance(12, 3, &tx_methods, &conn);
 
     let expected_data_1 = vec!["0".to_string(), "0".to_string()];

@@ -73,10 +73,33 @@ fn check_balance_migration() {
         conn.execute(&query, []).unwrap();
     }
 
+    conn.execute(
+        r#"UPDATE balance_all SET "test1" = 200.19, "test 2" = 159.19 WHERE id_num = 49"#,
+        [],
+    )
+    .unwrap();
+
+    let query = r#"SELECT "test1", "test 2" FROM balance_all ORDER BY id_num DESC LIMIT 1"#;
+
+    let old_last_balances = conn
+        .query_row(query, [], |row| {
+            let final_data: Vec<String> = vec![row.get(0).unwrap(), row.get(1).unwrap()];
+            Ok(final_data)
+        })
+        .unwrap();
+
     let old_db_status = check_old_balance_sql(&mut conn);
     let old_last_balance_id = get_last_balance_id(&conn).unwrap();
 
     update_balance_type(&mut conn).unwrap();
+
+    let last_balances = conn
+        .query_row(query, [], |row| {
+            let balance_1: f64 = row.get(0).unwrap();
+            let balance_2: f64 = row.get(1).unwrap();
+            Ok(vec![balance_1.to_string(), balance_2.to_string()])
+        })
+        .unwrap();
 
     let db_status = check_old_balance_sql(&mut conn);
     let last_balance_id = get_last_balance_id(&conn).unwrap();
@@ -86,7 +109,15 @@ fn check_balance_migration() {
 
     assert_eq!(old_db_status, true);
     assert_eq!(old_last_balance_id, 49);
+    assert_eq!(
+        old_last_balances,
+        vec!["200.19".to_string(), "159.19".to_string()]
+    );
 
     assert_eq!(db_status, false);
     assert_eq!(last_balance_id, 193);
+    assert_eq!(
+        last_balances,
+        vec!["200.19".to_string(), "159.19".to_string()]
+    );
 }
