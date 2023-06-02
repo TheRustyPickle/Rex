@@ -168,7 +168,7 @@ pub enum CurrentUi {
 
 /// Indicates which popup is currently on and is being shown in the screen
 pub enum PopupState {
-    NewUpdate,
+    NewUpdate(Vec<String>),
     HomeHelp,
     AddTxHelp,
     TransferHelp,

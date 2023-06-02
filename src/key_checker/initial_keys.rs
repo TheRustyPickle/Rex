@@ -10,7 +10,7 @@ pub fn initial_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
             _ => handler.go_home(),
         },
-        PopupState::NewUpdate => match handler.key.code {
+        PopupState::NewUpdate(_) => match handler.key.code {
             KeyCode::Enter => {
                 if let Err(e) = handler.handle_update_popup() {
                     return Some(e);

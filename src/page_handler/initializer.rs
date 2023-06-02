@@ -34,7 +34,7 @@ pub fn initialize_app(verifying_path: &str, current_dir: &str) -> Result<(), Box
 
     loop {
         let mut terminal = enter_tui_interface()?;
-        let result = start_app(&mut terminal, new_version_available, &mut conn);
+        let result = start_app(&mut terminal, &new_version_available, &mut conn);
         exit_tui_interface()?;
 
         match result {

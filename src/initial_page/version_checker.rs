@@ -1,12 +1,14 @@
+use crate::utility::parse_github_body;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Version {
     name: String,
+    body: String,
 }
 
 /// Uses Github API to get the latest release version number to check if the current version matches with it.
-pub fn check_version() -> Result<bool, reqwest::Error> {
+pub fn check_version() -> Result<Option<Vec<String>>, reqwest::Error> {
     let current_version = format!("v{}", env!("CARGO_PKG_VERSION"));
     static APP_USER_AGENT: &str = "Rex";
 
@@ -20,8 +22,9 @@ pub fn check_version() -> Result<bool, reqwest::Error> {
         .send()?
         .json()?;
     if current_version != caller.name {
-        Ok(true)
+        let updates = parse_github_body(caller.body);
+        Ok(Some(vec![caller.name, updates]))
     } else {
-        Ok(false)
+        Ok(None)
     }
 }
