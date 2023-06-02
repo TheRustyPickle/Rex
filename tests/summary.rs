@@ -40,7 +40,7 @@ fn check_summary_data_1() {
         "Testing transaction",
         "test 2",
         "100.00",
-        "Income",
+        "Expense",
         "Food",
         None,
         &mut conn,
@@ -65,37 +65,31 @@ fn check_summary_data_1() {
     let my_summary_text = my_summary.get_table_data(&summary_modes, 6, 1);
     let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 6, 1, &conn);
 
-    let expected_data_1 = vec![vec![
-        "Food".to_string(),
-        "300.00".to_string(),
-        "0.00".to_string(),
-        "100.00".to_string(),
-        "0.00".to_string(),
-    ]];
+    let expected_data_1 = vec![vec!["Food", "200.00", "100.00", "100.00", "100.00"]];
 
     let expected_data_2 = (
         vec![
             vec![
                 "Total Income".to_string(),
-                "300.00".to_string(),
-                "100.00%".to_string(),
+                "200.00".to_string(),
+                "66.67%".to_string(),
             ],
             vec![
                 "Total Expense".to_string(),
-                "0.00".to_string(),
-                "0.00%".to_string(),
+                "100.00".to_string(),
+                "33.33%".to_string(),
             ],
-            vec!["Net".to_string(), "300.00".to_string(), "-".to_string()],
+            vec!["Net".to_string(), "100.00".to_string(), "-".to_string()],
         ],
         vec![
             vec![
                 "Average Income".to_string(),
-                "300.00".to_string(),
+                "200.00".to_string(),
                 "-".to_string(),
             ],
             vec![
                 "Average Expense".to_string(),
-                "0.00".to_string(),
+                "100.00".to_string(),
                 "-".to_string(),
             ],
         ],
@@ -108,9 +102,9 @@ fn check_summary_data_1() {
             ],
             vec![
                 "Largest Expense".to_string(),
-                "-".to_string(),
-                "0.00".to_string(),
-                "-".to_string(),
+                "19-07-2023".to_string(),
+                "100.00".to_string(),
+                "test 2".to_string(),
             ],
             vec![
                 "Months Checked".to_string(),
@@ -123,13 +117,13 @@ fn check_summary_data_1() {
             vec![
                 "Peak Earning".to_string(),
                 "7-2023".to_string(),
-                "300.00".to_string(),
+                "200.00".to_string(),
                 "-".to_string(),
             ],
             vec![
                 "Peak Expense".to_string(),
-                "-".to_string(),
-                "0.00".to_string(),
+                "7-2023".to_string(),
+                "100.00".to_string(),
                 "-".to_string(),
             ],
         ],
@@ -138,19 +132,19 @@ fn check_summary_data_1() {
                 "test1".to_string(),
                 "200.00".to_string(),
                 "0.00".to_string(),
-                "66.67%".to_string(),
+                "100.00%".to_string(),
                 "0.00".to_string(),
                 "200.00".to_string(),
                 "0.00".to_string(),
             ],
             vec![
                 "test 2".to_string(),
-                "100.00".to_string(),
-                "0.00".to_string(),
-                "33.33%".to_string(),
                 "0.00".to_string(),
                 "100.00".to_string(),
                 "0.00".to_string(),
+                "100.00%".to_string(),
+                "0.00".to_string(),
+                "100.00".to_string(),
             ],
         ],
     );
@@ -168,7 +162,19 @@ fn check_summary_data_2() {
     let mut conn = create_test_db(&file_name);
 
     add_tx(
-        "2025-08-19",
+        "2022-08-19",
+        "Testing transaction",
+        "test1",
+        "500.00",
+        "Expense",
+        "Car",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2022-01-19",
         "Testing transaction",
         "test1",
         "500.00",
@@ -192,11 +198,11 @@ fn check_summary_data_2() {
     .unwrap();
 
     add_tx(
-        "2030-05-19",
+        "2022-05-19",
         "Testing transaction",
         "test1",
         "1000.00",
-        "Expense",
+        "Income",
         "Food",
         None,
         &mut conn,
@@ -210,56 +216,65 @@ fn check_summary_data_2() {
     let my_summary_text = my_summary.get_table_data(&summary_modes, 0, 0);
     let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 0, 0, &conn);
 
-    let expected_data_1 = vec![vec![
-        "Food".to_string(),
-        "700.00".to_string(),
-        "0.00".to_string(),
-        "100.00".to_string(),
-        "0.00".to_string(),
-    ]];
+    let expected_data_1 = vec![
+        vec![
+            "Car".to_string(),
+            "0.00".to_string(),
+            "1000.00".to_string(),
+            "0.00".to_string(),
+            "100.00".to_string(),
+        ],
+        vec![
+            "Food".to_string(),
+            "1700.00".to_string(),
+            "0.00".to_string(),
+            "100.00".to_string(),
+            "0.00".to_string(),
+        ],
+    ];
 
     let expected_data_2 = (
         vec![
             vec![
                 "Total Income".to_string(),
-                "700.00".to_string(),
-                "100.00%".to_string(),
+                "1700.00".to_string(),
+                "62.96%".to_string(),
             ],
             vec![
                 "Total Expense".to_string(),
-                "0.00".to_string(),
-                "0.00%".to_string(),
+                "1000.00".to_string(),
+                "37.04%".to_string(),
             ],
             vec!["Net".to_string(), "700.00".to_string(), "-".to_string()],
         ],
         vec![
             vec![
                 "Average Income".to_string(),
-                "700.00".to_string(),
+                "425.00".to_string(),
                 "-".to_string(),
             ],
             vec![
                 "Average Expense".to_string(),
-                "0.00".to_string(),
+                "250.00".to_string(),
                 "-".to_string(),
             ],
         ],
         vec![
             vec![
                 "Largest Income".to_string(),
-                "19-07-2022".to_string(),
-                "700.00".to_string(),
-                "test 2".to_string(),
+                "19-05-2022".to_string(),
+                "1000.00".to_string(),
+                "test1".to_string(),
             ],
             vec![
                 "Largest Expense".to_string(),
-                "-".to_string(),
-                "0.00".to_string(),
-                "-".to_string(),
+                "19-01-2022".to_string(),
+                "500.00".to_string(),
+                "test1".to_string(),
             ],
             vec![
                 "Months Checked".to_string(),
-                "1".to_string(),
+                "4".to_string(),
                 "-".to_string(),
                 "-".to_string(),
             ],
@@ -267,34 +282,34 @@ fn check_summary_data_2() {
         vec![
             vec![
                 "Peak Earning".to_string(),
-                "7-2022".to_string(),
-                "700.00".to_string(),
+                "5-2022".to_string(),
+                "1000.00".to_string(),
                 "-".to_string(),
             ],
             vec![
                 "Peak Expense".to_string(),
-                "-".to_string(),
-                "0.00".to_string(),
+                "1-2022".to_string(),
+                "500.00".to_string(),
                 "-".to_string(),
             ],
         ],
         vec![
             vec![
                 "test1".to_string(),
-                "0.00".to_string(),
-                "0.00".to_string(),
-                "0.00".to_string(),
-                "0.00".to_string(),
-                "0.00".to_string(),
-                "0.00".to_string(),
+                "1000.00".to_string(),
+                "1000.00".to_string(),
+                "58.82%".to_string(),
+                "100.00%".to_string(),
+                "250.00".to_string(),
+                "250.00".to_string(),
             ],
             vec![
                 "test 2".to_string(),
                 "700.00".to_string(),
                 "0.00".to_string(),
-                "100.00%".to_string(),
+                "41.18%".to_string(),
                 "0.00".to_string(),
-                "700.00".to_string(),
+                "175.00".to_string(),
                 "0.00".to_string(),
             ],
         ],

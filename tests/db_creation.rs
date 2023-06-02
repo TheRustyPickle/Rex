@@ -1,7 +1,7 @@
 extern crate rex_tui;
 use rex_tui::db::{add_new_tx_methods, create_db, rename_column, reposition_column};
-use rex_tui::utility::{get_all_tx_methods, get_last_balances};
 use rex_tui::tx_handler::add_tx;
+use rex_tui::utility::{get_all_tx_methods, get_last_balances};
 use rusqlite::Connection;
 use std::fs;
 
