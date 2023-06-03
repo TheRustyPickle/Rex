@@ -1,6 +1,5 @@
 use std::fmt;
 
-
 pub enum HandlingOutput {
     QuitUi,
     TakeUserInput,
