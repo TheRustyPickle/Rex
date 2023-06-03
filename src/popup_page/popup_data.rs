@@ -4,7 +4,6 @@ use tui::backend::Backend;
 use tui::Frame;
 
 /// Stores data to create a new popup
-#[cfg(not(tarpaulin_include))]
 pub struct PopupData<'a> {
     title: &'a str,
     x_value: u16,
@@ -20,12 +19,14 @@ impl<'a> PopupData<'a> {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub fn set(&mut self, title: &'a str, x_value: u16, y_value: u16) {
         self.title = title;
         self.x_value = x_value;
         self.y_value = y_value;
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub fn create_popup<B: Backend>(&mut self, f: &mut Frame<B>, popup_type: &PopupState) {
         let status = match popup_type {
             PopupState::NewUpdate(data) => self.get_new_update_text(data),
@@ -43,6 +44,7 @@ impl<'a> PopupData<'a> {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_new_update_text(&mut self, data: &Vec<String>) -> String {
         let update_data_len = data[1].split("\n").collect::<Vec<&str>>().len() * 3;
         self.set("New Update", 50, 25 + update_data_len as u16);
@@ -55,6 +57,7 @@ Enter: Redirect to the new version",
         )
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_add_tx_help_text(&mut self) -> String {
         self.set("Help", 60, 70);
         "This page is for adding new transactions. Following are the supported keys here
@@ -90,6 +93,7 @@ Q: Quit
         .to_string()
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_transfer_help_text(&mut self) -> String {
         self.set("Help", 60, 70);
         "This page is for adding new Transfer Transaction.
@@ -128,6 +132,7 @@ Q: Quit
         .to_string()
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_chart_help_text(&mut self) -> String {
         self.set("Help", 50, 40);
         "This page shows the movement of balances within the selected period of time
@@ -149,6 +154,7 @@ Q: Quit
         .to_string()
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_summary_help_text(&mut self) -> String {
         self.set("Help", 50, 45);
         "This page shows various information based on all transactions
@@ -172,6 +178,7 @@ Q: Quit
         .to_string()
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_home_help_text(&mut self) -> String {
         self.set("Help", 50, 50);
         "This is the Home page where all txs added so far, the balances and the changes are shown
@@ -195,6 +202,7 @@ Q: Quit
         .to_string()
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_delete_failed_text(&mut self, err: &str) -> String {
         self.set("Delete Failed", 50, 25);
         format!("Deletion failed. Error: {}", err)

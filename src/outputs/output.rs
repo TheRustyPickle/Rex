@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[cfg(not(tarpaulin_include))]
+
 pub enum HandlingOutput {
     QuitUi,
     TakeUserInput,
@@ -8,7 +8,6 @@ pub enum HandlingOutput {
 }
 
 #[derive(PartialEq, Debug)]
-#[cfg(not(tarpaulin_include))]
 pub enum VerifyingOutput {
     Nothing(AType),
     Accepted(AType),
@@ -16,6 +15,7 @@ pub enum VerifyingOutput {
 }
 
 impl fmt::Display for VerifyingOutput {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             VerifyingOutput::Nothing(value) => write!(f, "{value}: Nothing to check"),
@@ -27,7 +27,6 @@ impl fmt::Display for VerifyingOutput {
 
 /// Accepted Type
 #[derive(PartialEq, Debug)]
-#[cfg(not(tarpaulin_include))]
 pub enum AType {
     Date,
     TxMethod,
@@ -36,6 +35,7 @@ pub enum AType {
 }
 
 impl fmt::Display for AType {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             AType::Date => write!(f, "Date"),
@@ -48,7 +48,6 @@ impl fmt::Display for AType {
 
 /// Non Accepted Type
 #[derive(PartialEq, Debug)]
-#[cfg(not(tarpaulin_include))]
 pub enum NAType {
     InvalidDate,
     InvalidYear,
@@ -66,6 +65,7 @@ pub enum NAType {
 }
 
 impl fmt::Display for NAType {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             NAType::InvalidDate => write!(f, "Date: Unknown date"),
