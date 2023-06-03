@@ -4,6 +4,7 @@ use tui::backend::Backend;
 use tui::Frame;
 
 /// Stores data to create a new popup
+#[cfg(not(tarpaulin_include))]
 pub struct PopupData<'a> {
     title: &'a str,
     x_value: u16,

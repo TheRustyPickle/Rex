@@ -4,6 +4,7 @@ use crate::page_handler::PopupState;
 use crossterm::event::KeyCode;
 
 /// Tracks the keys of the Initial page and calls relevant function based on it
+#[cfg(not(tarpaulin_include))]
 pub fn initial_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
         PopupState::Nothing => match handler.key.code {

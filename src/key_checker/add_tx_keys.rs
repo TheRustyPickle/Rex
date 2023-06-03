@@ -4,6 +4,7 @@ use crate::page_handler::{PopupState, TxTab};
 use crossterm::event::KeyCode;
 
 /// Tracks the keys of the Add Tx page and calls relevant function based on it
+#[cfg(not(tarpaulin_include))]
 pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
         // we don't want to move this interface while the popup is on

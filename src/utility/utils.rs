@@ -38,6 +38,7 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
     data
 }
 
+/// Returns all unique tags from the db
 pub fn get_all_tags(conn: &Connection) -> Vec<String> {
     let mut query = conn
         .prepare("SELECT tags FROM tx_all")
@@ -122,6 +123,7 @@ pub fn get_sql_dates(month: usize, year: usize) -> (String, String) {
 }
 
 /// Verifies the db version is up to date
+#[cfg(not(tarpaulin_include))]
 pub fn check_old_sql(conn: &mut Connection) {
     // * earlier version of the database didn't had the Tag column
     if !get_all_tx_columns(conn).contains(&"tags".to_string()) {
@@ -153,6 +155,7 @@ pub fn check_old_sql(conn: &mut Connection) {
     }
 }
 
+/// Checks if the balance_all table is outdated
 pub fn check_old_balance_sql(conn: &Connection) -> bool {
     let mut query = conn.prepare("PRAGMA table_info(balance_all)").unwrap();
 
@@ -173,6 +176,7 @@ pub fn check_old_balance_sql(conn: &Connection) -> bool {
 }
 
 /// Enters raw mode so the Tui can render properly
+#[cfg(not(tarpaulin_include))]
 pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
     enable_raw_mode()?;
     let mut stdout = stdout();
@@ -183,6 +187,7 @@ pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<d
 }
 
 /// Exits raw mode so the terminal starts working normally
+#[cfg(not(tarpaulin_include))]
 pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     let stdout = stdout();
     let backend = CrosstermBackend::new(stdout);
@@ -194,6 +199,8 @@ pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Checks if a db already exists or prompts to create a new one
+#[cfg(not(tarpaulin_include))]
 pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
     // checks the local folder and searches for data.sqlite
     let paths = fs::read_dir(".")?;
@@ -229,6 +236,7 @@ pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
 }
 
 /// Returns a styled block for ui to use
+#[cfg(not(tarpaulin_include))]
 pub fn styled_block(title: &str) -> Block {
     Block::default()
         .borders(Borders::ALL)
@@ -240,12 +248,14 @@ pub fn styled_block(title: &str) -> Block {
         ))
 }
 
+#[cfg(not(tarpaulin_include))]
 pub fn main_block<'a>() -> Block<'a> {
     Block::default().style(Style::default().bg(BACKGROUND).fg(BOX))
 }
 
 /// takes a string and makes any word before the first occurrence of : to Bold
 /// Used for rendering
+#[cfg(not(tarpaulin_include))]
 pub fn create_bolded_text(text: &str) -> Vec<Spans> {
     let mut text_data = Vec::new();
 
@@ -265,6 +275,7 @@ pub fn create_bolded_text(text: &str) -> Vec<Spans> {
 }
 
 /// Tabs from some given data for the UI
+#[cfg(not(tarpaulin_include))]
 pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
     let titles = data
         .titles
@@ -284,6 +295,7 @@ pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
 }
 
 /// Does the 5 second timer after input taking ends
+#[cfg(not(tarpaulin_include))]
 pub fn start_timer<T: std::fmt::Display>(input: T) {
     let stdout = std::io::stdout();
     let mut handle = stdout.lock();
@@ -295,6 +307,7 @@ pub fn start_timer<T: std::fmt::Display>(input: T) {
 }
 
 /// Takes a user input and returns the trimmed input as String
+#[cfg(not(tarpaulin_include))]
 pub fn take_input() -> String {
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
@@ -302,16 +315,19 @@ pub fn take_input() -> String {
 }
 
 /// Clears the terminal of all text
+#[cfg(not(tarpaulin_include))]
 pub fn clear_terminal(stdout: &mut Stdout) {
     execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
 }
 
 /// Flushes output to the terminal
+#[cfg(not(tarpaulin_include))]
 pub fn flush_output(stdout: &Stdout) {
     let mut handle = stdout.lock();
     handle.flush().unwrap();
 }
 
+/// Checks if the input is a restricted word or inside a given vector
 pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
     if let Some(restricted_words) = restricted {
         for restricted_item in restricted_words.iter() {
