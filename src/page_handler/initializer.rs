@@ -14,6 +14,7 @@ use std::{error::Error, process};
 
 use super::UserInputType;
 
+#[cfg(not(tarpaulin_include))]
 pub fn initialize_app(verifying_path: &str, current_dir: &str) -> Result<(), Box<dyn Error>> {
     let new_version_available = check_version()?;
     if !atty::is(Stream::Stdout) {

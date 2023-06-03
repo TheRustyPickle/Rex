@@ -9,6 +9,7 @@ use tui::widgets::Paragraph;
 use tui::Frame;
 
 /// The function draws the Add Transaction page of the interface.
+#[cfg(not(tarpaulin_include))]
 pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_selected: &TxTab) {
     // get the data to insert into the Status widget of this page
     let status_data = add_tx_data.get_tx_status();
