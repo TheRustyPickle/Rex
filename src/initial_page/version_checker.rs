@@ -1,15 +1,16 @@
 use crate::utility::parse_github_body;
 use serde::{Deserialize, Serialize};
+use semver::Version;
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Version {
+struct GithubRelease {
     name: String,
     body: String,
 }
 
 /// Uses Github API to get the latest release version number to check if the current version matches with it.
 pub fn check_version() -> Result<Option<Vec<String>>, reqwest::Error> {
-    let current_version = format!("v{}", env!("CARGO_PKG_VERSION"));
+    let current_version = Version::parse(&format!("{}", env!("CARGO_PKG_VERSION"))).unwrap();
     static APP_USER_AGENT: &str = "Rex";
 
     let client = reqwest::blocking::Client::builder()
@@ -17,11 +18,14 @@ pub fn check_version() -> Result<Option<Vec<String>>, reqwest::Error> {
         .connect_timeout(std::time::Duration::new(2, 0))
         .build()?;
 
-    let caller: Version = client
+    let caller: GithubRelease = client
         .get("https://api.github.com/repos/TheRustyPickle/Rex/releases/latest")
         .send()?
         .json()?;
-    if current_version != caller.name {
+
+    let github_version = Version::parse(&format!("{}", caller.name.replace("v", ""))).unwrap();
+
+    if github_version > current_version {
         let updates = parse_github_body(caller.body);
         Ok(Some(vec![caller.name, updates]))
     } else {
