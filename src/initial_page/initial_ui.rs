@@ -7,6 +7,7 @@ use tui::widgets::Paragraph;
 use tui::Frame;
 
 /// The function draws the Initial page of the interface.
+#[cfg(not(tarpaulin_include))]
 pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
     let size = f.size();
     let chunks = Layout::default()

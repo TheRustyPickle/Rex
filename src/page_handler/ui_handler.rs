@@ -34,6 +34,7 @@ pub const RED: Color = Color::Rgb(255, 51, 51);
 pub const BLUE: Color = Color::Rgb(51, 51, 255);
 
 /// Starts the interface and run the app
+#[cfg(not(tarpaulin_include))]
 pub fn start_app<B: Backend>(
     terminal: &mut Terminal<B>,
     new_version_data: &Option<Vec<String>>,
