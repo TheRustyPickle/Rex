@@ -12,6 +12,7 @@ use rusqlite::Connection;
 /// Stores all the data that is required to handle
 /// every single possible key press event from the
 /// entire app
+#[cfg(not(tarpaulin_include))]
 pub struct InputKeyHandler<'a> {
     pub key: KeyEvent,
     pub page: &'a mut CurrentUi,

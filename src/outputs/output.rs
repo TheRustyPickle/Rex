@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[cfg(not(tarpaulin_include))]
 pub enum HandlingOutput {
     QuitUi,
     TakeUserInput,
@@ -7,6 +8,7 @@ pub enum HandlingOutput {
 }
 
 #[derive(PartialEq, Debug)]
+#[cfg(not(tarpaulin_include))]
 pub enum VerifyingOutput {
     Nothing(AType),
     Accepted(AType),
@@ -25,6 +27,7 @@ impl fmt::Display for VerifyingOutput {
 
 /// Accepted Type
 #[derive(PartialEq, Debug)]
+#[cfg(not(tarpaulin_include))]
 pub enum AType {
     Date,
     TxMethod,
@@ -45,6 +48,7 @@ impl fmt::Display for AType {
 
 /// Non Accepted Type
 #[derive(PartialEq, Debug)]
+#[cfg(not(tarpaulin_include))]
 pub enum NAType {
     InvalidDate,
     InvalidYear,

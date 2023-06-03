@@ -8,6 +8,7 @@ use tui::widgets::{Block, Borders, Clear, Paragraph};
 use tui::Frame;
 
 /// Creates a popup on top of a window with the given size, title and text attributes
+#[cfg(not(tarpaulin_include))]
 pub fn create_popup<B: Backend>(
     f: &mut Frame<B>,
     x_value: u16,

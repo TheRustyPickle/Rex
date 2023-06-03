@@ -3,6 +3,7 @@ use std::io::Error;
 use std::process::Output;
 
 #[derive(Debug)]
+#[cfg(not(tarpaulin_include))]
 pub enum TerminalExecutionError {
     NotFound(Output),
     ExecutionFailed(Error),
@@ -20,6 +21,7 @@ impl fmt::Display for TerminalExecutionError {
 impl std::error::Error for TerminalExecutionError {}
 
 #[derive(Debug)]
+#[cfg(not(tarpaulin_include))]
 pub enum UiHandlingError {
     DrawingError(Error),
     PollingError(Error),
@@ -41,6 +43,7 @@ impl fmt::Display for UiHandlingError {
 impl std::error::Error for UiHandlingError {}
 
 #[derive(Debug)]
+#[cfg(not(tarpaulin_include))]
 pub enum CheckingError {
     EmptyDate,
     EmptyMethod,
@@ -66,6 +69,7 @@ impl fmt::Display for CheckingError {
 
 impl std::error::Error for CheckingError {}
 
+#[cfg(not(tarpaulin_include))]
 pub enum SteppingError {
     InvalidDate,
     InvalidTxMethod,

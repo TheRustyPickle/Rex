@@ -11,6 +11,7 @@ use tui::widgets::{Axis, Block, Chart, Dataset, GraphType};
 use tui::{symbols, Frame};
 
 /// Creates the balance chart from the transactions
+#[cfg(not(tarpaulin_include))]
 pub fn chart_ui<B: Backend>(
     f: &mut Frame<B>,
     months: &IndexedData,
