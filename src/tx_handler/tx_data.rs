@@ -9,7 +9,6 @@ use rusqlite::Connection;
 use std::cmp::Ordering;
 
 /// Contains all data for a Transaction to work
-#[cfg(not(tarpaulin_include))]
 pub struct TxData {
     date: String,
     details: String,

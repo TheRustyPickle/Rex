@@ -3,13 +3,13 @@ use std::io::Error;
 use std::process::Output;
 
 #[derive(Debug)]
-#[cfg(not(tarpaulin_include))]
 pub enum TerminalExecutionError {
     NotFound(Output),
     ExecutionFailed(Error),
 }
 
 impl fmt::Display for TerminalExecutionError {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TerminalExecutionError::NotFound(output) => write!(f, "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{:?}", output),
@@ -21,13 +21,13 @@ impl fmt::Display for TerminalExecutionError {
 impl std::error::Error for TerminalExecutionError {}
 
 #[derive(Debug)]
-#[cfg(not(tarpaulin_include))]
 pub enum UiHandlingError {
     DrawingError(Error),
     PollingError(Error),
 }
 
 impl fmt::Display for UiHandlingError {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             UiHandlingError::DrawingError(err) => {
@@ -43,7 +43,6 @@ impl fmt::Display for UiHandlingError {
 impl std::error::Error for UiHandlingError {}
 
 #[derive(Debug)]
-#[cfg(not(tarpaulin_include))]
 pub enum CheckingError {
     EmptyDate,
     EmptyMethod,
@@ -53,6 +52,7 @@ pub enum CheckingError {
 }
 
 impl fmt::Display for CheckingError {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             CheckingError::EmptyDate => write!(f, "Date: Date cannot be empty"),
@@ -69,7 +69,6 @@ impl fmt::Display for CheckingError {
 
 impl std::error::Error for CheckingError {}
 
-#[cfg(not(tarpaulin_include))]
 pub enum SteppingError {
     InvalidDate,
     InvalidTxMethod,
@@ -79,6 +78,7 @@ pub enum SteppingError {
 }
 
 impl fmt::Display for SteppingError {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             SteppingError::InvalidDate => {
