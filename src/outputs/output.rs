@@ -2,7 +2,7 @@ use std::fmt;
 
 pub enum HandlingOutput {
     QuitUi,
-    AddTxMethod,
+    TakeUserInput,
     PrintNewUpdate,
 }
 
@@ -14,6 +14,7 @@ pub enum VerifyingOutput {
 }
 
 impl fmt::Display for VerifyingOutput {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             VerifyingOutput::Nothing(value) => write!(f, "{value}: Nothing to check"),
@@ -33,6 +34,7 @@ pub enum AType {
 }
 
 impl fmt::Display for AType {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             AType::Date => write!(f, "Date"),
@@ -62,6 +64,7 @@ pub enum NAType {
 }
 
 impl fmt::Display for NAType {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             NAType::InvalidDate => write!(f, "Date: Unknown date"),

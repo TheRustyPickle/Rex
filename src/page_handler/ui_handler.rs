@@ -34,9 +34,10 @@ pub const RED: Color = Color::Rgb(255, 51, 51);
 pub const BLUE: Color = Color::Rgb(51, 51, 255);
 
 /// Starts the interface and run the app
+#[cfg(not(tarpaulin_include))]
 pub fn start_app<B: Backend>(
     terminal: &mut Terminal<B>,
-    new_version_available: bool,
+    new_version_data: &Option<Vec<String>>,
     conn: &mut Connection,
 ) -> Result<HandlingOutput, UiHandlingError> {
     // Setting up some default values. Let's go through all of them
@@ -73,8 +74,8 @@ pub fn start_app<B: Backend>(
     // The page which is currently selected. Default is the initial page
     let mut page = CurrentUi::Initial;
     // stores current popup status
-    let mut popup_state = if new_version_available {
-        PopupState::NewUpdate
+    let mut popup_state = if let Some(data) = new_version_data {
+        PopupState::NewUpdate(data.to_owned())
     } else {
         PopupState::Nothing
     };

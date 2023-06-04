@@ -1,15 +1,15 @@
 use crate::db::{add_tags_column, create_db, update_balance_type, YEARS};
-use crate::page_handler::{IndexedData, BACKGROUND, BOX, HIGHLIGHTED, TEXT};
+use crate::page_handler::{IndexedData, UserInputType, BACKGROUND, BOX, HIGHLIGHTED, TEXT};
 use crate::utility::get_user_tx_methods;
 use crossterm::execute;
 use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+    disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen,
 };
 use rusqlite::{Connection, Result as sqlResult};
 use std::collections::HashSet;
 use std::error::Error;
 use std::fs;
-use std::io::{self, Stdout, Write};
+use std::io::{stdout, Stdout, Write};
 use std::time::Duration;
 use std::{process, thread};
 use tui::backend::CrosstermBackend;
@@ -17,6 +17,8 @@ use tui::style::{Modifier, Style};
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, BorderType, Borders, Tabs};
 use tui::Terminal;
+
+const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense", "Cancel"];
 
 /// Makes a call to the database to find out all the columns in the balance_all section
 /// so we can determine the number of TX Methods that has been added.
@@ -36,6 +38,7 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
     data
 }
 
+/// Returns all unique tags from the db
 pub fn get_all_tags(conn: &Connection) -> Vec<String> {
     let mut query = conn
         .prepare("SELECT tags FROM tx_all")
@@ -120,25 +123,14 @@ pub fn get_sql_dates(month: usize, year: usize) -> (String, String) {
 }
 
 /// Verifies the db version is up to date
+#[cfg(not(tarpaulin_include))]
 pub fn check_old_sql(conn: &mut Connection) {
     // * earlier version of the database didn't had the Tag column
     if !get_all_tx_columns(conn).contains(&"tags".to_string()) {
         println!("Old database detected. Starting migration...");
         let status = add_tags_column(conn);
         match status {
-            Ok(_) => {
-                let stdout = std::io::stdout();
-                let mut handle = stdout.lock();
-                for i in (1..6).rev() {
-                    write!(
-                        handle,
-                        "\rDatabase migration successfully complete. Restarting in {i} seconds"
-                    )
-                    .unwrap();
-                    handle.flush().unwrap();
-                    thread::sleep(Duration::from_millis(1000));
-                }
-            }
+            Ok(_) => start_timer("Database migration successfully complete."),
             Err(e) => {
                 println!("Database migration failed. Try again. Error: {}", e);
                 println!("Commits reversed. Exiting...");
@@ -153,19 +145,7 @@ pub fn check_old_sql(conn: &mut Connection) {
         println!("Outdated database detected. Updating...");
         let status = update_balance_type(conn);
         match status {
-            Ok(_) => {
-                let stdout = std::io::stdout();
-                let mut handle = stdout.lock();
-                for i in (1..6).rev() {
-                    write!(
-                        handle,
-                        "\rDatabase updating successfully complete. Restarting in {i} seconds"
-                    )
-                    .unwrap();
-                    handle.flush().unwrap();
-                    thread::sleep(Duration::from_millis(1000));
-                }
-            }
+            Ok(_) => start_timer("Database updating successfully complete."),
             Err(e) => {
                 println!("Database updating failed. Try again. Error: {}", e);
                 println!("Commits reversed. Exiting...");
@@ -175,7 +155,8 @@ pub fn check_old_sql(conn: &mut Connection) {
     }
 }
 
-fn check_old_balance_sql(conn: &Connection) -> bool {
+/// Checks if the balance_all table is outdated
+pub fn check_old_balance_sql(conn: &Connection) -> bool {
     let mut query = conn.prepare("PRAGMA table_info(balance_all)").unwrap();
 
     let columns = query
@@ -195,9 +176,10 @@ fn check_old_balance_sql(conn: &Connection) -> bool {
 }
 
 /// Enters raw mode so the Tui can render properly
+#[cfg(not(tarpaulin_include))]
 pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
     enable_raw_mode()?;
-    let mut stdout = io::stdout();
+    let mut stdout = stdout();
     execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
     let terminal = Terminal::new(backend)?;
@@ -205,8 +187,9 @@ pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<d
 }
 
 /// Exits raw mode so the terminal starts working normally
+#[cfg(not(tarpaulin_include))]
 pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
-    let stdout = io::stdout();
+    let stdout = stdout();
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
@@ -216,6 +199,8 @@ pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Checks if a db already exists or prompts to create a new one
+#[cfg(not(tarpaulin_include))]
 pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
     // checks the local folder and searches for data.sqlite
     let paths = fs::read_dir(".")?;
@@ -227,36 +212,31 @@ pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
         }
     }
     if !db_found {
-        let mut conn = Connection::open(verifying_path).unwrap();
-        let db_tx_methods = get_user_tx_methods(false, &conn).unwrap();
+        let db_tx_methods =
+            if let UserInputType::AddNewTxMethod(inner_value) = get_user_tx_methods(false, None) {
+                inner_value
+            } else {
+                return Err("Failed to get tx methods.".into());
+            };
         println!("Creating New Database. It may take some time...");
+
+        let mut conn = Connection::open(verifying_path)?;
         let status = create_db(db_tx_methods, &mut conn);
+        conn.close().unwrap();
         match status {
-            Ok(_) => {
-                let stdout = std::io::stdout();
-                let mut handle = stdout.lock();
-                for i in (1..6).rev() {
-                    write!(
-                        handle,
-                        "\rDatabase creation successfully complete. Restarting in {i} seconds"
-                    )
-                    .unwrap();
-                    handle.flush().unwrap();
-                    thread::sleep(Duration::from_millis(1000));
-                }
-            }
+            Ok(_) => start_timer("Database creation successful."),
             Err(e) => {
                 println!("Database creation failed. Try again. Error: {}", e);
                 fs::remove_file("data.sqlite")?;
                 process::exit(1);
             }
         }
-        conn.close().unwrap();
     }
     Ok(())
 }
 
 /// Returns a styled block for ui to use
+#[cfg(not(tarpaulin_include))]
 pub fn styled_block(title: &str) -> Block {
     Block::default()
         .borders(Borders::ALL)
@@ -268,12 +248,14 @@ pub fn styled_block(title: &str) -> Block {
         ))
 }
 
+#[cfg(not(tarpaulin_include))]
 pub fn main_block<'a>() -> Block<'a> {
     Block::default().style(Style::default().bg(BACKGROUND).fg(BOX))
 }
 
 /// takes a string and makes any word before the first occurrence of : to Bold
 /// Used for rendering
+#[cfg(not(tarpaulin_include))]
 pub fn create_bolded_text(text: &str) -> Vec<Spans> {
     let mut text_data = Vec::new();
 
@@ -292,6 +274,8 @@ pub fn create_bolded_text(text: &str) -> Vec<Spans> {
     text_data
 }
 
+/// Tabs from some given data for the UI
+#[cfg(not(tarpaulin_include))]
 pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
     let titles = data
         .titles
@@ -308,4 +292,64 @@ pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
                 .add_modifier(Modifier::BOLD)
                 .bg(HIGHLIGHTED),
         )
+}
+
+/// Does the 5 second timer after input taking ends
+#[cfg(not(tarpaulin_include))]
+pub fn start_timer<T: std::fmt::Display>(input: T) {
+    let stdout = std::io::stdout();
+    let mut handle = stdout.lock();
+    for i in (1..6).rev() {
+        write!(handle, "\r{input} Restarting in {i} seconds").unwrap();
+        handle.flush().unwrap();
+        thread::sleep(Duration::from_millis(1000));
+    }
+}
+
+/// Takes a user input and returns the trimmed input as String
+#[cfg(not(tarpaulin_include))]
+pub fn take_input() -> String {
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    input.trim().to_string()
+}
+
+/// Clears the terminal of all text
+#[cfg(not(tarpaulin_include))]
+pub fn clear_terminal(stdout: &mut Stdout) {
+    execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
+}
+
+/// Flushes output to the terminal
+#[cfg(not(tarpaulin_include))]
+pub fn flush_output(stdout: &Stdout) {
+    let mut handle = stdout.lock();
+    handle.flush().unwrap();
+}
+
+/// Checks if the input is a restricted word or inside a given vector
+pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
+    if let Some(restricted_words) = restricted {
+        for restricted_item in restricted_words.iter() {
+            if restricted_item.to_lowercase() == item.to_lowercase() {
+                return true;
+            }
+        }
+    } else {
+        for &restricted_item in &RESTRICTED {
+            if restricted_item.to_lowercase() == item.to_lowercase() {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+pub fn parse_github_body(body: String) -> String {
+    let body = body.replace("## Updates", "");
+    let body = body.replace("*", "•");
+    let body = body.replace("\r", "");
+    let end_point = body.find("## Changes").unwrap();
+    format!("\n{}\n", &body[..end_point].trim())
 }

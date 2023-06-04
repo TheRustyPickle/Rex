@@ -8,6 +8,7 @@ use tui::widgets::{Block, Borders, Clear, Paragraph};
 use tui::Frame;
 
 /// Creates a popup on top of a window with the given size, title and text attributes
+#[cfg(not(tarpaulin_include))]
 pub fn create_popup<B: Backend>(
     f: &mut Frame<B>,
     x_value: u16,
@@ -59,6 +60,7 @@ pub fn create_popup<B: Backend>(
 /// The function takes certain parameters to create an empty space in the layout
 /// and returns an area where we can place various widgets. Taken from tui-rs examples.
 /// This is used as a popup for helpful information.
+#[cfg(not(tarpaulin_include))]
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)

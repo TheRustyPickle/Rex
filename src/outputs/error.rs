@@ -9,6 +9,7 @@ pub enum TerminalExecutionError {
 }
 
 impl fmt::Display for TerminalExecutionError {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TerminalExecutionError::NotFound(output) => write!(f, "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{:?}", output),
@@ -26,6 +27,7 @@ pub enum UiHandlingError {
 }
 
 impl fmt::Display for UiHandlingError {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             UiHandlingError::DrawingError(err) => {
@@ -50,6 +52,7 @@ pub enum CheckingError {
 }
 
 impl fmt::Display for CheckingError {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             CheckingError::EmptyDate => write!(f, "Date: Date cannot be empty"),
@@ -75,6 +78,7 @@ pub enum SteppingError {
 }
 
 impl fmt::Display for SteppingError {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             SteppingError::InvalidDate => {

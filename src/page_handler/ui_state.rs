@@ -168,7 +168,7 @@ pub enum CurrentUi {
 
 /// Indicates which popup is currently on and is being shown in the screen
 pub enum PopupState {
-    NewUpdate,
+    NewUpdate(Vec<String>),
     HomeHelp,
     AddTxHelp,
     TransferHelp,
@@ -297,6 +297,26 @@ impl SummaryTab {
             SummaryTab::Table => SummaryTab::ModeSelection,
             SummaryTab::Years => SummaryTab::Years,
             SummaryTab::Months => SummaryTab::Months,
+        }
+    }
+}
+
+pub enum UserInputType {
+    AddNewTxMethod(Vec<String>),
+    RenameTxMethod(Vec<String>),
+    RepositionTxMethod(Vec<String>),
+    CancelledOperation,
+    InvalidInput,
+}
+
+impl UserInputType {
+    pub fn from_string(input: &str) -> Self {
+        match input {
+            "1" => UserInputType::AddNewTxMethod(Vec::new()),
+            "2" => UserInputType::RenameTxMethod(Vec::new()),
+            "3" => UserInputType::RepositionTxMethod(Vec::new()),
+            "cancel" => UserInputType::CancelledOperation,
+            _ => UserInputType::InvalidInput,
         }
     }
 }

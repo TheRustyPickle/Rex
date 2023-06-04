@@ -4,6 +4,7 @@ use crate::page_handler::PopupState;
 use crossterm::event::KeyCode;
 
 /// Tracks the keys of the Home page and calls relevant function based on it
+#[cfg(not(tarpaulin_include))]
 pub fn home_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
         PopupState::Nothing => match handler.key.code {
@@ -11,7 +12,7 @@ pub fn home_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Char('a') => handler.go_add_tx(),
             KeyCode::Char('t') => handler.go_transfer(),
             KeyCode::Char('r') => handler.go_chart(),
-            KeyCode::Char('j') => return Some(HandlingOutput::AddTxMethod),
+            KeyCode::Char('j') => return Some(HandlingOutput::TakeUserInput),
             KeyCode::Char('h') => handler.do_help_popup(),
             KeyCode::Char('z') => handler.go_summary(),
             KeyCode::Char('e') => handler.edit_tx(),

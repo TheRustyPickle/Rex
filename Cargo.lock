@@ -848,7 +848,7 @@ dependencies = [
 
 [[package]]
 name = "rex-tui"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "atty",
  "chrono",
@@ -857,6 +857,7 @@ dependencies = [
  "open",
  "reqwest",
  "rusqlite",
+ "semver",
  "serde",
  "thousands",
  "tui",
@@ -926,6 +927,12 @@ dependencies = [
  "core-foundation-sys",
  "libc",
 ]
+
+[[package]]
+name = "semver"
+version = "1.0.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bebd363326d05ec3e2f532ab7660680f3b02130d780c299bca73469d521bc0ed"
 
 [[package]]
 name = "serde"

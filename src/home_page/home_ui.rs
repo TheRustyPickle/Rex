@@ -11,6 +11,7 @@ use tui::widgets::{Cell, Row, Table};
 use tui::Frame;
 
 /// The function draws the Home page of the interface.
+#[cfg(not(tarpaulin_include))]
 pub fn home_ui<B: Backend>(
     f: &mut Frame<B>,
     months: &IndexedData,

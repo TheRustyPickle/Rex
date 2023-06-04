@@ -11,6 +11,7 @@ pub struct PopupData<'a> {
 }
 
 impl<'a> PopupData<'a> {
+    #[cfg(not(tarpaulin_include))]
     pub fn new() -> Self {
         PopupData {
             title: "",
@@ -19,15 +20,17 @@ impl<'a> PopupData<'a> {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub fn set(&mut self, title: &'a str, x_value: u16, y_value: u16) {
         self.title = title;
         self.x_value = x_value;
         self.y_value = y_value;
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub fn create_popup<B: Backend>(&mut self, f: &mut Frame<B>, popup_type: &PopupState) {
         let status = match popup_type {
-            PopupState::NewUpdate => self.get_new_update_text(),
+            PopupState::NewUpdate(data) => self.get_new_update_text(data),
             PopupState::HomeHelp => self.get_home_help_text(),
             PopupState::AddTxHelp => self.get_add_tx_help_text(),
             PopupState::TransferHelp => self.get_transfer_help_text(),
@@ -42,13 +45,20 @@ impl<'a> PopupData<'a> {
         }
     }
 
-    fn get_new_update_text(&mut self) -> String {
-        self.set("New Update", 30, 25);
-        "There is a new version available\n
-Enter: Redirect to the new version"
-            .to_string()
+    #[cfg(not(tarpaulin_include))]
+    fn get_new_update_text(&mut self, data: &Vec<String>) -> String {
+        let update_data_len = data[1].split("\n").collect::<Vec<&str>>().len() * 3;
+        self.set("New Update", 50, 25 + update_data_len as u16);
+        format!(
+            "New version {} is now available\n
+Updates:
+{}
+Enter: Redirect to the new version",
+            data[0], data[1]
+        )
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_add_tx_help_text(&mut self) -> String {
         self.set("Help", 60, 70);
         "This page is for adding new transactions. Following are the supported keys here
@@ -65,6 +75,7 @@ Esc: Stop editing filed
 
 Arrow Up/Down: Steps value up/down by 1
 Arrow Left/Right: Move cursor on input fields
+C: Clear all fields
 b: On amount field 'b' gets replaced with the current balance of Tx Method field
 Calculation: Amount field supports simple calculation with +, -, *, /
 Tags: This field can be treated as the category of this transaction.
@@ -83,6 +94,7 @@ Q: Quit
         .to_string()
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_transfer_help_text(&mut self) -> String {
         self.set("Help", 60, 70);
         "This page is for adding new Transfer Transaction.
@@ -102,6 +114,7 @@ Esc: Stop editing filed
 
 Arrow Up/Down: Steps value up/down by 1
 Arrow Left/Right: Move cursor on input fields
+C: Clear all fields
 b: On amount field 'b' gets replaced with the current balance of From Method field
 Calculation: Amount field supports simple calculation with +, -, *, /
 Tags: This field can be treated as the category of this transaction
@@ -120,6 +133,7 @@ Q: Quit
         .to_string()
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_chart_help_text(&mut self) -> String {
         self.set("Help", 50, 40);
         "This page shows the movement of balances within the selected period of time
@@ -141,6 +155,7 @@ Q: Quit
         .to_string()
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_summary_help_text(&mut self) -> String {
         self.set("Help", 50, 45);
         "This page shows various information based on all transactions
@@ -164,6 +179,7 @@ Q: Quit
         .to_string()
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_home_help_text(&mut self) -> String {
         self.set("Help", 50, 50);
         "This is the Home page where all txs added so far, the balances and the changes are shown
@@ -172,7 +188,7 @@ Following are the supported keys here
 
 Arrow Up/Down: Cycle widgets/table value
 Arrow Left/Right: Move value of the widget
-J: Starts taking input to add one or more new Transaction Method
+J: Starts taking input to add/rename/reposition Transaction Method
 E: Edit the selected transaction on the table
 D: Delete the selected transaction on the table
 
@@ -187,6 +203,7 @@ Q: Quit
         .to_string()
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_delete_failed_text(&mut self, err: &str) -> String {
         self.set("Delete Failed", 50, 25);
         format!("Deletion failed. Error: {}", err)

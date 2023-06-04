@@ -3,7 +3,6 @@ use rex_tui::db::*;
 use rex_tui::utility::get_all_tx_methods;
 use rusqlite::Connection;
 use std::fs;
-//use std::collections::HashMap;
 
 fn create_test_db(file_name: &str) -> Connection {
     if let Ok(metadata) = fs::metadata(file_name) {
