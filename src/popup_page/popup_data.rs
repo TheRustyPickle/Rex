@@ -11,6 +11,7 @@ pub struct PopupData<'a> {
 }
 
 impl<'a> PopupData<'a> {
+    #[cfg(not(tarpaulin_include))]
     pub fn new() -> Self {
         PopupData {
             title: "",
