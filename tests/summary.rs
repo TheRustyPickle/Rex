@@ -19,8 +19,312 @@ fn create_test_db(file_name: &str) -> Connection {
 }
 
 #[test]
-fn check_summary_data() {
-    let file_name = "summary_data.sqlite";
+fn check_summary_data_1() {
+    let file_name = "summary_data_1.sqlite";
+    let mut conn = create_test_db(&file_name);
+
+    add_tx(
+        "2022-08-19",
+        "Testing transaction",
+        "test1",
+        "100.00",
+        "Expense",
+        "Car",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2023-07-19",
+        "Testing transaction",
+        "test 2",
+        "100.00",
+        "Expense",
+        "Food",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2023-07-25",
+        "Testing transaction",
+        "test1",
+        "200.00",
+        "Income",
+        "Food",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    let summary_modes = IndexedData::new_modes();
+
+    let my_summary = SummaryData::new(&conn);
+    let my_summary_text = my_summary.get_table_data(&summary_modes, 6, 1);
+    let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 6, 1, &conn);
+
+    let expected_data_1 = vec![vec!["Food", "200.00", "100.00", "100.00", "100.00"]];
+
+    let expected_data_2 = (
+        vec![
+            vec![
+                "Total Income".to_string(),
+                "200.00".to_string(),
+                "66.67%".to_string(),
+            ],
+            vec![
+                "Total Expense".to_string(),
+                "100.00".to_string(),
+                "33.33%".to_string(),
+            ],
+            vec!["Net".to_string(), "100.00".to_string(), "-".to_string()],
+        ],
+        vec![
+            vec![
+                "Average Income".to_string(),
+                "200.00".to_string(),
+                "-".to_string(),
+            ],
+            vec![
+                "Average Expense".to_string(),
+                "100.00".to_string(),
+                "-".to_string(),
+            ],
+        ],
+        vec![
+            vec![
+                "Largest Income".to_string(),
+                "25-07-2023".to_string(),
+                "200.00".to_string(),
+                "test1".to_string(),
+            ],
+            vec![
+                "Largest Expense".to_string(),
+                "19-07-2023".to_string(),
+                "100.00".to_string(),
+                "test 2".to_string(),
+            ],
+            vec![
+                "Months Checked".to_string(),
+                "1".to_string(),
+                "-".to_string(),
+                "-".to_string(),
+            ],
+        ],
+        vec![
+            vec![
+                "Peak Earning".to_string(),
+                "7-2023".to_string(),
+                "200.00".to_string(),
+                "-".to_string(),
+            ],
+            vec![
+                "Peak Expense".to_string(),
+                "7-2023".to_string(),
+                "100.00".to_string(),
+                "-".to_string(),
+            ],
+        ],
+        vec![
+            vec![
+                "test1".to_string(),
+                "200.00".to_string(),
+                "0.00".to_string(),
+                "100.00%".to_string(),
+                "0.00".to_string(),
+                "200.00".to_string(),
+                "0.00".to_string(),
+            ],
+            vec![
+                "test 2".to_string(),
+                "0.00".to_string(),
+                "100.00".to_string(),
+                "0.00".to_string(),
+                "100.00%".to_string(),
+                "0.00".to_string(),
+                "100.00".to_string(),
+            ],
+        ],
+    );
+
+    conn.close().unwrap();
+    fs::remove_file(file_name).unwrap();
+
+    assert_eq!(my_summary_text, expected_data_1);
+    assert_eq!(my_summary_text_2, expected_data_2);
+}
+
+#[test]
+fn check_summary_data_2() {
+    let file_name = "summary_data_2.sqlite";
+    let mut conn = create_test_db(&file_name);
+
+    add_tx(
+        "2022-08-19",
+        "Testing transaction",
+        "test1",
+        "500.00",
+        "Expense",
+        "Car",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2022-01-19",
+        "Testing transaction",
+        "test1",
+        "500.00",
+        "Expense",
+        "Car",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2022-07-19",
+        "Testing transaction",
+        "test 2",
+        "700.00",
+        "Income",
+        "Food",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2022-05-19",
+        "Testing transaction",
+        "test1",
+        "1000.00",
+        "Income",
+        "Food",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    let mut summary_modes = IndexedData::new_modes();
+    summary_modes.next();
+
+    let my_summary = SummaryData::new(&conn);
+    let my_summary_text = my_summary.get_table_data(&summary_modes, 0, 0);
+    let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 0, 0, &conn);
+
+    let expected_data_1 = vec![
+        vec![
+            "Car".to_string(),
+            "0.00".to_string(),
+            "1000.00".to_string(),
+            "0.00".to_string(),
+            "100.00".to_string(),
+        ],
+        vec![
+            "Food".to_string(),
+            "1700.00".to_string(),
+            "0.00".to_string(),
+            "100.00".to_string(),
+            "0.00".to_string(),
+        ],
+    ];
+
+    let expected_data_2 = (
+        vec![
+            vec![
+                "Total Income".to_string(),
+                "1700.00".to_string(),
+                "62.96%".to_string(),
+            ],
+            vec![
+                "Total Expense".to_string(),
+                "1000.00".to_string(),
+                "37.04%".to_string(),
+            ],
+            vec!["Net".to_string(), "700.00".to_string(), "-".to_string()],
+        ],
+        vec![
+            vec![
+                "Average Income".to_string(),
+                "425.00".to_string(),
+                "-".to_string(),
+            ],
+            vec![
+                "Average Expense".to_string(),
+                "250.00".to_string(),
+                "-".to_string(),
+            ],
+        ],
+        vec![
+            vec![
+                "Largest Income".to_string(),
+                "19-05-2022".to_string(),
+                "1000.00".to_string(),
+                "test1".to_string(),
+            ],
+            vec![
+                "Largest Expense".to_string(),
+                "19-01-2022".to_string(),
+                "500.00".to_string(),
+                "test1".to_string(),
+            ],
+            vec![
+                "Months Checked".to_string(),
+                "4".to_string(),
+                "-".to_string(),
+                "-".to_string(),
+            ],
+        ],
+        vec![
+            vec![
+                "Peak Earning".to_string(),
+                "5-2022".to_string(),
+                "1000.00".to_string(),
+                "-".to_string(),
+            ],
+            vec![
+                "Peak Expense".to_string(),
+                "1-2022".to_string(),
+                "500.00".to_string(),
+                "-".to_string(),
+            ],
+        ],
+        vec![
+            vec![
+                "test1".to_string(),
+                "1000.00".to_string(),
+                "1000.00".to_string(),
+                "58.82%".to_string(),
+                "100.00%".to_string(),
+                "250.00".to_string(),
+                "250.00".to_string(),
+            ],
+            vec![
+                "test 2".to_string(),
+                "700.00".to_string(),
+                "0.00".to_string(),
+                "41.18%".to_string(),
+                "0.00".to_string(),
+                "175.00".to_string(),
+                "0.00".to_string(),
+            ],
+        ],
+    );
+
+    conn.close().unwrap();
+    fs::remove_file(file_name).unwrap();
+
+    assert_eq!(my_summary_text, expected_data_1);
+    assert_eq!(my_summary_text_2, expected_data_2);
+}
+
+#[test]
+fn check_summary_data_3() {
+    let file_name = "summary_data_3.sqlite";
     let mut conn = create_test_db(&file_name);
 
     add_tx(

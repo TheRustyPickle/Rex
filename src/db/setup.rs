@@ -41,26 +41,9 @@ pub fn create_db(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
         [],
     )?;
 
-    // changes_all column. Will contain all balance changes with up and down arrows
-    let columns = tx_methods
-        .iter()
-        .map(|column_name| format!(r#""{}" TEXT DEFAULT 0.00"#, column_name))
-        .collect::<Vec<String>>()
-        .join(",");
-
-    let query = format!(
-        "CREATE TABLE changes_all (
-            date TEXT,
-            id_num INTEGER NOT NULL PRIMARY KEY,
-            {},
-            CONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
-        );",
-        columns
-    );
-
     create_balances_table(&tx_methods, &sp)?;
 
-    sp.execute(&query, [])?;
+    create_changes_table(&tx_methods, &sp)?;
 
     sp.execute("CREATE UNIQUE INDEX all_tx_id_IDX ON tx_all (id_num);", [])?;
 
@@ -115,6 +98,30 @@ pub fn create_balances_table(tx_methods: &[String], sp: &Savepoint) -> Result<()
             {}
         );",
         tx_methods_str
+    );
+
+    sp.execute(&query, [])?;
+
+    Ok(())
+}
+
+/// create the changes_all table of the DB
+pub fn create_changes_table(tx_methods: &[String], sp: &Savepoint) -> Result<()> {
+    // changes_all column. Will contain all balance changes with up and down arrows
+    let columns = tx_methods
+        .iter()
+        .map(|column_name| format!(r#""{}" TEXT DEFAULT 0.00"#, column_name))
+        .collect::<Vec<String>>()
+        .join(",");
+
+    let query = format!(
+        "CREATE TABLE changes_all (
+            date TEXT,
+            id_num INTEGER NOT NULL PRIMARY KEY,
+            {},
+            CONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
+        );",
+        columns
     );
 
     sp.execute(&query, [])?;

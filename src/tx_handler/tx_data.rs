@@ -370,7 +370,7 @@ impl TxData {
             let all_methods = get_all_tx_methods(conn);
 
             // get all the method's final balance, loop through the balances and match the tx method name
-            let last_balances = get_last_balances(&all_methods, conn);
+            let last_balances = get_last_balances(conn);
 
             for x in 0..all_methods.len() {
                 if all_methods[x] == self.from_method {

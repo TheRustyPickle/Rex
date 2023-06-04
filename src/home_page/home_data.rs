@@ -65,7 +65,7 @@ impl TransactionData {
     /// * The value is saved in the DB at the final row
     pub fn get_last_balance(&self, conn: &Connection) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
-        let db_data = get_last_balances(&get_all_tx_methods(conn), conn);
+        let db_data = get_last_balances(conn);
         for i in db_data.iter() {
             balance_data.push(format!("{:.2}", i.parse::<f64>().unwrap()));
         }

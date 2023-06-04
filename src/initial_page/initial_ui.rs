@@ -7,6 +7,7 @@ use tui::widgets::Paragraph;
 use tui::Frame;
 
 /// The function draws the Initial page of the interface.
+#[cfg(not(tarpaulin_include))]
 pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
     let size = f.size();
     let chunks = Layout::default()
@@ -77,7 +78,7 @@ T: Add Transfer Page
 R: Chart Page
 Z: Summary Page
 D: Delete selected Transaction (Home Page)
-J: Add new Transaction Methods (Home Page)
+J: Add/Rename/Reposition Transaction Methods (Home Page)
 E: Edit Selected Transaction (Home Page)
 H: Open Help (Use for detailed help)
 Q: Quit
@@ -90,6 +91,7 @@ Add Transaction/Transfer Page:
 5: Edit TX Type/Amount
 6: Edit Tags  
 S: Save inputted data as a Transaction
+C: Clear all fields
 Enter: Submit a field and continue
 Esc: Stop editing a filed
 

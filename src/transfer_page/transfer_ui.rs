@@ -9,6 +9,7 @@ use tui::widgets::Paragraph;
 use tui::Frame;
 
 /// The function draws the Transfer page of the interface.
+#[cfg(not(tarpaulin_include))]
 pub fn transfer_ui<B: Backend>(
     f: &mut Frame<B>,
     transfer_data: &TxData,
