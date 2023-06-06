@@ -20,7 +20,6 @@ test = false
 bench = false
 
 [dependencies]
-tui = "0.19.0"
 crossterm = "0.25.0"
 rusqlite = { version = "0.29.0", features = ["bundled"] }
 chrono = "0.4.19"
@@ -31,3 +30,4 @@ serde = { version = "1.0.140", features = ["derive"]}
 dirs = "5.0.0"
 thousands = "0.2.0"
 semver = "1.0.17"
+ratatui = "0.21.0"
