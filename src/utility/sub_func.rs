@@ -525,7 +525,7 @@ Currently added Transaction Methods: \n".to_string();
         print!("\nEnter Transaction Methods sequence: ");
         flush_output(&stdout);
 
-        let sequence_input = take_input().replace(" ", "");
+        let sequence_input = take_input().replace(' ', "");
 
         if sequence_input.is_empty() {
             clear_terminal(&mut stdout);

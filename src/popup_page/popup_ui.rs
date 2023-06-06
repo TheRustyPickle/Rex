@@ -1,11 +1,11 @@
 use crate::page_handler::{BACKGROUND, BOX, RED, TEXT};
 use crate::utility::create_bolded_text;
-use tui::backend::Backend;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use tui::style::{Modifier, Style};
-use tui::text::{Span, Text};
-use tui::widgets::{Block, Borders, Clear, Paragraph};
-use tui::Frame;
+use ratatui::backend::Backend;
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use ratatui::style::{Modifier, Style};
+use ratatui::text::{Span, Text};
+use ratatui::widgets::{Block, Borders, Clear, Paragraph};
+use ratatui::Frame;
 
 /// Creates a popup on top of a window with the given size, title and text attributes
 #[cfg(not(tarpaulin_include))]

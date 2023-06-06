@@ -1,7 +1,7 @@
 use crate::page_handler::PopupState;
 use crate::popup_page::create_popup;
-use tui::backend::Backend;
-use tui::Frame;
+use ratatui::backend::Backend;
+use ratatui::Frame;
 
 /// Stores data to create a new popup
 pub struct PopupData<'a> {
@@ -46,8 +46,8 @@ impl<'a> PopupData<'a> {
     }
 
     #[cfg(not(tarpaulin_include))]
-    fn get_new_update_text(&mut self, data: &Vec<String>) -> String {
-        let update_data_len = data[1].split("\n").collect::<Vec<&str>>().len() * 3;
+    fn get_new_update_text(&mut self, data: &[String]) -> String {
+        let update_data_len = data[1].split('\n').collect::<Vec<&str>>().len() * 3;
         self.set("New Update", 50, 25 + update_data_len as u16);
         format!(
             "New version {} is now available\n
@@ -71,7 +71,7 @@ Enter: Redirect to the new version",
 6: TX Tags      Example: Empty, Food, Car. Add a Comma for a new tag
 S: Save the inputted data as a Transaction
 Enter: Submit field and continue
-Esc: Stop editing filed
+Esc: Stop editing field
 
 Arrow Up/Down: Steps value up/down by 1
 Arrow Left/Right: Move cursor on input fields
@@ -110,7 +110,7 @@ Following are the supported keys here
 6: TX Tags      Example: Empty, Food, Car. Add a Comma for a new tag
 S: Save the inputted data as a Transaction
 Enter: Submit field and continue
-Esc: Stop editing filed
+Esc: Stop editing field
 
 Arrow Up/Down: Steps value up/down by 1
 Arrow Left/Right: Move cursor on input fields

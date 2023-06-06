@@ -5,11 +5,11 @@ use crate::summary_page::SummaryData;
 use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block};
 use rusqlite::Connection;
 use thousands::Separable;
-use tui::backend::Backend;
-use tui::layout::{Constraint, Direction, Layout};
-use tui::style::{Modifier, Style};
-use tui::widgets::{Cell, Row, Table};
-use tui::Frame;
+use ratatui::backend::Backend;
+use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::style::{Modifier, Style};
+use ratatui::widgets::{Cell, Row, Table};
+use ratatui::Frame;
 
 /// The function draws the Summary page of the interface.
 #[cfg(not(tarpaulin_include))]

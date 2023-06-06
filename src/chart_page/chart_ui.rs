@@ -3,12 +3,12 @@ use crate::page_handler::{ChartTab, IndexedData, BACKGROUND, BOX, SELECTED};
 use crate::utility::{create_tab, get_all_tx_methods, main_block};
 use chrono::{naive::NaiveDate, Duration};
 use rusqlite::Connection;
-use tui::backend::Backend;
-use tui::layout::{Constraint, Direction, Layout};
-use tui::style::{Color, Modifier, Style};
-use tui::text::Span;
-use tui::widgets::{Axis, Block, Chart, Dataset, GraphType};
-use tui::{symbols, Frame};
+use ratatui::backend::Backend;
+use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::text::Span;
+use ratatui::widgets::{Axis, Block, Chart, Dataset, GraphType};
+use ratatui::{symbols, Frame};
 
 /// Creates the balance chart from the transactions
 #[cfg(not(tarpaulin_include))]
