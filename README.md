@@ -8,7 +8,7 @@
 <a href="https://crates.io/crates/rex-tui">
 <img src="https://img.shields.io/crates/d/rex-tui?style=flat-square"/></a>
 </div>
-Rex is a terminal user interface app for managing income, expenses, and transactions. Built with Rust and ratatui with a simple interface that's easy to use.
+Rex is a terminal user interface app for managing incomes, expenses, and transactions. Built with Rust and ratatui with a simple interface that's easy to use.
 
 ![new_rex](https://user-images.githubusercontent.com/35862475/234666900-317aaece-6955-4e15-a92b-b4cb2d3daf4a.png)
 
