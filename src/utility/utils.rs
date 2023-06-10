@@ -5,6 +5,11 @@ use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen,
 };
+use ratatui::backend::CrosstermBackend;
+use ratatui::style::{Modifier, Style};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, BorderType, Borders, Tabs};
+use ratatui::Terminal;
 use rusqlite::{Connection, Result as sqlResult};
 use std::collections::HashSet;
 use std::error::Error;
@@ -12,11 +17,6 @@ use std::fs;
 use std::io::{stdout, Stdout, Write};
 use std::time::Duration;
 use std::{process, thread};
-use tui::backend::CrosstermBackend;
-use tui::style::{Modifier, Style};
-use tui::text::{Span, Spans};
-use tui::widgets::{Block, BorderType, Borders, Tabs};
-use tui::Terminal;
 
 const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense", "Cancel"];
 
@@ -256,7 +256,7 @@ pub fn main_block<'a>() -> Block<'a> {
 /// takes a string and makes any word before the first occurrence of : to Bold
 /// Used for rendering
 #[cfg(not(tarpaulin_include))]
-pub fn create_bolded_text(text: &str) -> Vec<Spans> {
+pub fn create_bolded_text(text: &str) -> Vec<Line> {
     let mut text_data = Vec::new();
 
     for line in text.split('\n') {
@@ -265,9 +265,9 @@ pub fn create_bolded_text(text: &str) -> Vec<Spans> {
             let first_data =
                 Span::styled(first_part, Style::default().add_modifier(Modifier::BOLD));
             let rest_data = Span::from(format!(":{rest}"));
-            text_data.push(Spans::from(vec![first_data, rest_data]));
+            text_data.push(Line::from(vec![first_data, rest_data]));
         } else {
-            text_data.push(Spans::from(vec![Span::from(line)]))
+            text_data.push(Line::from(vec![Span::from(line)]))
         }
     }
 
@@ -280,7 +280,7 @@ pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
     let titles = data
         .titles
         .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
+        .map(|t| Line::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
         .collect();
 
     Tabs::new(titles)
@@ -348,8 +348,8 @@ pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
 
 pub fn parse_github_body(body: String) -> String {
     let body = body.replace("## Updates", "");
-    let body = body.replace("*", "•");
-    let body = body.replace("\r", "");
+    let body = body.replace('*', "•");
+    let body = body.replace('\r', "");
     let end_point = body.find("## Changes").unwrap();
     format!("\n{}\n", &body[..end_point].trim())
 }

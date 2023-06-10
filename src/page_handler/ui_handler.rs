@@ -17,12 +17,12 @@ use crate::tx_handler::TxData;
 use crate::utility::{get_all_tx_methods, get_empty_changes};
 use crossterm::event::poll;
 use crossterm::event::{self, Event};
+use ratatui::backend::Backend;
+use ratatui::layout::Constraint;
+use ratatui::style::Color;
+use ratatui::Terminal;
 use rusqlite::Connection;
 use std::time::Duration;
-use tui::backend::Backend;
-use tui::layout::Constraint;
-use tui::style::Color;
-use tui::Terminal;
 
 pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
 pub const TEXT: Color = Color::Rgb(153, 78, 236);
