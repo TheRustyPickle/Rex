@@ -5,6 +5,11 @@ use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen,
 };
+use ratatui::backend::CrosstermBackend;
+use ratatui::style::{Modifier, Style};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, BorderType, Borders, Tabs};
+use ratatui::Terminal;
 use rusqlite::{Connection, Result as sqlResult};
 use std::collections::HashSet;
 use std::error::Error;
@@ -12,11 +17,6 @@ use std::fs;
 use std::io::{stdout, Stdout, Write};
 use std::time::Duration;
 use std::{process, thread};
-use ratatui::backend::CrosstermBackend;
-use ratatui::style::{Modifier, Style};
-use ratatui::text::{Span, Line};
-use ratatui::widgets::{Block, BorderType, Borders, Tabs};
-use ratatui::Terminal;
 
 const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense", "Cancel"];
 
