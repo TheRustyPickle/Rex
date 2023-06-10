@@ -341,7 +341,11 @@ pub trait DataVerifier {
         let mut best_score = 0;
 
         for x in all_tx_methods.iter() {
-            let new_score = current_method.chars().filter(|c| x.contains(*c)).count();
+            let new_score = current_method
+                .to_lowercase()
+                .chars()
+                .filter(|c| x.to_lowercase().contains(*c))
+                .count();
             if new_score > best_score {
                 best_match = x;
                 best_score = new_score;
