@@ -2,13 +2,13 @@ use crate::page_handler::{
     HomeTab, IndexedData, TableData, BACKGROUND, BLUE, BOX, HEADER, RED, SELECTED, TEXT,
 };
 use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block};
-use rusqlite::Connection;
-use thousands::Separable;
 use ratatui::backend::Backend;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Cell, Row, Table};
 use ratatui::Frame;
+use rusqlite::Connection;
+use thousands::Separable;
 
 /// The function draws the Home page of the interface.
 #[cfg(not(tarpaulin_include))]
