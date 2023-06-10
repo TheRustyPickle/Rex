@@ -1,12 +1,12 @@
 use crate::page_handler::{TxTab, BACKGROUND, BLUE, RED, TEXT};
 use crate::tx_handler::TxData;
 use crate::utility::{create_bolded_text, main_block, styled_block};
-use tui::backend::Backend;
-use tui::layout::{Alignment, Constraint, Direction, Layout};
-use tui::style::{Modifier, Style};
-use tui::text::{Span, Spans};
-use tui::widgets::Paragraph;
-use tui::Frame;
+use ratatui::backend::Backend;
+use ratatui::layout::{Alignment, Constraint, Direction, Layout};
+use ratatui::style::{Modifier, Style};
+use ratatui::text::{Line, Span};
+use ratatui::widgets::Paragraph;
+use ratatui::Frame;
 
 /// The function draws the Add Transaction page of the interface.
 #[cfg(not(tarpaulin_include))]
@@ -70,7 +70,7 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, currently_s
 S: Save the inputted data as a Transaction
 H: Shows further detailed help info
 Enter: Submit field and continue
-Esc: Stop editing filed";
+Esc: Stop editing field";
 
     // highlight texts before the first color to Bold
     let help_text = create_bolded_text(unmodified_help_text);
@@ -82,7 +82,7 @@ Esc: Stop editing filed";
     for i in status_data.iter().rev() {
         let (initial, rest) = i.split_once(':').unwrap();
         if !i.contains("Accepted") && !i.contains("Nothing") {
-            status_text.push(Spans::from(vec![
+            status_text.push(Line::from(vec![
                 Span::styled(
                     initial,
                     Style::default().fg(RED).add_modifier(Modifier::BOLD),
@@ -90,7 +90,7 @@ Esc: Stop editing filed";
                 Span::styled(format!(":{rest}"), Style::default().fg(RED)),
             ]));
         } else {
-            status_text.push(Spans::from(vec![
+            status_text.push(Line::from(vec![
                 Span::styled(
                     initial,
                     Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
@@ -101,17 +101,17 @@ Esc: Stop editing filed";
     }
 
     // We already fetched the data for each of these. Assign them now and then use them to load the widget
-    let date_text = vec![Spans::from(input_data[0])];
+    let date_text = vec![Line::from(input_data[0])];
 
-    let details_text = vec![Spans::from(input_data[1])];
+    let details_text = vec![Line::from(input_data[1])];
 
-    let tx_method_text = vec![Spans::from(input_data[2])];
+    let tx_method_text = vec![Line::from(input_data[2])];
 
-    let amount_text = vec![Spans::from(input_data[4])];
+    let amount_text = vec![Line::from(input_data[4])];
 
-    let tx_type_text = vec![Spans::from(input_data[5])];
+    let tx_type_text = vec![Line::from(input_data[5])];
 
-    let tags_text = vec![Spans::from(input_data[6])];
+    let tags_text = vec![Line::from(input_data[6])];
 
     // creates the widgets to ready it for rendering
     let help_sec = Paragraph::new(help_text.clone())

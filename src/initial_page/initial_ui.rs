@@ -1,10 +1,10 @@
 use crate::page_handler::{BACKGROUND, RED, TEXT};
 use crate::utility::{create_bolded_text, main_block, styled_block};
-use tui::backend::Backend;
-use tui::layout::{Alignment, Constraint, Direction, Layout};
-use tui::style::{Modifier, Style};
-use tui::widgets::Paragraph;
-use tui::Frame;
+use ratatui::backend::Backend;
+use ratatui::layout::{Alignment, Constraint, Direction, Layout};
+use ratatui::style::{Modifier, Style};
+use ratatui::widgets::Paragraph;
+use ratatui::Frame;
 
 /// The function draws the Initial page of the interface.
 #[cfg(not(tarpaulin_include))]
@@ -93,7 +93,7 @@ Add Transaction/Transfer Page:
 S: Save inputted data as a Transaction
 C: Clear all fields
 Enter: Submit a field and continue
-Esc: Stop editing a filed
+Esc: Stop editing a field
 
 Other Pages:
 Arrow Up/Down: Cycle widgets

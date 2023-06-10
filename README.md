@@ -8,14 +8,14 @@
 <a href="https://crates.io/crates/rex-tui">
 <img src="https://img.shields.io/crates/d/rex-tui?style=flat-square"/></a>
 </div>
-Rex is a terminal user interface app for managing income, expenses, and transactions. Built with Rust and tui-rs with a simple interface that's easy to use.
+Rex is a terminal user interface app for managing incomes, expenses, and transactions. Built with Rust and ratatui with a simple interface that's easy to use.
 
 ![new_rex](https://user-images.githubusercontent.com/35862475/234666900-317aaece-6955-4e15-a92b-b4cb2d3daf4a.png)
-
 
 <h2>Getting Started</h2>
 
 **1. Run from Source Code:**
+
 * Clone the repository
 `
 git clone https://github.com/TheRustyPickle/Rex
@@ -26,20 +26,22 @@ cargo run --release
 `
 
 **2. Run the Latest Release:**
+
 * Download the latest executable from [Releases](https://github.com/TheRustyPickle/Rex/releases).
   * Open terminal/CMD and start the program by the command `./rex` or `rex` depending on the OS at the correct directory.
   
   or
   
-  * Double click the executable which will try to open a terminal/CMD by itself. 
+  * Double click the executable which will try to open a terminal/CMD by itself.
 
 **3. Install from Cargo:**
+
 * Run `cargo install rex-tui`
 * Make sure `~/.cargo/bin` is on path if you're on linux
 
 <h2>App Data Location</h2>
 
-See [here](https://docs.rs/dirs/latest/dirs/fn.data_local_dir.html) for location info where Rex data is saved which is determined based on the OS. 
+See [here](https://docs.rs/dirs/latest/dirs/fn.data_local_dir.html) for location info where Rex data is saved which is determined based on the OS.
 
 <h2>Feedback & Bug Reports</h2>
 

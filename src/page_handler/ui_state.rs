@@ -1,7 +1,7 @@
 use crate::db::{MODES, MONTHS, YEARS};
 use chrono::prelude::Local;
 use chrono::Datelike;
-use tui::widgets::TableState;
+use ratatui::widgets::TableState;
 
 /// The struct stores all transaction data for the Transaction widget
 /// and creates an index to keep track of which transactions row is selected

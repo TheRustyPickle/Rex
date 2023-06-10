@@ -23,7 +23,7 @@ pub fn check_version() -> Result<Option<Vec<String>>, reqwest::Error> {
         .send()?
         .json()?;
 
-    let github_version = Version::parse(&format!("{}", caller.name.replace("v", ""))).unwrap();
+    let github_version = Version::parse(&caller.name.replace('v', "")).unwrap();
 
     if github_version > current_version {
         let updates = parse_github_body(caller.body);
