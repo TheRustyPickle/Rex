@@ -1,4 +1,4 @@
-use crate::page_handler::{TxTab, BACKGROUND, BLUE, RED, TEXT};
+use crate::page_handler::{TxTab, BACKGROUND, BLUE, GRAY, RED, TEXT};
 use crate::tx_handler::TxData;
 use crate::utility::{create_bolded_text, main_block, styled_block};
 use ratatui::backend::Backend;
@@ -101,55 +101,71 @@ Esc: Stop editing field";
     }
 
     // We already fetched the data for each of these. Assign them now and then use them to load the widget
-    let date_text = vec![Line::from(input_data[0])];
+    let date_text = Line::from(format!("{} ", input_data[0]));
 
-    let details_text = vec![Line::from(input_data[1])];
+    let details_text = Line::from(format!("{} ", input_data[1]));
 
-    let tx_method_text = vec![Line::from(input_data[2])];
+    let mut tx_method_text = Line::from(format!("{} ", input_data[2]));
 
-    let amount_text = vec![Line::from(input_data[4])];
+    let amount_text = Line::from(format!("{} ", input_data[4]));
 
-    let tx_type_text = vec![Line::from(input_data[5])];
+    let tx_type_text = Line::from(format!("{} ", input_data[5]));
 
-    let tags_text = vec![Line::from(input_data[6])];
+    let mut tags_text = Line::from(format!("{} ", input_data[6]));
+
+    match currently_selected {
+        TxTab::FromMethod => {
+            tx_method_text = Line::from(vec![
+                Span::from(format!("{} ", input_data[2])),
+                Span::styled(input_data[7], Style::default().fg(GRAY)),
+            ]);
+        }
+        TxTab::Tags => {
+            tags_text = Line::from(vec![
+                Span::from(format!("{} ", input_data[6])),
+                Span::styled(input_data[7], Style::default().fg(GRAY)),
+            ]);
+        }
+        _ => {}
+    }
 
     // creates the widgets to ready it for rendering
-    let help_sec = Paragraph::new(help_text.clone())
+    let help_sec = Paragraph::new(help_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Help"))
         .alignment(Alignment::Left);
 
-    let status_sec = Paragraph::new(status_text.clone())
+    let status_sec = Paragraph::new(status_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Status"))
         .alignment(Alignment::Left);
 
-    let date_sec = Paragraph::new(date_text.clone())
+    let date_sec = Paragraph::new(date_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Date"))
         .alignment(Alignment::Left);
 
-    let tx_method_sec = Paragraph::new(tx_method_text.clone())
+    let tx_method_sec = Paragraph::new(tx_method_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("TX Method"))
         .alignment(Alignment::Left);
 
-    let amount_sec = Paragraph::new(amount_text.clone())
+    let amount_sec = Paragraph::new(amount_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Amount"))
         .alignment(Alignment::Left);
 
-    let tx_type_sec = Paragraph::new(tx_type_text.clone())
+    let tx_type_sec = Paragraph::new(tx_type_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("TX Type"))
         .alignment(Alignment::Left);
 
-    let details_sec = Paragraph::new(details_text.clone())
+    let details_sec = Paragraph::new(details_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Details"))
         .alignment(Alignment::Left);
 
-    let tags_sec = Paragraph::new(tags_text.clone())
+    let tags_sec = Paragraph::new(tags_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Tags"))
         .alignment(Alignment::Left);

@@ -336,6 +336,7 @@ impl<'a> InputKeyHandler<'a> {
             }
             _ => {}
         }
+        self.check_autofill();
     }
 
     /// Handles left arrow key press for multiple pages
@@ -464,6 +465,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Chart => self.do_chart_up(),
             _ => {}
         }
+        self.check_autofill();
     }
 
     /// Handles down arrow key press for multiple pages
@@ -476,6 +478,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Chart => self.do_chart_down(),
             _ => {}
         }
+        self.check_autofill();
     }
 
     /// Checks and verifies date for Add Tx and Transfer page
@@ -507,6 +510,7 @@ impl<'a> InputKeyHandler<'a> {
             },
             _ => {}
         }
+        self.check_autofill();
     }
 
     /// Checks and verifies amount for Add Tx and Transfer page
@@ -532,6 +536,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Transfer => self.check_transfer_tags(),
             _ => {}
         }
+        self.check_autofill();
     }
 
     /// Resets all input boxes on Add Tx and Transfer page
@@ -1161,6 +1166,16 @@ impl<'a> InputKeyHandler<'a> {
 
         if let Err(e) = status {
             self.transfer_data.add_tx_status(e.to_string())
+        }
+    }
+
+    fn check_autofill(&mut self) {
+        match self.page {
+            CurrentUi::AddTx => self.add_tx_data.check_autofill(self.add_tx_tab, self.conn),
+            CurrentUi::Transfer => self
+                .transfer_data
+                .check_autofill(self.transfer_tab, self.conn),
+            _ => {}
         }
     }
 }

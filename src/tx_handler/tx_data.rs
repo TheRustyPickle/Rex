@@ -1,7 +1,7 @@
 use crate::outputs::{CheckingError, NAType, SteppingError, VerifyingOutput};
 use crate::page_handler::TxTab;
 use crate::tx_handler::{add_tx, delete_tx};
-use crate::utility::traits::DataVerifier;
+use crate::utility::traits::{AutoFiller, DataVerifier};
 use crate::utility::{get_all_tags, get_all_tx_methods, get_last_balances};
 use chrono::prelude::Local;
 use chrono::{Duration, NaiveDate};
@@ -21,9 +21,12 @@ pub struct TxData {
     editing_tx: bool,
     id_num: i32,
     current_index: usize,
+    autofill: String,
 }
 
 impl DataVerifier for TxData {}
+
+impl AutoFiller for TxData {}
 
 impl TxData {
     /// Creates an instance of the struct however the date field is
@@ -43,6 +46,7 @@ impl TxData {
             editing_tx: false,
             id_num: 0,
             current_index: 0,
+            autofill: String::new(),
         }
     }
 
@@ -61,6 +65,7 @@ impl TxData {
             editing_tx: false,
             id_num: 0,
             current_index: 0,
+            autofill: String::new(),
         }
     }
 
@@ -94,6 +99,7 @@ impl TxData {
             editing_tx: true,
             id_num,
             current_index: 0,
+            autofill: String::new(),
         }
     }
 
@@ -107,6 +113,7 @@ impl TxData {
             &self.amount,
             &self.tx_type,
             &self.tags,
+            &self.autofill,
         ]
     }
 
@@ -327,6 +334,22 @@ impl TxData {
             self.tx_status.remove(0);
         }
         self.tx_status.push(data);
+    }
+
+    pub fn clear_autofill(&mut self) {
+        self.autofill.clear();
+    }
+
+    pub fn check_autofill(&mut self, current_tab: &TxTab, conn: &Connection) {
+        self.clear_autofill();
+
+        self.autofill = match current_tab {
+            TxTab::FromMethod => self.autofill_tx_method(&self.from_method, conn),
+
+            TxTab::ToMethod => self.autofill_tx_method(&self.to_method, conn),
+            TxTab::Tags => self.autofill_tags(&self.tags, conn),
+            _ => String::new(),
+        }
     }
 
     /// Checks the inputted Date by the user upon pressing Enter/Esc for various error.
@@ -870,15 +893,8 @@ impl TxData {
                     // as the tag didn't match with any existing tags
                     // whatever tag matches the first character in the existing list,
                     // make that the new tag -> join with comma + space
-                    for tag in tags {
-                        if tag
-                            .to_lowercase()
-                            .starts_with(&last_tag.to_lowercase()[..1])
-                        {
-                            current_tags.push(tag);
-                            break;
-                        }
-                    }
+                    current_tags.push(self.autofill.to_owned());
+
                     self.tags = current_tags.join(", ");
                     self.go_current_index(&TxTab::Tags);
                     return Err(SteppingError::InvalidTags);
@@ -950,15 +966,7 @@ impl TxData {
                     // as the tag didn't match with any existing tags
                     // whatever tag matches the first character in the existing list,
                     // make that the new tag -> join with comma + space
-                    for tag in tags {
-                        if tag
-                            .to_lowercase()
-                            .starts_with(&last_tag.to_lowercase()[..1])
-                        {
-                            current_tags.push(tag);
-                            break;
-                        }
-                    }
+                    current_tags.push(self.autofill.to_owned());
                     self.tags = current_tags.join(", ");
                     self.go_current_index(&TxTab::Tags);
                     return Err(SteppingError::InvalidTags);
