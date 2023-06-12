@@ -547,6 +547,14 @@ impl<'a> InputKeyHandler<'a> {
             _ => {}
         }
     }
+
+    pub fn do_autofill(&mut self) {
+        match self.page {
+            CurrentUi::AddTx => self.add_tx_data.accept_autofill(self.add_tx_tab),
+            CurrentUi::Transfer => self.transfer_data.accept_autofill(self.transfer_tab),
+            _ => {}
+        }
+    }
 }
 
 impl<'a> InputKeyHandler<'a> {

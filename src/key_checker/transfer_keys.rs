@@ -29,6 +29,7 @@ pub fn transfer_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 KeyCode::Left => handler.handle_left_arrow(),
                 KeyCode::Up => handler.handle_up_arrow(),
                 KeyCode::Down => handler.handle_down_arrow(),
+                KeyCode::Tab => handler.do_autofill(),
                 _ => match handler.transfer_tab {
                     TxTab::Date => handler.handle_date(),
                     TxTab::Details => handler.handle_details(),

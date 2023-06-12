@@ -336,12 +336,8 @@ impl TxData {
         self.tx_status.push(data);
     }
 
-    pub fn clear_autofill(&mut self) {
-        self.autofill.clear();
-    }
-
     pub fn check_autofill(&mut self, current_tab: &TxTab, conn: &Connection) {
-        self.clear_autofill();
+        self.autofill.clear();
 
         self.autofill = match current_tab {
             TxTab::FromMethod => self.autofill_tx_method(&self.from_method, conn),
@@ -350,6 +346,28 @@ impl TxData {
             TxTab::Tags => self.autofill_tags(&self.tags, conn),
             _ => String::new(),
         }
+    }
+
+    pub fn accept_autofill(&mut self, current_tab: &TxTab) {
+        match current_tab {
+            TxTab::FromMethod => self.from_method = self.autofill.to_string(),
+            TxTab::ToMethod => self.to_method = self.autofill.to_string(),
+            TxTab::Tags => {
+                let mut splitted = self
+                    .tags
+                    .split(',')
+                    .map(|s| s.trim())
+                    .collect::<Vec<&str>>();
+
+                splitted.pop().unwrap();
+
+                splitted.push(&self.autofill);
+                self.tags = splitted.join(", ");
+            }
+            _ => {}
+        }
+        self.autofill.clear();
+        self.go_current_index(current_tab);
     }
 
     /// Checks the inputted Date by the user upon pressing Enter/Esc for various error.

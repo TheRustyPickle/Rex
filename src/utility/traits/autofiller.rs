@@ -3,11 +3,11 @@ use rusqlite::Connection;
 
 pub trait AutoFiller {
     fn autofill_tx_method(&self, user_input: &str, conn: &Connection) -> String {
-        if !user_input.is_empty() {
+        if !user_input.trim().is_empty() {
             let all_tx_methods = get_all_tx_methods(conn);
             let best_match = get_best_match(user_input, all_tx_methods);
 
-            if best_match == user_input {
+            if best_match == user_input.trim() {
                 String::new()
             } else {
                 best_match
@@ -20,13 +20,13 @@ pub trait AutoFiller {
     fn autofill_tags(&self, user_input: &str, conn: &Connection) -> String {
         let all_tags = get_all_tags(conn);
 
-        if !user_input.is_empty() && !all_tags.is_empty() {
+        if !user_input.trim().is_empty() && !all_tags.is_empty() {
             let splitted = user_input
                 .split(',')
                 .map(|s| s.trim())
                 .collect::<Vec<&str>>();
 
-            let last_value = splitted.last().unwrap();
+            let last_value = splitted.last().unwrap().trim();
 
             if last_value.is_empty() {
                 return String::new();
