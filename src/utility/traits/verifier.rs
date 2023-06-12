@@ -3,6 +3,7 @@ use crate::utility::{get_all_tx_methods, get_best_match};
 use chrono::naive::NaiveDate;
 use rusqlite::Connection;
 use std::cmp::Ordering;
+use std::collections::HashSet;
 
 pub trait DataVerifier {
     /// Checks if:
@@ -369,6 +370,16 @@ pub trait DataVerifier {
     fn verify_tags(&self, tags: &mut String) {
         let mut splitted = tags.split(',').map(|s| s.trim()).collect::<Vec<&str>>();
         splitted.retain(|s| !s.is_empty());
-        *tags = splitted.join(", ");
+
+        let mut seen = HashSet::new();
+        let mut unique = Vec::new();
+
+        for item in splitted {
+            if seen.insert(item) {
+                unique.push(item);
+            }
+        }
+
+        *tags = unique.join(", ");
     }
 }
