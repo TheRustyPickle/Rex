@@ -338,7 +338,6 @@ impl<'a> InputKeyHandler<'a> {
                     KeyCode::Char('6') => *self.add_tx_tab = TxTab::Tags,
                     _ => {}
                 }
-                self.go_correct_index();
             }
             CurrentUi::Transfer => {
                 match self.key.code {
@@ -350,10 +349,10 @@ impl<'a> InputKeyHandler<'a> {
                     KeyCode::Char('6') => *self.transfer_tab = TxTab::Tags,
                     _ => {}
                 }
-                self.go_correct_index();
             }
             _ => {}
         }
+        self.go_correct_index();
         self.check_autofill();
     }
 
@@ -585,6 +584,15 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Transfer => self.transfer_data.accept_autofill(self.transfer_tab),
             _ => {}
         }
+    }
+
+    pub fn select_date_field(&mut self) {
+        match self.page {
+            CurrentUi::AddTx => *self.add_tx_tab = TxTab::Date,
+            CurrentUi::Transfer => *self.transfer_tab = TxTab::Date,
+            _ => {}
+        }
+        self.go_correct_index();
     }
 }
 
