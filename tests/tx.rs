@@ -124,6 +124,18 @@ fn check_getting_all_tx_2() {
     )
     .unwrap();
 
+    add_tx(
+        "2022-05-25",
+        "Testing transfer",
+        "test 2 to test1",
+        "100.00",
+        "Transfer",
+        "Unknown",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
     let data = get_all_txs(&conn, 6, 0);
     let data_2 = get_all_txs(&conn, 4, 0);
 
@@ -147,8 +159,8 @@ fn check_getting_all_tx_2() {
             ],
         ],
         vec![
-            vec!["-100.00".to_string(), "0.00".to_string()],
-            vec!["-100.00".to_string(), "-100.00".to_string()],
+            vec!["0.00".to_string(), "-100.00".to_string()],
+            vec!["0.00".to_string(), "-200.00".to_string()],
         ],
         vec!["1".to_string(), "2".to_string()],
     );
@@ -171,12 +183,21 @@ fn check_getting_all_tx_2() {
                 "Income".to_string(),
                 "Unknown".to_string(),
             ],
+            vec![
+                "25-05-2022".to_string(),
+                "Testing transfer".to_string(),
+                "test 2 to test1".to_string(),
+                "100.00".to_string(),
+                "Transfer".to_string(),
+                "Unknown".to_string(),
+            ],
         ],
         vec![
             vec!["0.00".to_string(), "-100.00".to_string()],
             vec!["0.00".to_string(), "0.00".to_string()],
+            vec!["100.00".to_string(), "-100.00".to_string()],
         ],
-        vec!["3".to_string(), "4".to_string()],
+        vec!["3".to_string(), "4".to_string(), "5".to_string()],
     );
 
     conn.close().unwrap();

@@ -328,28 +328,24 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn handle_number_press(&mut self) {
         match self.page {
-            CurrentUi::AddTx => {
-                match self.key.code {
-                    KeyCode::Char('1') => *self.add_tx_tab = TxTab::Date,
-                    KeyCode::Char('2') => *self.add_tx_tab = TxTab::Details,
-                    KeyCode::Char('3') => *self.add_tx_tab = TxTab::FromMethod,
-                    KeyCode::Char('4') => *self.add_tx_tab = TxTab::Amount,
-                    KeyCode::Char('5') => *self.add_tx_tab = TxTab::TxType,
-                    KeyCode::Char('6') => *self.add_tx_tab = TxTab::Tags,
-                    _ => {}
-                }
-            }
-            CurrentUi::Transfer => {
-                match self.key.code {
-                    KeyCode::Char('1') => *self.transfer_tab = TxTab::Date,
-                    KeyCode::Char('2') => *self.transfer_tab = TxTab::Details,
-                    KeyCode::Char('3') => *self.transfer_tab = TxTab::FromMethod,
-                    KeyCode::Char('4') => *self.transfer_tab = TxTab::ToMethod,
-                    KeyCode::Char('5') => *self.transfer_tab = TxTab::Amount,
-                    KeyCode::Char('6') => *self.transfer_tab = TxTab::Tags,
-                    _ => {}
-                }
-            }
+            CurrentUi::AddTx => match self.key.code {
+                KeyCode::Char('1') => *self.add_tx_tab = TxTab::Date,
+                KeyCode::Char('2') => *self.add_tx_tab = TxTab::Details,
+                KeyCode::Char('3') => *self.add_tx_tab = TxTab::FromMethod,
+                KeyCode::Char('4') => *self.add_tx_tab = TxTab::Amount,
+                KeyCode::Char('5') => *self.add_tx_tab = TxTab::TxType,
+                KeyCode::Char('6') => *self.add_tx_tab = TxTab::Tags,
+                _ => {}
+            },
+            CurrentUi::Transfer => match self.key.code {
+                KeyCode::Char('1') => *self.transfer_tab = TxTab::Date,
+                KeyCode::Char('2') => *self.transfer_tab = TxTab::Details,
+                KeyCode::Char('3') => *self.transfer_tab = TxTab::FromMethod,
+                KeyCode::Char('4') => *self.transfer_tab = TxTab::ToMethod,
+                KeyCode::Char('5') => *self.transfer_tab = TxTab::Amount,
+                KeyCode::Char('6') => *self.transfer_tab = TxTab::Tags,
+                _ => {}
+            },
             _ => {}
         }
         self.go_correct_index();

@@ -122,6 +122,7 @@ pub enum HomeTab {
 impl HomeTab {
     /// Moves the current selected tab to the upper value. If at the 1st value, the
     /// the final value is selected.
+    #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up(&mut self) -> Self {
         match &self {
             HomeTab::Years => HomeTab::Table,
@@ -132,6 +133,7 @@ impl HomeTab {
 
     /// Moves the current selected tab to the bottom value. If at the last value, the
     /// the 1st value is selected.
+    #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down(&mut self) -> Self {
         match &self {
             HomeTab::Years => HomeTab::Months,
@@ -187,6 +189,7 @@ pub enum ChartTab {
 impl ChartTab {
     /// Moves the current selected tab to the upper value. If at the 1st value, the
     /// the final value is selected.
+    #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_monthly(&mut self) -> Self {
         match &self {
             ChartTab::ModeSelection => ChartTab::Months,
@@ -197,6 +200,7 @@ impl ChartTab {
 
     /// Moves the current selected tab to the bottom value. If at the last value, the
     /// the 1st value is selected.
+    #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down_monthly(&mut self) -> Self {
         match &self {
             ChartTab::ModeSelection => ChartTab::Years,
@@ -207,6 +211,7 @@ impl ChartTab {
 
     /// Moves the current selected tab to the upper value. If at the 1st value, the
     /// the final value is selected.
+    #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_yearly(&mut self) -> Self {
         match &self {
             ChartTab::ModeSelection => ChartTab::Years,
@@ -217,6 +222,7 @@ impl ChartTab {
 
     /// Moves the current selected tab to the bottom value. If at the last value, the
     /// the 1st value is selected.
+    #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down_yearly(&mut self) -> Self {
         match &self {
             ChartTab::ModeSelection => ChartTab::Years,
@@ -236,6 +242,7 @@ pub enum SummaryTab {
 impl SummaryTab {
     /// Moves the current selected tab to the upper value. If at the 1st value, the
     /// the final value is selected.
+    #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_monthly(&mut self) -> Self {
         match &self {
             SummaryTab::ModeSelection => SummaryTab::Table,
@@ -247,6 +254,7 @@ impl SummaryTab {
 
     /// Moves the current selected tab to the bottom value. If at the last value, the
     /// the 1st value is selected.
+    #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down_monthly(&mut self) -> Self {
         match &self {
             SummaryTab::ModeSelection => SummaryTab::Years,
@@ -258,6 +266,7 @@ impl SummaryTab {
 
     /// Moves the current selected tab to the upper value. If at the 1st value, the
     /// the final value is selected.
+    #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_yearly(&mut self) -> Self {
         match &self {
             SummaryTab::ModeSelection => SummaryTab::Table,
@@ -269,6 +278,7 @@ impl SummaryTab {
 
     /// Moves the current selected tab to the bottom value. If at the last value, the
     /// the 1st value is selected.
+    #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down_yearly(&mut self) -> Self {
         match &self {
             SummaryTab::ModeSelection => SummaryTab::Years,
@@ -280,6 +290,7 @@ impl SummaryTab {
 
     /// Moves the current selected tab to the upper value. If at the 1st value, the
     /// the final value is selected.
+    #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_all_time(&mut self) -> Self {
         match &self {
             SummaryTab::ModeSelection => SummaryTab::Table,
@@ -291,6 +302,7 @@ impl SummaryTab {
 
     /// Moves the current selected tab to the bottom value. If at the last value, the
     /// the 1st value is selected.
+    #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down_all_time(&mut self) -> Self {
         match &self {
             SummaryTab::ModeSelection => SummaryTab::Table,
@@ -310,6 +322,7 @@ pub enum UserInputType {
 }
 
 impl UserInputType {
+    #[cfg(not(tarpaulin_include))]
     pub fn from_string(input: &str) -> Self {
         match input {
             "1" => UserInputType::AddNewTxMethod(Vec::new()),
