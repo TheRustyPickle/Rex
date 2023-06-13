@@ -34,7 +34,7 @@ pub trait AutoFiller {
 
             let best_match = get_best_match(last_value, all_tags);
 
-            if &best_match == last_value {
+            if best_match == last_value {
                 String::new()
             } else {
                 best_match

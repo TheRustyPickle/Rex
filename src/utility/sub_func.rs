@@ -63,14 +63,14 @@ pub fn get_last_time_balance(
             break;
         }
         // check each tx_method column in the current row
-        for i in 0..tx_method.len() {
-            if !checked_methods.contains(&tx_method[i].as_str()) {
+        for (i, item) in tx_method.iter().enumerate() {
+            if !checked_methods.contains(&item.as_str()) {
                 let balance: f64 = row.get(i).unwrap();
 
                 // we only need non-zero balance
                 if balance != 0.0 {
-                    *final_value.get_mut(&tx_method[i]).unwrap() = balance;
-                    checked_methods.push(&tx_method[i]);
+                    *final_value.get_mut(item).unwrap() = balance;
+                    checked_methods.push(item);
                 }
             }
         }
@@ -424,8 +424,8 @@ pub fn get_rename_data(conn: &Connection) -> UserInputType {
 Currently added Transaction Methods: \n"
                 .to_string();
 
-        for i in 0..tx_methods.len() {
-            method_line.push_str(&format!("\n{}. {}", i + 1, tx_methods[i]))
+        for (i, item) in tx_methods.iter().enumerate() {
+            method_line.push_str(&format!("\n{}. {}", i + 1, item))
         }
         println!("{method_line}");
         print!("\nEnter the method number to edit: ");
@@ -522,8 +522,8 @@ Example input: 4 2 1 3, 3412
         
 Currently added Transaction Methods: \n".to_string();
 
-        for i in 0..tx_methods.len() {
-            method_line.push_str(&format!("\n{}. {}", i + 1, tx_methods[i]))
+        for (i, item) in tx_methods.iter().enumerate() {
+            method_line.push_str(&format!("\n{}. {}", i + 1, item))
         }
         println!("{method_line}");
         print!("\nEnter Transaction Methods sequence: ");
@@ -586,8 +586,8 @@ Currently added Transaction Methods: \n".to_string();
         }
 
         println!("\nNew Transaction Methods positions: ");
-        for i in 0..reposition_data.len() {
-            print!("\n{}. {}", i + 1, reposition_data[i]);
+        for (i, item) in reposition_data.iter().enumerate() {
+            print!("\n{}. {}", i + 1, item);
         }
 
         print!("\n\nAccept the values? y/n: ");
