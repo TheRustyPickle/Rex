@@ -3,6 +3,17 @@ use crate::page_handler::IndexedData;
 use crate::utility::{get_all_tx_methods, get_all_txs};
 use rusqlite::Connection;
 use std::collections::HashMap;
+
+type MyVec = Vec<Vec<String>>;
+type MyTuple = (
+    f64,
+    f64,
+    (f64, String, String),
+    (f64, String, String),
+    f64,
+    f64,
+);
+
 /// Contains the necessary information to construct the Summary Page highlighting
 /// tag based expense and income information, biggest expense and income
 pub struct SummaryData {
@@ -30,14 +41,7 @@ impl SummaryData {
         txs: &Vec<Vec<String>>,
         method_earning: &mut HashMap<String, f64>,
         method_expense: &mut HashMap<String, f64>,
-    ) -> (
-        f64,
-        f64,
-        (f64, String, String),
-        (f64, String, String),
-        f64,
-        f64,
-    ) {
+    ) -> MyTuple {
         let mut total_income: f64 = 0.0;
         let mut total_expense: f64 = 0.0;
 
@@ -217,13 +221,7 @@ impl SummaryData {
         month: usize,
         year: usize,
         conn: &Connection,
-    ) -> (
-        Vec<Vec<String>>,
-        Vec<Vec<String>>,
-        Vec<Vec<String>>,
-        Vec<Vec<String>>,
-        Vec<Vec<String>>,
-    ) {
+    ) -> (MyVec, MyVec, MyVec, MyVec, MyVec) {
         let all_methods = get_all_tx_methods(conn);
         let mut total_income: f64 = 0.0;
         let mut total_expense: f64 = 0.0;
