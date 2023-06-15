@@ -49,8 +49,8 @@ fn check_verifier_date() {
             "2038-01-31".to_string(),
             "2022-01-".to_string(),
             "20222-01-01".to_string(),
-            "2022-015-01".to_string(),  
-            "2022-01-311".to_string(),   
+            "2022-015-01".to_string(),
+            "2022-01-311".to_string(),
         ],
         expected: vec![
             "".to_string(),
@@ -116,7 +116,7 @@ fn check_verifier_amount() {
             "   1000000000000000.52   ".to_string(),
             "@%15612".to_string(),
             " 5 + 2 * 3 - 5".to_string(),
-            "1.0000".to_string()
+            "1.0000".to_string(),
         ],
         expected: vec![
             "".to_string(),
