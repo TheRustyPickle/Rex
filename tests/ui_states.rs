@@ -34,6 +34,13 @@ fn test_table_data() {
     let mut table = TableData::new(table_data);
     assert_eq!(table.state.selected(), None);
 
+    table.next();
+    assert_eq!(table.state.selected(), Some(0));
+
+    table.state.select(None);
+    table.previous();
+    assert_eq!(table.state.selected(), Some(0));
+
     table.state.select(Some(0));
     table.next();
     table.next();
