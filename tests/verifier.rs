@@ -48,6 +48,9 @@ fn check_verifier_date() {
             "2022-13-31".to_string(),
             "2038-01-31".to_string(),
             "2022-01-".to_string(),
+            "20222-01-01".to_string(),
+            "2022-015-01".to_string(),
+            "2022-01-311".to_string(),
         ],
         expected: vec![
             "".to_string(),
@@ -62,6 +65,9 @@ fn check_verifier_date() {
             "2022-12-31".to_string(),
             "2037-01-31".to_string(),
             "2022-01-".to_string(),
+            "2022-01-01".to_string(),
+            "2022-12-01".to_string(),
+            "2022-01-31".to_string(),
         ],
         result: vec![
             VerifyingOutput::Nothing(AType::Date),
@@ -76,12 +82,14 @@ fn check_verifier_date() {
             VerifyingOutput::NotAccepted(NAType::MonthTooBig),
             VerifyingOutput::NotAccepted(NAType::YearTooBig),
             VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date)),
+            VerifyingOutput::NotAccepted(NAType::InvalidYear),
+            VerifyingOutput::NotAccepted(NAType::InvalidMonth),
+            VerifyingOutput::NotAccepted(NAType::InvalidDay),
         ],
     };
 
     for i in 0..test_data.data.len() {
         let mut to_verify = test_data.data[i].clone();
-        println!("to_verify: {}", to_verify);
         let result = test_data.verify_date(&mut to_verify);
         assert_eq!(result, test_data.result[i]);
         assert_eq!(to_verify, test_data.expected[i]);
@@ -107,6 +115,8 @@ fn check_verifier_amount() {
             "  2/7  ".to_string(),
             "   1000000000000000.52   ".to_string(),
             "@%15612".to_string(),
+            " 5 + 2 * 3 - 5".to_string(),
+            "1.0000".to_string(),
         ],
         expected: vec![
             "".to_string(),
@@ -124,6 +134,8 @@ fn check_verifier_amount() {
             "0.29".to_string(),
             "1000000000.52".to_string(),
             "15612.00".to_string(),
+            "6.00".to_string(),
+            "1.00".to_string(),
         ],
 
         result: vec![
@@ -136,6 +148,8 @@ fn check_verifier_amount() {
             VerifyingOutput::Accepted(AType::Amount),
             VerifyingOutput::Accepted(AType::Amount),
             VerifyingOutput::NotAccepted(NAType::AmountBelowZero),
+            VerifyingOutput::Accepted(AType::Amount),
+            VerifyingOutput::Accepted(AType::Amount),
             VerifyingOutput::Accepted(AType::Amount),
             VerifyingOutput::Accepted(AType::Amount),
             VerifyingOutput::Accepted(AType::Amount),
@@ -223,6 +237,35 @@ fn check_verifier_tx_type() {
         let mut to_verify = test_data.data[i].clone();
         let result = test_data.verify_tx_type(&mut to_verify);
         assert_eq!(result, test_data.result[i]);
+        assert_eq!(to_verify, test_data.expected[i]);
+    }
+}
+
+#[test]
+fn check_verifier_tags() {
+    let test_data = Testing {
+        data: vec![
+            "".to_string(),
+            "tag1,".to_string(),
+            "tag1,    , , , ".to_string(),
+            "tag1,tag2,tag3".to_string(),
+            "tag1,tag1,tag1".to_string(),
+            "tag1, Tag1, tAg1".to_string(),
+        ],
+        expected: vec![
+            "".to_string(),
+            "tag1".to_string(),
+            "tag1".to_string(),
+            "tag1, tag2, tag3".to_string(),
+            "tag1".to_string(),
+            "tag1, Tag1, tAg1".to_string(),
+        ],
+        result: Vec::new(),
+    };
+
+    for i in 0..test_data.data.len() {
+        let mut to_verify = test_data.data[i].clone();
+        test_data.verify_tags(&mut to_verify);
         assert_eq!(to_verify, test_data.expected[i]);
     }
 }

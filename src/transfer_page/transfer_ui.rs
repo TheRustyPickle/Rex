@@ -1,4 +1,4 @@
-use crate::page_handler::{TxTab, BACKGROUND, BLUE, RED, TEXT};
+use crate::page_handler::{TxTab, BACKGROUND, BLUE, GRAY, RED, TEXT};
 use crate::tx_handler::TxData;
 use crate::utility::{create_bolded_text, main_block, styled_block};
 use ratatui::backend::Backend;
@@ -93,18 +93,40 @@ Esc: Stop editing field
         }
     }
     // We already fetched the data for each of these. Assign them now and then use them to load the widget
-    let date_text = vec![Line::from(input_data[0])];
+    let date_text = Line::from(format!("{} ", input_data[0]));
 
-    let details_text = vec![Line::from(input_data[1])];
+    let details_text = Line::from(format!("{} ", input_data[1]));
 
-    let from_text = vec![Line::from(input_data[2])];
+    let mut from_text = Line::from(format!("{} ", input_data[2]));
 
-    let to_text = vec![Line::from(input_data[3])];
+    let mut to_text = Line::from(format!("{} ", input_data[3]));
 
-    let amount_text = vec![Line::from(input_data[4])];
+    let amount_text = Line::from(format!("{} ", input_data[4]));
 
     // * 5th index is the tx type which is not necessary for the transfer ui
-    let tags_text = vec![Line::from(input_data[6])];
+    let mut tags_text = Line::from(format!("{} ", input_data[6]));
+
+    match currently_selected {
+        TxTab::FromMethod => {
+            from_text = Line::from(vec![
+                Span::from(format!("{} ", input_data[2])),
+                Span::styled(input_data[7], Style::default().fg(GRAY)),
+            ]);
+        }
+        TxTab::ToMethod => {
+            to_text = Line::from(vec![
+                Span::from(format!("{} ", input_data[3])),
+                Span::styled(input_data[7], Style::default().fg(GRAY)),
+            ]);
+        }
+        TxTab::Tags => {
+            tags_text = Line::from(vec![
+                Span::from(format!("{} ", input_data[6])),
+                Span::styled(input_data[7], Style::default().fg(GRAY)),
+            ]);
+        }
+        _ => {}
+    }
 
     // creates the widgets to ready it for rendering
     let help_sec = Paragraph::new(help_text)

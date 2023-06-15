@@ -1,8 +1,9 @@
 use crate::outputs::{AType, NAType, VerifyingOutput};
-use crate::utility::get_all_tx_methods;
+use crate::utility::{get_all_tx_methods, get_best_match};
 use chrono::naive::NaiveDate;
 use rusqlite::Connection;
 use std::cmp::Ordering;
+use std::collections::HashSet;
 
 pub trait DataVerifier {
     /// Checks if:
@@ -337,22 +338,9 @@ pub trait DataVerifier {
             }
         }
 
-        let mut best_match = &all_tx_methods[0];
-        let mut best_score = 0;
+        let best_match = get_best_match(current_method, all_tx_methods);
 
-        for x in all_tx_methods.iter() {
-            let new_score = current_method
-                .to_lowercase()
-                .chars()
-                .filter(|c| x.to_lowercase().contains(*c))
-                .count();
-            if new_score > best_score {
-                best_match = x;
-                best_score = new_score;
-            }
-        }
-
-        *current_method = best_match.to_string();
+        *current_method = best_match;
         VerifyingOutput::NotAccepted(NAType::InvalidTxMethod)
     }
 
@@ -382,6 +370,16 @@ pub trait DataVerifier {
     fn verify_tags(&self, tags: &mut String) {
         let mut splitted = tags.split(',').map(|s| s.trim()).collect::<Vec<&str>>();
         splitted.retain(|s| !s.is_empty());
-        *tags = splitted.join(", ");
+
+        let mut seen = HashSet::new();
+        let mut unique = Vec::new();
+
+        for item in splitted {
+            if seen.insert(item) {
+                unique.push(item);
+            }
+        }
+
+        *tags = unique.join(", ");
     }
 }
