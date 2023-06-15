@@ -582,6 +582,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub fn select_date_field(&mut self) {
         match self.page {
             CurrentUi::AddTx => *self.add_tx_tab = TxTab::Date,
