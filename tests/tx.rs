@@ -1,7 +1,7 @@
 extern crate rex_tui;
-use rex_tui::db::create_db;
 use rex_tui::tx_handler::add_tx;
 use rex_tui::utility::*;
+use rex_tui::{db::create_db, tx_handler::delete_tx};
 use rusqlite::{Connection, Result as sqlResult};
 use std::fs;
 
@@ -124,6 +124,18 @@ fn check_getting_all_tx_2() {
     )
     .unwrap();
 
+    add_tx(
+        "2022-05-25",
+        "Testing transfer",
+        "test 2 to test1",
+        "100.00",
+        "Transfer",
+        "Unknown",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
     let data = get_all_txs(&conn, 6, 0);
     let data_2 = get_all_txs(&conn, 4, 0);
 
@@ -147,8 +159,8 @@ fn check_getting_all_tx_2() {
             ],
         ],
         vec![
-            vec!["-100.00".to_string(), "0.00".to_string()],
-            vec!["-100.00".to_string(), "-100.00".to_string()],
+            vec!["0.00".to_string(), "-100.00".to_string()],
+            vec!["0.00".to_string(), "-200.00".to_string()],
         ],
         vec!["1".to_string(), "2".to_string()],
     );
@@ -171,12 +183,72 @@ fn check_getting_all_tx_2() {
                 "Income".to_string(),
                 "Unknown".to_string(),
             ],
+            vec![
+                "25-05-2022".to_string(),
+                "Testing transfer".to_string(),
+                "test 2 to test1".to_string(),
+                "100.00".to_string(),
+                "Transfer".to_string(),
+                "Unknown".to_string(),
+            ],
         ],
         vec![
             vec!["0.00".to_string(), "-100.00".to_string()],
             vec!["0.00".to_string(), "0.00".to_string()],
+            vec!["100.00".to_string(), "-100.00".to_string()],
         ],
-        vec!["3".to_string(), "4".to_string()],
+        vec!["3".to_string(), "4".to_string(), "5".to_string()],
+    );
+
+    delete_tx(5, &mut conn).unwrap();
+
+    add_tx(
+        "2022-05-25",
+        "Testing transfer",
+        "test 2 to test1",
+        "500.00",
+        "Transfer",
+        "Unknown",
+        Some("5"),
+        &mut conn,
+    )
+    .unwrap();
+
+    let data_3 = get_all_txs(&conn, 4, 0);
+
+    let expected_data_3 = (
+        vec![
+            vec![
+                "15-05-2022".to_string(),
+                "Testing transaction".to_string(),
+                "test 2".to_string(),
+                "100.00".to_string(),
+                "Expense".to_string(),
+                "Unknown".to_string(),
+            ],
+            vec![
+                "20-05-2022".to_string(),
+                "Testing transaction".to_string(),
+                "test 2".to_string(),
+                "100.00".to_string(),
+                "Income".to_string(),
+                "Unknown".to_string(),
+            ],
+            vec![
+                "25-05-2022".to_string(),
+                "Testing transfer".to_string(),
+                "test 2 to test1".to_string(),
+                "500.00".to_string(),
+                "Transfer".to_string(),
+                "Unknown".to_string(),
+            ],
+        ],
+        vec![
+            vec!["0.00".to_string(), "-100.00".to_string()],
+            vec!["0.00".to_string(), "0.00".to_string()],
+            vec!["500.00".to_string(), "-500.00".to_string()],
+        ],
+        vec!["3".to_string(), "4".to_string(), "5".to_string()],
     );
 
     conn.close().unwrap();
@@ -184,6 +256,7 @@ fn check_getting_all_tx_2() {
 
     assert_eq!(data, expected_data);
     assert_eq!(data_2, expected_data_2);
+    assert_eq!(data_3, expected_data_3);
 }
 
 #[test]

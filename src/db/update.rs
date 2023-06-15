@@ -162,6 +162,7 @@ pub fn rename_column(old_name: &str, new_name: &str, conn: &mut Connection) -> R
     Ok(())
 }
 
+/// repositions tx method positions in the db
 pub fn reposition_column(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
     let sp = conn.savepoint()?;
 

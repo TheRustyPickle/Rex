@@ -32,6 +32,7 @@ pub const HIGHLIGHTED: Color = Color::Rgb(38, 38, 38);
 pub const HEADER: Color = Color::Rgb(0, 150, 255);
 pub const RED: Color = Color::Rgb(255, 51, 51);
 pub const BLUE: Color = Color::Rgb(51, 51, 255);
+pub const GRAY: Color = Color::Rgb(128, 128, 128);
 
 /// Starts the interface and run the app
 #[cfg(not(tarpaulin_include))]

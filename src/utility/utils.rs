@@ -17,6 +17,7 @@ use std::fs;
 use std::io::{stdout, Stdout, Write};
 use std::time::Duration;
 use std::{process, thread};
+use strsim::normalized_levenshtein;
 
 const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense", "Cancel"];
 
@@ -352,4 +353,19 @@ pub fn parse_github_body(body: String) -> String {
     let body = body.replace('\r', "");
     let end_point = body.find("## Changes").unwrap();
     format!("\n{}\n", &body[..end_point].trim())
+}
+
+pub fn get_best_match(data: &str, matching_set: Vec<String>) -> String {
+    let mut best_match = &matching_set[0];
+    let mut best_score = -1.0;
+
+    for x in matching_set.iter() {
+        let new_score = normalized_levenshtein(&x.to_lowercase(), &data.to_lowercase());
+
+        if new_score > best_score {
+            best_match = x;
+            best_score = new_score;
+        }
+    }
+    best_match.to_string()
 }
