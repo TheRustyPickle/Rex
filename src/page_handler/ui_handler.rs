@@ -8,7 +8,8 @@ use crate::key_checker::{
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
-    ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SummaryTab, TableData, TxTab,
+    ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SortingType, SummaryTab, TableData,
+    TxTab,
 };
 use crate::popup_page::PopupData;
 use crate::summary_page::{summary_ui, SummaryData};
@@ -62,6 +63,9 @@ pub fn start_app<B: Backend>(
 
     // the selected widget on the Home Page. Default set to the month selection
     let mut home_tab = HomeTab::Months;
+
+    // How summary table will be sorted
+    let mut summary_sort = SortingType::ByTags;
 
     // the database connection and the path of the db
     conn.execute("PRAGMA foreign_keys = ON", [])
@@ -207,6 +211,7 @@ pub fn start_app<B: Backend>(
                         &mut summary_table,
                         &summary_tab,
                         summary_hidden_mode,
+                        &summary_sort,
                         conn,
                     ),
                 }
@@ -259,6 +264,7 @@ pub fn start_app<B: Backend>(
                 &mut summary_months,
                 &mut summary_years,
                 &mut summary_modes,
+                &mut summary_sort,
                 &mut chart_index,
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,
