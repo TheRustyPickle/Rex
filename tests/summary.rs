@@ -1,6 +1,6 @@
 extern crate rex_tui;
 use rex_tui::db::*;
-use rex_tui::page_handler::IndexedData;
+use rex_tui::page_handler::{IndexedData, SortingType};
 use rex_tui::summary_page::SummaryData;
 use rex_tui::tx_handler::add_tx;
 use rusqlite::Connection;
@@ -475,4 +475,109 @@ fn check_summary_data_3() {
 
     assert_eq!(my_summary_text, expected_data_1);
     assert_eq!(my_summary_text_2, expected_data_2);
+}
+
+#[test]
+fn check_summary_sorting() {
+    let file_name = "summary_data_3.sqlite";
+    let mut conn = create_test_db(&file_name);
+
+    add_tx(
+        "2022-08-19",
+        "Testing transaction",
+        "test1",
+        "1000.00",
+        "Expense",
+        "Car",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2023-07-19",
+        "Testing transaction",
+        "test 2",
+        "500.00",
+        "Income",
+        "Food",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2024-07-19",
+        "Testing transaction",
+        "test1",
+        "2000.00",
+        "Income",
+        "Bank",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    let mut summary_modes = IndexedData::new_modes();
+    summary_modes.next();
+    summary_modes.next();
+
+    let my_summary = SummaryData::new(&conn);
+    let table_data = my_summary.get_table_data(&summary_modes, 0, 0);
+
+    let sorted_data_1 = my_summary.sort_table_data(table_data.clone(), &SortingType::ByTags);
+    let sorted_data_2 = my_summary.sort_table_data(table_data.clone(), &SortingType::ByIncome);
+    let sorted_data_3 = my_summary.sort_table_data(table_data.clone(), &SortingType::ByExpense);
+
+    let expected_data_1 = vec![
+        vec!["Bank", "2000.00", "0.00", "80.00", "0.00"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>(),
+        vec!["Car", "0.00", "1000.00", "0.00", "100.00"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>(),
+        vec!["Food", "500.00", "0.00", "20.00", "0.00"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>(),
+    ];
+
+    let expected_data_2 = vec![
+        vec!["Bank", "2000.00", "0.00", "80.00", "0.00"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>(),
+        vec!["Food", "500.00", "0.00", "20.00", "0.00"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>(),
+        vec!["Car", "0.00", "1000.00", "0.00", "100.00"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>(),
+    ];
+
+    let expected_data_3 = vec![
+        vec!["Car", "0.00", "1000.00", "0.00", "100.00"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>(),
+        vec!["Bank", "2000.00", "0.00", "80.00", "0.00"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>(),
+        vec!["Food", "500.00", "0.00", "20.00", "0.00"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>(),
+    ];
+
+    conn.close().unwrap();
+    fs::remove_file(file_name).unwrap();
+
+    assert_eq!(sorted_data_1, expected_data_1);
+    assert_eq!(sorted_data_2, expected_data_2);
+    assert_eq!(sorted_data_3, expected_data_3);
 }

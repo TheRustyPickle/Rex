@@ -2,7 +2,8 @@ use crate::chart_page::ChartData;
 use crate::home_page::TransactionData;
 use crate::outputs::{HandlingOutput, VerifyingOutput};
 use crate::page_handler::{
-    ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SummaryTab, TableData, TxTab,
+    ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SortingType, SummaryTab, TableData,
+    TxTab,
 };
 use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
@@ -36,6 +37,7 @@ pub struct InputKeyHandler<'a> {
     summary_months: &'a mut IndexedData,
     summary_years: &'a mut IndexedData,
     summary_modes: &'a mut IndexedData,
+    summary_sort: &'a mut SortingType,
     total_tags: usize,
     chart_index: &'a mut Option<f64>,
     chart_hidden_mode: &'a mut bool,
@@ -69,6 +71,7 @@ impl<'a> InputKeyHandler<'a> {
         summary_months: &'a mut IndexedData,
         summary_years: &'a mut IndexedData,
         summary_modes: &'a mut IndexedData,
+        summary_sort: &'a mut SortingType,
         chart_index: &'a mut Option<f64>,
         chart_hidden_mode: &'a mut bool,
         summary_hidden_mode: &'a mut bool,
@@ -101,6 +104,7 @@ impl<'a> InputKeyHandler<'a> {
             summary_months,
             summary_years,
             summary_modes,
+            summary_sort,
             total_tags,
             chart_index,
             summary_hidden_mode,
@@ -590,6 +594,16 @@ impl<'a> InputKeyHandler<'a> {
             _ => {}
         }
         self.go_correct_index();
+    }
+
+    #[cfg(not(tarpaulin_include))]
+    pub fn change_summary_sort(&mut self) {
+        *self.summary_sort = self.summary_sort.next_type();
+        let summary_data = self.summary_table.items.to_owned();
+        let sorted_data = self
+            .summary_data
+            .sort_table_data(summary_data, self.summary_sort);
+        *self.summary_table = TableData::new(sorted_data);
     }
 }
 

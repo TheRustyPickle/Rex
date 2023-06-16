@@ -1,5 +1,5 @@
 use crate::page_handler::{
-    IndexedData, SummaryTab, TableData, BACKGROUND, BOX, HEADER, SELECTED, TEXT,
+    IndexedData, SortingType, SummaryTab, TableData, BACKGROUND, BOX, HEADER, SELECTED, TEXT,
 };
 use crate::summary_page::SummaryData;
 use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block};
@@ -22,6 +22,7 @@ pub fn summary_ui<B: Backend>(
     table_data: &mut TableData,
     current_page: &SummaryTab,
     summary_hidden_mode: bool,
+    summary_sort: &SortingType,
     conn: &Connection,
 ) {
     let (summary_data_1, summary_data_2, summary_data_3, summary_data_4, method_data) =
@@ -35,15 +36,33 @@ pub fn summary_ui<B: Backend>(
 
     let size = f.size();
 
+    let tag_header = if let SortingType::ByTags = summary_sort {
+        "Tags▼"
+    } else {
+        "Tags"
+    };
+
+    let total_income_header = if let SortingType::ByIncome = summary_sort {
+        "Total Income▼"
+    } else {
+        "Total Income"
+    };
+
+    let total_expense_header = if let SortingType::ByExpense = summary_sort {
+        "Total Expense▼"
+    } else {
+        "Total Expense"
+    };
+
     let header_cells = [
-        "Tag",
-        "Total Income",
-        "Total Expense",
+        tag_header,
+        total_income_header,
+        total_expense_header,
         "Income %",
         "Expense %",
     ]
-    .iter()
-    .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
+    .into_iter()
+    .map(|h| Cell::from(h).style(Style::default().fg(BACKGROUND)));
 
     let method_header_cells = [
         "Method",
