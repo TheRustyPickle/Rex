@@ -1,5 +1,5 @@
 use crate::db::{MONTHS, YEARS};
-use crate::page_handler::{IndexedData, SortingType};
+use crate::page_handler::IndexedData;
 use crate::utility::{get_all_tx_methods, get_all_txs};
 use rusqlite::Connection;
 use std::collections::HashMap;
@@ -580,29 +580,5 @@ impl SummaryData {
             format!("{:.2}%", percentage1),
             format!("{:.2}%", percentage2),
         )
-    }
-
-    pub fn sort_table_data(
-        &self,
-        mut data: Vec<Vec<String>>,
-        sort_type: &SortingType,
-    ) -> Vec<Vec<String>> {
-        match sort_type {
-            SortingType::ByTags => data.sort(),
-            SortingType::ByIncome => data.sort_by(|a, b| {
-                let val_a: f64 = a[1].parse().unwrap();
-                let val_b: f64 = b[1].parse().unwrap();
-                val_b.partial_cmp(&val_a).unwrap()
-            }),
-            SortingType::ByExpense => {
-                data.sort_by(|a, b| {
-                    let val_a: f64 = a[2].parse().unwrap();
-                    let val_b: f64 = b[2].parse().unwrap();
-                    val_b.partial_cmp(&val_a).unwrap()
-                });
-            }
-        }
-
-        data
     }
 }

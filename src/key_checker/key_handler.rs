@@ -7,6 +7,7 @@ use crate::page_handler::{
 };
 use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
+use crate::utility::sort_table_data;
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 
@@ -600,9 +601,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn change_summary_sort(&mut self) {
         *self.summary_sort = self.summary_sort.next_type();
         let summary_data = self.summary_table.items.to_owned();
-        let sorted_data = self
-            .summary_data
-            .sort_table_data(summary_data, self.summary_sort);
+        let sorted_data = sort_table_data(summary_data, self.summary_sort);
         *self.summary_table = TableData::new(sorted_data);
     }
 }
@@ -1165,6 +1164,7 @@ impl<'a> InputKeyHandler<'a> {
         );
         self.total_tags = summary_table.len();
         *self.summary_table = TableData::new(summary_table);
+        *self.summary_sort = SortingType::ByTags;
     }
 
     #[cfg(not(tarpaulin_include))]

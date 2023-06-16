@@ -1,5 +1,7 @@
 use crate::db::{add_tags_column, create_db, update_balance_type, YEARS};
-use crate::page_handler::{IndexedData, UserInputType, BACKGROUND, BOX, HIGHLIGHTED, TEXT};
+use crate::page_handler::{
+    IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED, TEXT,
+};
 use crate::utility::get_user_tx_methods;
 use crossterm::execute;
 use crossterm::terminal::{
@@ -347,6 +349,7 @@ pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
     false
 }
 
+/// Parse github release information for popup menu
 pub fn parse_github_body(body: String) -> String {
     let body = body.replace("## Updates", "");
     let body = body.replace('*', "•");
@@ -355,6 +358,7 @@ pub fn parse_github_body(body: String) -> String {
     format!("\n{}\n", &body[..end_point].trim())
 }
 
+/// Uses Levenshtein algorithm to get the best match of a string in a vec of strings
 pub fn get_best_match(data: &str, matching_set: Vec<String>) -> String {
     let mut best_match = &matching_set[0];
     let mut best_score = -1.0;
@@ -368,4 +372,25 @@ pub fn get_best_match(data: &str, matching_set: Vec<String>) -> String {
         }
     }
     best_match.to_string()
+}
+
+/// Used for sorting summary table data
+pub fn sort_table_data(mut data: Vec<Vec<String>>, sort_type: &SortingType) -> Vec<Vec<String>> {
+    match sort_type {
+        SortingType::ByTags => data.sort(),
+        SortingType::ByIncome => data.sort_by(|a, b| {
+            let val_a: f64 = a[1].parse().unwrap();
+            let val_b: f64 = b[1].parse().unwrap();
+            val_b.partial_cmp(&val_a).unwrap()
+        }),
+        SortingType::ByExpense => {
+            data.sort_by(|a, b| {
+                let val_a: f64 = a[2].parse().unwrap();
+                let val_b: f64 = b[2].parse().unwrap();
+                val_b.partial_cmp(&val_a).unwrap()
+            });
+        }
+    }
+
+    data
 }
