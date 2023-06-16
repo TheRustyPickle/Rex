@@ -333,3 +333,20 @@ impl UserInputType {
         }
     }
 }
+
+pub enum SortingType {
+    ByTags,
+    ByIncome,
+    ByExpense,
+}
+
+impl SortingType {
+    #[cfg(not(tarpaulin_include))]
+    pub fn next_type(&mut self) -> Self {
+        match self {
+            SortingType::ByTags => SortingType::ByIncome,
+            SortingType::ByIncome => SortingType::ByExpense,
+            SortingType::ByExpense => SortingType::ByTags,
+        }
+    }
+}
