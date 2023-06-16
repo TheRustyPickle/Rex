@@ -47,7 +47,7 @@ impl<'a> PopupData<'a> {
 
     #[cfg(not(tarpaulin_include))]
     fn get_new_update_text(&mut self, data: &[String]) -> String {
-        let update_data_len = data[1].split('\n').collect::<Vec<&str>>().len() * 3;
+        let update_data_len = data[1].split('\n').collect::<Vec<&str>>().len() * 2;
         self.set("New Update", 50, 25 + update_data_len as u16);
         format!(
             "New version {} is now available\n
@@ -166,6 +166,7 @@ Following are the supported keys here
 
 Arrow Up/Down: Cycle widgets/table value
 Arrow Left/Right: Move value of the widget
+S: Sorts table by Tag, Total Income or Total Expense
 Z: Hides the top widgets for full view
 
 Other Keys:
