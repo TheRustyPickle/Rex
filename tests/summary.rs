@@ -3,6 +3,7 @@ use rex_tui::db::*;
 use rex_tui::page_handler::{IndexedData, SortingType};
 use rex_tui::summary_page::SummaryData;
 use rex_tui::tx_handler::add_tx;
+use rex_tui::utility::sort_table_data;
 use rusqlite::Connection;
 use std::fs;
 
@@ -479,7 +480,7 @@ fn check_summary_data_3() {
 
 #[test]
 fn check_summary_sorting() {
-    let file_name = "summary_data_3.sqlite";
+    let file_name = "summary_sorting.sqlite";
     let mut conn = create_test_db(&file_name);
 
     add_tx(
@@ -525,9 +526,9 @@ fn check_summary_sorting() {
     let my_summary = SummaryData::new(&conn);
     let table_data = my_summary.get_table_data(&summary_modes, 0, 0);
 
-    let sorted_data_1 = my_summary.sort_table_data(table_data.clone(), &SortingType::ByTags);
-    let sorted_data_2 = my_summary.sort_table_data(table_data.clone(), &SortingType::ByIncome);
-    let sorted_data_3 = my_summary.sort_table_data(table_data.clone(), &SortingType::ByExpense);
+    let sorted_data_1 = sort_table_data(table_data.clone(), &SortingType::ByTags);
+    let sorted_data_2 = sort_table_data(table_data.clone(), &SortingType::ByIncome);
+    let sorted_data_3 = sort_table_data(table_data.clone(), &SortingType::ByExpense);
 
     let expected_data_1 = vec![
         vec!["Bank", "2000.00", "0.00", "80.00", "0.00"]
