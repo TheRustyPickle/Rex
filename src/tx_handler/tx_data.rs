@@ -1,10 +1,9 @@
 use crate::outputs::{CheckingError, NAType, SteppingError, VerifyingOutput};
 use crate::page_handler::TxTab;
 use crate::tx_handler::{add_tx, delete_tx};
-use crate::utility::traits::{AutoFiller, DataVerifier};
+use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
 use crate::utility::{get_all_tags, get_all_tx_methods, get_last_balances};
 use chrono::prelude::Local;
-use chrono::{Duration, NaiveDate};
 use rusqlite::Connection;
 use std::cmp::Ordering;
 
@@ -27,6 +26,8 @@ pub struct TxData {
 impl DataVerifier for TxData {}
 
 impl AutoFiller for TxData {}
+
+impl FieldStepper for TxData {}
 
 impl TxData {
     /// Creates an instance of the struct however the date field is
@@ -523,490 +524,227 @@ impl TxData {
 
     /// Steps up Date value by one
     pub fn do_date_up(&mut self) -> Result<(), SteppingError> {
-        let status = self.check_date();
+        let verify_status = self.check_date();
         let data_len = self.get_data_len(&TxTab::Date);
         if self.current_index > data_len {
             self.current_index = data_len
         }
 
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let final_date = NaiveDate::parse_from_str("2037-12-31", "%Y-%m-%d").unwrap();
-                let mut current_date = NaiveDate::parse_from_str(&self.date, "%Y-%m-%d").unwrap();
-                if current_date != final_date {
-                    current_date += Duration::days(1);
-                    self.date = current_date.to_string();
-                }
-            }
-            VerifyingOutput::NotAccepted(_) => {
-                self.go_current_index(&TxTab::Date);
-                return Err(SteppingError::InvalidDate);
-            }
-            // * Nothing -> Empty box.
-            // If nothing and pressed Up, make it the first possible date
-            VerifyingOutput::Nothing(_) => {
-                self.date = String::from("2022-01-01");
-            }
-        }
+        let mut user_date = self.date.clone();
+
+        let step_status = self.step_date_up(verify_status, &mut user_date);
+        self.date = user_date;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Date);
-        Ok(())
+        step_status
     }
 
     /// Steps down Date value by one
     pub fn do_date_down(&mut self) -> Result<(), SteppingError> {
-        let status = self.check_date();
+        let verify_status = self.check_date();
         let data_len = self.get_data_len(&TxTab::Date);
         if self.current_index > data_len {
             self.current_index = data_len
         }
 
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let final_date = NaiveDate::parse_from_str("2022-01-01", "%Y-%m-%d").unwrap();
-                let mut current_date = NaiveDate::parse_from_str(&self.date, "%Y-%m-%d").unwrap();
-                if current_date != final_date {
-                    current_date -= Duration::days(1);
-                    self.date = current_date.to_string();
-                }
-            }
-            VerifyingOutput::NotAccepted(_) => {
-                self.go_current_index(&TxTab::Date);
-                return Err(SteppingError::InvalidDate);
-            }
-            // * Nothing -> Empty box.
-            // If nothing and pressed Up, make it the first possible date
-            VerifyingOutput::Nothing(_) => {
-                self.date = String::from("2022-01-01");
-            }
-        }
+        let mut user_date = self.date.clone();
+
+        let step_status = self.step_date_down(verify_status, &mut user_date);
+        self.date = user_date;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Date);
-        Ok(())
+        step_status
     }
 
     /// Steps up From Method value by one
     pub fn do_from_method_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let all_methods = get_all_tx_methods(conn);
 
-        let status = self.check_from_method(conn);
+        let verify_status = self.check_from_method(conn);
         let data_len = self.get_data_len(&TxTab::FromMethod);
         if self.current_index > data_len {
             self.current_index = data_len
         }
 
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let current_method_index = all_methods
-                    .iter()
-                    .position(|e| e == &self.from_method)
-                    .unwrap();
+        let mut user_method = self.from_method.clone();
 
-                // if reached final index, start from beginning
-                let next_method_index = (current_method_index + 1) % all_methods.len();
-                self.from_method = String::from(&all_methods[next_method_index]);
-            }
-            VerifyingOutput::NotAccepted(_) => {
-                self.go_current_index(&TxTab::FromMethod);
-                return Err(SteppingError::InvalidTxMethod);
-            }
-            // * Nothing -> Empty box.
-            // If nothing and pressed Up, make it the first possible method
-            VerifyingOutput::Nothing(_) => {
-                self.from_method = String::from(&all_methods[0]);
-            }
-        }
+        let step_status = self.step_tx_method_up(verify_status, &mut user_method, all_methods);
+        self.from_method = user_method;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::FromMethod);
-        Ok(())
+        step_status
     }
 
     /// Steps down From Method value by one
     pub fn do_from_method_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let all_methods = get_all_tx_methods(conn);
 
-        let status = self.check_from_method(conn);
+        let verify_status = self.check_from_method(conn);
         let data_len = self.get_data_len(&TxTab::FromMethod);
         if self.current_index > data_len {
             self.current_index = data_len
         }
 
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let current_method_index = all_methods
-                    .iter()
-                    .position(|e| e == &self.from_method)
-                    .unwrap();
+        let mut user_method = self.from_method.clone();
 
-                // if reached final index, start from beginning
-                let next_method_index = if current_method_index == 0 {
-                    all_methods.len() - 1
-                } else {
-                    (current_method_index - 1) % all_methods.len()
-                };
-                self.from_method = String::from(&all_methods[next_method_index]);
-            }
-            VerifyingOutput::NotAccepted(_) => {
-                self.go_current_index(&TxTab::FromMethod);
-                return Err(SteppingError::InvalidTxMethod);
-            }
-            // * Nothing -> Empty box.
-            // If nothing and pressed Up, make it the first possible method
-            VerifyingOutput::Nothing(_) => {
-                self.from_method = String::from(&all_methods[0]);
-            }
-        }
+        let step_status = self.step_tx_method_down(verify_status, &mut user_method, all_methods);
+        self.from_method = user_method;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::FromMethod);
-        Ok(())
+        step_status
     }
 
     /// Steps up To Value value by one
     pub fn do_to_method_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let all_methods = get_all_tx_methods(conn);
 
-        let status = self.check_to_method(conn);
+        let verify_status = self.check_to_method(conn);
         let data_len = self.get_data_len(&TxTab::ToMethod);
         if self.current_index > data_len {
             self.current_index = data_len
         }
 
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let current_method_index = all_methods
-                    .iter()
-                    .position(|e| e == &self.to_method)
-                    .unwrap();
+        let mut user_method = self.to_method.clone();
 
-                // if reached final index, start from beginning
-                let next_method_index = (current_method_index + 1) % all_methods.len();
-                self.to_method = String::from(&all_methods[next_method_index]);
-            }
-            VerifyingOutput::NotAccepted(_) => {
-                self.go_current_index(&TxTab::ToMethod);
-                return Err(SteppingError::InvalidTxMethod);
-            }
-            // * Nothing -> Empty box.
-            // If nothing and pressed Up, make it the first possible method
-            VerifyingOutput::Nothing(_) => {
-                self.to_method = String::from(&all_methods[0]);
-            }
-        }
+        let step_status = self.step_tx_method_up(verify_status, &mut user_method, all_methods);
+        self.to_method = user_method;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::ToMethod);
-        Ok(())
+        step_status
     }
 
     /// Steps down To Method value by one
     pub fn do_to_method_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
         let all_methods = get_all_tx_methods(conn);
 
-        let status = self.check_to_method(conn);
+        let verify_status = self.check_to_method(conn);
         let data_len = self.get_data_len(&TxTab::ToMethod);
         if self.current_index > data_len {
             self.current_index = data_len
         }
 
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let current_method_index = all_methods
-                    .iter()
-                    .position(|e| e == &self.to_method)
-                    .unwrap();
+        let mut user_method = self.to_method.clone();
 
-                // if reached final index, start from beginning
-                let next_method_index = if current_method_index == 0 {
-                    all_methods.len() - 1
-                } else {
-                    (current_method_index - 1) % all_methods.len()
-                };
-                self.to_method = String::from(&all_methods[next_method_index]);
-            }
-            VerifyingOutput::NotAccepted(_) => {
-                self.go_current_index(&TxTab::ToMethod);
-                return Err(SteppingError::InvalidTxMethod);
-            }
-            // * Nothing -> Empty box.
-            // If nothing and pressed Up, make it the first possible method
-            VerifyingOutput::Nothing(_) => {
-                self.to_method = String::from(&all_methods[0]);
-            }
-        }
+        let step_status = self.step_tx_method_down(verify_status, &mut user_method, all_methods);
+        self.to_method = user_method;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::ToMethod);
-        Ok(())
+        step_status
     }
 
     /// Steps up Tx Type value by one
     pub fn do_tx_type_up(&mut self) -> Result<(), SteppingError> {
-        let status = self.check_tx_type();
+        let verify_status = self.check_tx_type();
         let data_len = self.get_data_len(&TxTab::TxType);
         if self.current_index > data_len {
             self.current_index = data_len
         }
 
-        // * there's only 2 possible values of tx type
-        if self.tx_type.is_empty() {
-            self.tx_type = "Income".to_string()
-        } else if self.tx_type == "Income" {
-            self.tx_type = "Expense".to_string()
-        } else if self.tx_type == "Expense" {
-            self.tx_type = "Income".to_string()
-        }
+        let mut user_type = self.tx_type.clone();
 
-        if let VerifyingOutput::NotAccepted(_) = status {
-            return Err(SteppingError::InvalidTxType);
-        }
+        let step_status = self.step_tx_type(verify_status, &mut user_type);
+        self.tx_type = user_type;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::TxType);
-        Ok(())
+        step_status
     }
 
     /// Steps down Tx Type value by one
     pub fn do_tx_type_down(&mut self) -> Result<(), SteppingError> {
-        let status = self.check_tx_type();
+        let verify_status = self.check_tx_type();
         let data_len = self.get_data_len(&TxTab::TxType);
         if self.current_index > data_len {
             self.current_index = data_len
         }
 
-        // * there's only 2 possible values of tx type
-        if self.tx_type.is_empty() {
-            self.tx_type = "Income".to_string()
-        } else if self.tx_type == "Income" {
-            self.tx_type = "Expense".to_string()
-        } else if self.tx_type == "Expense" {
-            self.tx_type = "Income".to_string()
-        }
+        let mut user_type = self.tx_type.clone();
 
-        if let VerifyingOutput::NotAccepted(_) = status {
-            return Err(SteppingError::InvalidTxType);
-        }
+        let step_status = self.step_tx_type(verify_status, &mut user_type);
+        self.tx_type = user_type;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::TxType);
-        Ok(())
+        step_status
     }
 
     /// Steps up Amount value by one
     pub fn do_amount_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let status = self.check_amount(conn);
+        let verify_status = self.check_amount(conn);
         let data_len = self.get_data_len(&TxTab::Amount);
         if self.current_index > data_len {
             self.current_index = data_len
         }
 
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let mut current_amount: f64 = self.amount.parse().unwrap();
+        let mut user_amount = self.amount.clone();
 
-                if 9999999999.99 > current_amount + 1.0 {
-                    current_amount += 1.0;
-                    self.amount = format!("{current_amount:.2}");
-                }
-            }
-            VerifyingOutput::NotAccepted(err_type) => match err_type {
-                // if value went below 0, make it 1
-                NAType::AmountBelowZero => {
-                    self.amount = String::from("1.00");
-                }
-                _ => {
-                    self.go_current_index(&TxTab::Amount);
-                    return Err(SteppingError::InvalidAmount);
-                }
-            },
-            VerifyingOutput::Nothing(_) => self.amount = "1.00".to_string(),
-        }
+        let step_status = self.step_amount_up(verify_status, &mut user_amount);
+        self.amount = user_amount;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Amount);
-        Ok(())
+        step_status
     }
 
     /// Steps down Amount value by one
     pub fn do_amount_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let status = self.check_amount(conn);
+        let verify_status = self.check_amount(conn);
 
         let data_len = self.get_data_len(&TxTab::Amount);
         if self.current_index > data_len {
             self.current_index = data_len
         }
 
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let mut current_amount: f64 = self.amount.parse().unwrap();
+        let mut user_amount = self.amount.clone();
 
-                if (current_amount - 1.0) >= 0.00 {
-                    current_amount -= 1.0;
-                    self.amount = format!("{current_amount:.2}");
-                }
-            }
-            VerifyingOutput::NotAccepted(err_type) => match err_type {
-                NAType::AmountBelowZero => {}
-                _ => {
-                    self.go_current_index(&TxTab::Amount);
-                    return Err(SteppingError::InvalidAmount);
-                }
-            },
-            VerifyingOutput::Nothing(_) => self.amount = "1.00".to_string(),
-        }
+        let step_status = self.step_amount_down(verify_status, &mut user_amount);
+        self.amount = user_amount;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Amount);
-        Ok(())
+        step_status
     }
 
     /// Steps up Tags value by one
     pub fn do_tags_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let tags = get_all_tags(conn);
+        let all_tags = get_all_tags(conn);
 
         let data_len = self.get_data_len(&TxTab::Tags);
         if self.current_index > data_len {
             self.current_index = data_len
         }
+        let mut user_tag = self.tags.clone();
 
-        // if current tag is empty but up is pressed,
-        // select the first possible tag if available
-        if self.tags.is_empty() {
-            if !tags.is_empty() {
-                self.tags = String::from(&tags[0]);
-            } else {
-                return Err(SteppingError::InvalidTags);
-            }
-        } else {
-            // tags are separated by comma. Collect all the tags
-            let mut current_tags = self
-                .tags
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect::<Vec<String>>();
-
-            // tag1, tag2, tag3
-            // in this case, only work with tag3, keep the rest as it is
-            let last_tag = current_tags.pop().unwrap();
-
-            // check if the working tag exists inside all tag list
-            if !tags
-                .iter()
-                .any(|tag| tag.to_lowercase() == last_tag.to_lowercase())
-            {
-                // tag3, tag2,
-                // if kept like this with extra comma, the last_tag would be empty. In this case
-                // select the first tag available in the list or just join the first two tag with , + space
-                if last_tag.is_empty() {
-                    if !tags.is_empty() {
-                        current_tags.push(tags[0].to_owned());
-                        self.tags = current_tags.join(", ");
-                    } else {
-                        self.tags = current_tags.join(", ");
-                    }
-                } else {
-                    // as the tag didn't match with any existing tags
-                    // whatever tag matches the first character in the existing list,
-                    // make that the new tag -> join with comma + space
-                    current_tags.push(self.autofill.to_owned());
-
-                    self.tags = current_tags.join(", ");
-                    self.go_current_index(&TxTab::Tags);
-                    return Err(SteppingError::InvalidTags);
-                }
-            } else if let Some(index) = tags
-                .iter()
-                .position(|tag| tag.to_lowercase() == last_tag.to_lowercase())
-            {
-                // if the tag matches with something, get the index, select the next one.
-                // start from beginning if reached at the end -> Join
-                let next_index = (index + 1) % tags.len();
-                current_tags.push(tags[next_index].to_owned());
-                self.tags = current_tags.join(", ");
-            }
-        }
+        let status = self.step_tags_up(&mut user_tag, all_tags, &self.autofill);
+        self.tags = user_tag;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Tags);
-        Ok(())
+        status
     }
 
     /// Steps down Tags value by one
     pub fn do_tags_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let tags = get_all_tags(conn);
+        let all_tags = get_all_tags(conn);
 
         let data_len = self.get_data_len(&TxTab::Tags);
         if self.current_index > data_len {
             self.current_index = data_len
         }
 
-        // if current tag is empty but down is pressed,
-        // select the first possible tag if available
-        if self.tags.is_empty() {
-            if !tags.is_empty() {
-                self.tags = String::from(&tags[0]);
-            } else {
-                return Err(SteppingError::InvalidTags);
-            }
-        } else {
-            // tags are separated by comma. Collect all the tags
-            let mut current_tags = self
-                .tags
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect::<Vec<String>>();
+        let mut user_tag = self.tags.clone();
 
-            // tag1, tag2, tag3
-            // in this case, only work with tag3, keep the rest as it is
-            let last_tag = current_tags.pop().unwrap();
-
-            // check if the working tag exists inside all tag list
-            if !tags
-                .iter()
-                .any(|tag| tag.to_lowercase() == last_tag.to_lowercase())
-            {
-                // tag3, tag2,
-                // if kept like this with extra comma, the last_tag would be empty. In this case
-                // select the first tag available in the list or just join the first two tag with , + space
-                if last_tag.is_empty() {
-                    if !tags.is_empty() {
-                        current_tags.push(tags[0].to_owned());
-                        self.tags = current_tags.join(", ");
-                    } else {
-                        self.tags = current_tags.join(", ");
-                    }
-                    current_tags.push(tags[0].to_owned());
-                    self.tags = current_tags.join(", ");
-                } else {
-                    // as the tag didn't match with any existing tags
-                    // whatever tag matches the first character in the existing list,
-                    // make that the new tag -> join with comma + space
-                    current_tags.push(self.autofill.to_owned());
-                    self.tags = current_tags.join(", ");
-                    self.go_current_index(&TxTab::Tags);
-                    return Err(SteppingError::InvalidTags);
-                }
-            } else if let Some(index) = tags
-                .iter()
-                .position(|tag| tag.to_lowercase() == last_tag.to_lowercase())
-            {
-                // if the tag matches with something, get the index, select the next one.
-                // start from beginning if reached at the end -> Join
-                let next_index = if index == 0 {
-                    tags.len() - 1
-                } else {
-                    (index - 1) % tags.len()
-                };
-                current_tags.push(tags[next_index].to_owned());
-                self.tags = current_tags.join(", ");
-            }
-        }
+        let status = self.step_tags_down(&mut user_tag, all_tags, &self.autofill);
+        self.tags = user_tag;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Tags);
-        Ok(())
+        status
     }
 }
