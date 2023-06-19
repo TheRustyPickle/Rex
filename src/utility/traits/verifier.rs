@@ -150,27 +150,27 @@ pub trait DataVerifier {
     ///
     /// if the value is not float, tries to make it float ending with double zero
 
-    fn verify_amount(&self, amount: &mut String) -> VerifyingOutput {
+    fn verify_amount(&self, user_amount: &mut String) -> VerifyingOutput {
         // cancel all verification if the amount is empty
-        if amount.is_empty() {
+        if user_amount.is_empty() {
             return VerifyingOutput::Nothing(AType::Amount);
         }
 
         let calc_symbols = vec!['*', '/', '+', '-'];
 
-        *amount = amount
+        *user_amount = user_amount
             .chars()
             .filter(|c| c.is_numeric() || *c == '.' || calc_symbols.contains(c))
             .collect();
 
         // Already checked if the initial amount is empty.
         // if it becomes empty after the filtering was done, there no number inside so return error
-        if amount.is_empty() {
+        if user_amount.is_empty() {
             return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Amount));
         }
 
         // check if any of the symbols are present
-        if calc_symbols.iter().any(|s| amount.contains(*s)) {
+        if calc_symbols.iter().any(|s| user_amount.contains(*s)) {
             // how it works:
             // the calc_symbol intentionally starts with * and / so these calculations are done first
             // start a main loop which will only run for the amount of times any one of them from calc_symbols is present
@@ -181,10 +181,13 @@ pub trait DataVerifier {
             // result: 1+50 => break the symbol checking loop and continue the main loop again so we start working with 1+50.
 
             // get the amount of time the symbols were found in the amount string
-            let count = amount.chars().filter(|c| calc_symbols.contains(c)).count();
+            let count = user_amount
+                .chars()
+                .filter(|c| calc_symbols.contains(c))
+                .count();
 
             // remove all spaces for easier indexing
-            let mut working_value = amount.to_owned();
+            let mut working_value = user_amount.to_owned();
 
             for _i in 0..count {
                 for symbol in &calc_symbols {
@@ -265,48 +268,50 @@ pub trait DataVerifier {
                     }
                 }
             }
-            *amount = working_value;
+            *user_amount = working_value;
         }
 
         // if dot is present but nothing after that, add 2 zero
         // if no dot, add dot + 2 zero
-        if amount.contains('.') {
-            let state = amount.split('.').collect::<Vec<&str>>();
+        if user_amount.contains('.') {
+            let state = user_amount.split('.').collect::<Vec<&str>>();
             if state[1].is_empty() {
-                *amount += "00"
+                *user_amount += "00"
             }
         } else {
-            *amount = format!("{amount}.00");
+            *user_amount = format!("{user_amount}.00");
         }
 
-        let float_amount: f64 = match amount.parse() {
+        let float_amount: f64 = match user_amount.parse() {
             Ok(v) => v,
             Err(_) => return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Amount)),
         };
 
         if float_amount <= 0.0 {
-            *amount = format!("{:.2}", (float_amount - (float_amount * 2.0)));
+            *user_amount = format!("{:.2}", (float_amount - (float_amount * 2.0)));
             return VerifyingOutput::NotAccepted(NAType::AmountBelowZero);
         }
 
         // checks if there is 2 number after the dot else add zero/s
-        if amount.contains('.') {
-            let splitted = amount.split('.').collect::<Vec<&str>>();
+        if user_amount.contains('.') {
+            let splitted = user_amount.split('.').collect::<Vec<&str>>();
 
             match splitted[1].len().cmp(&2) {
-                Ordering::Less => *amount = format!("{amount}0"),
-                Ordering::Greater => *amount = format!("{}.{}", splitted[0], &splitted[1][..2]),
+                Ordering::Less => *user_amount = format!("{user_amount}0"),
+                Ordering::Greater => {
+                    *user_amount = format!("{}.{}", splitted[0], &splitted[1][..2])
+                }
                 Ordering::Equal => (),
             }
         }
 
         // we can safely split now as previously we just added a dot + 2 numbers with the amount
         // and create the final value for the amount
-        let splitted_amount = amount.split('.').collect::<Vec<&str>>();
+        let splitted_amount = user_amount.split('.').collect::<Vec<&str>>();
 
         // limit max character to 10
         if splitted_amount[0].len() > 10 {
-            *amount = format!("{}.{}", &splitted_amount[0][..10], splitted_amount[1]);
+            *user_amount = format!("{}.{}", &splitted_amount[0][..10], splitted_amount[1]);
         }
 
         VerifyingOutput::Accepted(AType::Amount)
@@ -320,27 +325,27 @@ pub trait DataVerifier {
     /// if the Transaction is not found, matches each character with the available
     /// Transaction Methods and corrects to the best matching one.
 
-    fn verify_tx_method(&self, current_method: &mut String, conn: &Connection) -> VerifyingOutput {
+    fn verify_tx_method(&self, user_method: &mut String, conn: &Connection) -> VerifyingOutput {
         // get all currently added tx methods
         let all_tx_methods = get_all_tx_methods(conn);
 
-        *current_method = current_method.trim().to_string();
+        *user_method = user_method.trim().to_string();
 
         // cancel all verification if the text is empty
-        if current_method.is_empty() {
+        if user_method.is_empty() {
             return VerifyingOutput::Nothing(AType::TxMethod);
         }
 
         for method in &all_tx_methods {
-            if method.to_lowercase() == current_method.to_lowercase() {
-                *current_method = method.to_string();
+            if method.to_lowercase() == user_method.to_lowercase() {
+                *user_method = method.to_string();
                 return VerifyingOutput::Accepted(AType::TxMethod);
             }
         }
 
-        let best_match = get_best_match(current_method, all_tx_methods);
+        let best_match = get_best_match(user_method, all_tx_methods);
 
-        *current_method = best_match;
+        *user_method = best_match;
         VerifyingOutput::NotAccepted(NAType::InvalidTxMethod)
     }
 
@@ -349,26 +354,26 @@ pub trait DataVerifier {
     /// - The transaction method starts with E or I
     ///
     /// Auto expands E to Expense and I to Income.
-    fn verify_tx_type(&self, tx_type: &mut String) -> VerifyingOutput {
-        *tx_type = tx_type.replace(' ', "");
+    fn verify_tx_type(&self, user_type: &mut String) -> VerifyingOutput {
+        *user_type = user_type.replace(' ', "");
 
-        if tx_type.is_empty() {
+        if user_type.is_empty() {
             return VerifyingOutput::Nothing(AType::TxType);
         }
-        if tx_type.to_lowercase().starts_with('e') {
-            *tx_type = "Expense".to_string();
+        if user_type.to_lowercase().starts_with('e') {
+            *user_type = "Expense".to_string();
             VerifyingOutput::Accepted(AType::TxType)
-        } else if tx_type.to_lowercase().starts_with('i') {
-            *tx_type = "Income".to_string();
+        } else if user_type.to_lowercase().starts_with('i') {
+            *user_type = "Income".to_string();
             VerifyingOutput::Accepted(AType::TxType)
         } else {
-            *tx_type = String::new();
+            *user_type = String::new();
             VerifyingOutput::NotAccepted(NAType::InvalidTxType)
         }
     }
 
-    fn verify_tags(&self, tags: &mut String) {
-        let mut splitted = tags.split(',').map(|s| s.trim()).collect::<Vec<&str>>();
+    fn verify_tags(&self, user_tag: &mut String) {
+        let mut splitted = user_tag.split(',').map(|s| s.trim()).collect::<Vec<&str>>();
         splitted.retain(|s| !s.is_empty());
 
         let mut seen = HashSet::new();
@@ -380,6 +385,6 @@ pub trait DataVerifier {
             }
         }
 
-        *tags = unique.join(", ");
+        *user_tag = unique.join(", ");
     }
 }
