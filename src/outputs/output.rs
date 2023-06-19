@@ -102,3 +102,8 @@ impl fmt::Display for NAType {
         }
     }
 }
+
+pub enum StepType {
+    StepUp,
+    StepDown,
+}

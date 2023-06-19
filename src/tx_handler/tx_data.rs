@@ -1,8 +1,8 @@
-use crate::outputs::{CheckingError, NAType, SteppingError, VerifyingOutput};
+use crate::outputs::{CheckingError, NAType, StepType, SteppingError, VerifyingOutput};
 use crate::page_handler::TxTab;
 use crate::tx_handler::{add_tx, delete_tx};
 use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
-use crate::utility::{get_all_tags, get_all_tx_methods, get_last_balances};
+use crate::utility::{get_all_tx_methods, get_last_balances};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::cmp::Ordering;
@@ -405,6 +405,8 @@ impl TxData {
 
     /// Checks the inputted Amount by the user upon pressing Enter/Esc for various error.
     pub fn check_amount(&mut self, conn: &Connection) -> VerifyingOutput {
+        self.check_b_field(conn).map_err(|err| err).unwrap();
+
         let mut user_amount = self.amount.clone().to_lowercase();
 
         // 'b' represents the current balance of the original tx method
@@ -476,6 +478,29 @@ impl TxData {
         None
     }
 
+    /// Checks for b on amount field to replace with the balance of the tx method field
+    fn check_b_field(&mut self, conn: &Connection) -> Result<(), VerifyingOutput> {
+        let user_amount = self.amount.to_lowercase();
+
+        // 'b' represents the current balance of the original tx method
+        if user_amount.contains('b') && !self.from_method.is_empty() {
+            let all_methods = get_all_tx_methods(conn);
+
+            // get all the method's final balance, loop through the balances and match the tx method name
+            let last_balances = get_last_balances(conn);
+
+            for x in 0..all_methods.len() {
+                if all_methods[x] == self.from_method {
+                    self.amount = user_amount.replace('b', &last_balances[x]);
+                    break;
+                }
+            }
+        } else if user_amount.contains('b') && self.from_method.is_empty() {
+            return Err(VerifyingOutput::NotAccepted(NAType::InvalidBValue));
+        }
+        Ok(())
+    }
+
     /// Returns the current index
     pub fn get_current_index(&self) -> usize {
         self.current_index
@@ -524,15 +549,9 @@ impl TxData {
 
     /// Steps up Date value by one
     pub fn do_date_up(&mut self) -> Result<(), SteppingError> {
-        let verify_status = self.check_date();
-        let data_len = self.get_data_len(&TxTab::Date);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
         let mut user_date = self.date.clone();
 
-        let step_status = self.step_date_up(verify_status, &mut user_date);
+        let step_status = self.step_date(&mut user_date, StepType::StepUp);
         self.date = user_date;
 
         // reload index to the final point as some data just got added/changed
@@ -542,15 +561,9 @@ impl TxData {
 
     /// Steps down Date value by one
     pub fn do_date_down(&mut self) -> Result<(), SteppingError> {
-        let verify_status = self.check_date();
-        let data_len = self.get_data_len(&TxTab::Date);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
         let mut user_date = self.date.clone();
 
-        let step_status = self.step_date_down(verify_status, &mut user_date);
+        let step_status = self.step_date(&mut user_date, StepType::StepDown);
         self.date = user_date;
 
         // reload index to the final point as some data just got added/changed
@@ -560,17 +573,9 @@ impl TxData {
 
     /// Steps up From Method value by one
     pub fn do_from_method_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let all_methods = get_all_tx_methods(conn);
-
-        let verify_status = self.check_from_method(conn);
-        let data_len = self.get_data_len(&TxTab::FromMethod);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
         let mut user_method = self.from_method.clone();
 
-        let step_status = self.step_tx_method_up(verify_status, &mut user_method, all_methods);
+        let step_status = self.step_tx_method(&mut user_method, StepType::StepUp, conn);
         self.from_method = user_method;
 
         // reload index to the final point as some data just got added/changed
@@ -580,17 +585,9 @@ impl TxData {
 
     /// Steps down From Method value by one
     pub fn do_from_method_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let all_methods = get_all_tx_methods(conn);
-
-        let verify_status = self.check_from_method(conn);
-        let data_len = self.get_data_len(&TxTab::FromMethod);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
         let mut user_method = self.from_method.clone();
 
-        let step_status = self.step_tx_method_down(verify_status, &mut user_method, all_methods);
+        let step_status = self.step_tx_method(&mut user_method, StepType::StepDown, conn);
         self.from_method = user_method;
 
         // reload index to the final point as some data just got added/changed
@@ -600,17 +597,9 @@ impl TxData {
 
     /// Steps up To Value value by one
     pub fn do_to_method_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let all_methods = get_all_tx_methods(conn);
-
-        let verify_status = self.check_to_method(conn);
-        let data_len = self.get_data_len(&TxTab::ToMethod);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
         let mut user_method = self.to_method.clone();
 
-        let step_status = self.step_tx_method_up(verify_status, &mut user_method, all_methods);
+        let step_status = self.step_tx_method(&mut user_method, StepType::StepUp, conn);
         self.to_method = user_method;
 
         // reload index to the final point as some data just got added/changed
@@ -620,17 +609,9 @@ impl TxData {
 
     /// Steps down To Method value by one
     pub fn do_to_method_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let all_methods = get_all_tx_methods(conn);
-
-        let verify_status = self.check_to_method(conn);
-        let data_len = self.get_data_len(&TxTab::ToMethod);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
         let mut user_method = self.to_method.clone();
 
-        let step_status = self.step_tx_method_down(verify_status, &mut user_method, all_methods);
+        let step_status = self.step_tx_method(&mut user_method, StepType::StepDown, conn);
         self.to_method = user_method;
 
         // reload index to the final point as some data just got added/changed
@@ -640,15 +621,9 @@ impl TxData {
 
     /// Steps up Tx Type value by one
     pub fn do_tx_type_up(&mut self) -> Result<(), SteppingError> {
-        let verify_status = self.check_tx_type();
-        let data_len = self.get_data_len(&TxTab::TxType);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
         let mut user_type = self.tx_type.clone();
 
-        let step_status = self.step_tx_type(verify_status, &mut user_type);
+        let step_status = self.step_tx_type(&mut user_type);
         self.tx_type = user_type;
 
         // reload index to the final point as some data just got added/changed
@@ -658,15 +633,9 @@ impl TxData {
 
     /// Steps down Tx Type value by one
     pub fn do_tx_type_down(&mut self) -> Result<(), SteppingError> {
-        let verify_status = self.check_tx_type();
-        let data_len = self.get_data_len(&TxTab::TxType);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
         let mut user_type = self.tx_type.clone();
 
-        let step_status = self.step_tx_type(verify_status, &mut user_type);
+        let step_status = self.step_tx_type(&mut user_type);
         self.tx_type = user_type;
 
         // reload index to the final point as some data just got added/changed
@@ -676,15 +645,11 @@ impl TxData {
 
     /// Steps up Amount value by one
     pub fn do_amount_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let verify_status = self.check_amount(conn);
-        let data_len = self.get_data_len(&TxTab::Amount);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
+        self.check_b_field(conn).map_err(|err| err).unwrap();
 
         let mut user_amount = self.amount.clone();
 
-        let step_status = self.step_amount_up(verify_status, &mut user_amount);
+        let step_status = self.step_amount(&mut user_amount, StepType::StepUp);
         self.amount = user_amount;
 
         // reload index to the final point as some data just got added/changed
@@ -694,16 +659,11 @@ impl TxData {
 
     /// Steps down Amount value by one
     pub fn do_amount_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let verify_status = self.check_amount(conn);
-
-        let data_len = self.get_data_len(&TxTab::Amount);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
+        self.check_b_field(conn).map_err(|err| err).unwrap();
 
         let mut user_amount = self.amount.clone();
 
-        let step_status = self.step_amount_down(verify_status, &mut user_amount);
+        let step_status = self.step_amount(&mut user_amount, StepType::StepDown);
         self.amount = user_amount;
 
         // reload index to the final point as some data just got added/changed
@@ -713,15 +673,9 @@ impl TxData {
 
     /// Steps up Tags value by one
     pub fn do_tags_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let all_tags = get_all_tags(conn);
-
-        let data_len = self.get_data_len(&TxTab::Tags);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
         let mut user_tag = self.tags.clone();
 
-        let status = self.step_tags_up(&mut user_tag, all_tags, &self.autofill);
+        let status = self.step_tags(&mut user_tag, &self.autofill, StepType::StepUp, conn);
         self.tags = user_tag;
 
         // reload index to the final point as some data just got added/changed
@@ -731,16 +685,9 @@ impl TxData {
 
     /// Steps down Tags value by one
     pub fn do_tags_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let all_tags = get_all_tags(conn);
-
-        let data_len = self.get_data_len(&TxTab::Tags);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
         let mut user_tag = self.tags.clone();
 
-        let status = self.step_tags_down(&mut user_tag, all_tags, &self.autofill);
+        let status = self.step_tags(&mut user_tag, &self.autofill, StepType::StepDown, conn);
         self.tags = user_tag;
 
         // reload index to the final point as some data just got added/changed
