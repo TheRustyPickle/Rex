@@ -2,7 +2,7 @@ use crate::outputs::{CheckingError, NAType, StepType, SteppingError, VerifyingOu
 use crate::page_handler::TxTab;
 use crate::tx_handler::{add_tx, delete_tx};
 use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
-use crate::utility::{get_all_tx_methods, get_last_balances};
+use crate::utility::{add_char_to, get_all_tx_methods, get_last_balances};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::cmp::Ordering;
@@ -132,142 +132,37 @@ impl TxData {
 
     /// Insert or remove from date field according to the index point
     pub fn edit_date(&mut self, to_add: Option<char>) {
-        if self.current_index > self.date.len() {
-            self.current_index = self.date.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.date.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.date.is_empty() && self.current_index != 0 {
-                        self.date.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.date);
     }
 
     /// Insert or remove from details field according to the index point
     pub fn edit_details(&mut self, to_add: Option<char>) {
-        if self.current_index > self.details.len() {
-            self.current_index = self.details.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.details.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.details.is_empty() && self.current_index != 0 {
-                        self.details.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.details);
     }
 
     /// Insert or remove from from method field according to the index point
     pub fn edit_from_method(&mut self, to_add: Option<char>) {
-        if self.current_index > self.from_method.len() {
-            self.current_index = self.from_method.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.from_method.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.from_method.is_empty() && self.current_index != 0 {
-                        self.from_method.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.from_method);
     }
 
     /// Insert or remove from to method field according to the index point
     pub fn edit_to_method(&mut self, to_add: Option<char>) {
-        if self.current_index > self.to_method.len() {
-            self.current_index = self.to_method.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.to_method.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.to_method.is_empty() && self.current_index != 0 {
-                        self.to_method.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.to_method);
     }
 
     /// Insert or remove from amount field according to the index point
     pub fn edit_amount(&mut self, to_add: Option<char>) {
-        if self.current_index > self.amount.len() {
-            self.current_index = self.amount.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.amount.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.amount.is_empty() && self.current_index != 0 {
-                        self.amount.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.amount);
     }
 
     /// Insert or remove from tx type field according to the index point
     pub fn edit_tx_type(&mut self, to_add: Option<char>) {
-        if self.current_index > self.tx_type.len() {
-            self.current_index = self.tx_type.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.tx_type.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.tx_type.is_empty() && self.current_index != 0 {
-                        self.tx_type.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.tx_type);
     }
 
     /// Insert or remove from tags field according to the index point
     pub fn edit_tags(&mut self, to_add: Option<char>) {
-        if self.current_index > self.tags.len() {
-            self.current_index = self.tags.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.tags.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.tags.is_empty() && self.current_index != 0 {
-                        self.tags.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.tags);
     }
 
     // TODO: Handle errors
