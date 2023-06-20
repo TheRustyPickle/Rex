@@ -394,3 +394,23 @@ pub fn sort_table_data(mut data: Vec<Vec<String>>, sort_type: &SortingType) -> V
 
     data
 }
+
+/// Adds a char to the given index on the given string
+pub fn add_char_to(to_add: Option<char>, current_index: &mut usize, current_data: &mut String) {
+    if *current_index > current_data.len() {
+        *current_index = current_data.len();
+    } else {
+        match to_add {
+            Some(ch) => {
+                current_data.insert(*current_index, ch);
+                *current_index += 1
+            }
+            None => {
+                if !current_data.is_empty() && *current_index != 0 {
+                    current_data.remove(*current_index - 1);
+                    *current_index -= 1;
+                }
+            }
+        }
+    }
+}
