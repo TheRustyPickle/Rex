@@ -405,7 +405,9 @@ impl TxData {
 
     /// Checks the inputted Amount by the user upon pressing Enter/Esc for various error.
     pub fn check_amount(&mut self, conn: &Connection) -> VerifyingOutput {
-        self.check_b_field(conn).map_err(|err| err).unwrap();
+        if let Err(e) = self.check_b_field(conn) {
+            return e;
+        }
 
         let mut user_amount = self.amount.clone().to_lowercase();
 
@@ -645,7 +647,9 @@ impl TxData {
 
     /// Steps up Amount value by one
     pub fn do_amount_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        self.check_b_field(conn).map_err(|err| err).unwrap();
+        if self.check_b_field(conn).is_err() {
+            return Err(SteppingError::UnknownBValue);
+        }
 
         let mut user_amount = self.amount.clone();
 
@@ -659,7 +663,9 @@ impl TxData {
 
     /// Steps down Amount value by one
     pub fn do_amount_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        self.check_b_field(conn).map_err(|err| err).unwrap();
+        if self.check_b_field(conn).is_err() {
+            return Err(SteppingError::UnknownBValue);
+        }
 
         let mut user_amount = self.amount.clone();
 
