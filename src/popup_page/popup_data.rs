@@ -60,7 +60,7 @@ Enter: Redirect to the new version",
 
     #[cfg(not(tarpaulin_include))]
     fn get_add_tx_help_text(&mut self) -> String {
-        self.set("Help", 60, 70);
+        self.set("Help", 60, 80);
         "This page is for adding new transactions. Following are the supported keys here
 
 1: Date         Example: 2022-05-12, YYYY-MM-DD
@@ -79,7 +79,7 @@ C: Clear all fields
 b: On amount field 'b' gets replaced with the current balance of Tx Method field
 Calculation: Amount field supports simple calculation with +, -, *, /
 Tags: This field can be treated as the category of this transaction.
-Empty tags field gets replaced with Unknown.
+Empty tags field gets replaced with Unknown. Separate more than 1 tags with a comma
 
 Example: 100 + b, b + b, 5 * b
 
