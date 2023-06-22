@@ -107,3 +107,8 @@ pub enum StepType {
     StepUp,
     StepDown,
 }
+
+pub enum TxType {
+    IncomeExpense,
+    Transfer,
+}

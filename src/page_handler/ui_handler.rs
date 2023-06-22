@@ -4,7 +4,8 @@ use crate::home_page::home_ui;
 use crate::home_page::TransactionData;
 use crate::initial_page::initial_ui;
 use crate::key_checker::{
-    add_tx_keys, chart_keys, home_keys, initial_keys, summary_keys, transfer_keys, InputKeyHandler,
+    add_tx_keys, chart_keys, home_keys, initial_keys, search_keys, summary_keys, transfer_keys,
+    InputKeyHandler,
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
@@ -12,6 +13,7 @@ use crate::page_handler::{
     TxTab,
 };
 use crate::popup_page::PopupData;
+use crate::search_page::search_ui;
 use crate::summary_page::{summary_ui, SummaryData};
 use crate::transfer_page::transfer_ui;
 use crate::tx_handler::TxData;
@@ -93,6 +95,8 @@ pub fn start_app<B: Backend>(
     let mut chart_tab = ChartTab::ModeSelection;
     // Store the current selected widget on Summary page
     let mut summary_tab = SummaryTab::ModeSelection;
+    // Store the current selected widget on Search page
+    let mut search_tab = TxTab::Nothing;
 
     // Holds the data that will be/are inserted into the Add Tx page's input fields
     let mut add_tx_data = TxData::new();
@@ -100,10 +104,10 @@ pub fn start_app<B: Backend>(
     let mut transfer_data = TxData::new_transfer();
     // Holds the data that will be/are inserted into the Summary Page
     let mut summary_data = SummaryData::new(conn);
-
+    // Holds the data that will be/are inserted into the Search page's input fields
+    let mut search_data = TxData::new();
     // Holds the data that will be/are inserted into the Chart Page
     let mut chart_data = ChartData::new(conn);
-
     // Holds the popup data that will be/are inserted into the Popup page
     let mut popup_data = PopupData::new();
 
@@ -214,6 +218,7 @@ pub fn start_app<B: Backend>(
                         &summary_sort,
                         conn,
                     ),
+                    CurrentUi::Search => search_ui(f, &search_data, &search_tab),
                 }
                 popup_data.create_popup(f, &popup_state)
             })
@@ -265,6 +270,8 @@ pub fn start_app<B: Backend>(
                 &mut summary_years,
                 &mut summary_modes,
                 &mut summary_sort,
+                &mut search_data,
+                &mut search_tab,
                 &mut chart_index,
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,
@@ -278,6 +285,7 @@ pub fn start_app<B: Backend>(
                 CurrentUi::Transfer => transfer_keys(&mut handler),
                 CurrentUi::Chart => chart_keys(&mut handler),
                 CurrentUi::Summary => summary_keys(&mut handler),
+                CurrentUi::Search => search_keys(&mut handler),
             };
 
             if let Some(output) = status {
