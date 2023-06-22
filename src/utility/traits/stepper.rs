@@ -55,20 +55,17 @@ pub trait FieldStepper: DataVerifier {
             VerifyingOutput::Accepted(_) => {
                 let current_method_index =
                     all_methods.iter().position(|e| e == user_method).unwrap();
-                let next_method_index;
 
-                match step_type {
-                    StepType::StepUp => {
-                        next_method_index = (current_method_index + 1) % all_methods.len()
-                    }
+                let next_method_index = match step_type {
+                    StepType::StepUp => (current_method_index + 1) % all_methods.len(),
                     StepType::StepDown => {
-                        next_method_index = if current_method_index == 0 {
+                        if current_method_index == 0 {
                             all_methods.len() - 1
                         } else {
                             (current_method_index - 1) % all_methods.len()
-                        };
+                        }
                     }
-                }
+                };
                 *user_method = String::from(&all_methods[next_method_index]);
             }
             VerifyingOutput::NotAccepted(_) => {
@@ -112,10 +109,11 @@ pub trait FieldStepper: DataVerifier {
             }
             VerifyingOutput::NotAccepted(err_type) => match err_type {
                 // if value went below 0, make it 1
-                NAType::AmountBelowZero => match step_type {
-                    StepType::StepUp => *user_amount = String::from("1.00"),
-                    _ => {}
-                },
+                NAType::AmountBelowZero => {
+                    if let StepType::StepUp = step_type {
+                        *user_amount = String::from("1.00")
+                    }
+                }
                 _ => {
                     return Err(SteppingError::InvalidAmount);
                 }
@@ -198,19 +196,17 @@ pub trait FieldStepper: DataVerifier {
                 .iter()
                 .position(|tag| tag.to_lowercase() == last_tag.to_lowercase())
             {
-                let next_index;
-
-                match step_type {
-                    StepType::StepUp => next_index = (index + 1) % all_tags.len(),
+                let next_index = match step_type {
+                    StepType::StepUp => (index + 1) % all_tags.len(),
 
                     StepType::StepDown => {
-                        next_index = if index == 0 {
+                        if index == 0 {
                             all_tags.len() - 1
                         } else {
                             (index - 1) % all_tags.len()
                         }
                     }
-                }
+                };
                 // if the tag matches with something, get the index, select the next one.
                 // start from beginning if reached at the end -> Join
                 current_tags.push(all_tags[next_index].to_owned());
