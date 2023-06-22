@@ -15,6 +15,7 @@ pub fn home_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Char('j') => return Some(HandlingOutput::TakeUserInput),
             KeyCode::Char('h') => handler.do_help_popup(),
             KeyCode::Char('z') => handler.go_summary(),
+            KeyCode::Char('w') => handler.go_search(),
             KeyCode::Char('e') => handler.edit_tx(),
             KeyCode::Char('d') => handler.delete_tx(),
             KeyCode::Right => handler.handle_right_arrow(),

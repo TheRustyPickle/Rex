@@ -13,8 +13,11 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 KeyCode::Char('t') => handler.go_transfer(),
                 KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
                 KeyCode::Char('f') => handler.go_home(),
+                KeyCode::Char('r') => handler.go_chart(),
+                KeyCode::Char('z') => handler.go_summary(),
                 KeyCode::Char('h') => handler.do_help_popup(),
                 KeyCode::Char('s') => handler.add_tx(),
+                KeyCode::Char('w') => handler.go_search(),
                 KeyCode::Char('c') => handler.clear_input(),
                 KeyCode::Enter => handler.select_date_field(),
                 KeyCode::Char(c) => {

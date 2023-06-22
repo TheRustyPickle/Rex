@@ -13,6 +13,7 @@ pub fn summary_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Char('r') => handler.go_chart(),
             KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
             KeyCode::Char('f') => handler.go_home(),
+            KeyCode::Char('w') => handler.go_search(),
             KeyCode::Char('h') => handler.do_help_popup(),
             KeyCode::Char('z') => handler.do_summary_hidden_mode(),
             KeyCode::Char('s') => handler.change_summary_sort(),
