@@ -75,6 +75,7 @@ pub enum SteppingError {
     InvalidAmount,
     InvalidTxType,
     InvalidTags,
+    UnknownBValue,
 }
 
 impl fmt::Display for SteppingError {
@@ -97,6 +98,10 @@ impl fmt::Display for SteppingError {
             SteppingError::InvalidTags => {
                 write!(f, "Tags: Failed to step as the tag does not exists")
             }
+            SteppingError::UnknownBValue => write!(
+                f,
+                "Amount: Failed to step value. Value of B cannot be determined"
+            ),
         }
     }
 }
