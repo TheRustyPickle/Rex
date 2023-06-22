@@ -1,4 +1,4 @@
-use crate::outputs::{CheckingError, NAType, StepType, SteppingError, VerifyingOutput};
+use crate::outputs::{CheckingError, NAType, StepType, SteppingError, TxType, VerifyingOutput};
 use crate::page_handler::TxTab;
 use crate::tx_handler::{add_tx, delete_tx};
 use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
@@ -128,6 +128,17 @@ impl TxData {
 
     pub fn get_tx_status(&self) -> &Vec<String> {
         &self.tx_status
+    }
+
+    pub fn get_tx_type(&self) -> TxType {
+        if let Some(first_letter) = self.tx_type.chars().next() {
+            match first_letter {
+                'I' | 'E' => return TxType::IncomeExpense,
+                'T' => return TxType::Transfer,
+                _ => {}
+            }
+        }
+        TxType::IncomeExpense
     }
 
     /// Insert or remove from date field according to the index point

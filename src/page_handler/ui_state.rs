@@ -166,6 +166,7 @@ pub enum CurrentUi {
     Transfer,
     Chart,
     Summary,
+    Search,
 }
 
 /// Indicates which popup is currently on and is being shown in the screen
