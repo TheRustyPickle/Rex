@@ -366,6 +366,9 @@ pub trait DataVerifier {
         } else if user_type.to_lowercase().starts_with('i') {
             *user_type = "Income".to_string();
             VerifyingOutput::Accepted(AType::TxType)
+        } else if user_type.to_lowercase().starts_with('t') {
+            *user_type = "Transfer".to_string();
+            VerifyingOutput::Accepted(AType::TxType)
         } else {
             *user_type = String::new();
             VerifyingOutput::NotAccepted(NAType::InvalidTxType)

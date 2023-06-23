@@ -123,17 +123,35 @@ pub trait FieldStepper: DataVerifier {
         Ok(())
     }
 
-    fn step_tx_type(&self, user_type: &mut String) -> Result<(), SteppingError> {
+    fn step_tx_type(
+        &self,
+        user_type: &mut String,
+        step_type: StepType,
+    ) -> Result<(), SteppingError> {
         let verify_status: VerifyingOutput = self.verify_tx_type(user_type);
+        let tx_types = ["Income", "Expense", "Transfer"];
 
-        // * there's only 2 possible values of tx type
         if user_type.is_empty() {
-            *user_type = "Income".to_string()
-        } else if user_type == "Income" {
-            *user_type = "Expense".to_string()
-        } else if user_type == "Expense" {
-            *user_type = "Income".to_string()
+            *user_type = "Income".to_string();
+            return Ok(());
         }
+
+        let mut current_index: usize = match user_type.chars().next().unwrap().to_ascii_lowercase()
+        {
+            'i' => 0,
+            'e' => 1,
+            't' => 2,
+            _ => 0,
+        };
+
+        match step_type {
+            StepType::StepUp => current_index = (current_index + 1) % tx_types.len(),
+            StepType::StepDown => {
+                current_index = (current_index + tx_types.len() - 1) % tx_types.len()
+            }
+        }
+
+        *user_type = tx_types[current_index].to_string();
 
         if let VerifyingOutput::NotAccepted(_) = verify_status {
             return Err(SteppingError::InvalidTxType);
@@ -156,63 +174,65 @@ pub trait FieldStepper: DataVerifier {
         if user_tag.is_empty() {
             if !all_tags.is_empty() {
                 *user_tag = String::from(&all_tags[0]);
+                return Ok(());
             } else {
                 return Err(SteppingError::InvalidTags);
             }
-        } else {
-            // tags are separated by comma. Collect all the tags
-            let mut current_tags = user_tag
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect::<Vec<String>>();
-
-            // tag1, tag2, tag3
-            // in this case, only work with tag3, keep the rest as it is
-            let last_tag = current_tags.pop().unwrap();
-
-            // check if the working tag exists inside all tag list
-            if !all_tags
-                .iter()
-                .any(|tag| tag.to_lowercase() == last_tag.to_lowercase())
-            {
-                // tag3, tag2,
-                // if kept like this with extra comma, the last_tag would be empty. In this case
-                // select the first tag available in the list or just join the first two tag with , + space
-                if last_tag.is_empty() {
-                    if !all_tags.is_empty() {
-                        current_tags.push(all_tags[0].to_owned());
-                        *user_tag = current_tags.join(", ");
-                    } else {
-                        *user_tag = current_tags.join(", ");
-                    }
-                } else {
-                    // as the tag didn't match with any existing tags accept the autofill suggestion
-                    current_tags.push(autofill.to_owned());
-
-                    *user_tag = current_tags.join(", ");
-                    return Err(SteppingError::InvalidTags);
-                }
-            } else if let Some(index) = all_tags
-                .iter()
-                .position(|tag| tag.to_lowercase() == last_tag.to_lowercase())
-            {
-                let next_index = match step_type {
-                    StepType::StepUp => (index + 1) % all_tags.len(),
-
-                    StepType::StepDown => {
-                        if index == 0 {
-                            all_tags.len() - 1
-                        } else {
-                            (index - 1) % all_tags.len()
-                        }
-                    }
-                };
-                // if the tag matches with something, get the index, select the next one.
-                // start from beginning if reached at the end -> Join
-                current_tags.push(all_tags[next_index].to_owned());
-                *user_tag = current_tags.join(", ");
-            }
         }
+
+        // tags are separated by comma. Collect all the tags
+        let mut current_tags = user_tag
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect::<Vec<String>>();
+
+        // tag1, tag2, tag3
+        // in this case, only work with tag3, keep the rest as it is
+        let last_tag = current_tags.pop().unwrap();
+
+        // check if the working tag exists inside all tag list
+        if !all_tags
+            .iter()
+            .any(|tag| tag.to_lowercase() == last_tag.to_lowercase())
+        {
+            // tag3, tag2,
+            // if kept like this with extra comma, the last_tag would be empty. In this case
+            // select the first tag available in the list or just join the first two tag with , + space
+            if last_tag.is_empty() {
+                if !all_tags.is_empty() {
+                    current_tags.push(all_tags[0].to_owned());
+                    *user_tag = current_tags.join(", ");
+                } else {
+                    *user_tag = current_tags.join(", ");
+                }
+            } else {
+                // as the tag didn't match with any existing tags accept the autofill suggestion
+                current_tags.push(autofill.to_owned());
+
+                *user_tag = current_tags.join(", ");
+                return Err(SteppingError::InvalidTags);
+            }
+        } else if let Some(index) = all_tags
+            .iter()
+            .position(|tag| tag.to_lowercase() == last_tag.to_lowercase())
+        {
+            let next_index = match step_type {
+                StepType::StepUp => (index + 1) % all_tags.len(),
+
+                StepType::StepDown => {
+                    if index == 0 {
+                        all_tags.len() - 1
+                    } else {
+                        (index - 1) % all_tags.len()
+                    }
+                }
+            };
+            // if the tag matches with something, get the index, select the next one.
+            // start from beginning if reached at the end -> Join
+            current_tags.push(all_tags[next_index].to_owned());
+            *user_tag = current_tags.join(", ");
+        }
+
         Ok(())
     }
 }
