@@ -37,6 +37,7 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                     TxTab::Date => handler.handle_date(),
                     TxTab::Details => handler.handle_details(),
                     TxTab::FromMethod => handler.handle_tx_method(),
+                    TxTab::ToMethod => handler.handle_tx_method(),
                     TxTab::Amount => handler.handle_amount(),
                     TxTab::TxType => handler.handle_tx_type(),
                     TxTab::Tags => handler.handle_tags(),

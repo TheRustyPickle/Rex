@@ -949,6 +949,50 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     #[cfg(not(tarpaulin_include))]
+    fn check_add_tx_details(&mut self) {
+        match self.key.code {
+            KeyCode::Enter => {
+                *self.add_tx_tab = TxTab::TxType;
+                self.go_correct_index();
+            }
+            KeyCode::Esc => *self.add_tx_tab = TxTab::Nothing,
+            KeyCode::Backspace => self.add_tx_data.edit_details(None),
+            KeyCode::Char(a) => self.add_tx_data.edit_details(Some(a)),
+            _ => {}
+        }
+    }
+
+    #[cfg(not(tarpaulin_include))]
+    fn check_add_tx_type(&mut self) {
+        match self.key.code {
+            KeyCode::Enter => {
+                let status = self.add_tx_data.check_tx_type();
+                self.add_tx_data.add_tx_status(status.to_string());
+                match status {
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.add_tx_tab = TxTab::FromMethod;
+                        self.go_correct_index();
+                    }
+                    VerifyingOutput::NotAccepted(_) => {}
+                }
+            }
+            KeyCode::Esc => {
+                let status = self.add_tx_data.check_tx_type();
+                self.add_tx_data.add_tx_status(status.to_string());
+                match status {
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.add_tx_tab = TxTab::Nothing
+                    }
+                    VerifyingOutput::NotAccepted(_) => {}
+                }
+            }
+            KeyCode::Backspace => self.add_tx_data.edit_tx_type(None),
+            KeyCode::Char(a) => self.add_tx_data.edit_tx_type(Some(a)),
+            _ => {}
+        }
+    }
+
+    #[cfg(not(tarpaulin_include))]
     fn check_add_tx_from(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
@@ -985,8 +1029,8 @@ impl<'a> InputKeyHandler<'a> {
     fn check_add_tx_to(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.search_data.check_to_method(self.conn);
-                self.search_data.add_tx_status(status.to_string());
+                let status = self.add_tx_data.check_to_method(self.conn);
+                self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Amount;
@@ -1019,7 +1063,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = TxTab::TxType;
+                        *self.add_tx_tab = TxTab::Tags;
                         self.go_correct_index();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
@@ -1037,50 +1081,6 @@ impl<'a> InputKeyHandler<'a> {
             }
             KeyCode::Backspace => self.add_tx_data.edit_amount(None),
             KeyCode::Char(a) => self.add_tx_data.edit_amount(Some(a)),
-            _ => {}
-        }
-    }
-
-    #[cfg(not(tarpaulin_include))]
-    fn check_add_tx_details(&mut self) {
-        match self.key.code {
-            KeyCode::Enter => {
-                *self.add_tx_tab = TxTab::TxType;
-                self.go_correct_index();
-            }
-            KeyCode::Esc => *self.add_tx_tab = TxTab::Nothing,
-            KeyCode::Backspace => self.add_tx_data.edit_details(None),
-            KeyCode::Char(a) => self.add_tx_data.edit_details(Some(a)),
-            _ => {}
-        }
-    }
-
-    #[cfg(not(tarpaulin_include))]
-    fn check_add_tx_type(&mut self) {
-        match self.key.code {
-            KeyCode::Enter => {
-                let status = self.add_tx_data.check_tx_type();
-                self.add_tx_data.add_tx_status(status.to_string());
-                match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = TxTab::Tags;
-                        self.go_correct_index();
-                    }
-                    VerifyingOutput::NotAccepted(_) => {}
-                }
-            }
-            KeyCode::Esc => {
-                let status = self.add_tx_data.check_tx_type();
-                self.add_tx_data.add_tx_status(status.to_string());
-                match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = TxTab::Nothing
-                    }
-                    VerifyingOutput::NotAccepted(_) => {}
-                }
-            }
-            KeyCode::Backspace => self.add_tx_data.edit_tx_type(None),
-            KeyCode::Char(a) => self.add_tx_data.edit_tx_type(Some(a)),
             _ => {}
         }
     }
@@ -1486,6 +1486,7 @@ impl<'a> InputKeyHandler<'a> {
         let status = match self.add_tx_tab {
             TxTab::Date => self.add_tx_data.do_date_up(),
             TxTab::FromMethod => self.add_tx_data.do_from_method_up(self.conn),
+            TxTab::ToMethod => self.add_tx_data.do_to_method_up(self.conn),
             TxTab::Amount => self.add_tx_data.do_amount_up(self.conn),
             TxTab::TxType => self.add_tx_data.do_tx_type_up(),
             TxTab::Tags => self.add_tx_data.do_tags_up(self.conn),
@@ -1502,6 +1503,7 @@ impl<'a> InputKeyHandler<'a> {
         let status = match self.add_tx_tab {
             TxTab::Date => self.add_tx_data.do_date_down(),
             TxTab::FromMethod => self.add_tx_data.do_from_method_down(self.conn),
+            TxTab::ToMethod => self.add_tx_data.do_to_method_down(self.conn),
             TxTab::Amount => self.add_tx_data.do_amount_down(self.conn),
             TxTab::TxType => self.add_tx_data.do_tx_type_down(),
             TxTab::Tags => self.add_tx_data.do_tags_down(self.conn),
