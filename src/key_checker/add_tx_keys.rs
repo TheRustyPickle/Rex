@@ -10,7 +10,6 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
         // we don't want to move this interface while the popup is on
         PopupState::Nothing => match handler.add_tx_tab {
             TxTab::Nothing => match handler.key.code {
-                KeyCode::Char('t') => handler.go_transfer(),
                 KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
                 KeyCode::Char('f') => handler.go_home(),
                 KeyCode::Char('r') => handler.go_chart(),

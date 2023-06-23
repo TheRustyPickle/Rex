@@ -200,7 +200,7 @@ pub fn get_all_txs(
 
         // make changes to the balance map based on the tx
         // for transfer TX first block executes
-        // * new_balance_to != 0 means it's a transfer transaction
+        // new_balance_to != 0 means it's a transfer transaction
         if new_balance_to != 0.0 {
             *last_month_balance.get_mut(&from_method).unwrap() = new_balance_from;
             *last_month_balance.get_mut(&to_method).unwrap() = new_balance_to;

@@ -5,7 +5,6 @@ mod initial_keys;
 mod key_handler;
 mod search_keys;
 mod summary_keys;
-mod transfer_keys;
 
 pub use add_tx_keys::add_tx_keys;
 pub use chart_keys::chart_keys;
@@ -14,4 +13,3 @@ pub use initial_keys::initial_keys;
 pub use key_handler::InputKeyHandler;
 pub use search_keys::search_keys;
 pub use summary_keys::summary_keys;
-pub use transfer_keys::transfer_keys;

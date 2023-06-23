@@ -86,8 +86,8 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, add_tx_tab:
 
     let mut status_text = vec![];
 
-    // * iter through the data in reverse mode because we want the latest status text
-    // * to be at the top which is the final value of the vector.
+    // iter through the data in reverse mode because we want the latest status text
+    // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
         let (initial, rest) = i.split_once(':').unwrap();
         if !i.contains("Accepted") && !i.contains("Nothing") {

@@ -20,12 +20,10 @@ pub struct InputKeyHandler<'a> {
     pub page: &'a mut CurrentUi,
     pub popup: &'a mut PopupState,
     pub add_tx_tab: &'a mut TxTab,
-    pub transfer_tab: &'a mut TxTab,
     chart_tab: &'a mut ChartTab,
     summary_tab: &'a mut SummaryTab,
     home_tab: &'a mut HomeTab,
     add_tx_data: &'a mut TxData,
-    transfer_data: &'a mut TxData,
     all_tx_data: &'a mut TransactionData,
     chart_data: &'a mut ChartData,
     summary_data: &'a mut SummaryData,
@@ -56,12 +54,10 @@ impl<'a> InputKeyHandler<'a> {
         page: &'a mut CurrentUi,
         popup: &'a mut PopupState,
         add_tx_tab: &'a mut TxTab,
-        transfer_tab: &'a mut TxTab,
         chart_tab: &'a mut ChartTab,
         summary_tab: &'a mut SummaryTab,
         home_tab: &'a mut HomeTab,
         add_tx_data: &'a mut TxData,
-        transfer_data: &'a mut TxData,
         all_tx_data: &'a mut TransactionData,
         chart_data: &'a mut ChartData,
         summary_data: &'a mut SummaryData,
@@ -91,12 +87,10 @@ impl<'a> InputKeyHandler<'a> {
             page,
             popup,
             add_tx_tab,
-            transfer_tab,
             chart_tab,
             summary_tab,
             home_tab,
             add_tx_data,
-            transfer_data,
             all_tx_data,
             chart_data,
             summary_data,
@@ -131,10 +125,6 @@ impl<'a> InputKeyHandler<'a> {
                 *self.add_tx_data = TxData::new();
                 *self.add_tx_tab = TxTab::Nothing;
             }
-            CurrentUi::Transfer => {
-                *self.transfer_tab = TxTab::Nothing;
-                *self.transfer_data = TxData::new_transfer();
-            }
             CurrentUi::Search => {
                 *self.search_data = TxData::new();
                 *self.search_tab = TxTab::Nothing;
@@ -154,12 +144,6 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn go_add_tx(&mut self) {
         *self.page = CurrentUi::AddTx
-    }
-
-    /// Moves the interface to Transfer page
-    #[cfg(not(tarpaulin_include))]
-    pub fn go_transfer(&mut self) {
-        *self.page = CurrentUi::Transfer
     }
 
     /// Moves the interface to Search page
@@ -198,7 +182,6 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::Home => *self.popup = PopupState::HomeHelp,
             CurrentUi::AddTx => *self.popup = PopupState::AddTxHelp,
-            CurrentUi::Transfer => *self.popup = PopupState::TransferHelp,
             CurrentUi::Chart => *self.popup = PopupState::ChartHelp,
             CurrentUi::Summary => *self.popup = PopupState::SummaryHelp,
             _ => {}
@@ -266,7 +249,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// Based on transaction Selected, opens Add Tx or Transfer Page and
+    /// Based on transaction Selected, opens Add Tx page and
     /// allocates the data of the tx to the input boxes
     #[cfg(not(tarpaulin_include))]
     pub fn edit_tx(&mut self) {
@@ -294,7 +277,7 @@ impl<'a> InputKeyHandler<'a> {
                 let from_method = splitted_method[0];
                 let to_method = splitted_method[1];
 
-                *self.transfer_data = TxData::custom(
+                *self.add_tx_data = TxData::custom(
                     &target_data[0],
                     &target_data[1],
                     from_method,
@@ -304,7 +287,7 @@ impl<'a> InputKeyHandler<'a> {
                     &target_data[5],
                     target_id_num,
                 );
-                *self.page = CurrentUi::Transfer;
+                *self.page = CurrentUi::AddTx;
             }
         }
     }
@@ -327,22 +310,6 @@ impl<'a> InputKeyHandler<'a> {
                     *self.popup = PopupState::DeleteFailed(err.to_string());
                 }
             }
-        }
-    }
-
-    /// Adds a transfer transaction and reloads home and chart page
-    #[cfg(not(tarpaulin_include))]
-    pub fn add_transfer_tx(&mut self) {
-        let status = self.transfer_data.add_tx(self.conn);
-        if status == *"" {
-            // reload home page and switch UI
-            *self.home_tab = HomeTab::Months;
-            self.go_home_reset();
-            self.reload_home_table();
-            self.reload_chart_data();
-            self.reload_summary_data();
-        } else {
-            self.transfer_data.add_tx_status(status);
         }
     }
 
@@ -370,15 +337,6 @@ impl<'a> InputKeyHandler<'a> {
                     KeyCode::Char('7') => *self.add_tx_tab = TxTab::Tags,
                     _ => {}
                 },
-            },
-            CurrentUi::Transfer => match self.key.code {
-                KeyCode::Char('1') => *self.transfer_tab = TxTab::Date,
-                KeyCode::Char('2') => *self.transfer_tab = TxTab::Details,
-                KeyCode::Char('3') => *self.transfer_tab = TxTab::FromMethod,
-                KeyCode::Char('4') => *self.transfer_tab = TxTab::ToMethod,
-                KeyCode::Char('5') => *self.transfer_tab = TxTab::Amount,
-                KeyCode::Char('6') => *self.transfer_tab = TxTab::Tags,
-                _ => {}
             },
             CurrentUi::Search => match self.search_data.get_tx_type() {
                 TxType::IncomeExpense => match self.key.code {
@@ -424,7 +382,6 @@ impl<'a> InputKeyHandler<'a> {
                 _ => {}
             },
             CurrentUi::AddTx => self.add_tx_data.move_index_left(self.add_tx_tab),
-            CurrentUi::Transfer => self.transfer_data.move_index_left(self.transfer_tab),
             CurrentUi::Search => self.search_data.move_index_left(&self.search_tab),
             CurrentUi::Chart => {
                 if !*self.chart_hidden_mode {
@@ -486,7 +443,6 @@ impl<'a> InputKeyHandler<'a> {
                 _ => {}
             },
             CurrentUi::AddTx => self.add_tx_data.move_index_right(self.add_tx_tab),
-            CurrentUi::Transfer => self.transfer_data.move_index_right(self.transfer_tab),
             CurrentUi::Search => self.search_data.move_index_right(self.search_tab),
             CurrentUi::Chart => {
                 if !*self.chart_hidden_mode {
@@ -533,7 +489,6 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::Home => self.do_home_up(),
             CurrentUi::AddTx => self.do_add_tx_up(),
-            CurrentUi::Transfer => self.do_transfer_up(),
             CurrentUi::Summary => self.do_summary_up(),
             CurrentUi::Chart => self.do_chart_up(),
             CurrentUi::Search => self.do_search_up(),
@@ -548,7 +503,6 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::Home => self.do_home_down(),
             CurrentUi::AddTx => self.do_add_tx_down(),
-            CurrentUi::Transfer => self.do_transfer_down(),
             CurrentUi::Summary => self.do_summary_down(),
             CurrentUi::Chart => self.do_chart_down(),
             CurrentUi::Search => self.do_search_down(),
@@ -562,7 +516,6 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_date(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_date(),
-            CurrentUi::Transfer => self.check_transfer_date(),
             CurrentUi::Search => self.check_search_date(),
             _ => {}
         }
@@ -573,7 +526,6 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_details(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_details(),
-            CurrentUi::Transfer => self.check_transfer_details(),
             CurrentUi::Search => self.check_search_details(),
             _ => {}
         }
@@ -586,11 +538,6 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::AddTx => match self.add_tx_tab {
                 TxTab::FromMethod => self.check_add_tx_from(),
                 TxTab::ToMethod => self.check_add_tx_to(),
-                _ => {}
-            },
-            CurrentUi::Transfer => match self.transfer_tab {
-                TxTab::FromMethod => self.check_transfer_from(),
-                TxTab::ToMethod => self.check_transfer_to(),
                 _ => {}
             },
             CurrentUi::Search => match self.search_tab {
@@ -608,7 +555,6 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_amount(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_amount(),
-            CurrentUi::Transfer => self.check_transfer_amount(),
             CurrentUi::Search => self.check_search_amount(),
             _ => {}
         }
@@ -629,7 +575,6 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_tags(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_tags(),
-            CurrentUi::Transfer => self.check_transfer_tags(),
             CurrentUi::Search => self.check_search_tags(),
             _ => {}
         }
@@ -641,7 +586,6 @@ impl<'a> InputKeyHandler<'a> {
     pub fn clear_input(&mut self) {
         match self.page {
             CurrentUi::AddTx => *self.add_tx_data = TxData::new(),
-            CurrentUi::Transfer => *self.transfer_data = TxData::new_transfer(),
             CurrentUi::Search => *self.search_data = TxData::new(),
             _ => {}
         }
@@ -652,7 +596,6 @@ impl<'a> InputKeyHandler<'a> {
     pub fn do_autofill(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.add_tx_data.accept_autofill(self.add_tx_tab),
-            CurrentUi::Transfer => self.transfer_data.accept_autofill(self.transfer_tab),
             CurrentUi::Search => self.search_data.accept_autofill(self.search_tab),
             _ => {}
         }
@@ -662,7 +605,6 @@ impl<'a> InputKeyHandler<'a> {
     pub fn select_date_field(&mut self) {
         match self.page {
             CurrentUi::AddTx => *self.add_tx_tab = TxTab::Date,
-            CurrentUi::Transfer => *self.transfer_tab = TxTab::Date,
             CurrentUi::Search => *self.search_tab = TxTab::Date,
             _ => {}
         }
@@ -1103,157 +1045,6 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     #[cfg(not(tarpaulin_include))]
-    fn check_transfer_date(&mut self) {
-        match self.key.code {
-            KeyCode::Enter => {
-                let status = self.transfer_data.check_date();
-                self.transfer_data.add_tx_status(status.to_string());
-                match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TxTab::Details;
-                        self.go_correct_index();
-                    }
-                    VerifyingOutput::NotAccepted(_) => {}
-                }
-            }
-            KeyCode::Esc => {
-                let status = self.transfer_data.check_date();
-                self.transfer_data.add_tx_status(status.to_string());
-                match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TxTab::Nothing
-                    }
-                    VerifyingOutput::NotAccepted(_) => {}
-                }
-            }
-            KeyCode::Backspace => self.transfer_data.edit_date(None),
-            KeyCode::Char(a) => self.transfer_data.edit_date(Some(a)),
-            _ => {}
-        }
-    }
-
-    #[cfg(not(tarpaulin_include))]
-    fn check_transfer_details(&mut self) {
-        match self.key.code {
-            KeyCode::Enter => {
-                *self.transfer_tab = TxTab::FromMethod;
-                self.go_correct_index();
-            }
-            KeyCode::Esc => *self.transfer_tab = TxTab::Nothing,
-            KeyCode::Backspace => self.transfer_data.edit_details(None),
-            KeyCode::Char(a) => self.transfer_data.edit_details(Some(a)),
-            _ => {}
-        }
-    }
-
-    #[cfg(not(tarpaulin_include))]
-    fn check_transfer_from(&mut self) {
-        match self.key.code {
-            KeyCode::Enter => {
-                let status = self.transfer_data.check_from_method(self.conn);
-                self.transfer_data.add_tx_status(status.to_string());
-                match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TxTab::ToMethod;
-                        self.go_correct_index();
-                    }
-                    VerifyingOutput::NotAccepted(_) => {}
-                }
-            }
-            KeyCode::Esc => {
-                let status = self.transfer_data.check_from_method(self.conn);
-                self.transfer_data.add_tx_status(status.to_string());
-                match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TxTab::Nothing
-                    }
-                    VerifyingOutput::NotAccepted(_) => {}
-                }
-            }
-            KeyCode::Backspace => self.transfer_data.edit_from_method(None),
-            KeyCode::Char(a) => self.transfer_data.edit_from_method(Some(a)),
-            _ => {}
-        }
-    }
-
-    #[cfg(not(tarpaulin_include))]
-    fn check_transfer_to(&mut self) {
-        match self.key.code {
-            KeyCode::Enter => {
-                let status = self.transfer_data.check_to_method(self.conn);
-                self.transfer_data.add_tx_status(status.to_string());
-                match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TxTab::Amount;
-                        self.go_correct_index();
-                    }
-                    VerifyingOutput::NotAccepted(_) => {}
-                }
-            }
-            KeyCode::Esc => {
-                let status = self.transfer_data.check_to_method(self.conn);
-                self.transfer_data.add_tx_status(status.to_string());
-                match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TxTab::Nothing
-                    }
-                    VerifyingOutput::NotAccepted(_) => {}
-                }
-            }
-            KeyCode::Backspace => self.transfer_data.edit_to_method(None),
-            KeyCode::Char(a) => self.transfer_data.edit_to_method(Some(a)),
-            _ => {}
-        }
-    }
-
-    #[cfg(not(tarpaulin_include))]
-    fn check_transfer_amount(&mut self) {
-        match self.key.code {
-            KeyCode::Enter => {
-                let status = self.transfer_data.check_amount(self.conn);
-                self.transfer_data.add_tx_status(status.to_string());
-                match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TxTab::Tags;
-                        self.go_correct_index();
-                    }
-                    VerifyingOutput::NotAccepted(_) => {}
-                }
-            }
-            KeyCode::Esc => {
-                let status = self.transfer_data.check_amount(self.conn);
-                self.transfer_data.add_tx_status(status.to_string());
-                match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.transfer_tab = TxTab::Nothing
-                    }
-                    VerifyingOutput::NotAccepted(_) => {}
-                }
-            }
-            KeyCode::Backspace => self.transfer_data.edit_amount(None),
-            KeyCode::Char(a) => self.transfer_data.edit_amount(Some(a)),
-            _ => {}
-        }
-    }
-
-    #[cfg(not(tarpaulin_include))]
-    fn check_transfer_tags(&mut self) {
-        match self.key.code {
-            KeyCode::Enter => {
-                *self.transfer_tab = TxTab::Nothing;
-                self.transfer_data.check_tags()
-            }
-            KeyCode::Esc => {
-                *self.transfer_tab = TxTab::Nothing;
-                self.transfer_data.check_tags()
-            }
-            KeyCode::Backspace => self.transfer_data.edit_tags(None),
-            KeyCode::Char(a) => self.transfer_data.edit_tags(Some(a)),
-            _ => {}
-        }
-    }
-
-    #[cfg(not(tarpaulin_include))]
     fn check_search_date(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
@@ -1475,7 +1266,6 @@ impl<'a> InputKeyHandler<'a> {
     fn go_correct_index(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.add_tx_data.go_current_index(self.add_tx_tab),
-            CurrentUi::Transfer => self.transfer_data.go_current_index(self.transfer_tab),
             CurrentUi::Search => self.search_data.go_current_index(self.search_tab),
             _ => {}
         }
@@ -1512,38 +1302,6 @@ impl<'a> InputKeyHandler<'a> {
 
         if let Err(e) = status {
             self.add_tx_data.add_tx_status(e.to_string())
-        }
-    }
-
-    #[cfg(not(tarpaulin_include))]
-    fn do_transfer_up(&mut self) {
-        let status = match self.transfer_tab {
-            TxTab::Date => self.transfer_data.do_date_up(),
-            TxTab::FromMethod => self.transfer_data.do_from_method_up(self.conn),
-            TxTab::ToMethod => self.transfer_data.do_to_method_up(self.conn),
-            TxTab::Amount => self.transfer_data.do_amount_up(self.conn),
-            TxTab::Tags => self.transfer_data.do_tags_up(self.conn),
-            _ => Ok(()),
-        };
-
-        if let Err(e) = status {
-            self.transfer_data.add_tx_status(e.to_string())
-        }
-    }
-
-    #[cfg(not(tarpaulin_include))]
-    fn do_transfer_down(&mut self) {
-        let status = match self.transfer_tab {
-            TxTab::Date => self.transfer_data.do_date_down(),
-            TxTab::FromMethod => self.transfer_data.do_from_method_down(self.conn),
-            TxTab::ToMethod => self.transfer_data.do_to_method_down(self.conn),
-            TxTab::Amount => self.transfer_data.do_amount_down(self.conn),
-            TxTab::Tags => self.transfer_data.do_tags_down(self.conn),
-            _ => Ok(()),
-        };
-
-        if let Err(e) = status {
-            self.transfer_data.add_tx_status(e.to_string())
         }
     }
 
@@ -1585,9 +1343,6 @@ impl<'a> InputKeyHandler<'a> {
     fn check_autofill(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.add_tx_data.check_autofill(self.add_tx_tab, self.conn),
-            CurrentUi::Transfer => self
-                .transfer_data
-                .check_autofill(self.transfer_tab, self.conn),
             CurrentUi::Search => self.search_data.check_autofill(self.search_tab, self.conn),
             _ => {}
         }

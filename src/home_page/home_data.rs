@@ -62,7 +62,7 @@ impl TransactionData {
     }
 
     /// returns the absolute final balance that is found after all transactions were counted for.
-    /// * The value is saved in the DB at the final row
+    /// The value is saved in the DB at the final row
     pub fn get_last_balance(&self, conn: &Connection) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
         let db_data = get_last_balances(conn);
@@ -90,8 +90,8 @@ impl TransactionData {
 
             // the splitting and checking is necessary to make sure all strings are
             // properly ending with 2 values after dot.
-            // * it's a string with ↓ or ↑
-            // * so format!("{:.2}", parse to f64 won't work for the symbol.
+            // it's a string with ↓ or ↑
+            // so format!("{:.2}", parse to f64 won't work for the symbol.
 
             if splitted[1].len() == 1 {
                 new_value = format!("{}0", i)

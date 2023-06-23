@@ -128,7 +128,7 @@ pub fn get_sql_dates(month: usize, year: usize) -> (String, String) {
 /// Verifies the db version is up to date
 #[cfg(not(tarpaulin_include))]
 pub fn check_old_sql(conn: &mut Connection) {
-    // * earlier version of the database didn't had the Tag column
+    // earlier version of the database didn't had the Tag column
     if !get_all_tx_columns(conn).contains(&"tags".to_string()) {
         println!("Old database detected. Starting migration...");
         let status = add_tags_column(conn);
@@ -142,8 +142,8 @@ pub fn check_old_sql(conn: &mut Connection) {
         }
     }
 
-    // * earlier version of the database's balance_all columns were all TEXT type.
-    // * Convert to REAL type if found
+    // earlier version of the database's balance_all columns were all TEXT type.
+    // Convert to REAL type if found
     if check_old_balance_sql(conn) {
         println!("Outdated database detected. Updating...");
         let status = update_balance_type(conn);

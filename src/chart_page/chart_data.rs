@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 /// Stores every transaction in the database and along with
 /// all balance amount after each transaction was committed
-/// * Gets reloaded only after a new tx is added/removed/edited
+/// Gets reloaded only after a new tx is added/removed/edited
 pub struct ChartData {
     all_txs: HashMap<i32, Vec<Vec<String>>>,
     all_balance: HashMap<i32, Vec<Vec<String>>>,
@@ -38,14 +38,14 @@ impl ChartData {
         let mut to_return = vec![];
 
         match mode.index {
-            // * 0 = monthly mode. Select the data only of the given month year
+            // 0 = monthly mode. Select the data only of the given month year
             0 => {
                 let target_id = month as i32 + (year as i32 * 12);
                 for i in &self.all_txs[&target_id] {
                     to_return.push(NaiveDate::parse_from_str(&i[0], "%d-%m-%Y").unwrap());
                 }
             }
-            // * 1 = yearly mode. Select the data of all months of the given year
+            // 1 = yearly mode. Select the data of all months of the given year
             1 => {
                 for i in 0..MONTHS.len() {
                     let target_id = i as i32 + (year as i32 * 12);
@@ -54,7 +54,7 @@ impl ChartData {
                     }
                 }
             }
-            // * 2 = all time mode. Select every single data
+            // 2 = all time mode. Select every single data
             2 => {
                 for x in 0..YEARS.len() {
                     for i in 0..MONTHS.len() {
@@ -80,7 +80,7 @@ impl ChartData {
         let mut to_return_balance = vec![];
 
         match mode.index {
-            // * 0 = monthly mode. Select the data only of the given month year
+            // 0 = monthly mode. Select the data only of the given month year
             0 => {
                 let target_id = month as i32 + (year as i32 * 12);
                 for i in &self.all_txs[&target_id] {
@@ -90,7 +90,7 @@ impl ChartData {
                     to_return_balance.push(i)
                 }
             }
-            // * 1 = yearly mode. Select the data of all months of the given year
+            // 1 = yearly mode. Select the data of all months of the given year
             1 => {
                 for i in 0..MONTHS.len() {
                     let target_id = i as i32 + (year as i32 * 12);
@@ -103,7 +103,7 @@ impl ChartData {
                     }
                 }
             }
-            //  * 2 = all time mode. Select every single data
+            // 2 = all time mode. Select every single data
             2 => {
                 for x in 0..YEARS.len() {
                     for i in 0..MONTHS.len() {

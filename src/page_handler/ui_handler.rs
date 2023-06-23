@@ -4,8 +4,7 @@ use crate::home_page::home_ui;
 use crate::home_page::TransactionData;
 use crate::initial_page::initial_ui;
 use crate::key_checker::{
-    add_tx_keys, chart_keys, home_keys, initial_keys, search_keys, summary_keys, transfer_keys,
-    InputKeyHandler,
+    add_tx_keys, chart_keys, home_keys, initial_keys, search_keys, summary_keys, InputKeyHandler,
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
@@ -15,7 +14,6 @@ use crate::page_handler::{
 use crate::popup_page::PopupData;
 use crate::search_page::search_ui;
 use crate::summary_page::{summary_ui, SummaryData};
-use crate::transfer_page::transfer_ui;
 use crate::tx_handler::TxData;
 use crate::utility::{get_all_tx_methods, get_empty_changes};
 use crossterm::event::poll;
@@ -89,8 +87,6 @@ pub fn start_app<B: Backend>(
 
     // Stores the current selected widget on Add Transaction page
     let mut add_tx_tab = TxTab::Nothing;
-    // Store the current selected widget on Add Transfer page
-    let mut transfer_tab = TxTab::Nothing;
     // Store the current selected widget on Chart page
     let mut chart_tab = ChartTab::ModeSelection;
     // Store the current selected widget on Summary page
@@ -100,8 +96,6 @@ pub fn start_app<B: Backend>(
 
     // Holds the data that will be/are inserted into the Add Tx page's input fields
     let mut add_tx_data = TxData::new();
-    // Holds the data that will be/are inserted into the Transfer Tx page's input fields
-    let mut transfer_data = TxData::new_transfer();
     // Holds the data that will be/are inserted into the Summary Page
     let mut summary_data = SummaryData::new(conn);
     // Holds the data that will be/are inserted into the Search page's input fields
@@ -192,8 +186,6 @@ pub fn start_app<B: Backend>(
 
                     CurrentUi::Initial => initial_ui(f, starter_index),
 
-                    CurrentUi::Transfer => transfer_ui(f, &transfer_data, &transfer_tab),
-
                     CurrentUi::Chart => chart_ui(
                         f,
                         &chart_months,
@@ -250,12 +242,10 @@ pub fn start_app<B: Backend>(
                 &mut page,
                 &mut popup_state,
                 &mut add_tx_tab,
-                &mut transfer_tab,
                 &mut chart_tab,
                 &mut summary_tab,
                 &mut home_tab,
                 &mut add_tx_data,
-                &mut transfer_data,
                 &mut all_tx_data,
                 &mut chart_data,
                 &mut summary_data,
@@ -282,7 +272,6 @@ pub fn start_app<B: Backend>(
                 CurrentUi::Initial => initial_keys(&mut handler),
                 CurrentUi::Home => home_keys(&mut handler),
                 CurrentUi::AddTx => add_tx_keys(&mut handler),
-                CurrentUi::Transfer => transfer_keys(&mut handler),
                 CurrentUi::Chart => chart_keys(&mut handler),
                 CurrentUi::Summary => summary_keys(&mut handler),
                 CurrentUi::Search => search_keys(&mut handler),

@@ -11,7 +11,6 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
         PopupState::Nothing => match handler.search_tab {
             TxTab::Nothing => match handler.key.code {
                 KeyCode::Char('a') => handler.go_add_tx(),
-                KeyCode::Char('t') => handler.go_transfer(),
                 KeyCode::Char('r') => handler.go_chart(),
                 KeyCode::Char('z') => handler.go_summary(),
                 KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
