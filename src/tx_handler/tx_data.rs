@@ -132,9 +132,9 @@ impl TxData {
 
     pub fn get_tx_type(&self) -> TxType {
         if let Some(first_letter) = self.tx_type.chars().next() {
-            match first_letter {
-                'I' | 'E' => return TxType::IncomeExpense,
-                'T' => return TxType::Transfer,
+            match first_letter.to_ascii_lowercase() {
+                'i' | 'e' => return TxType::IncomeExpense,
+                't' => return TxType::Transfer,
                 _ => {}
             }
         }
@@ -531,7 +531,7 @@ impl TxData {
     pub fn do_tx_type_up(&mut self) -> Result<(), SteppingError> {
         let mut user_type = self.tx_type.clone();
 
-        let step_status = self.step_tx_type(&mut user_type);
+        let step_status = self.step_tx_type(&mut user_type, StepType::StepUp);
         self.tx_type = user_type;
 
         // reload index to the final point as some data just got added/changed
@@ -543,7 +543,7 @@ impl TxData {
     pub fn do_tx_type_down(&mut self) -> Result<(), SteppingError> {
         let mut user_type = self.tx_type.clone();
 
-        let step_status = self.step_tx_type(&mut user_type);
+        let step_status = self.step_tx_type(&mut user_type, StepType::StepDown);
         self.tx_type = user_type;
 
         // reload index to the final point as some data just got added/changed
