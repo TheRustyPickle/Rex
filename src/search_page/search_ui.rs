@@ -34,6 +34,11 @@ pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab:
             .style(Style::default().bg(BACKGROUND).fg(TEXT))
     });
 
+    let from_method_name = match tx_type {
+        TxType::IncomeExpense => "TX Method",
+        TxType::Transfer => "From Method",
+    };
+
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
@@ -43,7 +48,7 @@ pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab:
         .height(1)
         .bottom_margin(0);
 
-    // divide the terminal into 3 parts vertically
+    // divide the terminal into 4 parts vertically
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -55,6 +60,7 @@ pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab:
                 Constraint::Length(3),
                 // status chunk
                 Constraint::Length(10),
+                // Transaction list chunk,
                 Constraint::Min(0),
             ]
             .as_ref(),
@@ -185,12 +191,12 @@ pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab:
 
     let from_method_sec = Paragraph::new(from_method_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("TX Method"))
+        .block(styled_block(from_method_name))
         .alignment(Alignment::Left);
 
     let to_method_sec = Paragraph::new(to_method_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("TX Method"))
+        .block(styled_block("To Method"))
         .alignment(Alignment::Left);
 
     let amount_sec = Paragraph::new(amount_text)
@@ -221,41 +227,63 @@ pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab:
             input_chunk[0].y + 1,
         ),
         TxTab::Details => f.set_cursor(chunks[1].x + current_index as u16 + 1, chunks[1].y + 1),
-        TxTab::FromMethod => f.set_cursor(
+        TxTab::TxType => f.set_cursor(
             input_chunk[1].x + current_index as u16 + 1,
             input_chunk[1].y + 1,
         ),
-        TxTab::Amount => f.set_cursor(
+        TxTab::FromMethod => f.set_cursor(
             input_chunk[2].x + current_index as u16 + 1,
             input_chunk[2].y + 1,
         ),
-        TxTab::TxType => f.set_cursor(
-            input_chunk[3].x + current_index as u16 + 1,
-            input_chunk[3].y + 1,
-        ),
-        TxTab::Tags => f.set_cursor(
-            input_chunk[4].x + current_index as u16 + 1,
-            input_chunk[4].y + 1,
-        ),
         _ => {}
+    }
+
+    match tx_type {
+        TxType::IncomeExpense => match search_tab {
+            TxTab::Amount => f.set_cursor(
+                input_chunk[3].x + current_index as u16 + 1,
+                input_chunk[3].y + 1,
+            ),
+
+            TxTab::Tags => f.set_cursor(
+                input_chunk[4].x + current_index as u16 + 1,
+                input_chunk[4].y + 1,
+            ),
+            _ => {}
+        },
+        TxType::Transfer => match search_tab {
+            TxTab::ToMethod => f.set_cursor(
+                input_chunk[3].x + current_index as u16 + 1,
+                input_chunk[3].y + 1,
+            ),
+            TxTab::Amount => f.set_cursor(
+                input_chunk[4].x + current_index as u16 + 1,
+                input_chunk[4].y + 1,
+            ),
+
+            TxTab::Tags => f.set_cursor(
+                input_chunk[5].x + current_index as u16 + 1,
+                input_chunk[5].y + 1,
+            ),
+            _ => {}
+        },
     }
 
     // render the previously generated data into an interface
     f.render_widget(details_sec, chunks[1]);
     f.render_widget(status_sec, chunks[2]);
     f.render_widget(date_sec, input_chunk[0]);
-    f.render_widget(from_method_sec, input_chunk[1]);
+    f.render_widget(tx_type_sec, input_chunk[1]);
+    f.render_widget(from_method_sec, input_chunk[2]);
 
     match tx_type {
         TxType::IncomeExpense => {
-            f.render_widget(amount_sec, input_chunk[2]);
-            f.render_widget(tx_type_sec, input_chunk[3]);
+            f.render_widget(amount_sec, input_chunk[3]);
             f.render_widget(tags_sec, input_chunk[4]);
         }
         TxType::Transfer => {
-            f.render_widget(to_method_sec, input_chunk[2]);
-            f.render_widget(amount_sec, input_chunk[3]);
-            f.render_widget(tx_type_sec, input_chunk[4]);
+            f.render_widget(to_method_sec, input_chunk[3]);
+            f.render_widget(amount_sec, input_chunk[4]);
             f.render_widget(tags_sec, input_chunk[5]);
         }
     }
