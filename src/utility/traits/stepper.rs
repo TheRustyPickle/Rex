@@ -32,7 +32,7 @@ pub trait FieldStepper: DataVerifier {
             VerifyingOutput::NotAccepted(_) => {
                 return Err(SteppingError::InvalidDate);
             }
-            // * Nothing -> Empty box.
+            // Nothing -> Empty box.
             // If nothing and pressed Up, make it the first possible date
             VerifyingOutput::Nothing(_) => {
                 *user_date = String::from("2022-01-01");
@@ -71,7 +71,7 @@ pub trait FieldStepper: DataVerifier {
             VerifyingOutput::NotAccepted(_) => {
                 return Err(SteppingError::InvalidTxMethod);
             }
-            // * Nothing -> Empty box.
+            // Nothing -> Empty box.
             // If nothing and pressed Up, make it the first possible method
             VerifyingOutput::Nothing(_) => {
                 *user_method = String::from(&all_methods[0]);

@@ -51,25 +51,6 @@ impl TxData {
         }
     }
 
-    pub fn new_transfer() -> Self {
-        let current_date = Local::now().to_string();
-        let formatted_current_date = &current_date[0..10];
-        TxData {
-            date: formatted_current_date.to_string(),
-            details: String::new(),
-            from_method: String::new(),
-            to_method: String::new(),
-            amount: String::new(),
-            tx_type: "Transfer".to_string(),
-            tags: String::new(),
-            tx_status: Vec::new(),
-            editing_tx: false,
-            id_num: 0,
-            current_index: 0,
-            autofill: String::new(),
-        }
-    }
-
     /// Used to adding custom pre-defined data inside the widgets of Add Transaction Page.
     /// Currently used on Editing transaction.
     pub fn custom(
@@ -379,7 +360,7 @@ impl TxData {
         {
             return Some(CheckingError::EmptyMethod);
         }
-        // * empty tags in a tx becomes as unknown
+        // empty tags in a tx becomes as unknown
         if self.tags.is_empty() {
             self.tags = "Unknown".to_string();
         }

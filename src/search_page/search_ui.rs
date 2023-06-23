@@ -13,7 +13,7 @@ use thousands::Separable;
 pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab: &TxTab) {
     // get the data to insert into the Status widget of this page
     let status_data = search_data.get_tx_status();
-    // * Contains date, details, from method, to method, amount, tx type, tags.
+    // Contains date, details, from method, to method, amount, tx type, tags.
     // Except to method, rest will be used for the widgets
     let input_data = search_data.get_all_texts();
     // The index of the cursor position
@@ -118,8 +118,8 @@ pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab:
 
     let mut status_text = vec![];
 
-    // * iter through the data in reverse mode because we want the latest status text
-    // * to be at the top which is the final value of the vector.
+    // iter through the data in reverse mode because we want the latest status text
+    // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
         let (initial, rest) = i.split_once(':').unwrap();
         if !i.contains("Accepted") && !i.contains("Nothing") {
