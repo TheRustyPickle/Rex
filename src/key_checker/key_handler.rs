@@ -382,7 +382,7 @@ impl<'a> InputKeyHandler<'a> {
                 _ => {}
             },
             CurrentUi::AddTx => self.add_tx_data.move_index_left(self.add_tx_tab),
-            CurrentUi::Search => self.search_data.move_index_left(&self.search_tab),
+            CurrentUi::Search => self.search_data.move_index_left(self.search_tab),
             CurrentUi::Chart => {
                 if !*self.chart_hidden_mode {
                     match self.chart_tab {
