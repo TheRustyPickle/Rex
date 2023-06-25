@@ -1001,7 +1001,7 @@ impl<'a> InputKeyHandler<'a> {
     fn check_add_tx_amount(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.add_tx_data.check_amount(self.conn);
+                let status = self.add_tx_data.check_amount(false, self.conn);
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
@@ -1012,7 +1012,7 @@ impl<'a> InputKeyHandler<'a> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.add_tx_data.check_amount(self.conn);
+                let status = self.add_tx_data.check_amount(false, self.conn);
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
@@ -1185,7 +1185,7 @@ impl<'a> InputKeyHandler<'a> {
     fn check_search_amount(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.search_data.check_amount(self.conn);
+                let status = self.search_data.check_amount(true, self.conn);
                 self.search_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
@@ -1196,7 +1196,7 @@ impl<'a> InputKeyHandler<'a> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.search_data.check_amount(self.conn);
+                let status = self.search_data.check_amount(true, self.conn);
                 self.search_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
@@ -1277,7 +1277,7 @@ impl<'a> InputKeyHandler<'a> {
             TxTab::Date => self.add_tx_data.do_date_up(),
             TxTab::FromMethod => self.add_tx_data.do_from_method_up(self.conn),
             TxTab::ToMethod => self.add_tx_data.do_to_method_up(self.conn),
-            TxTab::Amount => self.add_tx_data.do_amount_up(self.conn),
+            TxTab::Amount => self.add_tx_data.do_amount_up(false, self.conn),
             TxTab::TxType => self.add_tx_data.do_tx_type_up(),
             TxTab::Tags => self.add_tx_data.do_tags_up(self.conn),
             _ => Ok(()),
@@ -1294,7 +1294,7 @@ impl<'a> InputKeyHandler<'a> {
             TxTab::Date => self.add_tx_data.do_date_down(),
             TxTab::FromMethod => self.add_tx_data.do_from_method_down(self.conn),
             TxTab::ToMethod => self.add_tx_data.do_to_method_down(self.conn),
-            TxTab::Amount => self.add_tx_data.do_amount_down(self.conn),
+            TxTab::Amount => self.add_tx_data.do_amount_down(false, self.conn),
             TxTab::TxType => self.add_tx_data.do_tx_type_down(),
             TxTab::Tags => self.add_tx_data.do_tags_down(self.conn),
             _ => Ok(()),
@@ -1311,7 +1311,7 @@ impl<'a> InputKeyHandler<'a> {
             TxTab::Date => self.search_data.do_date_up(),
             TxTab::FromMethod => self.search_data.do_from_method_up(self.conn),
             TxTab::ToMethod => self.search_data.do_to_method_up(self.conn),
-            TxTab::Amount => self.search_data.do_amount_up(self.conn),
+            TxTab::Amount => self.search_data.do_amount_up(true, self.conn),
             TxTab::TxType => self.search_data.do_tx_type_up(),
             TxTab::Tags => self.search_data.do_tags_up(self.conn),
             _ => Ok(()),
@@ -1328,7 +1328,7 @@ impl<'a> InputKeyHandler<'a> {
             TxTab::Date => self.search_data.do_date_down(),
             TxTab::FromMethod => self.search_data.do_from_method_down(self.conn),
             TxTab::ToMethod => self.search_data.do_to_method_down(self.conn),
-            TxTab::Amount => self.search_data.do_amount_down(self.conn),
+            TxTab::Amount => self.search_data.do_amount_down(true, self.conn),
             TxTab::TxType => self.search_data.do_tx_type_down(),
             TxTab::Tags => self.search_data.do_tags_down(self.conn),
             _ => Ok(()),
