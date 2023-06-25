@@ -1,4 +1,5 @@
 use crate::db::{add_tags_column, create_db, update_balance_type, YEARS};
+use crate::outputs::ComparisonType;
 use crate::page_handler::{
     IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED, TEXT,
 };
@@ -412,5 +413,22 @@ pub fn add_char_to(to_add: Option<char>, current_index: &mut usize, current_data
                 }
             }
         }
+    }
+}
+
+/// Checks if the string contains any symbol indicating comparison
+pub fn check_comparison(input: &str) -> ComparisonType {
+    // Need to 2 letter ones first other in case of >=
+    // it will match with >.
+    if input.starts_with("<=") {
+        ComparisonType::EqualOrSmaller
+    } else if input.starts_with(">=") {
+        ComparisonType::EqualOrBigger
+    } else if input.starts_with('<') {
+        ComparisonType::SmallerThan
+    } else if input.starts_with('>') {
+        ComparisonType::BiggerThan
+    } else {
+        ComparisonType::Equal
     }
 }

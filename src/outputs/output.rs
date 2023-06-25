@@ -112,3 +112,12 @@ pub enum TxType {
     IncomeExpense,
     Transfer,
 }
+
+// TODO allow using to_string on them to use inside SQL statements
+pub enum ComparisonType {
+    Equal,
+    BiggerThan,
+    SmallerThan,
+    EqualOrBigger,
+    EqualOrSmaller,
+}

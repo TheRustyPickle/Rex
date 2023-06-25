@@ -362,7 +362,6 @@ Example input: Bank, Cash, PayPal.\n\nEnter Transaction Methods: "
             println!("Transaction Method input cannot be empty.\n");
             continue;
         }
-        
 
         // Restart the loop if the method is a restricted value or already exists
         for method in inputted_methods.iter() {

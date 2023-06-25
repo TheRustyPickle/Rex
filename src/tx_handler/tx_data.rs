@@ -1,8 +1,10 @@
-use crate::outputs::{CheckingError, NAType, StepType, SteppingError, TxType, VerifyingOutput};
+use crate::outputs::{
+    CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, VerifyingOutput,
+};
 use crate::page_handler::TxTab;
 use crate::tx_handler::{add_tx, delete_tx};
 use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
-use crate::utility::{add_char_to, get_all_tx_methods, get_last_balances};
+use crate::utility::{add_char_to, check_comparison, get_all_tx_methods, get_last_balances};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::cmp::Ordering;
@@ -291,33 +293,37 @@ impl TxData {
     }
 
     /// Checks the inputted Amount by the user upon pressing Enter/Esc for various error.
-    pub fn check_amount(&mut self, conn: &Connection) -> VerifyingOutput {
+    pub fn check_amount(&mut self, is_search: bool, conn: &Connection) -> VerifyingOutput {
         if let Err(e) = self.check_b_field(conn) {
             return e;
         }
 
+        let mut comparison_symbol = None;
+
         let mut user_amount = self.amount.clone().to_lowercase();
 
-        // 'b' represents the current balance of the original tx method
-        if user_amount.contains('b') && !self.from_method.is_empty() {
-            let all_methods = get_all_tx_methods(conn);
-
-            // get all the method's final balance, loop through the balances and match the tx method name
-            let last_balances = get_last_balances(conn);
-
-            for x in 0..all_methods.len() {
-                if all_methods[x] == self.from_method {
-                    user_amount = user_amount.replace('b', &last_balances[x]);
-                    break;
-                }
+        if is_search {
+            match check_comparison(&user_amount) {
+                ComparisonType::Equal => comparison_symbol = None,
+                ComparisonType::BiggerThan => comparison_symbol = Some(">"),
+                ComparisonType::SmallerThan => comparison_symbol = Some("<"),
+                ComparisonType::EqualOrBigger => comparison_symbol = Some(">="),
+                ComparisonType::EqualOrSmaller => comparison_symbol = Some("<="),
             }
-        } else if user_amount.contains('b') && self.from_method.is_empty() {
-            return VerifyingOutput::NotAccepted(NAType::InvalidBValue);
+        }
+
+        if let Some(symbol) = comparison_symbol {
+            user_amount = user_amount.replace(symbol, "");
         }
 
         let status = self.verify_amount(&mut user_amount);
 
+        if let Some(symbol) = comparison_symbol {
+            user_amount = format!("{symbol}{user_amount}");
+        }
+
         self.amount = user_amount;
+
         self.go_current_index(&TxTab::Amount);
         status
     }
@@ -533,14 +539,39 @@ impl TxData {
     }
 
     /// Steps up Amount value by one
-    pub fn do_amount_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+    pub fn do_amount_up(
+        &mut self,
+        is_search: bool,
+        conn: &Connection,
+    ) -> Result<(), SteppingError> {
         if self.check_b_field(conn).is_err() {
             return Err(SteppingError::UnknownBValue);
         }
 
+        let mut comparison_symbol = None;
+
         let mut user_amount = self.amount.clone();
 
+        if is_search {
+            match check_comparison(&user_amount) {
+                ComparisonType::Equal => comparison_symbol = None,
+                ComparisonType::BiggerThan => comparison_symbol = Some(">"),
+                ComparisonType::SmallerThan => comparison_symbol = Some("<"),
+                ComparisonType::EqualOrBigger => comparison_symbol = Some(">="),
+                ComparisonType::EqualOrSmaller => comparison_symbol = Some("<="),
+            }
+        }
+
+        if let Some(symbol) = comparison_symbol {
+            user_amount = user_amount.replace(symbol, "");
+        }
+
         let step_status = self.step_amount(&mut user_amount, StepType::StepUp);
+
+        if let Some(symbol) = comparison_symbol {
+            user_amount = format!("{symbol}{user_amount}");
+        }
+
         self.amount = user_amount;
 
         // reload index to the final point as some data just got added/changed
@@ -549,14 +580,39 @@ impl TxData {
     }
 
     /// Steps down Amount value by one
-    pub fn do_amount_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+    pub fn do_amount_down(
+        &mut self,
+        is_search: bool,
+        conn: &Connection,
+    ) -> Result<(), SteppingError> {
         if self.check_b_field(conn).is_err() {
             return Err(SteppingError::UnknownBValue);
         }
 
+        let mut comparison_symbol = None;
+
         let mut user_amount = self.amount.clone();
 
+        if is_search {
+            match check_comparison(&user_amount) {
+                ComparisonType::Equal => comparison_symbol = None,
+                ComparisonType::BiggerThan => comparison_symbol = Some(">"),
+                ComparisonType::SmallerThan => comparison_symbol = Some("<"),
+                ComparisonType::EqualOrBigger => comparison_symbol = Some(">="),
+                ComparisonType::EqualOrSmaller => comparison_symbol = Some("<="),
+            }
+        }
+
+        if let Some(symbol) = comparison_symbol {
+            user_amount = user_amount.replace(symbol, "");
+        }
+
         let step_status = self.step_amount(&mut user_amount, StepType::StepDown);
+
+        if let Some(symbol) = comparison_symbol {
+            user_amount = format!("{symbol}{user_amount}");
+        }
+
         self.amount = user_amount;
 
         // reload index to the final point as some data just got added/changed
