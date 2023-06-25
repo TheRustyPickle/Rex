@@ -343,6 +343,12 @@ Example input: Bank, Cash, PayPal.\n\nEnter Transaction Methods: "
             return UserInputType::CancelledOperation;
         }
 
+        if line.to_lowercase().contains("to") {
+            clear_terminal(&mut stdout);
+            println!("'To' cannot be used in Transaction Methods.\n");
+            continue;
+        }
+
         // split them and remove duplicates
         let mut inputted_methods: Vec<&str> = line
             .split(',')
@@ -356,6 +362,7 @@ Example input: Bank, Cash, PayPal.\n\nEnter Transaction Methods: "
             println!("Transaction Method input cannot be empty.\n");
             continue;
         }
+        
 
         // Restart the loop if the method is a restricted value or already exists
         for method in inputted_methods.iter() {
@@ -470,6 +477,12 @@ Currently added Transaction Methods: \n"
         flush_output(&stdout);
 
         let new_method_name = take_input();
+
+        if new_method_name.to_lowercase().contains("to") {
+            clear_terminal(&mut stdout);
+            println!("'To' cannot be used in Transaction Methods.\n");
+            continue;
+        }
 
         // Start from the beginning if the given tx method already exists
         if check_restricted(&new_method_name, Some(&tx_methods)) {
