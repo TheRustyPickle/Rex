@@ -1,7 +1,8 @@
 use crate::outputs::TerminalExecutionError;
 use crate::page_handler::UserInputType;
 use crate::utility::{
-    check_restricted, clear_terminal, flush_output, get_all_tx_methods, get_sql_dates, take_input,
+    check_comparison, check_restricted, clear_terminal, flush_output, get_all_tx_methods,
+    get_sql_dates, take_input,
 };
 use rusqlite::Connection;
 use std::collections::{HashMap, HashSet};
@@ -99,7 +100,7 @@ pub fn get_all_changes(month: usize, year: usize, conn: &Connection) -> Vec<Vec<
             }
             Ok(balance_vec)
         })
-        .expect("Error");
+        .unwrap();
 
     for i in rows {
         final_result.push(i.unwrap());
@@ -157,7 +158,7 @@ pub fn get_all_txs(
                 id_num.to_string(),
             ])
         })
-        .expect("Error");
+        .unwrap();
 
     for i in rows.flatten() {
         // data contains all tx data of a transaction
@@ -675,4 +676,89 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
         }
     };
     Ok(())
+}
+
+/// Creates the query to search for specific tx, gathers all rows and id numbers
+pub fn search_tx(
+    date: &str,
+    details: &str,
+    from_method: &str,
+    to_method: &str,
+    amount: &str,
+    tx_type: &str,
+    tags: &str,
+    conn: &Connection,
+) -> (Vec<Vec<String>>, Vec<String>) {
+    let mut all_txs = Vec::new();
+    let mut all_ids = Vec::new();
+
+    let mut query = "SELECT * FROM tx_all WHERE 1=1".to_string();
+
+    if !date.is_empty() {
+        query.push_str(&format!(r#" AND date = "{}""#, date));
+    }
+
+    if !details.is_empty() {
+        query.push_str(&format!(r#" AND details = "{}""#, details));
+    }
+
+    if !tx_type.is_empty() {
+        query.push_str(&format!(r#" AND tx_type = "{}""#, tx_type));
+    }
+
+    if !amount.is_empty() {
+        let comparison_type = check_comparison(amount);
+        query.push_str(&format!(r#" AND {} "{}""#, comparison_type, amount));
+    }
+
+    if tx_type == "Transfer" && !from_method.is_empty() && !to_method.is_empty() {
+        query.push_str(&format!(
+            r#" AND tx_method = "{} to {}""#,
+            from_method, to_method
+        ));
+    } else if tx_type != "Transfer" && !from_method.is_empty() {
+        query.push_str(&format!(r#" AND tx_method = "{}""#, from_method));
+    }
+
+    if !tags.is_empty() {
+        let all_tags = tags.split(", ");
+        let tag_conditions = all_tags
+            .map(|tag| format!(r#""," || tags || "," LIKE "%{}%""#, tag))
+            .collect::<Vec<String>>()
+            .join(" OR ");
+        query.push_str(&format!(" AND ({})", tag_conditions));
+    }
+
+    let mut statement = conn.prepare(&query).unwrap();
+
+    let rows = statement
+        .query_map([], |row| {
+            let date: String = row.get(0).unwrap();
+            let id_num: i32 = row.get(5).unwrap();
+            let collected_date = date.split('-').collect::<Vec<&str>>();
+            let new_date = format!(
+                "{}-{}-{}",
+                collected_date[2], collected_date[1], collected_date[0]
+            );
+
+            Ok(vec![
+                new_date,
+                row.get(1).unwrap(),
+                row.get(2).unwrap(),
+                row.get(3).unwrap(),
+                row.get(4).unwrap(),
+                row.get(6).unwrap(),
+                id_num.to_string(),
+            ])
+        })
+        .unwrap();
+
+    for i in rows.flatten() {
+        let mut data = i;
+        let id_num = &data.pop().unwrap();
+        all_ids.push(id_num.to_string());
+        all_txs.push(data);
+    }
+
+    (all_txs, all_ids)
 }
