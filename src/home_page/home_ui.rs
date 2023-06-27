@@ -144,8 +144,8 @@ pub fn home_ui<B: Backend>(
         }
         // changes the color of row based on Expense or Income tx type on Transaction widget.
         HomeTab::Table => {
-            table_area = table_area.highlight_symbol(">> ");
             if let Some(a) = table.state.selected() {
+                table_area = table_area.highlight_symbol(">> ");
                 if table.items[a][4] == "Expense" {
                     table_area = table_area.highlight_style(selected_style_expense)
                 } else if table.items[a][4] == "Income" {

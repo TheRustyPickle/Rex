@@ -1,5 +1,5 @@
 use crate::outputs::TxType;
-use crate::page_handler::{TableData, TxTab, BACKGROUND, BLUE, GRAY, HEADER, RED, TEXT};
+use crate::page_handler::{TableData, TxTab, BACKGROUND, BLUE, GRAY, HEADER, RED, SELECTED, TEXT};
 use crate::tx_handler::TxData;
 use crate::utility::{main_block, styled_block};
 use ratatui::backend::Backend;
@@ -10,7 +10,12 @@ use ratatui::widgets::{Cell, Paragraph, Row, Table};
 use ratatui::Frame;
 use thousands::Separable;
 
-pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab: &TxTab) {
+pub fn search_ui<B: Backend>(
+    f: &mut Frame<B>,
+    search_data: &TxData,
+    search_tab: &TxTab,
+    search_table: &mut TableData,
+) {
     // get the data to insert into the Status widget of this page
     let status_data = search_data.get_tx_status();
     // Contains date, details, from method, to method, amount, tx type, tags.
@@ -19,13 +24,14 @@ pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab:
     // The index of the cursor position
     let current_index = search_data.get_current_index();
 
-    let size = f.size();
+    let selected_style_income = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
+    let selected_style_expense = Style::default().fg(RED).add_modifier(Modifier::REVERSED);
 
-    let mut table = TableData::new(Vec::new());
+    let size = f.size();
 
     let tx_type = search_data.get_tx_type();
 
-    let rows = table.items.iter().map(|item| {
+    let rows = search_table.items.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| Cell::from(c.separate_with_commas()));
         Row::new(cells)
@@ -38,6 +44,12 @@ pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab:
         TxType::IncomeExpense => "TX Method",
         TxType::Transfer => "From Method",
     };
+
+    let mut table_name = "Transactions".to_string();
+
+    if search_table.items.len() > 0 {
+        table_name = format!("Transactions: {}", search_table.items.len());
+    }
 
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
         .iter()
@@ -104,9 +116,9 @@ pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab:
     // creates border around the entire terminal
     f.render_widget(main_block(), size);
 
-    let table_area = Table::new(rows)
+    let mut table_area = Table::new(rows)
         .header(header)
-        .block(styled_block("Transactions"))
+        .block(styled_block(&table_name))
         .widths(&[
             Constraint::Percentage(10),
             Constraint::Percentage(37),
@@ -269,6 +281,17 @@ pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab:
         },
     }
 
+    if let Some(a) = search_table.state.selected() {
+        table_area = table_area.highlight_symbol(">> ");
+        if search_table.items[a][4] == "Expense" {
+            table_area = table_area.highlight_style(selected_style_expense)
+        } else if search_table.items[a][4] == "Income" {
+            table_area = table_area.highlight_style(selected_style_income)
+        } else if search_table.items[a][4] == "Transfer" {
+            table_area = table_area.highlight_style(Style::default().bg(SELECTED))
+        }
+    }
+
     // render the previously generated data into an interface
     f.render_widget(details_sec, chunks[1]);
     f.render_widget(status_sec, chunks[2]);
@@ -288,5 +311,5 @@ pub fn search_ui<B: Backend>(f: &mut Frame<B>, search_data: &TxData, search_tab:
         }
     }
 
-    f.render_stateful_widget(table_area, chunks[3], &mut table.state)
+    f.render_stateful_widget(table_area, chunks[3], &mut search_table.state)
 }

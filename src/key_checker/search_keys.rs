@@ -16,8 +16,10 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
                 KeyCode::Char('f') => handler.go_home(),
                 KeyCode::Char('h') => handler.do_help_popup(),
-                //KeyCode::Char('s') => handler.add_tx(),
+                KeyCode::Char('s') => handler.search_tx(),
                 KeyCode::Char('c') => handler.clear_input(),
+                KeyCode::Up => handler.handle_up_arrow(),
+                KeyCode::Down => handler.handle_down_arrow(),
                 KeyCode::Enter => handler.select_date_field(),
                 KeyCode::Char(c) => {
                     if c.is_numeric() {
