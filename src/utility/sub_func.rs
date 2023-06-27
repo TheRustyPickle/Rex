@@ -679,7 +679,7 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
 }
 
 /// Creates the query to search for specific tx, gathers all rows and id numbers
-pub fn search_tx(
+pub fn get_search_data(
     date: &str,
     details: &str,
     from_method: &str,
@@ -699,7 +699,7 @@ pub fn search_tx(
     }
 
     if !details.is_empty() {
-        query.push_str(&format!(r#" AND details = "{}""#, details));
+        query.push_str(&format!(r#" AND details LIKE "%{}%""#, details));
     }
 
     if !tx_type.is_empty() {

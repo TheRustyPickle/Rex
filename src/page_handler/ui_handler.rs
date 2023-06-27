@@ -67,12 +67,13 @@ pub fn start_app<B: Backend>(
     // How summary table will be sorted
     let mut summary_sort = SortingType::ByTags;
 
-    // the database connection and the path of the db
     conn.execute("PRAGMA foreign_keys = ON", [])
         .expect("Could not enable foreign keys");
 
     // Stores all data relevant for home page such as balance, changes and txs
     let mut all_tx_data = TransactionData::new(home_months.index, home_years.index, conn);
+
+    let mut search_txs = TransactionData::new_search(Vec::new(), Vec::new());
     // data for the Home Page's tx table
     let mut table = TableData::new(all_tx_data.get_txs());
 
@@ -111,6 +112,8 @@ pub fn start_app<B: Backend>(
         summary_months.index,
         summary_years.index,
     ));
+
+    let mut search_table = TableData::new(Vec::new());
 
     // the initial page REX loading index
     let mut starter_index = 0;
@@ -210,7 +213,7 @@ pub fn start_app<B: Backend>(
                         &summary_sort,
                         conn,
                     ),
-                    CurrentUi::Search => search_ui(f, &search_data, &search_tab),
+                    CurrentUi::Search => search_ui(f, &search_data, &search_tab, &mut search_table),
                 }
                 popup_data.create_popup(f, &popup_state)
             })
@@ -262,6 +265,8 @@ pub fn start_app<B: Backend>(
                 &mut summary_sort,
                 &mut search_data,
                 &mut search_tab,
+                &mut search_table,
+                &mut search_txs,
                 &mut chart_index,
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,

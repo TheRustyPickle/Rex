@@ -4,7 +4,9 @@ use crate::outputs::{
 use crate::page_handler::TxTab;
 use crate::tx_handler::{add_tx, delete_tx};
 use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
-use crate::utility::{add_char_to, check_comparison, get_all_tx_methods, get_last_balances};
+use crate::utility::{
+    add_char_to, check_comparison, get_all_tx_methods, get_last_balances, get_search_data,
+};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::cmp::Ordering;
@@ -218,6 +220,19 @@ impl TxData {
         }
     }
 
+    pub fn get_search_tx(&self, conn: &Connection) -> (Vec<Vec<String>>, Vec<String>) {
+        get_search_data(
+            &self.date,
+            &self.details,
+            &self.from_method,
+            &self.to_method,
+            &self.amount,
+            &self.tx_type,
+            &self.tags,
+            conn,
+        )
+    }
+
     /// Adds a value to tx status
     pub fn add_tx_status(&mut self, data: String) {
         if self.tx_status.len() == 30 {
@@ -371,6 +386,25 @@ impl TxData {
             self.tags = "Unknown".to_string();
         }
         None
+    }
+
+    pub fn check_all_empty(&self) -> bool {
+        let all_data = vec![
+            &self.date,
+            &self.details,
+            &self.from_method,
+            &self.to_method,
+            &self.amount,
+            &self.tx_type,
+            &self.tags,
+        ];
+        let non_empty_count = all_data.iter().filter(|&value| !value.is_empty()).count();
+
+        if non_empty_count == 0 {
+            return true;
+        }
+
+        false
     }
 
     /// Checks for b on amount field to replace with the balance of the tx method field

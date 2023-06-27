@@ -33,6 +33,15 @@ impl TransactionData {
         }
     }
 
+    pub fn new_search(all_tx: Vec<Vec<String>>, all_id_num: Vec<String>) -> Self {
+        TransactionData {
+            all_tx,
+            all_balance: Vec::new(),
+            all_changes: Vec::new(),
+            all_id_num,
+        }
+    }
+
     /// returns all the Transaction data for the given index. Index is of the
     /// Home Table's selected index
     pub fn get_txs(&self) -> Vec<Vec<String>> {

@@ -40,6 +40,8 @@ pub struct InputKeyHandler<'a> {
     summary_sort: &'a mut SortingType,
     search_data: &'a mut TxData,
     pub search_tab: &'a mut TxTab,
+    search_table: &'a mut TableData,
+    search_txs: &'a mut TransactionData,
     total_tags: usize,
     chart_index: &'a mut Option<f64>,
     chart_hidden_mode: &'a mut bool,
@@ -74,6 +76,8 @@ impl<'a> InputKeyHandler<'a> {
         summary_sort: &'a mut SortingType,
         search_data: &'a mut TxData,
         search_tab: &'a mut TxTab,
+        search_table: &'a mut TableData,
+        search_txs: &'a mut TransactionData,
         chart_index: &'a mut Option<f64>,
         chart_hidden_mode: &'a mut bool,
         summary_hidden_mode: &'a mut bool,
@@ -107,6 +111,8 @@ impl<'a> InputKeyHandler<'a> {
             summary_sort,
             search_data,
             search_tab,
+            search_table,
+            search_txs,
             total_tags,
             chart_index,
             summary_hidden_mode,
@@ -233,6 +239,27 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
+    pub fn search_tx(&mut self) {
+        if self.search_data.check_all_empty() {
+            self.search_data
+                .add_tx_status("Search: All fields cannot be empty".to_string())
+        } else {
+            let search_txs = self.search_data.get_search_tx(self.conn);
+
+            if search_txs.0.is_empty() {
+                self.search_data.add_tx_status(
+                    "Search: No transactions found with the provided input".to_string(),
+                )
+            } else {
+                *self.search_txs =
+                    TransactionData::new_search(search_txs.0.to_owned(), search_txs.1);
+                *self.search_table = TableData::new(search_txs.0);
+                self.search_table.state.select(Some(0));
+            }
+        }
+    }
+
     /// Adds new tx and reloads home and chart data
     #[cfg(not(tarpaulin_include))]
     pub fn add_tx(&mut self) {
@@ -244,6 +271,7 @@ impl<'a> InputKeyHandler<'a> {
             self.reload_home_table();
             self.reload_chart_data();
             self.reload_summary_data();
+            self.reload_search_data();
         } else {
             self.add_tx_data.add_tx_status(status);
         }
@@ -305,6 +333,7 @@ impl<'a> InputKeyHandler<'a> {
                     *self.home_tab = HomeTab::Months;
                     self.reload_chart_data();
                     self.reload_summary_data();
+                    self.reload_search_data();
                 }
                 Err(err) => {
                     *self.popup = PopupState::DeleteFailed(err.to_string());
@@ -1263,6 +1292,12 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     #[cfg(not(tarpaulin_include))]
+    fn reload_search_data(&mut self) {
+        *self.search_table = TableData::new(Vec::new());
+        *self.search_txs = TransactionData::new_search(Vec::new(), Vec::new())
+    }
+
+    #[cfg(not(tarpaulin_include))]
     fn go_correct_index(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.add_tx_data.go_current_index(self.add_tx_tab),
@@ -1314,6 +1349,16 @@ impl<'a> InputKeyHandler<'a> {
             TxTab::Amount => self.search_data.do_amount_up(true, self.conn),
             TxTab::TxType => self.search_data.do_tx_type_up(),
             TxTab::Tags => self.search_data.do_tags_up(self.conn),
+            TxTab::Nothing => {
+                if self.search_table.state.selected() == Some(0) {
+                    self.search_table
+                        .state
+                        .select(Some(self.search_table.items.len() - 1));
+                } else if !self.search_txs.all_tx.is_empty() {
+                    self.search_table.previous();
+                }
+                Ok(())
+            }
             _ => Ok(()),
         };
 
@@ -1331,6 +1376,14 @@ impl<'a> InputKeyHandler<'a> {
             TxTab::Amount => self.search_data.do_amount_down(true, self.conn),
             TxTab::TxType => self.search_data.do_tx_type_down(),
             TxTab::Tags => self.search_data.do_tags_down(self.conn),
+            TxTab::Nothing => {
+                if self.search_table.state.selected() == Some(self.search_table.items.len() - 1) {
+                    self.search_table.state.select(Some(0));
+                } else if !self.search_txs.all_tx.is_empty() {
+                    self.search_table.next();
+                }
+                Ok(())
+            }
             _ => Ok(()),
         };
 
