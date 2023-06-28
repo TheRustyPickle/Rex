@@ -29,6 +29,12 @@ pub fn home_ui<B: Backend>(
     let selected_style_income = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
     let selected_style_expense = Style::default().fg(RED).add_modifier(Modifier::REVERSED);
 
+    let mut table_name = "Transactions".to_string();
+
+    if table.items.len() > 0 {
+        table_name = format!("Transactions: {}", table.items.len());
+    }
+
     // Transaction widget's top row/header to highlight what each data will mean
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
         .iter()
@@ -86,7 +92,7 @@ pub fn home_ui<B: Backend>(
 
     let mut table_area = Table::new(rows)
         .header(header)
-        .block(styled_block("Transactions"))
+        .block(styled_block(&table_name))
         .widths(&[
             Constraint::Percentage(10),
             Constraint::Percentage(37),

@@ -199,7 +199,10 @@ impl TxData {
 
             match status_add {
                 Ok(_) => Ok(()),
-                Err(e) => Err(format!("Edit Transaction: Something went wrong. Error: {}", e)),
+                Err(e) => Err(format!(
+                    "Edit Transaction: Something went wrong. Error: {}",
+                    e
+                )),
             }
         } else {
             let status = add_tx(
@@ -214,7 +217,10 @@ impl TxData {
             );
             match status {
                 Ok(_) => Ok(()),
-                Err(e) => Err(format!("Add Transaction: Something went wrong. Error: {}", e)),
+                Err(e) => Err(format!(
+                    "Add Transaction: Something went wrong. Error: {}",
+                    e
+                )),
             }
         }
     }
@@ -244,8 +250,8 @@ impl TxData {
         self.autofill.clear();
 
         self.autofill = match current_tab {
+            TxTab::Details => self.autofill_details(&self.details, conn),
             TxTab::FromMethod => self.autofill_tx_method(&self.from_method, conn),
-
             TxTab::ToMethod => self.autofill_tx_method(&self.to_method, conn),
             TxTab::Tags => self.autofill_tags(&self.tags, conn),
             _ => String::new(),
@@ -254,6 +260,7 @@ impl TxData {
 
     pub fn accept_autofill(&mut self, current_tab: &TxTab) {
         match current_tab {
+            TxTab::Details => self.details = self.autofill.to_string(),
             TxTab::FromMethod => self.from_method = self.autofill.to_string(),
             TxTab::ToMethod => self.to_method = self.autofill.to_string(),
             TxTab::Tags => {
