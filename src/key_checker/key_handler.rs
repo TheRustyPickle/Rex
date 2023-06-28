@@ -1,7 +1,7 @@
 use crate::chart_page::ChartData;
 use crate::home_page::TransactionData;
 use crate::outputs::TxType;
-use crate::outputs::{HandlingOutput, VerifyingOutput};
+use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
 use crate::page_handler::{
     ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SortingType, SummaryTab, TableData,
     TxTab,
@@ -338,7 +338,8 @@ impl<'a> InputKeyHandler<'a> {
                     self.reload_search_data();
                 }
                 Err(err) => {
-                    *self.popup = PopupState::DeleteFailed(err.to_string());
+                    *self.popup =
+                        PopupState::DeleteFailed(TxUpdateError::FailedDeleteTx(err).to_string());
                 }
             }
         }

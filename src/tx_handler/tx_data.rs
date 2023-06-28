@@ -1,5 +1,6 @@
 use crate::outputs::{
-    CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, VerifyingOutput,
+    CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, TxUpdateError,
+    VerifyingOutput,
 };
 use crate::page_handler::TxTab;
 use crate::tx_handler::{add_tx, delete_tx};
@@ -182,12 +183,7 @@ impl TxData {
             let status = delete_tx(self.id_num as usize, conn);
             match status {
                 Ok(_) => {}
-                Err(e) => {
-                    return Err(format!(
-                        "Edit Transaction: Something went wrong. Error: {}",
-                        e
-                    ))
-                }
+                Err(e) => return Err(TxUpdateError::FailedEditTx(e).to_string()),
             }
 
             let status_add = add_tx(
@@ -203,10 +199,7 @@ impl TxData {
 
             match status_add {
                 Ok(_) => Ok(()),
-                Err(e) => Err(format!(
-                    "Edit Transaction: Something went wrong. Error: {}",
-                    e
-                )),
+                Err(e) => Err(TxUpdateError::FailedEditTx(e).to_string()),
             }
         } else {
             let status = add_tx(
@@ -221,10 +214,7 @@ impl TxData {
             );
             match status {
                 Ok(_) => Ok(()),
-                Err(e) => Err(format!(
-                    "Add Transaction: Something went wrong. Error: {}",
-                    e
-                )),
+                Err(e) => Err(TxUpdateError::FailedAddTx(e).to_string()),
             }
         }
     }

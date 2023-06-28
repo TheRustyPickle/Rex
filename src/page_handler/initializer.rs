@@ -28,7 +28,7 @@ pub fn initialize_app(verifying_path: &str, current_dir: &str) -> Result<(), Box
     // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
     check_n_create_db(verifying_path)?;
 
-    let mut conn = Connection::open(verifying_path).unwrap();
+    let mut conn = Connection::open(verifying_path)?;
 
     // initiates migration if old database is detected.
     check_old_sql(&mut conn);

@@ -169,6 +169,6 @@ Q: Quit
     #[cfg(not(tarpaulin_include))]
     fn get_delete_failed_text(&mut self, err: &str) -> String {
         self.set("Delete Failed", 50, 25);
-        format!("Deletion failed. Error: {}", err)
+        err.to_string()
     }
 }
