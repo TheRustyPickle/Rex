@@ -31,6 +31,7 @@ pub enum AType {
     TxMethod,
     Amount,
     TxType,
+    Tags,
 }
 
 impl fmt::Display for AType {
@@ -41,6 +42,7 @@ impl fmt::Display for AType {
             AType::TxMethod => write!(f, "Tx Method"),
             AType::Amount => write!(f, "Amount"),
             AType::TxType => write!(f, "Tx Type"),
+            AType::Tags => write!(f, "Tags"),
         }
     }
 }
@@ -61,6 +63,7 @@ pub enum NAType {
     InvalidTxType,
     ParsingError(AType),
     InvalidBValue,
+    NonExistingTag,
 }
 
 impl fmt::Display for NAType {
@@ -99,6 +102,7 @@ impl fmt::Display for NAType {
                 f,
                 "Amount: TX Method cannot be empty. Value of B cannot be determined"
             ),
+            NAType::NonExistingTag => write!(f, "Tags: Non-existing tags cannot be accepted"),
         }
     }
 }

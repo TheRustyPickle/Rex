@@ -1262,13 +1262,15 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     fn check_search_tags(&mut self) {
         match self.key.code {
-            KeyCode::Enter => {
-                *self.search_tab = TxTab::Nothing;
-                self.search_data.check_tags()
-            }
-            KeyCode::Esc => {
-                *self.search_tab = TxTab::Nothing;
-                self.search_data.check_tags()
+            KeyCode::Enter | KeyCode::Esc => {
+                let status = self.search_data.check_tags_forced(self.conn);
+                self.search_data.add_tx_status(status.to_string());
+                match status {
+                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                        *self.search_tab = TxTab::Nothing;
+                    }
+                    VerifyingOutput::NotAccepted(_) => {}
+                }
             }
             KeyCode::Backspace => self.search_data.edit_tags(None),
             KeyCode::Char(a) => self.search_data.edit_tags(Some(a)),

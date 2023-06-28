@@ -1,5 +1,5 @@
 use crate::outputs::{AType, NAType, VerifyingOutput};
-use crate::utility::{get_all_tx_methods, get_best_match};
+use crate::utility::{get_all_tags, get_all_tx_methods, get_best_match};
 use chrono::naive::NaiveDate;
 use rusqlite::Connection;
 use std::cmp::Ordering;
@@ -389,5 +389,37 @@ pub trait DataVerifier {
         }
 
         *user_tag = unique.join(", ");
+    }
+
+    fn verify_tags_forced(&self, user_tag: &mut String, conn: &Connection) -> VerifyingOutput {
+        if user_tag.is_empty() {
+            return VerifyingOutput::Nothing(AType::Tags);
+        }
+        let all_tags = get_all_tags(conn);
+        let mut splitted = user_tag.split(',').map(|s| s.trim()).collect::<Vec<&str>>();
+        splitted.retain(|s| !s.is_empty());
+
+        let mut seen = HashSet::new();
+        let mut unique = Vec::new();
+
+        for item in splitted {
+            if seen.insert(item) {
+                unique.push(item);
+            }
+        }
+
+        let old_tags_len = unique.len();
+
+        unique.retain(|&tag| all_tags.contains(&tag.to_owned()));
+
+        let new_tags_len = unique.len();
+
+        *user_tag = unique.join(", ");
+
+        if old_tags_len == new_tags_len {
+            VerifyingOutput::Accepted(AType::Tags)
+        } else {
+            VerifyingOutput::NotAccepted(NAType::NonExistingTag)
+        }
     }
 }
