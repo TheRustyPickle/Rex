@@ -374,6 +374,17 @@ impl TxData {
         self.go_current_index(&TxTab::Tags);
     }
 
+    /// Checks the inputted tags to make sure it's properly separated by a comma
+    pub fn check_tags_forced(&mut self, conn: &Connection) -> VerifyingOutput {
+        let mut tags = self.tags.clone();
+
+        let status = self.verify_tags_forced(&mut tags, conn);
+
+        self.tags = tags;
+        self.go_current_index(&TxTab::Tags);
+        status
+    }
+
     /// Checks all field and verifies anything important is not empty
     pub fn check_all_fields(&mut self) -> Option<CheckingError> {
         if self.date.is_empty() {
