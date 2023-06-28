@@ -161,11 +161,10 @@ impl TxData {
         add_char_to(to_add, &mut self.current_index, &mut self.tags);
     }
 
-    // TODO: Handle errors
     /// Takes all data and adds it as a transaction
-    pub fn add_tx(&mut self, conn: &mut Connection) -> String {
+    pub fn add_tx(&mut self, conn: &mut Connection) -> Result<(), String> {
         if let Some(output) = self.check_all_fields() {
-            return output.to_string();
+            return Err(output.to_string());
         }
 
         let tx_method = self.get_tx_method();
@@ -180,10 +179,10 @@ impl TxData {
             match status {
                 Ok(_) => {}
                 Err(e) => {
-                    return format!(
-                        "Edit Transaction: Something went wrong while editing transaction {}",
+                    return Err(format!(
+                        "Edit Transaction: Something went wrong. Error: {}",
                         e
-                    )
+                    ))
                 }
             }
 
@@ -199,8 +198,8 @@ impl TxData {
             );
 
             match status_add {
-                Ok(_) => String::new(),
-                Err(e) => format!("Edit Transaction: Something went wrong {}", e),
+                Ok(_) => Ok(()),
+                Err(e) => Err(format!("Edit Transaction: Something went wrong. Error: {}", e)),
             }
         } else {
             let status = add_tx(
@@ -214,8 +213,8 @@ impl TxData {
                 conn,
             );
             match status {
-                Ok(_) => String::new(),
-                Err(e) => format!("Add Transaction: Something went wrong {}", e),
+                Ok(_) => Ok(()),
+                Err(e) => Err(format!("Add Transaction: Something went wrong. Error: {}", e)),
             }
         }
     }
