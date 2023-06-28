@@ -175,6 +175,7 @@ pub enum PopupState {
     AddTxHelp,
     ChartHelp,
     SummaryHelp,
+    SearchHelp,
     DeleteFailed(String),
     Nothing,
 }

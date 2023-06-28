@@ -190,6 +190,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::AddTx => *self.popup = PopupState::AddTxHelp,
             CurrentUi::Chart => *self.popup = PopupState::ChartHelp,
             CurrentUi::Summary => *self.popup = PopupState::SummaryHelp,
+            CurrentUi::Search => *self.popup = PopupState::SearchHelp,
             _ => {}
         }
     }

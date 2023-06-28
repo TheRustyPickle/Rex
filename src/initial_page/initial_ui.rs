@@ -76,13 +76,17 @@ F: Home Page
 A: Add Transaction Page
 R: Chart Page
 Z: Summary Page
-D: Delete selected Transaction (Home Page)
-J: Add/Rename/Reposition Transaction Methods (Home Page)
-E: Edit Selected Transaction (Home Page)
+W: Search Page
+
 H: Open Help (Use for detailed help)
 Q: Quit
 
-Add Transaction:
+Home Page:
+D: Delete selected Transaction
+J: Add/Rename/Reposition Transaction Methods
+E: Edit Selected Transaction
+
+Transaction Field Selection:
 1: Edit Date  
 2: Edit TX details
 3: Edit TX Type
