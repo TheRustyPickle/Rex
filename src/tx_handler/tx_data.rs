@@ -67,12 +67,16 @@ impl TxData {
         tags: &str,
         id_num: i32,
     ) -> Self {
-        let data = date.split('-').collect::<Vec<&str>>();
-        let year = data[2];
-        let month = data[1];
-        let day = data[0];
+        let new_date = if !date.is_empty() {
+            let data = date.split('-').collect::<Vec<&str>>();
+            let year = data[2];
+            let month = data[1];
+            let day = data[0];
+            format!("{}-{}-{}", year, month, day)
+        } else {
+            String::new()
+        };
 
-        let new_date = format!("{}-{}-{}", year, month, day);
         TxData {
             date: new_date,
             details: details.to_string(),
