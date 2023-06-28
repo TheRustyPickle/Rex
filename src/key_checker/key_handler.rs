@@ -264,16 +264,18 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn add_tx(&mut self) {
         let status = self.add_tx_data.add_tx(self.conn);
-        if status.is_empty() {
-            self.go_home_reset();
+
+        match status {
+            Ok(_) => {
+                self.go_home_reset();
             // we just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
             *self.home_tab = HomeTab::Months;
             self.reload_home_table();
             self.reload_chart_data();
             self.reload_summary_data();
             self.reload_search_data();
-        } else {
-            self.add_tx_data.add_tx_status(status);
+            }
+            Err(e) => self.add_tx_data.add_tx_status(e),
         }
     }
 
