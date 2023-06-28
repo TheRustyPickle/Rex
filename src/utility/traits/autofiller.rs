@@ -1,4 +1,4 @@
-use crate::utility::{get_all_tags, get_all_tx_methods, get_best_match};
+use crate::utility::{get_all_details, get_all_tags, get_all_tx_methods, get_best_match};
 use rusqlite::Connection;
 
 pub trait AutoFiller {
@@ -35,6 +35,21 @@ pub trait AutoFiller {
             let best_match = get_best_match(last_value, all_tags);
 
             if best_match == last_value {
+                String::new()
+            } else {
+                best_match
+            }
+        } else {
+            String::new()
+        }
+    }
+
+    fn autofill_details(&self, user_input: &str, conn: &Connection) -> String {
+        if !user_input.trim().is_empty() {
+            let all_details = get_all_details(conn);
+            let best_match = get_best_match(user_input, all_details);
+
+            if best_match == user_input.trim() {
                 String::new()
             } else {
                 best_match

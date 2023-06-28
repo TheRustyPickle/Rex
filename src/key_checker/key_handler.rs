@@ -268,12 +268,12 @@ impl<'a> InputKeyHandler<'a> {
         match status {
             Ok(_) => {
                 self.go_home_reset();
-            // we just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
-            *self.home_tab = HomeTab::Months;
-            self.reload_home_table();
-            self.reload_chart_data();
-            self.reload_summary_data();
-            self.reload_search_data();
+                // we just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
+                *self.home_tab = HomeTab::Months;
+                self.reload_home_table();
+                self.reload_chart_data();
+                self.reload_summary_data();
+                self.reload_search_data();
             }
             Err(e) => self.add_tx_data.add_tx_status(e),
         }
@@ -560,6 +560,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Search => self.check_search_details(),
             _ => {}
         }
+        self.check_autofill();
     }
 
     /// Checks and verifies tx method field

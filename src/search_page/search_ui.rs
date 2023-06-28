@@ -156,7 +156,7 @@ pub fn search_ui<B: Backend>(
     // We already fetched the data for each of these. Assign them now and then use them to load the widget
     let date_text = Line::from(format!("{} ", input_data[0]));
 
-    let details_text = Line::from(format!("{} ", input_data[1]));
+    let mut details_text = Line::from(format!("{} ", input_data[1]));
 
     let mut from_method_text = Line::from(format!("{} ", input_data[2]));
 
@@ -169,6 +169,12 @@ pub fn search_ui<B: Backend>(
     let mut tags_text = Line::from(format!("{} ", input_data[6]));
 
     match search_tab {
+        TxTab::Details => {
+            details_text = Line::from(vec![
+                Span::from(format!("{} ", input_data[1])),
+                Span::styled(input_data[7], Style::default().fg(GRAY)),
+            ]);
+        }
         TxTab::FromMethod => {
             from_method_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[2])),

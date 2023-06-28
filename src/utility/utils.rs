@@ -72,6 +72,36 @@ pub fn get_all_tags(conn: &Connection) -> Vec<String> {
     sorted_tags
 }
 
+/// Returns all unique details from the db
+pub fn get_all_details(conn: &Connection) -> Vec<String> {
+    let mut query = conn
+        .prepare("SELECT details FROM tx_all")
+        .expect("could not prepare statement");
+
+    let mut details_data: HashSet<String> = HashSet::new();
+
+    if let Ok(rows) = query.query_map([], |row| {
+        let row_data: String = row.get(0).unwrap();
+        let splitted = row_data.split(',');
+        let final_data = splitted
+            .into_iter()
+            .map(|s| s.trim().to_string())
+            .collect::<Vec<String>>();
+        Ok(final_data)
+    }) {
+        for inner_data in rows.flatten() {
+            for x in inner_data {
+                details_data.insert(x);
+            }
+        }
+    }
+
+    let mut sorted_details = details_data.into_iter().collect::<Vec<String>>();
+    sorted_details.sort();
+    sorted_details
+
+}
+
 /// Gets all columns inside the tx_all table. Used to determine if the database needs to be migrated
 pub fn get_all_tx_columns(conn: &Connection) -> Vec<String> {
     let column_names = conn
