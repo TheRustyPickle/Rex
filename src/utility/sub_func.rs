@@ -1,4 +1,4 @@
-use crate::outputs::TerminalExecutionError;
+use crate::outputs::{ComparisonType, TerminalExecutionError};
 use crate::page_handler::UserInputType;
 use crate::utility::{
     check_comparison, check_restricted, clear_terminal, flush_output, get_all_tx_methods,
@@ -708,6 +708,16 @@ pub fn get_search_data(
 
     if !amount.is_empty() {
         let comparison_type = check_comparison(amount);
+
+        let comparison_symbol = match comparison_type {
+            ComparisonType::BiggerThan => ">",
+            ComparisonType::SmallerThan => "<",
+            ComparisonType::Equal => "",
+            ComparisonType::EqualOrBigger => ">=",
+            ComparisonType::EqualOrSmaller => "<=",
+        };
+        let amount = amount.replace(comparison_symbol, "");
+
         query.push_str(&format!(r#" AND {} "{}""#, comparison_type, amount));
     }
 
