@@ -99,7 +99,6 @@ pub fn get_all_details(conn: &Connection) -> Vec<String> {
     let mut sorted_details = details_data.into_iter().collect::<Vec<String>>();
     sorted_details.sort();
     sorted_details
-
 }
 
 /// Gets all columns inside the tx_all table. Used to determine if the database needs to be migrated

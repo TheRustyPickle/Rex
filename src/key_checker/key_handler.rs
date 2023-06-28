@@ -618,7 +618,10 @@ impl<'a> InputKeyHandler<'a> {
     pub fn clear_input(&mut self) {
         match self.page {
             CurrentUi::AddTx => *self.add_tx_data = TxData::new(),
-            CurrentUi::Search => *self.search_data = TxData::new(),
+            CurrentUi::Search => {
+                *self.search_data = TxData::new();
+                self.reload_search_data()
+            }
             _ => {}
         }
     }
@@ -649,6 +652,19 @@ impl<'a> InputKeyHandler<'a> {
         let summary_data = self.summary_table.items.to_owned();
         let sorted_data = sort_table_data(summary_data, self.summary_sort);
         *self.summary_table = TableData::new(sorted_data);
+    }
+
+    #[cfg(not(tarpaulin_include))]
+    pub fn search_tag(&mut self) {
+        if let SummaryTab::Table = self.summary_tab {
+            if let Some(index) = self.summary_table.state.selected() {
+                let tag_name = &self.summary_table.items[index][0];
+                let search_param = TxData::custom("", "", "", "", "", "", tag_name, 0);
+                *self.search_data = search_param;
+                self.go_search();
+                self.search_tx();
+            }
+        }
     }
 }
 

@@ -20,6 +20,7 @@ pub fn summary_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Left => handler.handle_left_arrow(),
             KeyCode::Up => handler.handle_up_arrow(),
             KeyCode::Down => handler.handle_down_arrow(),
+            KeyCode::Enter => handler.search_tag(),
             _ => {}
         },
         _ => handler.do_empty_popup(),
