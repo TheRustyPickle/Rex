@@ -31,7 +31,7 @@ pub fn home_ui<B: Backend>(
 
     let mut table_name = "Transactions".to_string();
 
-    if table.items.len() > 0 {
+    if !table.items.is_empty() {
         table_name = format!("Transactions: {}", table.items.len());
     }
 

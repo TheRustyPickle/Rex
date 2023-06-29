@@ -47,7 +47,7 @@ pub fn search_ui<B: Backend>(
 
     let mut table_name = "Transactions".to_string();
 
-    if search_table.items.len() > 0 {
+    if !search_table.items.is_empty() {
         table_name = format!("Transactions: {}", search_table.items.len());
     }
 
