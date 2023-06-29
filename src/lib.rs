@@ -7,7 +7,7 @@ mod key_checker;
 pub mod outputs;
 pub mod page_handler;
 mod popup_page;
+mod search_page;
 pub mod summary_page;
-mod transfer_page;
 pub mod tx_handler;
 pub mod utility;

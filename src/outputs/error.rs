@@ -1,3 +1,4 @@
+use rusqlite::Error as sqlError;
 use std::fmt;
 use std::io::Error;
 use std::process::Output;
@@ -75,6 +76,7 @@ pub enum SteppingError {
     InvalidAmount,
     InvalidTxType,
     InvalidTags,
+    UnknownBValue,
 }
 
 impl fmt::Display for SteppingError {
@@ -96,6 +98,43 @@ impl fmt::Display for SteppingError {
             }
             SteppingError::InvalidTags => {
                 write!(f, "Tags: Failed to step as the tag does not exists")
+            }
+            SteppingError::UnknownBValue => write!(
+                f,
+                "Amount: Failed to step value. Value of B cannot be determined"
+            ),
+        }
+    }
+}
+
+pub enum TxUpdateError {
+    FailedAddTx(sqlError),
+    FailedEditTx(sqlError),
+    FailedDeleteTx(sqlError),
+}
+
+impl fmt::Display for TxUpdateError {
+    #[cfg(not(tarpaulin_include))]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TxUpdateError::FailedAddTx(e) => {
+                write!(
+                    f,
+                    "Delete Transaction: Something went wrong. Failed to delete transaction. Error: \n{}",
+                    e
+                )
+            }
+            TxUpdateError::FailedEditTx(e) => write!(
+                f,
+                "Edit Transaction: Something went wrong. Failed to edit transaction. Error: {}",
+                e
+            ),
+            TxUpdateError::FailedDeleteTx(e) => {
+                write!(
+                    f,
+                    "Add Transaction: Something went wrong. Failed to add transaction. Error: {}",
+                    e
+                )
             }
         }
     }

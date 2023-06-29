@@ -9,10 +9,10 @@ pub fn summary_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
         PopupState::Nothing => match handler.key.code {
             KeyCode::Char('a') => handler.go_add_tx(),
-            KeyCode::Char('t') => handler.go_transfer(),
             KeyCode::Char('r') => handler.go_chart(),
             KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
             KeyCode::Char('f') => handler.go_home(),
+            KeyCode::Char('w') => handler.go_search(),
             KeyCode::Char('h') => handler.do_help_popup(),
             KeyCode::Char('z') => handler.do_summary_hidden_mode(),
             KeyCode::Char('s') => handler.change_summary_sort(),
@@ -20,6 +20,7 @@ pub fn summary_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Left => handler.handle_left_arrow(),
             KeyCode::Up => handler.handle_up_arrow(),
             KeyCode::Down => handler.handle_down_arrow(),
+            KeyCode::Enter => handler.search_tag(),
             _ => {}
         },
         _ => handler.do_empty_popup(),

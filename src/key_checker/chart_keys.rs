@@ -9,12 +9,12 @@ pub fn chart_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
         PopupState::Nothing => match handler.key.code {
             KeyCode::Char('a') => handler.go_add_tx(),
-            KeyCode::Char('t') => handler.go_transfer(),
             KeyCode::Char('z') => handler.go_summary(),
             KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
             KeyCode::Char('f') => handler.go_home(),
             KeyCode::Char('h') => handler.do_help_popup(),
             KeyCode::Char('r') => handler.do_chart_hidden_mode(),
+            KeyCode::Char('w') => handler.go_search(),
             KeyCode::Right => handler.handle_right_arrow(),
             KeyCode::Left => handler.handle_left_arrow(),
             KeyCode::Up => handler.handle_up_arrow(),

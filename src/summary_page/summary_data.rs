@@ -101,7 +101,7 @@ impl SummaryData {
         let mut income_tags = HashMap::new();
         let mut expense_tags = HashMap::new();
         match mode.index {
-            // * 0 = monthly mode. Select the data only of the given month year
+            // 0 = monthly mode. Select the data only of the given month year
             0 => {
                 let target_id = month as i32 + (year as i32 * 12);
 
@@ -134,7 +134,7 @@ impl SummaryData {
                     }
                 }
             }
-            // * 1 = yearly mode. Select the data of all months of the given year
+            // 1 = yearly mode. Select the data of all months of the given year
             1 => {
                 for i in 0..MONTHS.len() {
                     let target_id = i as i32 + (year as i32 * 12);
