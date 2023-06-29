@@ -27,7 +27,6 @@ impl<'a> PopupData<'a> {
         self.y_value = y_value;
     }
 
-    // TODO search help
     #[cfg(not(tarpaulin_include))]
     pub fn create_popup<B: Backend>(&mut self, f: &mut Frame<B>, popup_type: &PopupState) {
         let status = match popup_type {

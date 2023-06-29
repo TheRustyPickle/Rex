@@ -120,7 +120,7 @@ impl fmt::Display for TxUpdateError {
             TxUpdateError::FailedAddTx(e) => {
                 write!(
                     f,
-                    "Something went wrong. Failed to delete transaction. Error: {}",
+                    "Delete Transaction: Something went wrong. Failed to delete transaction. Error: \n{}",
                     e
                 )
             }
