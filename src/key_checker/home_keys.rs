@@ -10,11 +10,11 @@ pub fn home_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
         PopupState::Nothing => match handler.key.code {
             KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
             KeyCode::Char('a') => handler.go_add_tx(),
-            KeyCode::Char('t') => handler.go_transfer(),
             KeyCode::Char('r') => handler.go_chart(),
             KeyCode::Char('j') => return Some(HandlingOutput::TakeUserInput),
             KeyCode::Char('h') => handler.do_help_popup(),
             KeyCode::Char('z') => handler.go_summary(),
+            KeyCode::Char('w') => handler.go_search(),
             KeyCode::Char('e') => handler.edit_tx(),
             KeyCode::Char('d') => handler.delete_tx(),
             KeyCode::Right => handler.handle_right_arrow(),

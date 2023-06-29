@@ -1,10 +1,14 @@
-use crate::outputs::{CheckingError, NAType, SteppingError, VerifyingOutput};
+use crate::outputs::{
+    CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, TxUpdateError,
+    VerifyingOutput,
+};
 use crate::page_handler::TxTab;
 use crate::tx_handler::{add_tx, delete_tx};
-use crate::utility::traits::{AutoFiller, DataVerifier};
-use crate::utility::{get_all_tags, get_all_tx_methods, get_last_balances};
+use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
+use crate::utility::{
+    add_char_to, check_comparison, get_all_tx_methods, get_last_balances, get_search_data,
+};
 use chrono::prelude::Local;
-use chrono::{Duration, NaiveDate};
 use rusqlite::Connection;
 use std::cmp::Ordering;
 
@@ -28,6 +32,8 @@ impl DataVerifier for TxData {}
 
 impl AutoFiller for TxData {}
 
+impl FieldStepper for TxData {}
+
 impl TxData {
     /// Creates an instance of the struct however the date field is
     /// edited with the current local date of the device.
@@ -50,25 +56,6 @@ impl TxData {
         }
     }
 
-    pub fn new_transfer() -> Self {
-        let current_date = Local::now().to_string();
-        let formatted_current_date = &current_date[0..10];
-        TxData {
-            date: formatted_current_date.to_string(),
-            details: String::new(),
-            from_method: String::new(),
-            to_method: String::new(),
-            amount: String::new(),
-            tx_type: "Transfer".to_string(),
-            tags: String::new(),
-            tx_status: Vec::new(),
-            editing_tx: false,
-            id_num: 0,
-            current_index: 0,
-            autofill: String::new(),
-        }
-    }
-
     /// Used to adding custom pre-defined data inside the widgets of Add Transaction Page.
     /// Currently used on Editing transaction.
     pub fn custom(
@@ -81,12 +68,16 @@ impl TxData {
         tags: &str,
         id_num: i32,
     ) -> Self {
-        let data = date.split('-').collect::<Vec<&str>>();
-        let year = data[2];
-        let month = data[1];
-        let day = data[0];
+        let new_date = if !date.is_empty() {
+            let data = date.split('-').collect::<Vec<&str>>();
+            let year = data[2];
+            let month = data[1];
+            let day = data[0];
+            format!("{}-{}-{}", year, month, day)
+        } else {
+            String::new()
+        };
 
-        let new_date = format!("{}-{}-{}", year, month, day);
         TxData {
             date: new_date,
             details: details.to_string(),
@@ -129,151 +120,56 @@ impl TxData {
         &self.tx_status
     }
 
-    /// Insert or remove from date field according to the index point
-    pub fn edit_date(&mut self, to_add: Option<char>) {
-        if self.current_index > self.date.len() {
-            self.current_index = self.date.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.date.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.date.is_empty() && self.current_index != 0 {
-                        self.date.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
+    pub fn get_tx_type(&self) -> TxType {
+        if let Some(first_letter) = self.tx_type.chars().next() {
+            match first_letter.to_ascii_lowercase() {
+                'i' | 'e' => return TxType::IncomeExpense,
+                't' => return TxType::Transfer,
+                _ => {}
             }
         }
+        TxType::IncomeExpense
+    }
+
+    /// Insert or remove from date field according to the index point
+    pub fn edit_date(&mut self, to_add: Option<char>) {
+        add_char_to(to_add, &mut self.current_index, &mut self.date);
     }
 
     /// Insert or remove from details field according to the index point
     pub fn edit_details(&mut self, to_add: Option<char>) {
-        if self.current_index > self.details.len() {
-            self.current_index = self.details.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.details.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.details.is_empty() && self.current_index != 0 {
-                        self.details.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.details);
     }
 
     /// Insert or remove from from method field according to the index point
     pub fn edit_from_method(&mut self, to_add: Option<char>) {
-        if self.current_index > self.from_method.len() {
-            self.current_index = self.from_method.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.from_method.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.from_method.is_empty() && self.current_index != 0 {
-                        self.from_method.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.from_method);
     }
 
     /// Insert or remove from to method field according to the index point
     pub fn edit_to_method(&mut self, to_add: Option<char>) {
-        if self.current_index > self.to_method.len() {
-            self.current_index = self.to_method.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.to_method.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.to_method.is_empty() && self.current_index != 0 {
-                        self.to_method.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.to_method);
     }
 
     /// Insert or remove from amount field according to the index point
     pub fn edit_amount(&mut self, to_add: Option<char>) {
-        if self.current_index > self.amount.len() {
-            self.current_index = self.amount.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.amount.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.amount.is_empty() && self.current_index != 0 {
-                        self.amount.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.amount);
     }
 
     /// Insert or remove from tx type field according to the index point
     pub fn edit_tx_type(&mut self, to_add: Option<char>) {
-        if self.current_index > self.tx_type.len() {
-            self.current_index = self.tx_type.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.tx_type.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.tx_type.is_empty() && self.current_index != 0 {
-                        self.tx_type.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.tx_type);
     }
 
     /// Insert or remove from tags field according to the index point
     pub fn edit_tags(&mut self, to_add: Option<char>) {
-        if self.current_index > self.tags.len() {
-            self.current_index = self.tags.len();
-        } else {
-            match to_add {
-                Some(ch) => {
-                    self.tags.insert(self.current_index, ch);
-                    self.current_index += 1
-                }
-                None => {
-                    if !self.tags.is_empty() && self.current_index != 0 {
-                        self.tags.remove(self.current_index - 1);
-                        self.current_index -= 1;
-                    }
-                }
-            }
-        }
+        add_char_to(to_add, &mut self.current_index, &mut self.tags);
     }
 
-    // TODO: Handle errors
     /// Takes all data and adds it as a transaction
-    pub fn add_tx(&mut self, conn: &mut Connection) -> String {
+    pub fn add_tx(&mut self, conn: &mut Connection) -> Result<(), String> {
         if let Some(output) = self.check_all_fields() {
-            return output.to_string();
+            return Err(output.to_string());
         }
 
         let tx_method = self.get_tx_method();
@@ -287,12 +183,7 @@ impl TxData {
             let status = delete_tx(self.id_num as usize, conn);
             match status {
                 Ok(_) => {}
-                Err(e) => {
-                    return format!(
-                        "Edit Transaction: Something went wrong while editing transaction {}",
-                        e
-                    )
-                }
+                Err(e) => return Err(TxUpdateError::FailedEditTx(e).to_string()),
             }
 
             let status_add = add_tx(
@@ -307,8 +198,8 @@ impl TxData {
             );
 
             match status_add {
-                Ok(_) => String::new(),
-                Err(e) => format!("Edit Transaction: Something went wrong {}", e),
+                Ok(_) => Ok(()),
+                Err(e) => Err(TxUpdateError::FailedEditTx(e).to_string()),
             }
         } else {
             let status = add_tx(
@@ -322,10 +213,23 @@ impl TxData {
                 conn,
             );
             match status {
-                Ok(_) => String::new(),
-                Err(e) => format!("Add Transaction: Something went wrong {}", e),
+                Ok(_) => Ok(()),
+                Err(e) => Err(TxUpdateError::FailedAddTx(e).to_string()),
             }
         }
+    }
+
+    pub fn get_search_tx(&self, conn: &Connection) -> (Vec<Vec<String>>, Vec<String>) {
+        get_search_data(
+            &self.date,
+            &self.details,
+            &self.from_method,
+            &self.to_method,
+            &self.amount,
+            &self.tx_type,
+            &self.tags,
+            conn,
+        )
     }
 
     /// Adds a value to tx status
@@ -340,8 +244,8 @@ impl TxData {
         self.autofill.clear();
 
         self.autofill = match current_tab {
+            TxTab::Details => self.autofill_details(&self.details, conn),
             TxTab::FromMethod => self.autofill_tx_method(&self.from_method, conn),
-
             TxTab::ToMethod => self.autofill_tx_method(&self.to_method, conn),
             TxTab::Tags => self.autofill_tags(&self.tags, conn),
             _ => String::new(),
@@ -350,6 +254,7 @@ impl TxData {
 
     pub fn accept_autofill(&mut self, current_tab: &TxTab) {
         match current_tab {
+            TxTab::Details => self.details = self.autofill.to_string(),
             TxTab::FromMethod => self.from_method = self.autofill.to_string(),
             TxTab::ToMethod => self.to_method = self.autofill.to_string(),
             TxTab::Tags => {
@@ -403,29 +308,37 @@ impl TxData {
     }
 
     /// Checks the inputted Amount by the user upon pressing Enter/Esc for various error.
-    pub fn check_amount(&mut self, conn: &Connection) -> VerifyingOutput {
+    pub fn check_amount(&mut self, is_search: bool, conn: &Connection) -> VerifyingOutput {
+        if let Err(e) = self.check_b_field(conn) {
+            return e;
+        }
+
+        let mut comparison_symbol = None;
+
         let mut user_amount = self.amount.clone().to_lowercase();
 
-        // 'b' represents the current balance of the original tx method
-        if user_amount.contains('b') && !self.from_method.is_empty() {
-            let all_methods = get_all_tx_methods(conn);
-
-            // get all the method's final balance, loop through the balances and match the tx method name
-            let last_balances = get_last_balances(conn);
-
-            for x in 0..all_methods.len() {
-                if all_methods[x] == self.from_method {
-                    user_amount = user_amount.replace('b', &last_balances[x]);
-                    break;
-                }
+        if is_search {
+            match check_comparison(&user_amount) {
+                ComparisonType::Equal => comparison_symbol = None,
+                ComparisonType::BiggerThan => comparison_symbol = Some(">"),
+                ComparisonType::SmallerThan => comparison_symbol = Some("<"),
+                ComparisonType::EqualOrBigger => comparison_symbol = Some(">="),
+                ComparisonType::EqualOrSmaller => comparison_symbol = Some("<="),
             }
-        } else if user_amount.contains('b') && self.from_method.is_empty() {
-            return VerifyingOutput::NotAccepted(NAType::InvalidBValue);
+        }
+
+        if let Some(symbol) = comparison_symbol {
+            user_amount = user_amount.replace(symbol, "");
         }
 
         let status = self.verify_amount(&mut user_amount);
 
+        if let Some(symbol) = comparison_symbol {
+            user_amount = format!("{symbol}{user_amount}");
+        }
+
         self.amount = user_amount;
+
         self.go_current_index(&TxTab::Amount);
         status
     }
@@ -451,6 +364,17 @@ impl TxData {
         self.go_current_index(&TxTab::Tags);
     }
 
+    /// Checks the inputted tags to make sure it's properly separated by a comma
+    pub fn check_tags_forced(&mut self, conn: &Connection) -> VerifyingOutput {
+        let mut tags = self.tags.clone();
+
+        let status = self.verify_tags_forced(&mut tags, conn);
+
+        self.tags = tags;
+        self.go_current_index(&TxTab::Tags);
+        status
+    }
+
     /// Checks all field and verifies anything important is not empty
     pub fn check_all_fields(&mut self) -> Option<CheckingError> {
         if self.date.is_empty() {
@@ -468,11 +392,53 @@ impl TxData {
         {
             return Some(CheckingError::EmptyMethod);
         }
-        // * empty tags in a tx becomes as unknown
+        // empty tags in a tx becomes as unknown
         if self.tags.is_empty() {
             self.tags = "Unknown".to_string();
         }
         None
+    }
+
+    pub fn check_all_empty(&self) -> bool {
+        let all_data = vec![
+            &self.date,
+            &self.details,
+            &self.from_method,
+            &self.to_method,
+            &self.amount,
+            &self.tx_type,
+            &self.tags,
+        ];
+        let non_empty_count = all_data.iter().filter(|&value| !value.is_empty()).count();
+
+        if non_empty_count == 0 {
+            return true;
+        }
+
+        false
+    }
+
+    /// Checks for b on amount field to replace with the balance of the tx method field
+    fn check_b_field(&mut self, conn: &Connection) -> Result<(), VerifyingOutput> {
+        let user_amount = self.amount.to_lowercase();
+
+        // 'b' represents the current balance of the original tx method
+        if user_amount.contains('b') && !self.from_method.is_empty() {
+            let all_methods = get_all_tx_methods(conn);
+
+            // get all the method's final balance, loop through the balances and match the tx method name
+            let last_balances = get_last_balances(conn);
+
+            for x in 0..all_methods.len() {
+                if all_methods[x] == self.from_method {
+                    self.amount = user_amount.replace('b', &last_balances[x]);
+                    break;
+                }
+            }
+        } else if user_amount.contains('b') && self.from_method.is_empty() {
+            return Err(VerifyingOutput::NotAccepted(NAType::InvalidBValue));
+        }
+        Ok(())
     }
 
     /// Returns the current index
@@ -523,490 +489,203 @@ impl TxData {
 
     /// Steps up Date value by one
     pub fn do_date_up(&mut self) -> Result<(), SteppingError> {
-        let status = self.check_date();
-        let data_len = self.get_data_len(&TxTab::Date);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
+        let mut user_date = self.date.clone();
 
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let final_date = NaiveDate::parse_from_str("2037-12-31", "%Y-%m-%d").unwrap();
-                let mut current_date = NaiveDate::parse_from_str(&self.date, "%Y-%m-%d").unwrap();
-                if current_date != final_date {
-                    current_date += Duration::days(1);
-                    self.date = current_date.to_string();
-                }
-            }
-            VerifyingOutput::NotAccepted(_) => {
-                self.go_current_index(&TxTab::Date);
-                return Err(SteppingError::InvalidDate);
-            }
-            // * Nothing -> Empty box.
-            // If nothing and pressed Up, make it the first possible date
-            VerifyingOutput::Nothing(_) => {
-                self.date = String::from("2022-01-01");
-            }
-        }
+        let step_status = self.step_date(&mut user_date, StepType::StepUp);
+        self.date = user_date;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Date);
-        Ok(())
+        step_status
     }
 
     /// Steps down Date value by one
     pub fn do_date_down(&mut self) -> Result<(), SteppingError> {
-        let status = self.check_date();
-        let data_len = self.get_data_len(&TxTab::Date);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
+        let mut user_date = self.date.clone();
 
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let final_date = NaiveDate::parse_from_str("2022-01-01", "%Y-%m-%d").unwrap();
-                let mut current_date = NaiveDate::parse_from_str(&self.date, "%Y-%m-%d").unwrap();
-                if current_date != final_date {
-                    current_date -= Duration::days(1);
-                    self.date = current_date.to_string();
-                }
-            }
-            VerifyingOutput::NotAccepted(_) => {
-                self.go_current_index(&TxTab::Date);
-                return Err(SteppingError::InvalidDate);
-            }
-            // * Nothing -> Empty box.
-            // If nothing and pressed Up, make it the first possible date
-            VerifyingOutput::Nothing(_) => {
-                self.date = String::from("2022-01-01");
-            }
-        }
+        let step_status = self.step_date(&mut user_date, StepType::StepDown);
+        self.date = user_date;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Date);
-        Ok(())
+        step_status
     }
 
     /// Steps up From Method value by one
     pub fn do_from_method_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let all_methods = get_all_tx_methods(conn);
+        let mut user_method = self.from_method.clone();
 
-        let status = self.check_from_method(conn);
-        let data_len = self.get_data_len(&TxTab::FromMethod);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let current_method_index = all_methods
-                    .iter()
-                    .position(|e| e == &self.from_method)
-                    .unwrap();
-
-                // if reached final index, start from beginning
-                let next_method_index = (current_method_index + 1) % all_methods.len();
-                self.from_method = String::from(&all_methods[next_method_index]);
-            }
-            VerifyingOutput::NotAccepted(_) => {
-                self.go_current_index(&TxTab::FromMethod);
-                return Err(SteppingError::InvalidTxMethod);
-            }
-            // * Nothing -> Empty box.
-            // If nothing and pressed Up, make it the first possible method
-            VerifyingOutput::Nothing(_) => {
-                self.from_method = String::from(&all_methods[0]);
-            }
-        }
+        let step_status = self.step_tx_method(&mut user_method, StepType::StepUp, conn);
+        self.from_method = user_method;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::FromMethod);
-        Ok(())
+        step_status
     }
 
     /// Steps down From Method value by one
     pub fn do_from_method_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let all_methods = get_all_tx_methods(conn);
+        let mut user_method = self.from_method.clone();
 
-        let status = self.check_from_method(conn);
-        let data_len = self.get_data_len(&TxTab::FromMethod);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let current_method_index = all_methods
-                    .iter()
-                    .position(|e| e == &self.from_method)
-                    .unwrap();
-
-                // if reached final index, start from beginning
-                let next_method_index = if current_method_index == 0 {
-                    all_methods.len() - 1
-                } else {
-                    (current_method_index - 1) % all_methods.len()
-                };
-                self.from_method = String::from(&all_methods[next_method_index]);
-            }
-            VerifyingOutput::NotAccepted(_) => {
-                self.go_current_index(&TxTab::FromMethod);
-                return Err(SteppingError::InvalidTxMethod);
-            }
-            // * Nothing -> Empty box.
-            // If nothing and pressed Up, make it the first possible method
-            VerifyingOutput::Nothing(_) => {
-                self.from_method = String::from(&all_methods[0]);
-            }
-        }
+        let step_status = self.step_tx_method(&mut user_method, StepType::StepDown, conn);
+        self.from_method = user_method;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::FromMethod);
-        Ok(())
+        step_status
     }
 
     /// Steps up To Value value by one
     pub fn do_to_method_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let all_methods = get_all_tx_methods(conn);
+        let mut user_method = self.to_method.clone();
 
-        let status = self.check_to_method(conn);
-        let data_len = self.get_data_len(&TxTab::ToMethod);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let current_method_index = all_methods
-                    .iter()
-                    .position(|e| e == &self.to_method)
-                    .unwrap();
-
-                // if reached final index, start from beginning
-                let next_method_index = (current_method_index + 1) % all_methods.len();
-                self.to_method = String::from(&all_methods[next_method_index]);
-            }
-            VerifyingOutput::NotAccepted(_) => {
-                self.go_current_index(&TxTab::ToMethod);
-                return Err(SteppingError::InvalidTxMethod);
-            }
-            // * Nothing -> Empty box.
-            // If nothing and pressed Up, make it the first possible method
-            VerifyingOutput::Nothing(_) => {
-                self.to_method = String::from(&all_methods[0]);
-            }
-        }
+        let step_status = self.step_tx_method(&mut user_method, StepType::StepUp, conn);
+        self.to_method = user_method;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::ToMethod);
-        Ok(())
+        step_status
     }
 
     /// Steps down To Method value by one
     pub fn do_to_method_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let all_methods = get_all_tx_methods(conn);
+        let mut user_method = self.to_method.clone();
 
-        let status = self.check_to_method(conn);
-        let data_len = self.get_data_len(&TxTab::ToMethod);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let current_method_index = all_methods
-                    .iter()
-                    .position(|e| e == &self.to_method)
-                    .unwrap();
-
-                // if reached final index, start from beginning
-                let next_method_index = if current_method_index == 0 {
-                    all_methods.len() - 1
-                } else {
-                    (current_method_index - 1) % all_methods.len()
-                };
-                self.to_method = String::from(&all_methods[next_method_index]);
-            }
-            VerifyingOutput::NotAccepted(_) => {
-                self.go_current_index(&TxTab::ToMethod);
-                return Err(SteppingError::InvalidTxMethod);
-            }
-            // * Nothing -> Empty box.
-            // If nothing and pressed Up, make it the first possible method
-            VerifyingOutput::Nothing(_) => {
-                self.to_method = String::from(&all_methods[0]);
-            }
-        }
+        let step_status = self.step_tx_method(&mut user_method, StepType::StepDown, conn);
+        self.to_method = user_method;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::ToMethod);
-        Ok(())
+        step_status
     }
 
     /// Steps up Tx Type value by one
     pub fn do_tx_type_up(&mut self) -> Result<(), SteppingError> {
-        let status = self.check_tx_type();
-        let data_len = self.get_data_len(&TxTab::TxType);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
+        let mut user_type = self.tx_type.clone();
 
-        // * there's only 2 possible values of tx type
-        if self.tx_type.is_empty() {
-            self.tx_type = "Income".to_string()
-        } else if self.tx_type == "Income" {
-            self.tx_type = "Expense".to_string()
-        } else if self.tx_type == "Expense" {
-            self.tx_type = "Income".to_string()
-        }
-
-        if let VerifyingOutput::NotAccepted(_) = status {
-            return Err(SteppingError::InvalidTxType);
-        }
+        let step_status = self.step_tx_type(&mut user_type, StepType::StepUp);
+        self.tx_type = user_type;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::TxType);
-        Ok(())
+        step_status
     }
 
     /// Steps down Tx Type value by one
     pub fn do_tx_type_down(&mut self) -> Result<(), SteppingError> {
-        let status = self.check_tx_type();
-        let data_len = self.get_data_len(&TxTab::TxType);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
+        let mut user_type = self.tx_type.clone();
 
-        // * there's only 2 possible values of tx type
-        if self.tx_type.is_empty() {
-            self.tx_type = "Income".to_string()
-        } else if self.tx_type == "Income" {
-            self.tx_type = "Expense".to_string()
-        } else if self.tx_type == "Expense" {
-            self.tx_type = "Income".to_string()
-        }
-
-        if let VerifyingOutput::NotAccepted(_) = status {
-            return Err(SteppingError::InvalidTxType);
-        }
+        let step_status = self.step_tx_type(&mut user_type, StepType::StepDown);
+        self.tx_type = user_type;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::TxType);
-        Ok(())
+        step_status
     }
 
     /// Steps up Amount value by one
-    pub fn do_amount_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let status = self.check_amount(conn);
-        let data_len = self.get_data_len(&TxTab::Amount);
-        if self.current_index > data_len {
-            self.current_index = data_len
+    pub fn do_amount_up(
+        &mut self,
+        is_search: bool,
+        conn: &Connection,
+    ) -> Result<(), SteppingError> {
+        if self.check_b_field(conn).is_err() {
+            return Err(SteppingError::UnknownBValue);
         }
 
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let mut current_amount: f64 = self.amount.parse().unwrap();
+        let mut comparison_symbol = None;
 
-                if 9999999999.99 > current_amount + 1.0 {
-                    current_amount += 1.0;
-                    self.amount = format!("{current_amount:.2}");
-                }
+        let mut user_amount = self.amount.clone();
+
+        if is_search {
+            match check_comparison(&user_amount) {
+                ComparisonType::Equal => comparison_symbol = None,
+                ComparisonType::BiggerThan => comparison_symbol = Some(">"),
+                ComparisonType::SmallerThan => comparison_symbol = Some("<"),
+                ComparisonType::EqualOrBigger => comparison_symbol = Some(">="),
+                ComparisonType::EqualOrSmaller => comparison_symbol = Some("<="),
             }
-            VerifyingOutput::NotAccepted(err_type) => match err_type {
-                // if value went below 0, make it 1
-                NAType::AmountBelowZero => {
-                    self.amount = String::from("1.00");
-                }
-                _ => {
-                    self.go_current_index(&TxTab::Amount);
-                    return Err(SteppingError::InvalidAmount);
-                }
-            },
-            VerifyingOutput::Nothing(_) => self.amount = "1.00".to_string(),
         }
+
+        if let Some(symbol) = comparison_symbol {
+            user_amount = user_amount.replace(symbol, "");
+        }
+
+        let step_status = self.step_amount(&mut user_amount, StepType::StepUp);
+
+        if let Some(symbol) = comparison_symbol {
+            user_amount = format!("{symbol}{user_amount}");
+        }
+
+        self.amount = user_amount;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Amount);
-        Ok(())
+        step_status
     }
 
     /// Steps down Amount value by one
-    pub fn do_amount_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let status = self.check_amount(conn);
-
-        let data_len = self.get_data_len(&TxTab::Amount);
-        if self.current_index > data_len {
-            self.current_index = data_len
+    pub fn do_amount_down(
+        &mut self,
+        is_search: bool,
+        conn: &Connection,
+    ) -> Result<(), SteppingError> {
+        if self.check_b_field(conn).is_err() {
+            return Err(SteppingError::UnknownBValue);
         }
 
-        match status {
-            VerifyingOutput::Accepted(_) => {
-                let mut current_amount: f64 = self.amount.parse().unwrap();
+        let mut comparison_symbol = None;
 
-                if (current_amount - 1.0) >= 0.00 {
-                    current_amount -= 1.0;
-                    self.amount = format!("{current_amount:.2}");
-                }
+        let mut user_amount = self.amount.clone();
+
+        if is_search {
+            match check_comparison(&user_amount) {
+                ComparisonType::Equal => comparison_symbol = None,
+                ComparisonType::BiggerThan => comparison_symbol = Some(">"),
+                ComparisonType::SmallerThan => comparison_symbol = Some("<"),
+                ComparisonType::EqualOrBigger => comparison_symbol = Some(">="),
+                ComparisonType::EqualOrSmaller => comparison_symbol = Some("<="),
             }
-            VerifyingOutput::NotAccepted(err_type) => match err_type {
-                NAType::AmountBelowZero => {}
-                _ => {
-                    self.go_current_index(&TxTab::Amount);
-                    return Err(SteppingError::InvalidAmount);
-                }
-            },
-            VerifyingOutput::Nothing(_) => self.amount = "1.00".to_string(),
         }
+
+        if let Some(symbol) = comparison_symbol {
+            user_amount = user_amount.replace(symbol, "");
+        }
+
+        let step_status = self.step_amount(&mut user_amount, StepType::StepDown);
+
+        if let Some(symbol) = comparison_symbol {
+            user_amount = format!("{symbol}{user_amount}");
+        }
+
+        self.amount = user_amount;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Amount);
-        Ok(())
+        step_status
     }
 
     /// Steps up Tags value by one
     pub fn do_tags_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let tags = get_all_tags(conn);
+        let mut user_tag = self.tags.clone();
 
-        let data_len = self.get_data_len(&TxTab::Tags);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
-        // if current tag is empty but up is pressed,
-        // select the first possible tag if available
-        if self.tags.is_empty() {
-            if !tags.is_empty() {
-                self.tags = String::from(&tags[0]);
-            } else {
-                return Err(SteppingError::InvalidTags);
-            }
-        } else {
-            // tags are separated by comma. Collect all the tags
-            let mut current_tags = self
-                .tags
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect::<Vec<String>>();
-
-            // tag1, tag2, tag3
-            // in this case, only work with tag3, keep the rest as it is
-            let last_tag = current_tags.pop().unwrap();
-
-            // check if the working tag exists inside all tag list
-            if !tags
-                .iter()
-                .any(|tag| tag.to_lowercase() == last_tag.to_lowercase())
-            {
-                // tag3, tag2,
-                // if kept like this with extra comma, the last_tag would be empty. In this case
-                // select the first tag available in the list or just join the first two tag with , + space
-                if last_tag.is_empty() {
-                    if !tags.is_empty() {
-                        current_tags.push(tags[0].to_owned());
-                        self.tags = current_tags.join(", ");
-                    } else {
-                        self.tags = current_tags.join(", ");
-                    }
-                } else {
-                    // as the tag didn't match with any existing tags
-                    // whatever tag matches the first character in the existing list,
-                    // make that the new tag -> join with comma + space
-                    current_tags.push(self.autofill.to_owned());
-
-                    self.tags = current_tags.join(", ");
-                    self.go_current_index(&TxTab::Tags);
-                    return Err(SteppingError::InvalidTags);
-                }
-            } else if let Some(index) = tags
-                .iter()
-                .position(|tag| tag.to_lowercase() == last_tag.to_lowercase())
-            {
-                // if the tag matches with something, get the index, select the next one.
-                // start from beginning if reached at the end -> Join
-                let next_index = (index + 1) % tags.len();
-                current_tags.push(tags[next_index].to_owned());
-                self.tags = current_tags.join(", ");
-            }
-        }
+        let status = self.step_tags(&mut user_tag, &self.autofill, StepType::StepUp, conn);
+        self.tags = user_tag;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Tags);
-        Ok(())
+        status
     }
 
     /// Steps down Tags value by one
     pub fn do_tags_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let tags = get_all_tags(conn);
+        let mut user_tag = self.tags.clone();
 
-        let data_len = self.get_data_len(&TxTab::Tags);
-        if self.current_index > data_len {
-            self.current_index = data_len
-        }
-
-        // if current tag is empty but down is pressed,
-        // select the first possible tag if available
-        if self.tags.is_empty() {
-            if !tags.is_empty() {
-                self.tags = String::from(&tags[0]);
-            } else {
-                return Err(SteppingError::InvalidTags);
-            }
-        } else {
-            // tags are separated by comma. Collect all the tags
-            let mut current_tags = self
-                .tags
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect::<Vec<String>>();
-
-            // tag1, tag2, tag3
-            // in this case, only work with tag3, keep the rest as it is
-            let last_tag = current_tags.pop().unwrap();
-
-            // check if the working tag exists inside all tag list
-            if !tags
-                .iter()
-                .any(|tag| tag.to_lowercase() == last_tag.to_lowercase())
-            {
-                // tag3, tag2,
-                // if kept like this with extra comma, the last_tag would be empty. In this case
-                // select the first tag available in the list or just join the first two tag with , + space
-                if last_tag.is_empty() {
-                    if !tags.is_empty() {
-                        current_tags.push(tags[0].to_owned());
-                        self.tags = current_tags.join(", ");
-                    } else {
-                        self.tags = current_tags.join(", ");
-                    }
-                    current_tags.push(tags[0].to_owned());
-                    self.tags = current_tags.join(", ");
-                } else {
-                    // as the tag didn't match with any existing tags
-                    // whatever tag matches the first character in the existing list,
-                    // make that the new tag -> join with comma + space
-                    current_tags.push(self.autofill.to_owned());
-                    self.tags = current_tags.join(", ");
-                    self.go_current_index(&TxTab::Tags);
-                    return Err(SteppingError::InvalidTags);
-                }
-            } else if let Some(index) = tags
-                .iter()
-                .position(|tag| tag.to_lowercase() == last_tag.to_lowercase())
-            {
-                // if the tag matches with something, get the index, select the next one.
-                // start from beginning if reached at the end -> Join
-                let next_index = if index == 0 {
-                    tags.len() - 1
-                } else {
-                    (index - 1) % tags.len()
-                };
-                current_tags.push(tags[next_index].to_owned());
-                self.tags = current_tags.join(", ");
-            }
-        }
+        let status = self.step_tags(&mut user_tag, &self.autofill, StepType::StepDown, conn);
+        self.tags = user_tag;
 
         // reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Tags);
-        Ok(())
+        status
     }
 }

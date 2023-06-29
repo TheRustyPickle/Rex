@@ -1,36 +1,66 @@
 use crate::outputs::TxType;
-use crate::page_handler::{TxTab, BACKGROUND, BLUE, GRAY, RED, TEXT};
+use crate::page_handler::{TableData, TxTab, BACKGROUND, BLUE, GRAY, HEADER, RED, SELECTED, TEXT};
 use crate::tx_handler::TxData;
 use crate::utility::{main_block, styled_block};
 use ratatui::backend::Backend;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::Paragraph;
+use ratatui::widgets::{Cell, Paragraph, Row, Table};
 use ratatui::Frame;
+use thousands::Separable;
 
-/// The function draws the Add Transaction page of the interface.
-#[cfg(not(tarpaulin_include))]
-pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, add_tx_tab: &TxTab) {
+pub fn search_ui<B: Backend>(
+    f: &mut Frame<B>,
+    search_data: &TxData,
+    search_tab: &TxTab,
+    search_table: &mut TableData,
+) {
     // get the data to insert into the Status widget of this page
-
-    let status_data = add_tx_data.get_tx_status();
+    let status_data = search_data.get_tx_status();
     // Contains date, details, from method, to method, amount, tx type, tags.
     // Except to method, rest will be used for the widgets
-    let input_data = add_tx_data.get_all_texts();
+    let input_data = search_data.get_all_texts();
     // The index of the cursor position
-    let current_index = add_tx_data.get_current_index();
+    let current_index = search_data.get_current_index();
+
+    let selected_style_income = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
+    let selected_style_expense = Style::default().fg(RED).add_modifier(Modifier::REVERSED);
 
     let size = f.size();
 
-    let tx_type = add_tx_data.get_tx_type();
+    let tx_type = search_data.get_tx_type();
+
+    let rows = search_table.items.iter().map(|item| {
+        let height = 1;
+        let cells = item.iter().map(|c| Cell::from(c.separate_with_commas()));
+        Row::new(cells)
+            .height(height as u16)
+            .bottom_margin(0)
+            .style(Style::default().bg(BACKGROUND).fg(TEXT))
+    });
 
     let from_method_name = match tx_type {
         TxType::IncomeExpense => "TX Method",
         TxType::Transfer => "From Method",
     };
 
-    // divide the terminal into 3 parts vertically
+    let mut table_name = "Transactions".to_string();
+
+    if !search_table.items.is_empty() {
+        table_name = format!("Transactions: {}", search_table.items.len());
+    }
+
+    let header_cells = ["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
+        .iter()
+        .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
+
+    let header = Row::new(header_cells)
+        .style(Style::default().bg(HEADER))
+        .height(1)
+        .bottom_margin(0);
+
+    // divide the terminal into 4 parts vertically
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -41,7 +71,9 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, add_tx_tab:
                 // details input chunk
                 Constraint::Length(3),
                 // status chunk
-                Constraint::Percentage(25),
+                Constraint::Length(10),
+                // Transaction list chunk,
+                Constraint::Min(0),
             ]
             .as_ref(),
         )
@@ -84,6 +116,18 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, add_tx_tab:
     // creates border around the entire terminal
     f.render_widget(main_block(), size);
 
+    let mut table_area = Table::new(rows)
+        .header(header)
+        .block(styled_block(&table_name))
+        .widths(&[
+            Constraint::Percentage(10),
+            Constraint::Percentage(37),
+            Constraint::Percentage(13),
+            Constraint::Percentage(13),
+            Constraint::Percentage(8),
+            Constraint::Percentage(18),
+        ]);
+
     let mut status_text = vec![];
 
     // iter through the data in reverse mode because we want the latest status text
@@ -124,7 +168,7 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, add_tx_tab:
 
     let mut tags_text = Line::from(format!("{} ", input_data[6]));
 
-    match add_tx_tab {
+    match search_tab {
         TxTab::Details => {
             details_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[1])),
@@ -152,6 +196,7 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, add_tx_tab:
         _ => {}
     }
 
+    // creates the widgets to ready it for rendering
     let status_sec = Paragraph::new(status_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Status"))
@@ -194,7 +239,7 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, add_tx_tab:
 
     // We will be adding a cursor based on which tab is selected + the selected index.
     // This was created utilizing the tui-rs example named user_input.rs
-    match add_tx_tab {
+    match search_tab {
         TxTab::Date => f.set_cursor(
             input_chunk[0].x + current_index as u16 + 1,
             input_chunk[0].y + 1,
@@ -212,7 +257,7 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, add_tx_tab:
     }
 
     match tx_type {
-        TxType::IncomeExpense => match add_tx_tab {
+        TxType::IncomeExpense => match search_tab {
             TxTab::Amount => f.set_cursor(
                 input_chunk[3].x + current_index as u16 + 1,
                 input_chunk[3].y + 1,
@@ -224,7 +269,7 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, add_tx_tab:
             ),
             _ => {}
         },
-        TxType::Transfer => match add_tx_tab {
+        TxType::Transfer => match search_tab {
             TxTab::ToMethod => f.set_cursor(
                 input_chunk[3].x + current_index as u16 + 1,
                 input_chunk[3].y + 1,
@@ -242,6 +287,18 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, add_tx_tab:
         },
     }
 
+    if let Some(a) = search_table.state.selected() {
+        table_area = table_area.highlight_symbol(">> ");
+        if search_table.items[a][4] == "Expense" {
+            table_area = table_area.highlight_style(selected_style_expense)
+        } else if search_table.items[a][4] == "Income" {
+            table_area = table_area.highlight_style(selected_style_income)
+        } else if search_table.items[a][4] == "Transfer" {
+            table_area = table_area.highlight_style(Style::default().bg(SELECTED))
+        }
+    }
+
+    // render the previously generated data into an interface
     f.render_widget(details_sec, chunks[1]);
     f.render_widget(status_sec, chunks[2]);
     f.render_widget(date_sec, input_chunk[0]);
@@ -259,4 +316,6 @@ pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, add_tx_tab:
             f.render_widget(tags_sec, input_chunk[5]);
         }
     }
+
+    f.render_stateful_widget(table_area, chunks[3], &mut search_table.state)
 }

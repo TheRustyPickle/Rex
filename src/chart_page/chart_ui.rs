@@ -76,7 +76,7 @@ pub fn chart_ui<B: Backend>(
 
     let all_tx_methods = get_all_tx_methods(conn);
 
-    // * a vector containing another vector with vec![X, Y] coordinate of where to render chart points
+    // a vector containing another vector with vec![X, Y] coordinate of where to render chart points
     let mut datasets: Vec<Vec<(f64, f64)>> = Vec::new();
     let mut last_balances = Vec::new();
 
@@ -111,7 +111,7 @@ pub fn chart_ui<B: Backend>(
 
         // When chart ui is selected, start by rendering this amount of day worth of data,
         // then render_size * 2, 3 and so on until the final day is reached, creating a small animation.
-        // * Numbers were determined after checking with data filled db and with --release flag
+        // Numbers were determined after checking with data filled db and with --release flag
         let render_size = if total_loop > 4000.0 {
             (total_loop * 0.7) / 100.0
         } else if total_loop > 2000.0 {
@@ -155,7 +155,7 @@ pub fn chart_ui<B: Backend>(
 
         // data_num represents which index to check out from all the txs and balances data.
         // to_add_again will become true in cases where two or more transactions shares the same date simultaneously.
-        // * Same date transactions movements will be combined together into 1 chart location
+        // Same date transactions movements will be combined together into 1 chart location
 
         let mut to_add_again = false;
         let mut data_num = 0;
@@ -171,7 +171,7 @@ pub fn chart_ui<B: Backend>(
                         NaiveDate::parse_from_str(&all_txs[data_num + 1][0], "%d-%m-%Y").unwrap();
                 }
                 // new valid transactions so the earlier looped balance is not required.
-                // * if no tx exists in a date, data from last_balances/previous valid date is used to compensate for it
+                // if no tx exists in a date, data from last_balances/previous valid date is used to compensate for it
                 last_balances = Vec::new();
 
                 for method_index in 0..all_tx_methods.len() {

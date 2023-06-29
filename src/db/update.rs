@@ -83,7 +83,7 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
         zero_values.join(",")
     );
 
-    // * the old db had 49 rows. So add 144 more to match total year * 12 + 1 rows
+    // the old db had 49 rows. So add 144 more to match total year * 12 + 1 rows
     for _a in 0..144 {
         sp.execute(&query, [])?;
     }

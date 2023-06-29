@@ -31,6 +31,7 @@ pub enum AType {
     TxMethod,
     Amount,
     TxType,
+    Tags,
 }
 
 impl fmt::Display for AType {
@@ -41,6 +42,7 @@ impl fmt::Display for AType {
             AType::TxMethod => write!(f, "Tx Method"),
             AType::Amount => write!(f, "Amount"),
             AType::TxType => write!(f, "Tx Type"),
+            AType::Tags => write!(f, "Tags"),
         }
     }
 }
@@ -61,6 +63,7 @@ pub enum NAType {
     InvalidTxType,
     ParsingError(AType),
     InvalidBValue,
+    NonExistingTag,
 }
 
 impl fmt::Display for NAType {
@@ -99,6 +102,38 @@ impl fmt::Display for NAType {
                 f,
                 "Amount: TX Method cannot be empty. Value of B cannot be determined"
             ),
+            NAType::NonExistingTag => write!(f, "Tags: Non-existing tags cannot be accepted"),
+        }
+    }
+}
+
+pub enum StepType {
+    StepUp,
+    StepDown,
+}
+
+pub enum TxType {
+    IncomeExpense,
+    Transfer,
+}
+
+pub enum ComparisonType {
+    Equal,
+    BiggerThan,
+    SmallerThan,
+    EqualOrBigger,
+    EqualOrSmaller,
+}
+
+impl fmt::Display for ComparisonType {
+    #[cfg(not(tarpaulin_include))]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ComparisonType::Equal => write!(f, "amount ="),
+            ComparisonType::BiggerThan => write!(f, "CAST(amount AS REAL) >"),
+            ComparisonType::SmallerThan => write!(f, "CAST(amount AS REAL) <"),
+            ComparisonType::EqualOrBigger => write!(f, "CAST(amount AS REAL) >="),
+            ComparisonType::EqualOrSmaller => write!(f, "CAST(amount AS REAL) <="),
         }
     }
 }

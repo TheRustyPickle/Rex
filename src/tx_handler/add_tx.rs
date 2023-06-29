@@ -111,7 +111,7 @@ pub fn add_tx(
     }
 
     // Add the current month's balances to the new balance data vector.
-    // * It's done this way to match the tx method location
+    // It's done this way to match the tx method location
     for i in &all_tx_methods {
         new_balance_data.push(format!("{:.2}", current_month_balance[i]))
     }

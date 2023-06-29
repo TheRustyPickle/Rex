@@ -143,8 +143,8 @@ impl HomeTab {
     }
 }
 
-/// This enum is used inside the Add Transaction and Transfer page.
-/// This is targeted to be used to keep track which widget of the Add Transaction and Transfer
+/// This enum is used inside the Add Transaction page.
+/// This is targeted to be used to keep track which widget of the Add Transaction
 /// is currently being interacted with.
 pub enum TxTab {
     Date,
@@ -163,9 +163,9 @@ pub enum CurrentUi {
     Initial,
     Home,
     AddTx,
-    Transfer,
     Chart,
     Summary,
+    Search,
 }
 
 /// Indicates which popup is currently on and is being shown in the screen
@@ -173,9 +173,9 @@ pub enum PopupState {
     NewUpdate(Vec<String>),
     HomeHelp,
     AddTxHelp,
-    TransferHelp,
     ChartHelp,
     SummaryHelp,
+    SearchHelp,
     DeleteFailed(String),
     Nothing,
 }
