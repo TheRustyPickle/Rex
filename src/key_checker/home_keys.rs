@@ -16,11 +16,15 @@ pub fn home_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Char('z') => handler.go_summary(),
             KeyCode::Char('w') => handler.go_search(),
             KeyCode::Char('e') => handler.edit_tx(),
-            KeyCode::Char('d') => handler.delete_tx(),
+            KeyCode::Char('d') => handler.do_deletion_popup(),
             KeyCode::Right => handler.handle_right_arrow(),
             KeyCode::Left => handler.handle_left_arrow(),
             KeyCode::Up => handler.handle_up_arrow(),
             KeyCode::Down => handler.handle_down_arrow(),
+            _ => {}
+        },
+        PopupState::TxDeletion => match handler.key.code {
+            KeyCode::Left | KeyCode::Right | KeyCode::Enter => handler.handle_deletion_popup(),
             _ => {}
         },
         _ => handler.do_empty_popup(),
