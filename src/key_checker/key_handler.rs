@@ -3,8 +3,8 @@ use crate::home_page::TransactionData;
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
 use crate::page_handler::{
-    ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SortingType, SummaryTab, TableData,
-    TxTab,
+    ChartTab, CurrentUi, DeletionStatus, HomeTab, IndexedData, PopupState, SortingType, SummaryTab,
+    TableData, TxTab,
 };
 use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
@@ -46,6 +46,7 @@ pub struct InputKeyHandler<'a> {
     chart_index: &'a mut Option<f64>,
     chart_hidden_mode: &'a mut bool,
     summary_hidden_mode: &'a mut bool,
+    deletion_status: &'a mut DeletionStatus,
     conn: &'a mut Connection,
 }
 
@@ -81,6 +82,7 @@ impl<'a> InputKeyHandler<'a> {
         chart_index: &'a mut Option<f64>,
         chart_hidden_mode: &'a mut bool,
         summary_hidden_mode: &'a mut bool,
+        deletion_status: &'a mut DeletionStatus,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data
@@ -117,6 +119,7 @@ impl<'a> InputKeyHandler<'a> {
             chart_index,
             summary_hidden_mode,
             chart_hidden_mode,
+            deletion_status,
             conn,
         }
     }
@@ -192,6 +195,14 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Summary => *self.popup = PopupState::SummaryHelp,
             CurrentUi::Search => *self.popup = PopupState::SearchHelp,
             _ => {}
+        }
+    }
+
+    /// Turns on deletion confirmation popup
+    #[cfg(not(tarpaulin_include))]
+    pub fn do_deletion_popup(&mut self) {
+        if let Some(_) = self.table.state.selected() {
+            *self.popup = PopupState::TxDeletion
         }
     }
 
@@ -323,7 +334,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// Deletes the selected transaction and reloads home and chart page
+    /// Deletes the selected transaction and reloads pages
     #[cfg(not(tarpaulin_include))]
     pub fn delete_tx(&mut self) {
         if let Some(index) = self.table.state.selected() {
@@ -332,11 +343,16 @@ impl<'a> InputKeyHandler<'a> {
                 Ok(_) => {
                     // transaction deleted so reload the data again
                     self.reload_home_table();
-                    self.table.state.select(None);
-                    *self.home_tab = HomeTab::Months;
                     self.reload_chart_data();
                     self.reload_summary_data();
                     self.reload_search_data();
+
+                    if index == 0 {
+                        self.table.state.select(None);
+                        *self.home_tab = HomeTab::Months;
+                    } else {
+                        self.table.state.select(Some(index - 1));
+                    }
                 }
                 Err(err) => {
                     *self.popup =
@@ -666,6 +682,21 @@ impl<'a> InputKeyHandler<'a> {
                 self.go_search();
                 self.search_tx();
             }
+        }
+    }
+
+    #[cfg(not(tarpaulin_include))]
+    pub fn handle_deletion_popup(&mut self) {
+        match self.key.code {
+            KeyCode::Left | KeyCode::Right => *self.deletion_status = self.deletion_status.next(),
+            KeyCode::Enter => match self.deletion_status {
+                DeletionStatus::Yes => {
+                    self.delete_tx();
+                    *self.popup = PopupState::Nothing
+                }
+                DeletionStatus::No => *self.popup = PopupState::Nothing,
+            },
+            _ => {}
         }
     }
 }
