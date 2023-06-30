@@ -177,6 +177,7 @@ pub enum PopupState {
     SummaryHelp,
     SearchHelp,
     DeleteFailed(String),
+    TxDeletion,
     Nothing,
 }
 
@@ -347,6 +348,20 @@ impl SortingType {
             SortingType::ByTags => SortingType::ByIncome,
             SortingType::ByIncome => SortingType::ByExpense,
             SortingType::ByExpense => SortingType::ByTags,
+        }
+    }
+}
+
+pub enum DeletionStatus {
+    Yes,
+    No,
+}
+
+impl DeletionStatus {
+    pub fn next(&mut self) -> Self {
+        match self {
+            DeletionStatus::Yes => DeletionStatus::No,
+            DeletionStatus::No => DeletionStatus::Yes,
         }
     }
 }

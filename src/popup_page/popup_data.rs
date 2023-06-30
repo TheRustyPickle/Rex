@@ -1,5 +1,5 @@
-use crate::page_handler::PopupState;
-use crate::popup_page::create_popup;
+use crate::page_handler::{DeletionStatus, PopupState};
+use crate::popup_page::{create_deletion_popup, create_popup};
 use ratatui::backend::Backend;
 use ratatui::Frame;
 
@@ -28,7 +28,12 @@ impl<'a> PopupData<'a> {
     }
 
     #[cfg(not(tarpaulin_include))]
-    pub fn create_popup<B: Backend>(&mut self, f: &mut Frame<B>, popup_type: &PopupState) {
+    pub fn create_popup<B: Backend>(
+        &mut self,
+        f: &mut Frame<B>,
+        popup_type: &PopupState,
+        deletion_status: &DeletionStatus,
+    ) {
         let status = match popup_type {
             PopupState::NewUpdate(data) => self.get_new_update_text(data),
             PopupState::HomeHelp => self.get_home_help_text(),
@@ -37,11 +42,15 @@ impl<'a> PopupData<'a> {
             PopupState::SummaryHelp => self.get_summary_help_text(),
             PopupState::DeleteFailed(err) => self.get_delete_failed_text(err),
             PopupState::SearchHelp => self.get_search_help_text(),
-            PopupState::Nothing => String::new(),
+            PopupState::Nothing | PopupState::TxDeletion => String::new(),
         };
 
-        if !status.is_empty() {
-            create_popup(f, self.x_value, self.y_value, self.title, status);
+        if let PopupState::TxDeletion = popup_type {
+            create_deletion_popup(f, deletion_status)
+        } else {
+            if !status.is_empty() {
+                create_popup(f, self.x_value, self.y_value, self.title, status);
+            }
         }
     }
 
