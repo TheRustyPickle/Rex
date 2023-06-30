@@ -8,8 +8,8 @@ use crate::key_checker::{
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
-    ChartTab, CurrentUi, HomeTab, IndexedData, PopupState, SortingType, SummaryTab, TableData,
-    TxTab,
+    ChartTab, CurrentUi, DeletionStatus, HomeTab, IndexedData, PopupState, SortingType, SummaryTab,
+    TableData, TxTab,
 };
 use crate::popup_page::PopupData;
 use crate::search_page::search_ui;
@@ -124,6 +124,8 @@ pub fn start_app<B: Backend>(
 
     let mut summary_hidden_mode = false;
 
+    let mut deletion_status: DeletionStatus = DeletionStatus::Yes;
+
     // how it work:
     // Default value from above -> Goes to an interface page and render -> Wait for an event key press.
     //
@@ -215,7 +217,7 @@ pub fn start_app<B: Backend>(
                     ),
                     CurrentUi::Search => search_ui(f, &search_data, &search_tab, &mut search_table),
                 }
-                popup_data.create_popup(f, &popup_state)
+                popup_data.create_popup(f, &popup_state, &deletion_status)
             })
             .map_err(UiHandlingError::DrawingError)?;
 
@@ -270,6 +272,7 @@ pub fn start_app<B: Backend>(
                 &mut chart_index,
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,
+                &mut deletion_status,
                 conn,
             );
 
