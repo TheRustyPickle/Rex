@@ -3,8 +3,8 @@ use rusqlite::Connection;
 
 pub trait AutoFiller {
     fn autofill_tx_method(&self, user_input: &str, conn: &Connection) -> String {
-        if !user_input.trim().is_empty() {
-            let all_tx_methods = get_all_tx_methods(conn);
+        let all_tx_methods = get_all_tx_methods(conn);
+        if !user_input.trim().is_empty() && !all_tx_methods.is_empty() {
             let best_match = get_best_match(user_input, all_tx_methods);
 
             if best_match == user_input.trim() {
@@ -45,8 +45,8 @@ pub trait AutoFiller {
     }
 
     fn autofill_details(&self, user_input: &str, conn: &Connection) -> String {
-        if !user_input.trim().is_empty() {
-            let all_details = get_all_details(conn);
+        let all_details = get_all_details(conn);
+        if !user_input.trim().is_empty() && !all_details.is_empty() {
             let best_match = get_best_match(user_input, all_details);
 
             if best_match == user_input.trim() {
