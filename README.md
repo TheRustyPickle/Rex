@@ -39,6 +39,13 @@ cargo run --release
 * Run `cargo install rex-tui`
 * Make sure `~/.cargo/bin` is on path if you're on linux
 
+**4. Install using a package manager:**
+
+* On NetBSD a package is available from the [official repositories](https://pkgsrc.se/finance/rex). To install it simply run:
+```sh
+pkgin install rex
+```
+
 <h2>App Data Location</h2>
 
 See [here](https://docs.rs/dirs/latest/dirs/fn.data_local_dir.html) for location info where Rex data is saved which is determined based on the OS.
