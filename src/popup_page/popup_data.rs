@@ -141,7 +141,7 @@ Following are the supported keys here
 
 Arrow Up/Down: Cycle widgets/table value
 Arrow Left/Right: Move value of the widget
-S: Sorts table by Tag, Total Income or Total Expense
+X: Sorts table by Tag, Total Income or Total Expense
 Z: Hides the top widgets for full view
 
 Other Keys:
