@@ -1,4 +1,7 @@
-<div align="center"><img src="https://github.com/TheRustyPickle/Rex/assets/35862475/2a483a32-c3b6-48c7-8de7-6b344fa58bdf" height="500"></div>
+<p align="center">
+  <img src="logo.png" width=400>
+</p>
+
 <div align="center"><h1>Rex</h1></div>
 <div align="center">
 <a href="https://wakatime.com/@RustyPickle"><img src="https://wakatime.com/badge/github/TheRustyPickle/Rex.svg" alt="wakatime"></a>
