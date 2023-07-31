@@ -3,8 +3,8 @@ use crate::home_page::TransactionData;
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
 use crate::page_handler::{
-    ChartTab, CurrentUi, DeletionStatus, HomeTab, IndexedData, PopupState, SortingType, SummaryTab,
-    TableData, TxTab,
+    ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData, PopupState, SortingType,
+    SummaryTab, TableData, TxTab,
 };
 use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
@@ -39,6 +39,7 @@ pub struct InputKeyHandler<'a> {
     summary_modes: &'a mut IndexedData,
     summary_sort: &'a mut SortingType,
     search_data: &'a mut TxData,
+    search_date_type: &'a mut DateType,
     pub search_tab: &'a mut TxTab,
     search_table: &'a mut TableData,
     search_txs: &'a mut TransactionData,
@@ -76,6 +77,7 @@ impl<'a> InputKeyHandler<'a> {
         summary_modes: &'a mut IndexedData,
         summary_sort: &'a mut SortingType,
         search_data: &'a mut TxData,
+        search_date_type: &'a mut DateType,
         search_tab: &'a mut TxTab,
         search_table: &'a mut TableData,
         search_txs: &'a mut TransactionData,
@@ -112,6 +114,7 @@ impl<'a> InputKeyHandler<'a> {
             summary_modes,
             summary_sort,
             search_data,
+            search_date_type,
             search_tab,
             search_table,
             search_txs,
@@ -135,7 +138,7 @@ impl<'a> InputKeyHandler<'a> {
                 *self.add_tx_tab = TxTab::Nothing;
             }
             CurrentUi::Search => {
-                *self.search_data = TxData::new();
+                *self.search_data = TxData::new_empty();
                 *self.search_tab = TxTab::Nothing;
             }
             _ => {}
@@ -257,7 +260,9 @@ impl<'a> InputKeyHandler<'a> {
             self.search_data
                 .add_tx_status("Search: All fields cannot be empty".to_string())
         } else {
-            let search_txs = self.search_data.get_search_tx(self.conn);
+            let search_txs = self
+                .search_data
+                .get_search_tx(&self.search_date_type, self.conn);
 
             if search_txs.0.is_empty() {
                 self.search_data.add_tx_status(
@@ -637,7 +642,7 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::AddTx => *self.add_tx_data = TxData::new(),
             CurrentUi::Search => {
-                *self.search_data = TxData::new();
+                *self.search_data = TxData::new_empty();
                 self.reload_search_data()
             }
             _ => {}
@@ -669,7 +674,9 @@ impl<'a> InputKeyHandler<'a> {
         *self.summary_sort = self.summary_sort.next_type();
         let summary_data = self.summary_table.items.to_owned();
         let sorted_data = sort_table_data(summary_data, self.summary_sort);
+        let selection_status = self.summary_table.state.selected();
         *self.summary_table = TableData::new(sorted_data);
+        self.summary_table.state.select(selection_status);
     }
 
     #[cfg(not(tarpaulin_include))]
@@ -698,6 +705,12 @@ impl<'a> InputKeyHandler<'a> {
             },
             _ => {}
         }
+    }
+
+    #[cfg(not(tarpaulin_include))]
+    pub fn change_search_date_type(&mut self) {
+        *self.search_date_type = self.search_date_type.next();
+        self.search_data.clear_date();
     }
 }
 
@@ -945,7 +958,7 @@ impl<'a> InputKeyHandler<'a> {
     fn check_add_tx_date(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.add_tx_data.check_date();
+                let status = self.add_tx_data.check_date(&DateType::Exact);
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
@@ -956,7 +969,7 @@ impl<'a> InputKeyHandler<'a> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.add_tx_data.check_date();
+                let status = self.add_tx_data.check_date(&DateType::Exact);
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
@@ -1129,7 +1142,7 @@ impl<'a> InputKeyHandler<'a> {
     fn check_search_date(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.search_data.check_date();
+                let status = self.search_data.check_date(self.search_date_type);
                 self.search_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
@@ -1140,7 +1153,7 @@ impl<'a> InputKeyHandler<'a> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.search_data.check_date();
+                let status = self.search_data.check_date(self.search_date_type);
                 self.search_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
@@ -1363,7 +1376,7 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     fn do_add_tx_up(&mut self) {
         let status = match self.add_tx_tab {
-            TxTab::Date => self.add_tx_data.do_date_up(),
+            TxTab::Date => self.add_tx_data.do_date_up(&DateType::Exact),
             TxTab::FromMethod => self.add_tx_data.do_from_method_up(self.conn),
             TxTab::ToMethod => self.add_tx_data.do_to_method_up(self.conn),
             TxTab::Amount => self.add_tx_data.do_amount_up(false, self.conn),
@@ -1380,7 +1393,7 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     fn do_add_tx_down(&mut self) {
         let status = match self.add_tx_tab {
-            TxTab::Date => self.add_tx_data.do_date_down(),
+            TxTab::Date => self.add_tx_data.do_date_down(&DateType::Exact),
             TxTab::FromMethod => self.add_tx_data.do_from_method_down(self.conn),
             TxTab::ToMethod => self.add_tx_data.do_to_method_down(self.conn),
             TxTab::Amount => self.add_tx_data.do_amount_down(false, self.conn),
@@ -1397,7 +1410,7 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     fn do_search_up(&mut self) {
         let status = match self.search_tab {
-            TxTab::Date => self.search_data.do_date_up(),
+            TxTab::Date => self.search_data.do_date_up(self.search_date_type),
             TxTab::FromMethod => self.search_data.do_from_method_up(self.conn),
             TxTab::ToMethod => self.search_data.do_to_method_up(self.conn),
             TxTab::Amount => self.search_data.do_amount_up(true, self.conn),
@@ -1424,7 +1437,7 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     fn do_search_down(&mut self) {
         let status = match self.search_tab {
-            TxTab::Date => self.search_data.do_date_down(),
+            TxTab::Date => self.search_data.do_date_down(self.search_date_type),
             TxTab::FromMethod => self.search_data.do_from_method_down(self.conn),
             TxTab::ToMethod => self.search_data.do_to_method_down(self.conn),
             TxTab::Amount => self.search_data.do_amount_down(true, self.conn),

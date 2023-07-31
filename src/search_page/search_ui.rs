@@ -1,5 +1,7 @@
 use crate::outputs::TxType;
-use crate::page_handler::{TableData, TxTab, BACKGROUND, BLUE, GRAY, HEADER, RED, SELECTED, TEXT};
+use crate::page_handler::{
+    DateType, TableData, TxTab, BACKGROUND, BLUE, GRAY, HEADER, RED, SELECTED, TEXT,
+};
 use crate::tx_handler::TxData;
 use crate::utility::{main_block, styled_block};
 use ratatui::backend::Backend;
@@ -15,6 +17,7 @@ pub fn search_ui<B: Backend>(
     search_data: &TxData,
     search_tab: &TxTab,
     search_table: &mut TableData,
+    date_type: &DateType,
 ) {
     // get the data to insert into the Status widget of this page
     let status_data = search_data.get_tx_status();
@@ -46,6 +49,12 @@ pub fn search_ui<B: Backend>(
     };
 
     let mut table_name = "Transactions".to_string();
+
+    let date_name = match date_type {
+        DateType::Exact => "Search by Exact Date",
+        DateType::Monthly => "Search by Month",
+        DateType::Yearly => "Search by Year",
+    };
 
     if !search_table.items.is_empty() {
         table_name = format!("Transactions: {}", search_table.items.len());
@@ -204,7 +213,7 @@ pub fn search_ui<B: Backend>(
 
     let date_sec = Paragraph::new(date_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Date"))
+        .block(styled_block(date_name))
         .alignment(Alignment::Left);
 
     let from_method_sec = Paragraph::new(from_method_text)

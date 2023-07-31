@@ -141,7 +141,7 @@ Following are the supported keys here
 
 Arrow Up/Down: Cycle widgets/table value
 Arrow Left/Right: Move value of the widget
-S: Sorts table by Tag, Total Income or Total Expense
+X: Sorts table by Tag, Total Income or Total Expense
 Z: Hides the top widgets for full view
 
 Other Keys:
@@ -203,6 +203,7 @@ Fields: Minimum 1 field must be filled to search for transactions.
 Fill up multiple fields for better accuracy
 
 S: Search for transactions with the given data
+X: Cycle date type for searching with exact date, month based or year based
 Enter: Submit field and continue
 Enter: Selects the first field if nothing is selected
 Esc: Stop editing field

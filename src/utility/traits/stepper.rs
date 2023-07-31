@@ -1,42 +1,99 @@
 use crate::outputs::{NAType, StepType, SteppingError, VerifyingOutput};
+use crate::page_handler::DateType;
 use crate::utility::traits::DataVerifier;
 use crate::utility::{get_all_tags, get_all_tx_methods};
 use chrono::{Duration, NaiveDate};
 use rusqlite::Connection;
 
 pub trait FieldStepper: DataVerifier {
-    fn step_date(&self, user_date: &mut String, step_type: StepType) -> Result<(), SteppingError> {
-        let verify_status = self.verify_date(user_date);
+    fn step_date(
+        &self,
+        user_date: &mut String,
+        step_type: StepType,
+        date_type: &DateType,
+    ) -> Result<(), SteppingError> {
+        let verify_status = self.verify_date(user_date, date_type);
 
         match verify_status {
-            VerifyingOutput::Accepted(_) => {
-                let mut current_date = NaiveDate::parse_from_str(user_date, "%Y-%m-%d").unwrap();
-                match step_type {
-                    StepType::StepUp => {
-                        let final_date =
-                            NaiveDate::parse_from_str("2037-12-31", "%Y-%m-%d").unwrap();
-                        if current_date != final_date {
-                            current_date += Duration::days(1);
+            VerifyingOutput::Accepted(_) => match date_type {
+                DateType::Exact => {
+                    let mut current_date =
+                        NaiveDate::parse_from_str(user_date, "%Y-%m-%d").unwrap();
+                    match step_type {
+                        StepType::StepUp => {
+                            let final_date =
+                                NaiveDate::parse_from_str("2037-12-31", "%Y-%m-%d").unwrap();
+                            if current_date != final_date {
+                                current_date += Duration::days(1);
+                            }
+                        }
+                        StepType::StepDown => {
+                            let final_date =
+                                NaiveDate::parse_from_str("2022-01-01", "%Y-%m-%d").unwrap();
+                            if current_date != final_date {
+                                current_date -= Duration::days(1);
+                            }
                         }
                     }
-                    StepType::StepDown => {
-                        let final_date =
-                            NaiveDate::parse_from_str("2022-01-01", "%Y-%m-%d").unwrap();
-                        if current_date != final_date {
-                            current_date -= Duration::days(1);
-                        }
-                    }
+                    *user_date = current_date.to_string();
                 }
-                *user_date = current_date.to_string();
-            }
+                DateType::Monthly => {
+                    let splitted_date = user_date
+                        .split('-')
+                        .map(|s| s.parse().unwrap())
+                        .collect::<Vec<u16>>();
+
+                    let mut month = splitted_date[1];
+                    let mut year = splitted_date[0];
+
+                    match step_type {
+                        StepType::StepUp => {
+                            if month < 12 {
+                                month += 1;
+                            } else if month == 12 && year != 2037 {
+                                month = 1;
+                                year += 1;
+                            }
+                        }
+                        StepType::StepDown => {
+                            if month > 1 {
+                                month -= 1;
+                            } else if month == 1 && year != 2022 {
+                                month = 12;
+                                year -= 1;
+                            }
+                        }
+                    }
+                    *user_date = format!("{}-{:02}", year, month)
+                }
+                DateType::Yearly => {
+                    let mut int_year: u16 = user_date.parse().unwrap();
+                    match step_type {
+                        StepType::StepUp => {
+                            if int_year != 2037 {
+                                int_year += 1
+                            }
+                        }
+                        StepType::StepDown => {
+                            if int_year != 2022 {
+                                int_year -= 1
+                            }
+                        }
+                    }
+
+                    *user_date = int_year.to_string()
+                }
+            },
             VerifyingOutput::NotAccepted(_) => {
                 return Err(SteppingError::InvalidDate);
             }
             // Nothing -> Empty box.
             // If nothing and pressed Up, make it the first possible date
-            VerifyingOutput::Nothing(_) => {
-                *user_date = String::from("2022-01-01");
-            }
+            VerifyingOutput::Nothing(_) => match date_type {
+                DateType::Exact => *user_date = String::from("2022-01-01"),
+                DateType::Monthly => *user_date = String::from("2022-01"),
+                DateType::Yearly => *user_date = String::from("2022"),
+            },
         }
 
         Ok(())
