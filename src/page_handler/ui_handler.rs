@@ -8,8 +8,8 @@ use crate::key_checker::{
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
-    ChartTab, CurrentUi, DeletionStatus, HomeTab, IndexedData, PopupState, SortingType, SummaryTab,
-    TableData, TxTab,
+    ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData, PopupState, SortingType,
+    SummaryTab, TableData, TxTab,
 };
 use crate::popup_page::PopupData;
 use crate::search_page::search_ui;
@@ -25,6 +25,8 @@ use ratatui::Terminal;
 use rusqlite::Connection;
 use std::time::Duration;
 
+// TODO: More colors? Needs to be turned into an array
+// and maintain an index for which color to select based on the scheme
 pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
 pub const TEXT: Color = Color::Rgb(153, 78, 236);
 pub const BOX: Color = Color::Rgb(255, 87, 51);
@@ -94,13 +96,15 @@ pub fn start_app<B: Backend>(
     let mut summary_tab = SummaryTab::ModeSelection;
     // Store the current selected widget on Search page
     let mut search_tab = TxTab::Nothing;
+    // Store the current searching date type
+    let mut search_date_type = DateType::Exact;
 
     // Holds the data that will be/are inserted into the Add Tx page's input fields
     let mut add_tx_data = TxData::new();
     // Holds the data that will be/are inserted into the Summary Page
     let mut summary_data = SummaryData::new(conn);
     // Holds the data that will be/are inserted into the Search page's input fields
-    let mut search_data = TxData::new();
+    let mut search_data = TxData::new_empty();
     // Holds the data that will be/are inserted into the Chart Page
     let mut chart_data = ChartData::new(conn);
     // Holds the popup data that will be/are inserted into the Popup page
@@ -215,7 +219,13 @@ pub fn start_app<B: Backend>(
                         &summary_sort,
                         conn,
                     ),
-                    CurrentUi::Search => search_ui(f, &search_data, &search_tab, &mut search_table),
+                    CurrentUi::Search => search_ui(
+                        f,
+                        &search_data,
+                        &search_tab,
+                        &mut search_table,
+                        &search_date_type,
+                    ),
                 }
                 popup_data.create_popup(f, &popup_state, &deletion_status)
             })
@@ -266,6 +276,7 @@ pub fn start_app<B: Backend>(
                 &mut summary_modes,
                 &mut summary_sort,
                 &mut search_data,
+                &mut search_date_type,
                 &mut search_tab,
                 &mut search_table,
                 &mut search_txs,
