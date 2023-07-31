@@ -1,7 +1,7 @@
 use crate::db::{add_tags_column, create_db, update_balance_type, YEARS};
 use crate::outputs::ComparisonType;
 use crate::page_handler::{
-    IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED, TEXT,
+    DateType, IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED, TEXT,
 };
 use crate::utility::get_user_tx_methods;
 use crossterm::execute;
@@ -145,14 +145,22 @@ pub fn get_last_balance_id(conn: &Connection) -> sqlResult<i32> {
     last_id
 }
 
-/// The function is used to create dates in the form of strings to use the WHERE statement
-/// based on the month and year index that has been passed to it. Will return two dates to use in the
-/// WHERE statement. Will return the 1st and the 31st date of the given month and year.
-/// return example: `(2022-01-01, 2022-01-31)`
-pub fn get_sql_dates(month: usize, year: usize) -> (String, String) {
-    let datetime_1 = format!("{}-{:02}-01", YEARS[year], month + 1);
-    let datetime_2 = format!("{}-{:02}-31", YEARS[year], month + 1);
-    (datetime_1, datetime_2)
+/// Returns two dates based on the month and year index. used for the purpose of searching
+/// tx based on date
+pub fn get_sql_dates(month: usize, year: usize, date_type: DateType) -> (String, String) {
+    match date_type {
+        DateType::Monthly => {
+            let datetime_1 = format!("{}-{:02}-01", YEARS[year], month + 1);
+            let datetime_2 = format!("{}-{:02}-31", YEARS[year], month + 1);
+            (datetime_1, datetime_2)
+        }
+        DateType::Yearly => {
+            let datetime_1 = format!("{}-01-01", YEARS[year]);
+            let datetime_2 = format!("{}-12-31", YEARS[year]);
+            (datetime_1, datetime_2)
+        }
+        DateType::Exact => (String::new(), String::new())
+    }
 }
 
 /// Verifies the db version is up to date

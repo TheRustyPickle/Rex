@@ -365,3 +365,9 @@ impl DeletionStatus {
         }
     }
 }
+
+pub enum DateType {
+    Exact,
+    Monthly,
+    Yearly,
+}

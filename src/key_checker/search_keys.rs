@@ -18,6 +18,7 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 KeyCode::Char('h') => handler.do_help_popup(),
                 KeyCode::Char('s') => handler.search_tx(),
                 KeyCode::Char('c') => handler.clear_input(),
+                KeyCode::Char('x') => todo!(),
                 KeyCode::Up => handler.handle_up_arrow(),
                 KeyCode::Down => handler.handle_down_arrow(),
                 KeyCode::Enter => handler.select_date_field(),
