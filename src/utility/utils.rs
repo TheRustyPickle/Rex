@@ -147,7 +147,7 @@ pub fn get_last_balance_id(conn: &Connection) -> sqlResult<i32> {
 
 /// Returns two dates based on the month and year index. used for the purpose of searching
 /// tx based on date
-pub fn get_sql_dates(month: usize, year: usize, date_type: DateType) -> (String, String) {
+pub fn get_sql_dates(month: usize, year: usize, date_type: &DateType) -> (String, String) {
     match date_type {
         DateType::Monthly => {
             let datetime_1 = format!("{}-{:02}-01", YEARS[year], month + 1);
