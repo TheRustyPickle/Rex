@@ -85,7 +85,7 @@ pub fn get_all_changes(month: usize, year: usize, conn: &Connection) -> Vec<Vec<
     let mut final_result = Vec::new();
     let tx_methods = get_all_tx_methods(conn);
 
-    let (datetime_1, datetime_2) = get_sql_dates(month, year, DateType::Monthly);
+    let (datetime_1, datetime_2) = get_sql_dates(month, year, &DateType::Monthly);
 
     let mut statement = conn
         .prepare("SELECT * FROM changes_all Where date BETWEEN date(?) AND date(?) ORDER BY date, id_num")
@@ -128,7 +128,7 @@ pub fn get_all_txs(
 
     let mut last_month_balance = get_last_time_balance(month, year, &all_tx_methods, conn);
 
-    let (datetime_1, datetime_2) = get_sql_dates(month, year, DateType::Monthly);
+    let (datetime_1, datetime_2) = get_sql_dates(month, year, &DateType::Monthly);
 
     // preparing the query for db, getting current month's all transactions
     let mut statement = conn
@@ -687,6 +687,7 @@ pub fn get_search_data(
     amount: &str,
     tx_type: &str,
     tags: &str,
+    date_type: &DateType,
     conn: &Connection,
 ) -> (Vec<Vec<String>>, Vec<String>) {
     let mut all_txs = Vec::new();
@@ -695,7 +696,33 @@ pub fn get_search_data(
     let mut query = "SELECT * FROM tx_all WHERE 1=1".to_string();
 
     if !date.is_empty() {
-        query.push_str(&format!(r#" AND date = "{}""#, date));
+        match date_type {
+            DateType::Exact => query.push_str(&format!(r#" AND date = "{}""#, date)),
+            DateType::Monthly => {
+                let splitted_date: Vec<usize> =
+                    date.split('-').map(|s| s.parse().unwrap()).collect();
+
+                let month_index = splitted_date[1] - 1;
+                let year_index = splitted_date[0] - 2022;
+
+                let (date_1, date_2) = get_sql_dates(month_index, year_index, date_type);
+
+                query.push_str(&format!(
+                    r#" AND date BETWEEN date("{}") AND date("{}")"#,
+                    date_1, date_2
+                ))
+            }
+            DateType::Yearly => {
+                let year_index = date.parse::<usize>().unwrap() - 2022;
+
+                let (date_1, date_2) = get_sql_dates(0, year_index, date_type);
+
+                query.push_str(&format!(
+                    r#" AND date BETWEEN date("{}") AND date("{}")"#,
+                    date_1, date_2
+                ))
+            }
+        }
     }
 
     if !details.is_empty() {
