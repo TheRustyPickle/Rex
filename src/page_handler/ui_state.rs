@@ -371,3 +371,13 @@ pub enum DateType {
     Monthly,
     Yearly,
 }
+
+impl DateType {
+    pub fn next(&mut self) -> Self {
+        match self {
+            DateType::Exact => DateType::Monthly,
+            DateType::Monthly => DateType::Yearly,
+            DateType::Yearly => DateType::Exact,
+        }
+    }
+}

@@ -56,6 +56,23 @@ impl TxData {
         }
     }
 
+    pub fn new_empty() -> Self {
+        TxData {
+            date: String::new(),
+            details: String::new(),
+            from_method: String::new(),
+            to_method: String::new(),
+            amount: String::new(),
+            tx_type: String::new(),
+            tags: String::new(),
+            tx_status: Vec::new(),
+            editing_tx: false,
+            id_num: 0,
+            current_index: 0,
+            autofill: String::new(),
+        }
+    }
+
     /// Used to adding custom pre-defined data inside the widgets of Add Transaction Page.
     /// Currently used on Editing transaction.
     pub fn custom(
@@ -439,6 +456,10 @@ impl TxData {
             return Err(VerifyingOutput::NotAccepted(NAType::InvalidBValue));
         }
         Ok(())
+    }
+
+    pub fn clear_date(&mut self) {
+        self.date = String::new();
     }
 
     /// Returns the current index

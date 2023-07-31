@@ -159,7 +159,7 @@ pub fn get_sql_dates(month: usize, year: usize, date_type: DateType) -> (String,
             let datetime_2 = format!("{}-12-31", YEARS[year]);
             (datetime_1, datetime_2)
         }
-        DateType::Exact => (String::new(), String::new())
+        DateType::Exact => (String::new(), String::new()),
     }
 }
 
