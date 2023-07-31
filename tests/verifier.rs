@@ -1,6 +1,7 @@
 extern crate rex_tui;
 use rex_tui::db::create_db;
 use rex_tui::outputs::{AType, NAType, VerifyingOutput};
+use rex_tui::page_handler::DateType;
 use rex_tui::utility::traits::DataVerifier;
 use rex_tui::utility::*;
 use rusqlite::Connection;
@@ -27,7 +28,7 @@ fn create_test_db(file_name: &str) -> Connection {
 
 #[test]
 fn check_sql_dates() {
-    let data = get_sql_dates(11, 2);
+    let data = get_sql_dates(11, 2, DateType::Monthly);
     let expected_data = ("2024-12-01".to_string(), "2024-12-31".to_string());
     assert_eq!(data, expected_data);
 }
