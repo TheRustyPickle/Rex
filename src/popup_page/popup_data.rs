@@ -203,6 +203,7 @@ Fields: Minimum 1 field must be filled to search for transactions.
 Fill up multiple fields for better accuracy
 
 S: Search for transactions with the given data
+X: Cycle date type for searching with exact date, month based or year based
 Enter: Submit field and continue
 Enter: Selects the first field if nothing is selected
 Esc: Stop editing field
