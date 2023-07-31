@@ -2,7 +2,7 @@ use crate::outputs::{
     CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, TxUpdateError,
     VerifyingOutput,
 };
-use crate::page_handler::TxTab;
+use crate::page_handler::{DateType, TxTab};
 use crate::tx_handler::{add_tx, delete_tx};
 use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
 use crate::utility::{
@@ -236,7 +236,11 @@ impl TxData {
         }
     }
 
-    pub fn get_search_tx(&self, conn: &Connection) -> (Vec<Vec<String>>, Vec<String>) {
+    pub fn get_search_tx(
+        &self,
+        date_type: &DateType,
+        conn: &Connection,
+    ) -> (Vec<Vec<String>>, Vec<String>) {
         get_search_data(
             &self.date,
             &self.details,
@@ -245,6 +249,7 @@ impl TxData {
             &self.amount,
             &self.tx_type,
             &self.tags,
+            date_type,
             conn,
         )
     }
@@ -293,9 +298,9 @@ impl TxData {
     }
 
     /// Checks the inputted Date by the user upon pressing Enter/Esc for various error.
-    pub fn check_date(&mut self) -> VerifyingOutput {
+    pub fn check_date(&mut self, date_type: &DateType) -> VerifyingOutput {
         let mut user_date = self.date.clone();
-        let status = self.verify_date(&mut user_date);
+        let status = self.verify_date(&mut user_date, date_type);
 
         self.date = user_date;
         self.go_current_index(&TxTab::Date);
@@ -509,10 +514,10 @@ impl TxData {
     }
 
     /// Steps up Date value by one
-    pub fn do_date_up(&mut self) -> Result<(), SteppingError> {
+    pub fn do_date_up(&mut self, date_type: &DateType) -> Result<(), SteppingError> {
         let mut user_date = self.date.clone();
 
-        let step_status = self.step_date(&mut user_date, StepType::StepUp);
+        let step_status = self.step_date(&mut user_date, StepType::StepUp, date_type);
         self.date = user_date;
 
         // reload index to the final point as some data just got added/changed
@@ -521,10 +526,10 @@ impl TxData {
     }
 
     /// Steps down Date value by one
-    pub fn do_date_down(&mut self) -> Result<(), SteppingError> {
+    pub fn do_date_down(&mut self, date_type: &DateType) -> Result<(), SteppingError> {
         let mut user_date = self.date.clone();
 
-        let step_status = self.step_date(&mut user_date, StepType::StepDown);
+        let step_status = self.step_date(&mut user_date, StepType::StepDown, date_type);
         self.date = user_date;
 
         // reload index to the final point as some data just got added/changed
