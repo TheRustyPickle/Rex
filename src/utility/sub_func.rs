@@ -733,7 +733,18 @@ pub fn get_search_data(
     if !tags.is_empty() {
         let all_tags = tags.split(", ");
         let tag_conditions = all_tags
-            .map(|tag| format!(r#""," || tags || "," LIKE "%{}%""#, tag))
+            .map(|tag| {
+                format!(
+                    r#"CASE 
+                          WHEN tags LIKE "{}, %" THEN 1
+                          WHEN tags LIKE "%, {}" THEN 1
+                          WHEN tags LIKE "%, {}," THEN 1
+                          WHEN tags = "{}" THEN 1
+                          ELSE 0
+                      END = 1"#,
+                    tag, tag, tag, tag
+                )
+            })
             .collect::<Vec<String>>()
             .join(" OR ");
         query.push_str(&format!(" AND ({})", tag_conditions));
