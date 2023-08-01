@@ -19,6 +19,8 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 KeyCode::Char('s') => handler.search_tx(),
                 KeyCode::Char('c') => handler.clear_input(),
                 KeyCode::Char('x') => handler.change_search_date_type(),
+                KeyCode::Char('e') => handler.search_edit_tx(),
+                KeyCode::Char('d') => handler.do_deletion_popup(),
                 KeyCode::Up => handler.handle_up_arrow(),
                 KeyCode::Down => handler.handle_down_arrow(),
                 KeyCode::Enter => handler.select_date_field(),
@@ -46,6 +48,10 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                     _ => {}
                 },
             },
+        },
+        PopupState::TxDeletion => match handler.key.code {
+            KeyCode::Left | KeyCode::Right | KeyCode::Enter => handler.handle_deletion_popup(),
+            _ => {}
         },
         _ => handler.do_empty_popup(),
     }

@@ -204,8 +204,18 @@ impl<'a> InputKeyHandler<'a> {
     /// Turns on deletion confirmation popup
     #[cfg(not(tarpaulin_include))]
     pub fn do_deletion_popup(&mut self) {
-        if let Some(_) = self.table.state.selected() {
-            *self.popup = PopupState::TxDeletion
+        match self.page {
+            CurrentUi::Home => {
+                if let Some(_) = self.table.state.selected() {
+                    *self.popup = PopupState::TxDeletion
+                }
+            }
+            CurrentUi::Search => {
+                if let Some(_) = self.search_table.state.selected() {
+                    *self.popup = PopupState::TxDeletion
+                }
+            }
+            _ => {}
         }
     }
 
@@ -299,7 +309,7 @@ impl<'a> InputKeyHandler<'a> {
     /// Based on transaction Selected, opens Add Tx page and
     /// allocates the data of the tx to the input boxes
     #[cfg(not(tarpaulin_include))]
-    pub fn edit_tx(&mut self) {
+    pub fn home_edit_tx(&mut self) {
         if let Some(a) = self.table.state.selected() {
             let target_data = &self.all_tx_data.get_txs()[a];
             let target_id_num = self.all_tx_data.get_id_num(a);
@@ -341,7 +351,7 @@ impl<'a> InputKeyHandler<'a> {
 
     /// Deletes the selected transaction and reloads pages
     #[cfg(not(tarpaulin_include))]
-    pub fn delete_tx(&mut self) {
+    pub fn home_delete_tx(&mut self) {
         if let Some(index) = self.table.state.selected() {
             let status = self.all_tx_data.del_tx(index, self.conn);
             match status {
@@ -659,6 +669,8 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// No field selected on add tx or search but enter is pressed then
+    /// select the Date field
     #[cfg(not(tarpaulin_include))]
     pub fn select_date_field(&mut self) {
         match self.page {
@@ -669,6 +681,7 @@ impl<'a> InputKeyHandler<'a> {
         self.go_correct_index();
     }
 
+    /// Cycles through tag, income, expense table sorting on summary page
     #[cfg(not(tarpaulin_include))]
     pub fn change_summary_sort(&mut self) {
         *self.summary_sort = self.summary_sort.next_type();
@@ -679,6 +692,8 @@ impl<'a> InputKeyHandler<'a> {
         self.summary_table.state.select(selection_status);
     }
 
+    /// If Enter is pressed on Summary page while a tag is selected
+    /// go to search page and search for it
     #[cfg(not(tarpaulin_include))]
     pub fn search_tag(&mut self) {
         if let SummaryTab::Table = self.summary_tab {
@@ -692,25 +707,97 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle keypress when deletion popup is turned on
     #[cfg(not(tarpaulin_include))]
     pub fn handle_deletion_popup(&mut self) {
         match self.key.code {
             KeyCode::Left | KeyCode::Right => *self.deletion_status = self.deletion_status.next(),
             KeyCode::Enter => match self.deletion_status {
-                DeletionStatus::Yes => {
-                    self.delete_tx();
-                    *self.popup = PopupState::Nothing
-                }
+                DeletionStatus::Yes => match self.page {
+                    CurrentUi::Home => {
+                        self.home_delete_tx();
+                        *self.popup = PopupState::Nothing
+                    }
+                    CurrentUi::Search => {
+                        self.search_delete_tx();
+                        *self.popup = PopupState::Nothing
+                    }
+                    _ => {}
+                },
                 DeletionStatus::No => *self.popup = PopupState::Nothing,
             },
             _ => {}
         }
     }
 
+    /// Cycles through available date types
     #[cfg(not(tarpaulin_include))]
     pub fn change_search_date_type(&mut self) {
         *self.search_date_type = self.search_date_type.next();
         self.search_data.clear_date();
+    }
+
+    /// Start editing tx from a search result
+    #[cfg(not(tarpaulin_include))]
+    pub fn search_edit_tx(&mut self) {
+        if let Some(a) = self.search_table.state.selected() {
+            let target_data = &self.search_txs.get_txs()[a];
+            let target_id_num = self.search_txs.get_id_num(a);
+            let tx_type = &target_data[4];
+
+            // based on what kind of transaction is selected, passes the tx data to the struct
+            // and changes the current interface
+            if tx_type != "Transfer" {
+                *self.add_tx_data = TxData::custom(
+                    &target_data[0],
+                    &target_data[1],
+                    &target_data[2],
+                    "",
+                    &target_data[3],
+                    &target_data[4],
+                    &target_data[5],
+                    target_id_num,
+                );
+                *self.page = CurrentUi::AddTx;
+            } else {
+                let splitted_method = target_data[2].split(" to ").collect::<Vec<&str>>();
+                let from_method = splitted_method[0];
+                let to_method = splitted_method[1];
+
+                *self.add_tx_data = TxData::custom(
+                    &target_data[0],
+                    &target_data[1],
+                    from_method,
+                    to_method,
+                    &target_data[3],
+                    "Transfer",
+                    &target_data[5],
+                    target_id_num,
+                );
+                *self.page = CurrentUi::AddTx;
+            }
+        }
+    }
+
+    /// Delete a transaction from search page
+    #[cfg(not(tarpaulin_include))]
+    pub fn search_delete_tx(&mut self) {
+        if let Some(index) = self.search_table.state.selected() {
+            let status = self.search_txs.del_tx(index, self.conn);
+            match status {
+                Ok(_) => {
+                    // transaction deleted so reload the data again
+                    self.reload_home_table();
+                    self.reload_chart_data();
+                    self.reload_summary_data();
+                    self.reload_search_data();
+                }
+                Err(err) => {
+                    *self.popup =
+                        PopupState::DeleteFailed(TxUpdateError::FailedDeleteTx(err).to_string());
+                }
+            }
+        }
     }
 }
 
