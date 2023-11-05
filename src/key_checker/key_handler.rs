@@ -206,12 +206,12 @@ impl<'a> InputKeyHandler<'a> {
     pub fn do_deletion_popup(&mut self) {
         match self.page {
             CurrentUi::Home => {
-                if let Some(_) = self.table.state.selected() {
+                if self.table.state.selected().is_some() {
                     *self.popup = PopupState::TxDeletion
                 }
             }
             CurrentUi::Search => {
-                if let Some(_) = self.search_table.state.selected() {
+                if self.search_table.state.selected().is_some() {
                     *self.popup = PopupState::TxDeletion
                 }
             }
@@ -272,7 +272,7 @@ impl<'a> InputKeyHandler<'a> {
         } else {
             let search_txs = self
                 .search_data
-                .get_search_tx(&self.search_date_type, self.conn);
+                .get_search_tx(self.search_date_type, self.conn);
 
             if search_txs.0.is_empty() {
                 self.search_data.add_tx_status(
