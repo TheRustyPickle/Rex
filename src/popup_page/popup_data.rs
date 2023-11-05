@@ -47,10 +47,8 @@ impl<'a> PopupData<'a> {
 
         if let PopupState::TxDeletion = popup_type {
             create_deletion_popup(f, deletion_status)
-        } else {
-            if !status.is_empty() {
-                create_popup(f, self.x_value, self.y_value, self.title, status);
-            }
+        } else if !status.is_empty() {
+            create_popup(f, self.x_value, self.y_value, self.title, status);
         }
     }
 

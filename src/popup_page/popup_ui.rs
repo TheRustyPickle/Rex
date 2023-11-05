@@ -66,7 +66,7 @@ pub fn create_deletion_popup<B: Backend>(f: &mut Frame<B>, deletion_status: &Del
     let size = f.size();
 
     let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
-    let text = create_bolded_text(&text);
+    let text = create_bolded_text(text);
 
     // determines the size of the popup window
     let x_value = x_value;
