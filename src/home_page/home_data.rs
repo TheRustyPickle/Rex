@@ -1,6 +1,8 @@
+use rusqlite::{Connection, Result as sqlResult};
+use std::collections::HashMap;
+
 use crate::tx_handler::delete_tx;
 use crate::utility::{get_all_changes, get_all_tx_methods, get_all_txs, get_last_balances};
-use rusqlite::{Connection, Result as sqlResult};
 
 /// This struct stores the transaction data, balance, changes and the id num
 /// Data storing format is:
@@ -128,11 +130,12 @@ impl TransactionData {
     pub fn get_total_income(&self, current_index: Option<usize>, conn: &Connection) -> Vec<String> {
         // Initialize the output vector with the title "Income".
         let mut final_income = vec!["Income".to_string()];
+        let mut income_data = HashMap::new();
 
-        // Get all transaction methods from the database and add a placeholder for each of them.
+        // Get all transaction methods from the database and set 0 as the default value
         let all_tx_methods = get_all_tx_methods(conn);
-        for _ in all_tx_methods.iter() {
-            final_income.push("-".to_string())
+        for method in all_tx_methods.iter() {
+            income_data.insert(method, 0.0);
         }
 
         // Compute the stopping index based on the current index, if present.
@@ -144,11 +147,13 @@ impl TransactionData {
         // Iterate over all transactions and accumulate the total income.
         let mut total_income = 0.0_f64;
         for tx in self.all_tx.iter() {
-            let amount = &tx[3];
             let tx_type = &tx[4];
 
             if tx_type == "Income" {
-                total_income += amount.parse::<f64>().unwrap();
+                let method = &tx[2];
+                let amount = tx[3].parse::<f64>().unwrap();
+                total_income += amount;
+                *income_data.get_mut(method).unwrap() += amount;
             }
 
             if stopping_index == 0 {
@@ -158,6 +163,10 @@ impl TransactionData {
                 // Decrement the stopping index and continue with the loop.
                 stopping_index -= 1
             }
+        }
+
+        for i in all_tx_methods.iter() {
+            final_income.push(format!("{:.2}", income_data[i]));
         }
 
         // Add the computed total income to the output vector.
@@ -174,11 +183,12 @@ impl TransactionData {
     ) -> Vec<String> {
         // Initialize the output vector with the title "Expense".
         let mut final_expense = vec!["Expense".to_string()];
+        let mut expense_data = HashMap::new();
 
-        // Get all transaction methods from the database and add a placeholder for each of them.
+        // Get all transaction methods from the database and set 0 as the default value
         let all_tx_methods = get_all_tx_methods(conn);
-        for _ in all_tx_methods.iter() {
-            final_expense.push("-".to_string())
+        for method in all_tx_methods.iter() {
+            expense_data.insert(method, 0.0);
         }
 
         // Compute the stopping index based on the current index, if present.
@@ -190,11 +200,13 @@ impl TransactionData {
         // Iterate over all transactions and accumulate the total expense.
         let mut total_expense = 0.0_f64;
         for tx in self.all_tx.iter() {
-            let amount = &tx[3];
             let tx_type = &tx[4];
 
             if tx_type == "Expense" {
-                total_expense += amount.parse::<f64>().unwrap();
+                let method = &tx[2];
+                let amount = tx[3].parse::<f64>().unwrap();
+                total_expense += amount;
+                *expense_data.get_mut(method).unwrap() += amount;
             }
 
             if stopping_index == 0 {
@@ -204,6 +216,10 @@ impl TransactionData {
                 // Decrement the stopping index and continue with the loop.
                 stopping_index -= 1
             }
+        }
+
+        for i in all_tx_methods.iter() {
+            final_expense.push(format!("{:.2}", expense_data[i]));
         }
 
         // Add the computed total expense to the output vector.

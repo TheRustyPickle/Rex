@@ -121,7 +121,7 @@ pub trait DataVerifier {
                         *user_date = format!("2022-{}-{}", splitted_date[1], splitted_date[2])
                     }
                     DateType::Monthly => *user_date = format!("2022-{}", splitted_date[1]),
-                    DateType::Yearly => *user_date = format!("2022"),
+                    DateType::Yearly => *user_date = "2022".to_string(),
                 },
                 Ordering::Greater => match date_type {
                     DateType::Exact => {
@@ -135,7 +135,7 @@ pub trait DataVerifier {
                     DateType::Monthly => {
                         *user_date = format!("{}-{}", &splitted_date[0][..4], splitted_date[1])
                     }
-                    DateType::Yearly => *user_date = format!("{}", &splitted_date[0][..4],),
+                    DateType::Yearly => *user_date = splitted_date[0][..4].to_string(),
                 },
                 _ => {}
             }
@@ -176,21 +176,18 @@ pub trait DataVerifier {
 
         // checks if the day part length is 2. If not 2, turn the day to 0 + whatever day was entered + the other character entered by the user
         // and return the new date
-        match date_type {
-            DateType::Exact => {
-                let unwrapped_day = int_day.unwrap();
-                if splitted_date[2].len() != 2 {
-                    if unwrapped_day < 10 {
-                        *user_date =
-                            format!("{}-{}-0{unwrapped_day}", splitted_date[0], splitted_date[1]);
-                    } else if unwrapped_day > 31 {
-                        *user_date = format!("{}-{}-31", splitted_date[0], splitted_date[1]);
-                    }
-
-                    return VerifyingOutput::NotAccepted(NAType::InvalidDay);
+        if let DateType::Exact = date_type {
+            let unwrapped_day = int_day.unwrap();
+            if splitted_date[2].len() != 2 {
+                if unwrapped_day < 10 {
+                    *user_date =
+                        format!("{}-{}-0{unwrapped_day}", splitted_date[0], splitted_date[1]);
+                } else if unwrapped_day > 31 {
+                    *user_date = format!("{}-{}-31", splitted_date[0], splitted_date[1]);
                 }
+
+                return VerifyingOutput::NotAccepted(NAType::InvalidDay);
             }
-            _ => {}
         }
 
         // checks if the year value is between 2022 and 2037
@@ -201,7 +198,7 @@ pub trait DataVerifier {
                         *user_date = format!("2022-{}-{}", splitted_date[1], splitted_date[2])
                     }
                     DateType::Monthly => *user_date = format!("2022-{}", splitted_date[1]),
-                    DateType::Yearly => *user_date = format!("2022"),
+                    DateType::Yearly => *user_date = "2022".to_string(),
                 }
             } else if int_year > 2037 {
                 match date_type {
@@ -209,7 +206,7 @@ pub trait DataVerifier {
                         *user_date = format!("2037-{}-{}", splitted_date[1], splitted_date[2])
                     }
                     DateType::Monthly => *user_date = format!("2037-{}", splitted_date[1]),
-                    DateType::Yearly => *user_date = format!("2037"),
+                    DateType::Yearly => *user_date = "2037".to_string(),
                 }
             }
 
@@ -246,33 +243,27 @@ pub trait DataVerifier {
         }
 
         // checks if the day value is between 1 and 31
-        match date_type {
-            DateType::Exact => {
-                let unwrapped_day = int_day.unwrap();
-                if !(1..=31).contains(&unwrapped_day) {
-                    if unwrapped_day < 1 {
-                        *user_date = format!("{}-{}-01", splitted_date[0], splitted_date[1]);
-                    } else if unwrapped_day > 31 {
-                        *user_date = format!("{}-{}-31", splitted_date[0], splitted_date[1]);
-                    }
-
-                    return VerifyingOutput::NotAccepted(NAType::DayTooBig);
+        if let DateType::Exact = date_type {
+            let unwrapped_day = int_day.unwrap();
+            if !(1..=31).contains(&unwrapped_day) {
+                if unwrapped_day < 1 {
+                    *user_date = format!("{}-{}-01", splitted_date[0], splitted_date[1]);
+                } else if unwrapped_day > 31 {
+                    *user_date = format!("{}-{}-31", splitted_date[0], splitted_date[1]);
                 }
+
+                return VerifyingOutput::NotAccepted(NAType::DayTooBig);
             }
-            _ => {}
         }
 
         // We will check if the date actually exists otherwise return error
         // Some months have more or less days than 31 so the date needs to be validated
-        match date_type {
-            DateType::Exact => {
-                let naive_date = NaiveDate::parse_from_str(user_date, "%Y-%m-%d");
-                match naive_date {
-                    Ok(_) => {}
-                    Err(_) => return VerifyingOutput::NotAccepted(NAType::NonExistingDate),
-                }
+        if let DateType::Exact = date_type {
+            let naive_date = NaiveDate::parse_from_str(user_date, "%Y-%m-%d");
+            match naive_date {
+                Ok(_) => {}
+                Err(_) => return VerifyingOutput::NotAccepted(NAType::NonExistingDate),
             }
-            _ => {}
         }
 
         VerifyingOutput::Accepted(AType::Date)
