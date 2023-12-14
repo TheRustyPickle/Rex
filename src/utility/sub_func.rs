@@ -647,11 +647,16 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
         all_terminals.insert(
             "gnome-terminal",
             vec![
-                gnome_dir,
+                gnome_dir.to_owned(),
                 "--maximize".to_string(),
                 "--".to_string(),
                 "./rex".to_string(),
             ],
+        );
+
+        all_terminals.insert(
+            "kgx",
+            vec![gnome_dir, "-e".to_string(), "./rex".to_string()],
         );
 
         let mut terminal_opened = false;
