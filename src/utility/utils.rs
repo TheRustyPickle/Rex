@@ -18,6 +18,7 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::fs;
 use std::io::{stdout, Stdout, Write};
+use std::path::PathBuf;
 use std::time::Duration;
 use std::{process, thread};
 use strsim::normalized_levenshtein;
@@ -242,17 +243,8 @@ pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
 
 /// Checks if a db already exists or prompts to create a new one
 #[cfg(not(tarpaulin_include))]
-pub fn check_n_create_db(verifying_path: &str) -> Result<(), Box<dyn Error>> {
-    // checks the local folder and searches for data.sqlite
-    let paths = fs::read_dir(".")?;
-    let mut db_found = false;
-    for path in paths {
-        let path = path?.path().display().to_string();
-        if path == verifying_path {
-            db_found = true;
-        }
-    }
-    if !db_found {
+pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>> {
+    if !verifying_path.exists() {
         let db_tx_methods =
             if let UserInputType::AddNewTxMethod(inner_value) = get_user_tx_methods(false, None) {
                 inner_value

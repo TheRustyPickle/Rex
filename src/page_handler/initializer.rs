@@ -8,27 +8,33 @@ use crate::utility::{
 };
 use atty::Stream;
 use rusqlite::Connection;
+use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
-use std::{error::Error, process};
+use std::path::PathBuf;
+use std::process;
 
 use super::UserInputType;
 
 #[cfg(not(tarpaulin_include))]
-pub fn initialize_app(verifying_path: &str, current_dir: &str) -> Result<(), Box<dyn Error>> {
+pub fn initialize_app(working_dir: PathBuf, original_dir: PathBuf) -> Result<(), Box<dyn Error>> {
     let new_version_available = check_version()?;
     if !atty::is(Stream::Stdout) {
-        if let Err(err) = start_terminal(current_dir) {
-            let mut open = File::create(format!("{current_dir}/Error.txt"))?;
-            open.write_all(err.to_string().as_bytes())?;
+        if let Err(err) = start_terminal(original_dir.to_str().unwrap()) {
+            let mut error_location = PathBuf::from(&original_dir);
+            error_location.push("Error.txt");
+
+            let mut open = File::create(error_location)?;
+            let to_write = format!("{}\n{}", original_dir.to_str().unwrap(), err);
+            open.write_all(to_write.as_bytes())?;
             process::exit(1);
         }
     }
 
     // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
-    check_n_create_db(verifying_path)?;
+    check_n_create_db(&working_dir)?;
 
-    let mut conn = Connection::open(verifying_path)?;
+    let mut conn = Connection::open(&working_dir)?;
 
     // initiates migration if old database is detected.
     check_old_sql(&mut conn);
