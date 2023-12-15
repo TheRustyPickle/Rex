@@ -12,6 +12,7 @@ repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
 keywords = ["tui", "terminal", "tui-app", "money", "budget"]
 categories = ["command-line-utilities"]
+exclude = ["logo.png"]
 
 [[bin]]
 name = "rex"
@@ -32,3 +33,4 @@ thousands = "0.2.0"
 semver = "1.0.17"
 ratatui = "0.21.0"
 strsim = "0.10.0"
+serde_json = "1.0.108"
