@@ -1,13 +1,16 @@
+use rusqlite::Connection;
+use std::collections::{HashMap, HashSet};
+use std::fs;
+use std::io::stdout;
+use std::path::PathBuf;
+use std::process::Command;
+
 use crate::outputs::{ComparisonType, TerminalExecutionError};
 use crate::page_handler::{DateType, UserInputType};
 use crate::utility::{
     check_comparison, check_restricted, clear_terminal, flush_output, get_all_tx_methods,
     get_sql_dates, take_input,
 };
-use rusqlite::Connection;
-use std::collections::{HashMap, HashSet};
-use std::io::stdout;
-use std::process::Command;
 
 /// Returns the balance of all methods based on year and month point.
 /// if the balance is empty/0 at the given point for any one of the methods
@@ -273,7 +276,8 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
 
 1. Add New Transaction Methods
 2. Rename Transaction Method
-3. Reposition Transactions Methods\n"
+3. Reposition Transactions Methods
+4. Set a new location for app data\n"
         );
         print!("Proceed with option number: ");
         flush_output(&stdout);
@@ -285,6 +289,7 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
             UserInputType::AddNewTxMethod(_) => return get_user_tx_methods(true, Some(conn)),
             UserInputType::RenameTxMethod(_) => return get_rename_data(conn),
             UserInputType::RepositionTxMethod(_) => return get_reposition_data(conn),
+            UserInputType::SetNewLocation(_) => return get_new_location(),
             UserInputType::CancelledOperation => return input_type,
             UserInputType::InvalidInput => clear_terminal(&mut stdout),
         }
@@ -340,7 +345,7 @@ Example input: Bank, Cash, PayPal.\n\nEnter Transaction Methods: "
         let line = take_input();
 
         // cancel operation on cancel input
-        if line.to_lowercase().starts_with("cancel") && add_new_method {
+        if line.trim().to_lowercase().starts_with("cancel") && add_new_method {
             return UserInputType::CancelledOperation;
         }
 
@@ -447,7 +452,7 @@ Currently added Transaction Methods: \n"
         }
 
         // cancel the process on cancel input
-        if user_input.to_lowercase().starts_with("cancel") {
+        if user_input.trim().to_lowercase().starts_with("cancel") {
             return UserInputType::CancelledOperation;
         }
 
@@ -549,7 +554,7 @@ Currently added Transaction Methods: \n".to_string();
             continue;
         }
 
-        if sequence_input.to_lowercase().starts_with("cancel") {
+        if sequence_input.trim().to_lowercase().starts_with("cancel") {
             return UserInputType::CancelledOperation;
         }
 
@@ -619,7 +624,52 @@ Currently added Transaction Methods: \n".to_string();
     UserInputType::RepositionTxMethod(reposition_data)
 }
 
+/// Asks the user for a location where the app data will be stored
+#[cfg(not(tarpaulin_include))]
+pub fn get_new_location() -> UserInputType {
+    let mut stdout = stdout();
+
+    clear_terminal(&mut stdout);
+
+    loop {
+        let initial_line = "Enter a new location where the app will look for data. The location must start from root. 
+        
+If the location does not exist, all missing folders will be created and app data will be copied. 
+        
+Example location:
+        
+Linux: /mnt/sdb1/data/save/
+Windows: C:\\data\\save\\";
+
+        println!("{initial_line}");
+        print!("\nEnter a new location: ");
+        flush_output(&stdout);
+
+        let given_location = take_input();
+
+        if given_location.is_empty() {
+            clear_terminal(&mut stdout);
+            continue;
+        }
+
+        if given_location.trim().to_lowercase().starts_with("cancel") {
+            return UserInputType::CancelledOperation;
+        }
+
+        let target_path = PathBuf::from(given_location);
+
+        if let Err(e) = fs::create_dir_all(&target_path) {
+            clear_terminal(&mut stdout);
+            println!("The given path is not valid. Error: {e:?}\n");
+            continue;
+        }
+
+        return UserInputType::SetNewLocation(target_path);
+    }
+}
+
 /// Tries to open terminal/cmd and run this app
+/// Currently supports windows cmd, konsole, gnome-terminal, kgx (also known as gnome-console)
 #[cfg(not(tarpaulin_include))]
 pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> {
     if cfg!(target_os = "windows") {
@@ -632,7 +682,6 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
         let mut all_terminals = HashMap::new();
         let gnome_dir = format!("--working-directory={}", original_dir);
 
-        // TODO add more terminal support
         all_terminals.insert(
             "konsole",
             vec![

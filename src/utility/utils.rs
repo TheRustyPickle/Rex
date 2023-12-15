@@ -1,9 +1,3 @@
-use crate::db::{add_tags_column, create_db, update_balance_type, YEARS};
-use crate::outputs::ComparisonType;
-use crate::page_handler::{
-    DateType, IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED, TEXT,
-};
-use crate::utility::get_user_tx_methods;
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen,
@@ -14,14 +8,22 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Tabs};
 use ratatui::Terminal;
 use rusqlite::{Connection, Result as sqlResult};
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::error::Error;
-use std::fs;
-use std::io::{stdout, Stdout, Write};
+use std::fs::{self, File};
+use std::io::{stdout, Read, Stdout, Write};
 use std::path::PathBuf;
 use std::time::Duration;
 use std::{process, thread};
 use strsim::normalized_levenshtein;
+
+use crate::db::{add_tags_column, create_db, update_balance_type, YEARS};
+use crate::outputs::ComparisonType;
+use crate::page_handler::{
+    DateType, IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED, TEXT,
+};
+use crate::utility::get_user_tx_methods;
 
 const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense", "Cancel"];
 
@@ -447,8 +449,8 @@ pub fn add_char_to(to_add: Option<char>, current_index: &mut usize, current_data
 
 /// Checks if the string contains any symbol indicating comparison
 pub fn check_comparison(input: &str) -> ComparisonType {
-    // Need to 2 letter ones first other in case of >=
-    // it will match with >.
+    // Need to handle 2 letter ones first otherwise in case of >=
+    // it will match with >
     if input.starts_with("<=") {
         ComparisonType::EqualOrSmaller
     } else if input.starts_with(">=") {
@@ -460,4 +462,44 @@ pub fn check_comparison(input: &str) -> ComparisonType {
     } else {
         ComparisonType::Equal
     }
+}
+
+#[derive(Serialize, Deserialize)]
+struct LocationInfo {
+    location: String,
+}
+
+/// Checks if location.json exists and returns a path if it exists
+#[cfg(not(tarpaulin_include))]
+pub fn is_location_changed(working_dir: &PathBuf) -> Option<PathBuf> {
+    let mut json_path = working_dir.to_owned();
+    json_path.pop();
+    json_path.push("location.json");
+
+    if json_path.exists() {
+        let mut file = File::open(json_path).unwrap();
+        let mut file_content = String::new();
+        file.read_to_string(&mut file_content).unwrap();
+        let location_info: LocationInfo = serde_json::from_str(&file_content).unwrap();
+        Some(PathBuf::from(location_info.location))
+    } else {
+        None
+    }
+}
+
+/// Creates a location.json file to store the new app data location
+#[cfg(not(tarpaulin_include))]
+pub fn create_change_location_file(working_dir: &PathBuf, new_path: &PathBuf) {
+    let mut target_dir = working_dir.to_owned();
+    target_dir.pop();
+
+    let location = LocationInfo {
+        location: new_path.to_str().unwrap().to_string(),
+    };
+
+    target_dir.push("location.json");
+
+    let mut file = File::create(target_dir).unwrap();
+
+    serde_json::to_writer(&mut file, &location).unwrap();
 }

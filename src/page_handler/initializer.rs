@@ -1,24 +1,27 @@
-use crate::db::{add_new_tx_methods, rename_column, reposition_column};
-use crate::initial_page::check_version;
-use crate::outputs::HandlingOutput;
-use crate::page_handler::start_app;
-use crate::utility::{
-    check_n_create_db, check_old_sql, enter_tui_interface, exit_tui_interface, start_taking_input,
-    start_terminal, start_timer,
-};
 use atty::Stream;
 use rusqlite::Connection;
+use std::env::set_current_dir;
 use std::error::Error;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::process;
 
-use super::UserInputType;
+use crate::db::{add_new_tx_methods, rename_column, reposition_column};
+use crate::initial_page::check_version;
+use crate::outputs::HandlingOutput;
+use crate::page_handler::{start_app, UserInputType};
+use crate::utility::{
+    check_n_create_db, check_old_sql, create_change_location_file, enter_tui_interface,
+    exit_tui_interface, is_location_changed, start_taking_input, start_terminal, start_timer,
+};
 
+/// Initialize the tui loop
 #[cfg(not(tarpaulin_include))]
-pub fn initialize_app(working_dir: PathBuf, original_dir: PathBuf) -> Result<(), Box<dyn Error>> {
+pub fn initialize_app(mut db_path: PathBuf, original_dir: PathBuf) -> Result<(), Box<dyn Error>> {
     let new_version_available = check_version()?;
+
+    // If is not terminal, try to start a terminal otherwise create an error.txt file with the error message
     if !atty::is(Stream::Stdout) {
         if let Err(err) = start_terminal(original_dir.to_str().unwrap()) {
             let mut error_location = PathBuf::from(&original_dir);
@@ -31,10 +34,16 @@ pub fn initialize_app(working_dir: PathBuf, original_dir: PathBuf) -> Result<(),
         }
     }
 
+    // If the location was changed/json file found, change the db directory.
+    if let Some(mut location) = is_location_changed(&db_path) {
+        set_current_dir(&location).unwrap();
+        location.push("data.sqlite");
+        db_path = location;
+    }
     // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
-    check_n_create_db(&working_dir)?;
+    check_n_create_db(&db_path)?;
 
-    let mut conn = Connection::open(&working_dir)?;
+    let mut conn = Connection::open(&db_path)?;
 
     // initiates migration if old database is detected.
     check_old_sql(&mut conn);
@@ -46,7 +55,7 @@ pub fn initialize_app(working_dir: PathBuf, original_dir: PathBuf) -> Result<(),
 
         match result {
             Ok(output) => match output {
-                HandlingOutput::TakeUserInput => match start_taking_input( &conn) {
+                HandlingOutput::TakeUserInput => match start_taking_input(&conn) {
                     UserInputType::AddNewTxMethod(tx_methods) => {
                         let status = add_new_tx_methods(tx_methods, &mut conn);
                         match status {
@@ -84,7 +93,24 @@ pub fn initialize_app(working_dir: PathBuf, original_dir: PathBuf) -> Result<(),
                     UserInputType::CancelledOperation => {
                         start_timer("Operation Cancelled.")
                     }
-                    _ => {}
+                    UserInputType::SetNewLocation(mut target_path) => {
+                        create_change_location_file(&db_path, &target_path);
+
+                        target_path.push("data.sqlite");
+                        let file_copy_status = fs::copy(&db_path, target_path);
+
+                        match file_copy_status {
+                            Ok(_) => {
+                                println!("New location set successfully. The app must be restarted for it to take effect. Exiting.");
+                                process::exit(0)
+                            }
+                            Err(e) => {
+                                println!("Error while trying to copy app data. Error: {e:?}");
+                                start_timer("")
+                            }
+                        }
+                    }
+                    UserInputType::InvalidInput => unreachable!()
                 },
                 HandlingOutput::QuitUi => break,
                 HandlingOutput::PrintNewUpdate => println!("Could not open browser.\n\nLatest Version Link: https://github.com/TheRustyPickle/Rex/releases/latest")

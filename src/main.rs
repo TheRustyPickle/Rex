@@ -9,7 +9,7 @@ fn main() {
         let original_dir = current_dir().unwrap();
 
         // OS based path where data will be stored
-        let mut working_path = dir.clone();
+        let mut working_path = dir;
         working_path.push("Rex");
         // Create folder if non-existing then move the current working directory
         // to the OS data directory

@@ -1,7 +1,9 @@
-use crate::db::{MODES, MONTHS, YEARS};
 use chrono::prelude::Local;
 use chrono::Datelike;
 use ratatui::widgets::TableState;
+use std::path::PathBuf;
+
+use crate::db::{MODES, MONTHS, YEARS};
 
 /// The struct stores all transaction data for the Transaction widget
 /// and creates an index to keep track of which transactions row is selected
@@ -318,6 +320,7 @@ pub enum UserInputType {
     AddNewTxMethod(Vec<String>),
     RenameTxMethod(Vec<String>),
     RepositionTxMethod(Vec<String>),
+    SetNewLocation(PathBuf),
     CancelledOperation,
     InvalidInput,
 }
@@ -329,6 +332,7 @@ impl UserInputType {
             "1" => UserInputType::AddNewTxMethod(Vec::new()),
             "2" => UserInputType::RenameTxMethod(Vec::new()),
             "3" => UserInputType::RepositionTxMethod(Vec::new()),
+            "4" => UserInputType::SetNewLocation(PathBuf::new()),
             "cancel" => UserInputType::CancelledOperation,
             _ => UserInputType::InvalidInput,
         }
