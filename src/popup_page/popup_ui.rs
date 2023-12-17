@@ -1,21 +1,15 @@
-use crate::page_handler::{DeletionStatus, BACKGROUND, BLUE, BOX, HIGHLIGHTED, RED, TEXT};
-use crate::utility::create_bolded_text;
-use ratatui::backend::Backend;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Span, Text};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
 use ratatui::Frame;
 
+use crate::page_handler::{DeletionStatus, BACKGROUND, BLUE, BOX, HIGHLIGHTED, RED, TEXT};
+use crate::utility::create_bolded_text;
+
 /// Creates a popup on top of a window with the given size, title and text attributes
 #[cfg(not(tarpaulin_include))]
-pub fn create_popup<B: Backend>(
-    f: &mut Frame<B>,
-    x_value: u16,
-    y_value: u16,
-    title: &str,
-    text: String,
-) {
+pub fn create_popup(f: &mut Frame, x_value: u16, y_value: u16, title: &str, text: String) {
     let size = f.size();
 
     let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
@@ -58,7 +52,7 @@ pub fn create_popup<B: Backend>(
 }
 
 #[cfg(not(tarpaulin_include))]
-pub fn create_deletion_popup<B: Backend>(f: &mut Frame<B>, deletion_status: &DeletionStatus) {
+pub fn create_deletion_popup(f: &mut Frame, deletion_status: &DeletionStatus) {
     let text = "Are you sure you want to delete this transaction?";
     let title = "TX Deletion";
     let x_value = 40;

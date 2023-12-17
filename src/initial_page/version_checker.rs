@@ -1,6 +1,7 @@
-use crate::utility::parse_github_body;
 use semver::Version;
 use serde::{Deserialize, Serialize};
+
+use crate::utility::parse_github_body;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct GithubRelease {

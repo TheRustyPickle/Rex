@@ -1,9 +1,10 @@
-use crate::db::{MONTHS, YEARS};
-use crate::page_handler::IndexedData;
-use crate::utility::get_all_txs;
 use chrono::naive::NaiveDate;
 use rusqlite::Connection;
 use std::collections::HashMap;
+
+use crate::db::{MONTHS, YEARS};
+use crate::page_handler::IndexedData;
+use crate::utility::get_all_txs;
 
 /// Stores every transaction in the database and along with
 /// all balance amount after each transaction was committed

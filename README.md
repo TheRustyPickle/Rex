@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" width=400>
+  <img src="https://github.com/TheRustyPickle/Rex/assets/35862475/04575a15-53f7-497f-b2e7-88a7a66d1136" width=400>
 </p>
 
 <div align="center"><h1>Rex</h1></div>
@@ -18,17 +18,16 @@ Rex is a terminal user interface app for managing incomes, expenses, and transac
 
 <h2>Key Features</h2>
 
-* Easily view, add, edit, and delete transactions
-* Navigate through transactions and instantly observe balance changes after each transaction
-* Chart for visualizing balance changes over specific a month, year, or all transactions
-* Access a summary with key insights with various info on income, expense, and percentage distribution.
+* Easily view, add, edit, and delete transactions.
+* Navigate through transactions and instantly observe balance changes after each transaction.
+* Chart for visualizing balance changes over a specific month, year, or all transactions.
+* Access a summary with key insights and information on income, expense, and percentage distribution.
+* Built using SQLite database and keeps everything local.
+* Find transactions quickly using partial or specific information.
+* Organize transactions with custom tags for easy filtering.
+* Works fully offline.
 
-* Built using SQLite database and keeps everything local
-* Find transactions quickly using partial or specific information
-* Organize transactions with custom tags for easy filtering
-* Works fully offline
-
-<h2>Installtion</h2>
+<h2>Installation</h2>
 
 **1. Run from Source Code:**
 
@@ -43,17 +42,17 @@ cargo run --release
 
 **2. Run the Latest Release:**
 
-* Download the latest executable from [Releases](https://github.com/TheRustyPickle/Rex/releases).
+* Download the latest executable from [Release](https://github.com/TheRustyPickle/Rex/releases/latest).
   * Open terminal/CMD and start the program by the command `./rex` or `rex` depending on the OS at the correct directory.
   
   or
   
-  * Double click the executable which will try to open a terminal/CMD by itself.
+  * Double-click the executable which will try to open a terminal/CMD by itself.
 
 **3. Install from Cargo:**
 
-* Run `cargo install rex-tui`
-* Make sure `~/.cargo/bin` is on the PATH if you're on Linux
+* Install with `cargo install rex-tui`
+* Run with the command `rex`
 
 **4. Install using a package manager:**
 
@@ -64,7 +63,7 @@ pkgin install rex
 
 <h2>App Data Location</h2>
 
-See [here](https://docs.rs/dirs/latest/dirs/fn.data_local_dir.html) for location info where Rex data is saved which is determined based on the OS.
+See [here](https://docs.rs/dirs/latest/dirs/fn.data_local_dir.html) to learn about the initial directory where Rex data gets saved which is determined based on the OS.
 
 <h2>Feedback & Bug Reports</h2>
 
