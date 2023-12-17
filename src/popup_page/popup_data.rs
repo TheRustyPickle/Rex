@@ -67,7 +67,7 @@ Enter: Redirect to the new version",
 
     #[cfg(not(tarpaulin_include))]
     fn get_add_tx_help_text(&mut self) -> String {
-        self.set("Help", 60, 80);
+        self.set("Help", 80, 90);
         "This page is for adding new transactions. Following are the supported keys here
 
 On Transfer transaction there will be one additional field pushing Tags to the key 7. 
@@ -108,7 +108,7 @@ Q: Quit
 
     #[cfg(not(tarpaulin_include))]
     fn get_chart_help_text(&mut self) -> String {
-        self.set("Help", 50, 40);
+        self.set("Help", 60, 50);
         "This page shows the movement of balances within the selected period of time
         
 Following are the supported keys here
@@ -130,7 +130,7 @@ Q: Quit
 
     #[cfg(not(tarpaulin_include))]
     fn get_summary_help_text(&mut self) -> String {
-        self.set("Help", 50, 45);
+        self.set("Help", 50, 50);
         "This page shows various information based on all transactions
 and is for tracking incomes and expenses based on tags
 Transfer Transaction are not shown here
@@ -155,7 +155,7 @@ Q: Quit
 
     #[cfg(not(tarpaulin_include))]
     fn get_home_help_text(&mut self) -> String {
-        self.set("Help", 50, 50);
+        self.set("Help", 70, 50);
         "This is the Home page where all txs added so far, the balances and the changes are shown
         
 Following are the supported keys here
@@ -185,7 +185,7 @@ Q: Quit
 
     #[cfg(not(tarpaulin_include))]
     fn get_search_help_text(&mut self) -> String {
-        self.set("Help", 60, 100);
+        self.set("Help", 70, 100);
         "This page is for searching transactions. Following are the supported keys here
 
 On Transfer transaction there will be one additional field pushing Tags to the key 7.
