@@ -1,14 +1,14 @@
-use crate::page_handler::{BACKGROUND, RED, TEXT};
-use crate::utility::{create_bolded_text, main_block, styled_block};
-use ratatui::backend::Backend;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::Paragraph;
 use ratatui::Frame;
 
+use crate::page_handler::{BACKGROUND, RED, TEXT};
+use crate::utility::{create_bolded_text, main_block, styled_block};
+
 /// The function draws the Initial page of the interface.
 #[cfg(not(tarpaulin_include))]
-pub fn initial_ui<B: Backend>(f: &mut Frame<B>, start_from: usize) {
+pub fn initial_ui(f: &mut Frame, start_from: usize) {
     let size = f.size();
     let chunks = Layout::default()
         .direction(Direction::Vertical)

@@ -1,9 +1,10 @@
+use rusqlite::{Connection, Result as sqlResult};
+use std::collections::HashMap;
+
 use crate::utility::{
     get_all_tx_methods, get_last_balance_id, get_last_balances, get_last_time_balance,
     get_last_tx_id,
 };
-use rusqlite::{Connection, Result as sqlResult};
-use std::collections::HashMap;
 
 /// Adds a transaction to the database with the given info. The flow of this goes like this:
 /// - Add the new transaction to the database
