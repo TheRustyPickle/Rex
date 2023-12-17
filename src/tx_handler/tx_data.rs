@@ -1,3 +1,7 @@
+use chrono::prelude::Local;
+use rusqlite::Connection;
+use std::cmp::Ordering;
+
 use crate::outputs::{
     CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, TxUpdateError,
     VerifyingOutput,
@@ -8,9 +12,6 @@ use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
 use crate::utility::{
     add_char_to, check_comparison, get_all_tx_methods, get_last_balances, get_search_data,
 };
-use chrono::prelude::Local;
-use rusqlite::Connection;
-use std::cmp::Ordering;
 
 /// Contains all data for a Transaction to work
 pub struct TxData {

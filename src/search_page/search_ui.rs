@@ -1,10 +1,3 @@
-use crate::outputs::TxType;
-use crate::page_handler::{
-    DateType, TableData, TxTab, BACKGROUND, BLUE, GRAY, HEADER, RED, SELECTED, TEXT,
-};
-use crate::tx_handler::TxData;
-use crate::utility::{main_block, styled_block};
-use ratatui::backend::Backend;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
@@ -12,8 +5,15 @@ use ratatui::widgets::{Cell, Paragraph, Row, Table};
 use ratatui::Frame;
 use thousands::Separable;
 
-pub fn search_ui<B: Backend>(
-    f: &mut Frame<B>,
+use crate::outputs::TxType;
+use crate::page_handler::{
+    DateType, TableData, TxTab, BACKGROUND, BLUE, GRAY, HEADER, RED, SELECTED, TEXT,
+};
+use crate::tx_handler::TxData;
+use crate::utility::{main_block, styled_block};
+
+pub fn search_ui(
+    f: &mut Frame,
     search_data: &TxData,
     search_tab: &TxTab,
     search_table: &mut TableData,

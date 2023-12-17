@@ -1,3 +1,6 @@
+use crossterm::event::{KeyCode, KeyEvent};
+use rusqlite::Connection;
+
 use crate::chart_page::ChartData;
 use crate::home_page::TransactionData;
 use crate::outputs::TxType;
@@ -9,8 +12,6 @@ use crate::page_handler::{
 use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
 use crate::utility::sort_table_data;
-use crossterm::event::{KeyCode, KeyEvent};
-use rusqlite::Connection;
 
 /// Stores all the data that is required to handle
 /// every single possible key press event from the
