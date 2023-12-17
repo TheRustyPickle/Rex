@@ -470,7 +470,6 @@ struct LocationInfo {
 }
 
 /// Checks if location.json exists and returns a path if it exists
-#[cfg(not(tarpaulin_include))]
 pub fn is_location_changed(working_dir: &PathBuf) -> Option<PathBuf> {
     let mut json_path = working_dir.to_owned();
     json_path.pop();
@@ -488,7 +487,6 @@ pub fn is_location_changed(working_dir: &PathBuf) -> Option<PathBuf> {
 }
 
 /// Creates a location.json file to store the new app data location
-#[cfg(not(tarpaulin_include))]
 pub fn create_change_location_file(working_dir: &PathBuf, new_path: &PathBuf) {
     let mut target_dir = working_dir.to_owned();
     target_dir.pop();
