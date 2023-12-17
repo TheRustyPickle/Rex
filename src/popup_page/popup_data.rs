@@ -1,7 +1,7 @@
+use ratatui::Frame;
+
 use crate::page_handler::{DeletionStatus, PopupState};
 use crate::popup_page::{create_deletion_popup, create_popup};
-use ratatui::backend::Backend;
-use ratatui::Frame;
 
 /// Stores data to create a new popup
 pub struct PopupData<'a> {
@@ -28,9 +28,9 @@ impl<'a> PopupData<'a> {
     }
 
     #[cfg(not(tarpaulin_include))]
-    pub fn create_popup<B: Backend>(
+    pub fn create_popup(
         &mut self,
-        f: &mut Frame<B>,
+        f: &mut Frame,
         popup_type: &PopupState,
         deletion_status: &DeletionStatus,
     ) {

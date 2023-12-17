@@ -1,17 +1,17 @@
-use crate::outputs::TxType;
-use crate::page_handler::{TxTab, BACKGROUND, BLUE, GRAY, RED, TEXT};
-use crate::tx_handler::TxData;
-use crate::utility::{main_block, styled_block};
-use ratatui::backend::Backend;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::Paragraph;
 use ratatui::Frame;
 
+use crate::outputs::TxType;
+use crate::page_handler::{TxTab, BACKGROUND, BLUE, GRAY, RED, TEXT};
+use crate::tx_handler::TxData;
+use crate::utility::{main_block, styled_block};
+
 /// The function draws the Add Transaction page of the interface.
 #[cfg(not(tarpaulin_include))]
-pub fn add_tx_ui<B: Backend>(f: &mut Frame<B>, add_tx_data: &TxData, add_tx_tab: &TxTab) {
+pub fn add_tx_ui(f: &mut Frame, add_tx_data: &TxData, add_tx_tab: &TxTab) {
     // get the data to insert into the Status widget of this page
 
     let status_data = add_tx_data.get_tx_status();

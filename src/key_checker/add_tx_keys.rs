@@ -1,7 +1,8 @@
+use crossterm::event::KeyCode;
+
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
 use crate::page_handler::{PopupState, TxTab};
-use crossterm::event::KeyCode;
 
 /// Tracks the keys of the Add Tx page and calls relevant function based on it
 #[cfg(not(tarpaulin_include))]

@@ -1,3 +1,12 @@
+use crossterm::event::poll;
+use crossterm::event::{self, Event};
+use ratatui::backend::Backend;
+use ratatui::layout::Constraint;
+use ratatui::style::Color;
+use ratatui::Terminal;
+use rusqlite::Connection;
+use std::time::Duration;
+
 use crate::add_tx_page::add_tx_ui;
 use crate::chart_page::{chart_ui, ChartData};
 use crate::home_page::home_ui;
@@ -16,14 +25,6 @@ use crate::search_page::search_ui;
 use crate::summary_page::{summary_ui, SummaryData};
 use crate::tx_handler::TxData;
 use crate::utility::{get_all_tx_methods, get_empty_changes};
-use crossterm::event::poll;
-use crossterm::event::{self, Event};
-use ratatui::backend::Backend;
-use ratatui::layout::Constraint;
-use ratatui::style::Color;
-use ratatui::Terminal;
-use rusqlite::Connection;
-use std::time::Duration;
 
 // TODO: More colors? Needs to be turned into an array
 // and maintain an index for which color to select based on the scheme
