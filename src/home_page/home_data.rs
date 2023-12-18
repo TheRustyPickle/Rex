@@ -15,7 +15,7 @@ use crate::utility::{get_all_changes, get_all_tx_methods, get_all_txs, get_last_
 ///
 /// all_id_num : `["1", "2", "3",]`
 pub struct TransactionData {
-    pub all_tx: Vec<Vec<String>>,
+    all_tx: Vec<Vec<String>>,
     all_balance: Vec<Vec<String>>,
     all_changes: Vec<Vec<String>>,
     all_id_num: Vec<String>,
@@ -47,11 +47,11 @@ impl TransactionData {
     /// returns all the Transaction data for the given index. Index is of the
     /// Home Table's selected index
     pub fn get_txs(&self) -> Vec<Vec<String>> {
-        let mut table_data = Vec::new();
-        for i in self.all_tx.iter() {
-            table_data.push(i.clone());
-        }
-        table_data
+        self.all_tx.clone()
+    }
+
+    pub fn is_tx_empty(&self) -> bool {
+        self.all_tx.is_empty()
     }
 
     /// returns all the balance data for the given index. Index is of the
