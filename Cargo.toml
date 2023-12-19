@@ -31,6 +31,6 @@ serde = { version = "1.0.140", features = ["derive"]}
 dirs = "5.0.0"
 thousands = "0.2.0"
 semver = "1.0.17"
-ratatui = "0.24.0"
+ratatui = "0.25.0"
 strsim = "0.10.0"
 serde_json = "1.0.108"

@@ -260,60 +260,69 @@ pub fn summary_ui(
             .style(Style::default().fg(TEXT))
     });
 
-    let mut table_area = Table::new(rows)
-        .header(header)
-        .block(styled_block("Tags"))
-        .widths(&[
+    let mut table_area = Table::new(
+        rows,
+        [
             Constraint::Percentage(20),
             Constraint::Percentage(20),
             Constraint::Percentage(20),
             Constraint::Percentage(20),
             Constraint::Percentage(20),
-        ])
-        .style(Style::default().fg(BOX));
+        ],
+    )
+    .header(header)
+    .block(styled_block("Tags"))
+    .style(Style::default().fg(BOX));
 
-    let summary_area_1 = Table::new(summary_rows_1)
-        .block(styled_block(""))
-        .widths(&[
+    let summary_area_1 = Table::new(
+        summary_rows_1,
+        [
             Constraint::Percentage(33),
             Constraint::Percentage(33),
             Constraint::Percentage(33),
-        ])
-        .style(Style::default().fg(BOX));
+        ],
+    )
+    .block(styled_block(""))
+    .style(Style::default().fg(BOX));
 
-    let summary_area_2 = Table::new(summary_rows_2)
-        .block(styled_block(""))
-        .widths(&[
+    let summary_area_2 = Table::new(
+        summary_rows_2,
+        [
             Constraint::Percentage(33),
             Constraint::Percentage(33),
             Constraint::Percentage(33),
-        ])
-        .style(Style::default().fg(BOX));
+        ],
+    )
+    .block(styled_block(""))
+    .style(Style::default().fg(BOX));
 
-    let summary_area_3 = Table::new(summary_rows_3)
-        .block(styled_block(""))
-        .widths(&[
+    let summary_area_3 = Table::new(
+        summary_rows_3,
+        [
             Constraint::Percentage(25),
             Constraint::Percentage(25),
             Constraint::Percentage(25),
             Constraint::Percentage(25),
-        ])
-        .style(Style::default().fg(BOX));
+        ],
+    )
+    .block(styled_block(""))
+    .style(Style::default().fg(BOX));
 
-    let summary_area_4 = Table::new(summary_rows_4)
-        .block(styled_block(""))
-        .widths(&[
+    let summary_area_4 = Table::new(
+        summary_rows_4,
+        [
             Constraint::Percentage(25),
             Constraint::Percentage(25),
             Constraint::Percentage(25),
             Constraint::Percentage(25),
-        ])
-        .style(Style::default().fg(BOX));
+        ],
+    )
+    .block(styled_block(""))
+    .style(Style::default().fg(BOX));
 
-    let method_area = Table::new(method_rows)
-        .header(method_header)
-        .block(styled_block(""))
-        .widths(&[
+    let method_area = Table::new(
+        method_rows,
+        [
             Constraint::Percentage(14),
             Constraint::Percentage(14),
             Constraint::Percentage(14),
@@ -321,8 +330,11 @@ pub fn summary_ui(
             Constraint::Percentage(14),
             Constraint::Percentage(14),
             Constraint::Percentage(14),
-        ])
-        .style(Style::default().fg(BOX));
+        ],
+    )
+    .header(method_header)
+    .block(styled_block(""))
+    .style(Style::default().fg(BOX));
 
     match current_page {
         // previously added a black block to year and month widget if a value is not selected
