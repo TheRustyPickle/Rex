@@ -43,7 +43,7 @@ impl fmt::Display for UiHandlingError {
 
 impl std::error::Error for UiHandlingError {}
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum CheckingError {
     EmptyDate,
     EmptyMethod,

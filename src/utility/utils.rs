@@ -13,7 +13,7 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::{stdout, Read, Stdout, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 use std::{process, thread};
 use strsim::normalized_levenshtein;
@@ -487,7 +487,7 @@ pub fn is_location_changed(working_dir: &PathBuf) -> Option<PathBuf> {
 }
 
 /// Creates a location.json file to store the new app data location
-pub fn create_change_location_file(working_dir: &PathBuf, new_path: &PathBuf) {
+pub fn create_change_location_file(working_dir: &PathBuf, new_path: &Path) {
     let mut target_dir = working_dir.to_owned();
     target_dir.pop();
 

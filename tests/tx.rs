@@ -1,7 +1,8 @@
 extern crate rex_tui;
+use rex_tui::db::create_db;
 use rex_tui::tx_handler::add_tx;
-use rex_tui::utility::*;
-use rex_tui::{db::create_db, tx_handler::delete_tx};
+use rex_tui::tx_handler::delete_tx;
+use rex_tui::utility::{get_all_tx_columns, get_all_txs, get_last_tx_id};
 use rusqlite::{Connection, Result as sqlResult};
 use std::fs;
 

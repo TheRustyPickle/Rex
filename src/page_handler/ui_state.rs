@@ -362,6 +362,7 @@ pub enum DeletionStatus {
 }
 
 impl DeletionStatus {
+    #[cfg(not(tarpaulin_include))]
     pub fn next(&mut self) -> Self {
         match self {
             DeletionStatus::Yes => DeletionStatus::No,
@@ -377,6 +378,7 @@ pub enum DateType {
 }
 
 impl DateType {
+    #[cfg(not(tarpaulin_include))]
     pub fn next(&mut self) -> Self {
         match self {
             DateType::Exact => DateType::Monthly,
