@@ -126,7 +126,7 @@ impl TxData {
         ]
     }
 
-    fn get_tx_method(&self) -> String {
+    pub fn get_tx_method(&self) -> String {
         if self.tx_type == "Transfer" {
             format!("{} to {}", self.from_method, self.to_method)
         } else {

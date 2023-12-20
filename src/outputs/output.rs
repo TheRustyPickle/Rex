@@ -112,6 +112,7 @@ pub enum StepType {
     StepDown,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum TxType {
     IncomeExpense,
     Transfer,
