@@ -423,7 +423,7 @@ impl TxData {
     }
 
     pub fn check_all_empty(&self) -> bool {
-        let all_data = vec![
+        let all_data = [
             &self.date,
             &self.details,
             &self.from_method,
