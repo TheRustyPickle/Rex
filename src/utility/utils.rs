@@ -27,7 +27,7 @@ use crate::utility::get_user_tx_methods;
 
 const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense", "Cancel"];
 
-/// Makes a call to the database to find out all the columns in the balance_all section
+/// Makes a call to the database to find out all the columns in the `balance_all` section
 /// so we can determine the number of TX Methods that has been added.
 /// return example: `["source_1", "source_2", "source_3"]`
 pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
@@ -39,7 +39,7 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
     let mut data: Vec<String> = column_names
         .column_names()
         .iter()
-        .map(|c| c.to_string())
+        .map(ToString::to_string)
         .collect();
     data.remove(0);
     data
@@ -104,7 +104,7 @@ pub fn get_all_details(conn: &Connection) -> Vec<String> {
     sorted_details
 }
 
-/// Gets all columns inside the tx_all table. Used to determine if the database needs to be migrated
+/// Gets all columns inside the `tx_all` table. Used to determine if the database needs to be migrated
 pub fn get_all_tx_columns(conn: &Connection) -> Vec<String> {
     let column_names = conn
         .prepare("SELECT * FROM tx_all")
@@ -113,7 +113,7 @@ pub fn get_all_tx_columns(conn: &Connection) -> Vec<String> {
     column_names
         .column_names()
         .iter()
-        .map(|c| c.to_string())
+        .map(ToString::to_string)
         .collect()
 }
 
@@ -123,12 +123,12 @@ pub fn get_empty_changes(conn: &Connection) -> Vec<String> {
     let tx_methods = get_all_tx_methods(conn);
     let mut changes = vec!["Changes".to_string()];
     for _i in tx_methods {
-        changes.push(format!("{:.2}", 0.0))
+        changes.push(format!("{:.2}", 0.0));
     }
     changes
 }
 
-/// Returns the last id_num recorded by tx_all table
+/// Returns the last `id_num` recorded by `tx_all` table
 pub fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
     let last_id: sqlResult<i32> = conn.query_row(
         "SELECT id_num FROM tx_all ORDER BY id_num DESC LIMIT 1",
@@ -138,7 +138,7 @@ pub fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
     last_id
 }
 
-/// Returns the last id_num recorded by balance_all table or the id_num of the absolute final balance
+/// Returns the last `id_num` recorded by `balance_all` table or the `id_num` of the absolute final balance
 pub fn get_last_balance_id(conn: &Connection) -> sqlResult<i32> {
     let last_id: sqlResult<i32> = conn.query_row(
         "SELECT id_num FROM balance_all ORDER BY id_num DESC LIMIT 1",
@@ -174,9 +174,9 @@ pub fn check_old_sql(conn: &mut Connection) {
         println!("Old database detected. Starting migration...");
         let status = add_tags_column(conn);
         match status {
-            Ok(_) => start_timer("Database migration successfully complete."),
+            Ok(()) => start_timer("Database migration successfully complete."),
             Err(e) => {
-                println!("Database migration failed. Try again. Error: {}", e);
+                println!("Database migration failed. Try again. Error: {e}");
                 println!("Commits reversed. Exiting...");
                 process::exit(1);
             }
@@ -189,9 +189,9 @@ pub fn check_old_sql(conn: &mut Connection) {
         println!("Outdated database detected. Updating...");
         let status = update_balance_type(conn);
         match status {
-            Ok(_) => start_timer("Database updating successfully complete."),
+            Ok(()) => start_timer("Database updating successfully complete."),
             Err(e) => {
-                println!("Database updating failed. Try again. Error: {}", e);
+                println!("Database updating failed. Try again. Error: {e}");
                 println!("Commits reversed. Exiting...");
                 process::exit(1);
             }
@@ -199,7 +199,7 @@ pub fn check_old_sql(conn: &mut Connection) {
     }
 }
 
-/// Checks if the balance_all table is outdated
+/// Checks if the `balance_all` table is outdated
 pub fn check_old_balance_sql(conn: &Connection) -> bool {
     let mut query = conn.prepare("PRAGMA table_info(balance_all)").unwrap();
 
@@ -247,21 +247,18 @@ pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
 #[cfg(not(tarpaulin_include))]
 pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>> {
     if !verifying_path.exists() {
-        let db_tx_methods =
-            if let UserInputType::AddNewTxMethod(inner_value) = get_user_tx_methods(false, None) {
-                inner_value
-            } else {
-                return Err("Failed to get tx methods.".into());
-            };
+        let UserInputType::AddNewTxMethod(db_tx_methods) = get_user_tx_methods(false, None) else {
+            return Err("Failed to get tx methods.".into());
+        };
         println!("Creating New Database. It may take some time...");
 
         let mut conn = Connection::open(verifying_path)?;
         let status = create_db(db_tx_methods, &mut conn);
         conn.close().unwrap();
         match status {
-            Ok(_) => start_timer("Database creation successful."),
+            Ok(()) => start_timer("Database creation successful."),
             Err(e) => {
-                println!("Database creation failed. Try again. Error: {}", e);
+                println!("Database creation failed. Try again. Error: {e}");
                 fs::remove_file("data.sqlite")?;
                 process::exit(1);
             }
@@ -302,7 +299,7 @@ pub fn create_bolded_text(text: &str) -> Vec<Line> {
             let rest_data = Span::from(format!(":{rest}"));
             text_data.push(Line::from(vec![first_data, rest_data]));
         } else {
-            text_data.push(Line::from(vec![Span::from(line)]))
+            text_data.push(Line::from(vec![Span::from(line)]));
         }
     }
 
@@ -365,7 +362,7 @@ pub fn flush_output(stdout: &Stdout) {
 /// Checks if the input is a restricted word or inside a given vector
 pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
     if let Some(restricted_words) = restricted {
-        for restricted_item in restricted_words.iter() {
+        for restricted_item in restricted_words {
             if restricted_item.to_lowercase() == item.to_lowercase() {
                 return true;
             }
@@ -382,7 +379,7 @@ pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
 }
 
 /// Parse github release information for popup menu
-pub fn parse_github_body(body: String) -> String {
+pub fn parse_github_body(body: &str) -> String {
     let body = body.replace("## Updates", "");
     let body = body.replace('*', "•");
     let body = body.replace('\r', "");
@@ -391,11 +388,11 @@ pub fn parse_github_body(body: String) -> String {
 }
 
 /// Uses Levenshtein algorithm to get the best match of a string in a vec of strings
-pub fn get_best_match(data: &str, matching_set: Vec<String>) -> String {
+pub fn get_best_match(data: &str, matching_set: &[String]) -> String {
     let mut best_match = &matching_set[0];
     let mut best_score = -1.0;
 
-    for x in matching_set.iter() {
+    for x in matching_set {
         let new_score = normalized_levenshtein(&x.to_lowercase(), &data.to_lowercase());
 
         if new_score > best_score {
@@ -435,7 +432,7 @@ pub fn add_char_to(to_add: Option<char>, current_index: &mut usize, current_data
         match to_add {
             Some(ch) => {
                 current_data.insert(*current_index, ch);
-                *current_index += 1
+                *current_index += 1;
             }
             None => {
                 if !current_data.is_empty() && *current_index != 0 {

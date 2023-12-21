@@ -29,7 +29,7 @@ pub fn check_version() -> Result<Option<Vec<String>>, reqwest::Error> {
     let github_version = Version::parse(&caller.name.replace('v', "")).unwrap();
 
     if github_version > current_version {
-        let updates = parse_github_body(caller.body);
+        let updates = parse_github_body(&caller.body);
         Ok(Some(vec![caller.name, updates]))
     } else {
         Ok(None)

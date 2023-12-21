@@ -316,7 +316,7 @@ fn check_balance_all_day() {
     let expected = vec![total_amount.to_string(), "0".to_string()];
     assert_eq!(data, expected);
 
-    let mut delete_id_num = total_days as usize;
+    let mut delete_id_num = total_days;
 
     loop {
         if delete_id_num == 0 {
