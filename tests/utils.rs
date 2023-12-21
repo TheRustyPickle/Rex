@@ -103,7 +103,7 @@ fn github_parser_test() {
 more stuff"
         .to_string();
 
-    let parsed = parse_github_body(body);
+    let parsed = parse_github_body(&body);
 
     let expected_data = "
 • Some release

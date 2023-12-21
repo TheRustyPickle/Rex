@@ -122,7 +122,7 @@ impl TransactionData {
     /// gets the ID Number of the selected table row and calls the function to delete a transaction from the database
     pub fn del_tx(&self, index: usize, conn: &mut Connection) -> sqlResult<()> {
         let target_id = self.get_id_num(index);
-        delete_tx(target_id as usize, conn)
+        delete_tx(target_id, conn)
     }
 
     /// returns total incomes for the selected month by going through all the tx saved in the struct

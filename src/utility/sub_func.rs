@@ -40,7 +40,7 @@ pub fn get_last_time_balance(
 
     let tx_method_string = tx_method
         .iter()
-        .map(|m| format!("\"{}\"", m))
+        .map(|m| format!("\"{m}\""))
         .collect::<Vec<_>>()
         .join(", ");
 
@@ -54,8 +54,7 @@ pub fn get_last_time_balance(
     // go to the previous row, save m3 -> break -> return the data
 
     let query = format!(
-        "SELECT {} FROM balance_all WHERE id_num <= ? ORDER BY id_num DESC",
-        tx_method_string
+        "SELECT {tx_method_string} FROM balance_all WHERE id_num <= ? ORDER BY id_num DESC",
     );
 
     let mut stmt = conn.prepare(&query).unwrap();
@@ -111,7 +110,7 @@ pub fn get_all_changes(month: usize, year: usize, conn: &Connection) -> Vec<Vec<
     final_result
 }
 
-/// Used to retrieving all Transaction within a given date, balance and the id_num related to them.
+/// Used to retrieving all Transaction within a given date, balance and the `id_num` related to them.
 pub fn get_all_txs(
     conn: &Connection,
     month: usize,
@@ -186,8 +185,8 @@ pub fn get_all_txs(
         let mut new_balance_from: f64 = 0.0;
         let mut new_balance_to: f64 = 0.0;
 
-        let mut from_method = "".to_string();
-        let mut to_method = "".to_string();
+        let mut from_method = String::new();
+        let mut to_method = String::new();
 
         // add or subtract the amount based on the tx type
         if tx_type == "Expense" {
@@ -205,17 +204,17 @@ pub fn get_all_txs(
         // make changes to the balance map based on the tx
         // for transfer TX first block executes
         // new_balance_to != 0 means it's a transfer transaction
-        if new_balance_to != 0.0 {
+        if new_balance_to == 0.0 {
+            *last_month_balance.get_mut(tx_method).unwrap() = new_balance_from;
+        } else {
             *last_month_balance.get_mut(&from_method).unwrap() = new_balance_from;
             *last_month_balance.get_mut(&to_method).unwrap() = new_balance_to;
-        } else {
-            *last_month_balance.get_mut(tx_method).unwrap() = new_balance_from;
         }
 
         // push all the changes gathered to the return variable
         let mut to_push = vec![];
         for i in &all_tx_methods {
-            to_push.push(format!("{:.2}", last_month_balance[i]))
+            to_push.push(format!("{:.2}", last_month_balance[i]));
         }
 
         final_all_balances.push(to_push);
@@ -243,13 +242,10 @@ pub fn get_all_txs(
     (final_all_txs, final_all_balances, all_id_num)
 }
 
-/// Returns the absolute final balance or the last row on balance_all table.
+/// Returns the absolute final balance or the last row on `balance_all` table.
 pub fn get_last_balances(conn: &Connection) -> Vec<String> {
     let tx_method = get_all_tx_methods(conn);
-    let mut query = format!(
-        "SELECT {:?} FROM balance_all ORDER BY id_num DESC LIMIT 1",
-        tx_method
-    );
+    let mut query = format!("SELECT {tx_method:?} FROM balance_all ORDER BY id_num DESC LIMIT 1");
     query = query.replace('[', "");
     query = query.replace(']', "");
 
@@ -320,7 +316,7 @@ pub fn get_user_tx_methods(add_new_method: bool, conn: Option<&Connection>) -> U
     if add_new_method {
         current_tx_methods = get_all_tx_methods(conn.unwrap());
         for i in &current_tx_methods {
-            method_line.push_str(&format!("\n- {i}"))
+            method_line.push_str(&format!("\n- {i}"));
         }
     }
 
@@ -358,7 +354,7 @@ Example input: Bank, Cash, PayPal.\n\nEnter Transaction Methods: "
         // split them and remove duplicates
         let mut inputted_methods: Vec<&str> = line
             .split(',')
-            .map(|s| s.trim())
+            .map(str::trim)
             .filter(|s| !s.is_empty())
             .collect::<Vec<&str>>();
 
@@ -370,7 +366,7 @@ Example input: Bank, Cash, PayPal.\n\nEnter Transaction Methods: "
         }
 
         // Restart the loop if the method is a restricted value or already exists
-        for method in inputted_methods.iter() {
+        for method in &inputted_methods {
             if check_restricted(method, None) {
                 clear_terminal(&mut stdout);
                 println!("Restricted method name. Value cannot be accepted.\n");
@@ -437,7 +433,7 @@ Currently added Transaction Methods: \n"
                 .to_string();
 
         for (i, item) in tx_methods.iter().enumerate() {
-            method_line.push_str(&format!("\n{}. {}", i + 1, item))
+            method_line.push_str(&format!("\n{}. {}", i + 1, item));
         }
         println!("{method_line}");
         print!("\nEnter the method number to edit: ");
@@ -458,13 +454,12 @@ Currently added Transaction Methods: \n"
 
         let method_number_result = user_input.parse::<usize>();
 
-        let method_number = match method_number_result {
-            Ok(num) => num,
-            Err(_) => {
-                clear_terminal(&mut stdout);
-                println!("Invalid method number. Example input: 1\n");
-                continue;
-            }
+        let method_number = if let Ok(num) = method_number_result {
+            num
+        } else {
+            clear_terminal(&mut stdout);
+            println!("Invalid method number. Example input: 1\n");
+            continue;
         };
 
         // Start from the beginning if the number is beyond the tx method total index
@@ -513,7 +508,7 @@ Currently added Transaction Methods: \n"
         let confirm_operation = take_input();
 
         if confirm_operation.to_lowercase().starts_with('y') {
-            rename_data.push(tx_methods[method_number - 1].to_owned());
+            rename_data.push(tx_methods[method_number - 1].clone());
             rename_data.push(new_method_name);
             break;
         } else {
@@ -541,7 +536,7 @@ Example input: 4 2 1 3, 3412
 Currently added Transaction Methods: \n".to_string();
 
         for (i, item) in tx_methods.iter().enumerate() {
-            method_line.push_str(&format!("\n{}. {}", i + 1, item))
+            method_line.push_str(&format!("\n{}. {}", i + 1, item));
         }
         println!("{method_line}");
         print!("\nEnter Transaction Methods sequence: ");
@@ -569,30 +564,27 @@ Currently added Transaction Methods: \n".to_string();
         for char in sequence_input.chars() {
             let sequence_num = char.to_digit(10);
 
-            match sequence_num {
-                Some(num) => {
-                    if num as usize > tx_methods.len() {
-                        reposition_data.clear();
-                        clear_terminal(&mut stdout);
-                        println!("Invalid sequence number given.\n");
-                        continue 'outer_loop;
-                    }
-
-                    if reposition_data.contains(&tx_methods[num as usize - 1]) {
-                        reposition_data.clear();
-                        clear_terminal(&mut stdout);
-                        println!("Cannot enter the same Transaction Method position twice.\n");
-                        continue 'outer_loop;
-                    }
-
-                    reposition_data.push(tx_methods[num as usize - 1].to_string());
-                }
-                None => {
+            if let Some(num) = sequence_num {
+                if num as usize > tx_methods.len() {
                     reposition_data.clear();
                     clear_terminal(&mut stdout);
                     println!("Invalid sequence number given.\n");
                     continue 'outer_loop;
                 }
+
+                if reposition_data.contains(&tx_methods[num as usize - 1]) {
+                    reposition_data.clear();
+                    clear_terminal(&mut stdout);
+                    println!("Cannot enter the same Transaction Method position twice.\n");
+                    continue 'outer_loop;
+                }
+
+                reposition_data.push(tx_methods[num as usize - 1].to_string());
+            } else {
+                reposition_data.clear();
+                clear_terminal(&mut stdout);
+                println!("Invalid sequence number given.\n");
+                continue 'outer_loop;
             }
         }
 
@@ -680,7 +672,7 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
             .map_err(TerminalExecutionError::ExecutionFailed)?;
     } else {
         let mut all_terminals = HashMap::new();
-        let gnome_dir = format!("--working-directory={}", original_dir);
+        let gnome_dir = format!("--working-directory={original_dir}");
 
         all_terminals.insert(
             "konsole",
@@ -696,7 +688,7 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
         all_terminals.insert(
             "gnome-terminal",
             vec![
-                gnome_dir.to_owned(),
+                gnome_dir.clone(),
                 "--maximize".to_string(),
                 "--".to_string(),
                 "./rex".to_string(),
@@ -716,7 +708,7 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
             match status {
                 Ok(out) => {
                     if out.stderr.len() > 2 {
-                        result = Some(TerminalExecutionError::NotFound(out))
+                        result = Some(TerminalExecutionError::NotFound(out));
                     } else {
                         terminal_opened = true;
                         break;
@@ -751,7 +743,7 @@ pub fn get_search_data(
 
     if !date.is_empty() {
         match date_type {
-            DateType::Exact => query.push_str(&format!(r#" AND date = "{}""#, date)),
+            DateType::Exact => query.push_str(&format!(r#" AND date = "{date}""#)),
             DateType::Monthly => {
                 let splitted_date: Vec<usize> =
                     date.split('-').map(|s| s.parse().unwrap()).collect();
@@ -762,8 +754,7 @@ pub fn get_search_data(
                 let (date_1, date_2) = get_sql_dates(month_index, year_index, date_type);
 
                 query.push_str(&format!(
-                    r#" AND date BETWEEN date("{}") AND date("{}")"#,
-                    date_1, date_2
+                    r#" AND date BETWEEN date("{date_1}") AND date("{date_2}")"#,
                 ))
             }
             DateType::Yearly => {
@@ -772,19 +763,18 @@ pub fn get_search_data(
                 let (date_1, date_2) = get_sql_dates(0, year_index, date_type);
 
                 query.push_str(&format!(
-                    r#" AND date BETWEEN date("{}") AND date("{}")"#,
-                    date_1, date_2
+                    r#" AND date BETWEEN date("{date_1}") AND date("{date_2}")"#
                 ))
             }
         }
     }
 
     if !details.is_empty() {
-        query.push_str(&format!(r#" AND details LIKE "%{}%""#, details));
+        query.push_str(&format!(r#" AND details LIKE "%{details}%""#,));
     }
 
     if !tx_type.is_empty() {
-        query.push_str(&format!(r#" AND tx_type = "{}""#, tx_type));
+        query.push_str(&format!(r#" AND tx_type = "{tx_type}""#,));
     }
 
     if !amount.is_empty() {
@@ -799,16 +789,15 @@ pub fn get_search_data(
         };
         let amount = amount.replace(comparison_symbol, "");
 
-        query.push_str(&format!(r#" AND {} "{}""#, comparison_type, amount));
+        query.push_str(&format!(r#" AND {comparison_type} "{amount}""#));
     }
 
     if tx_type == "Transfer" && !from_method.is_empty() && !to_method.is_empty() {
         query.push_str(&format!(
-            r#" AND tx_method = "{} to {}""#,
-            from_method, to_method
+            r#" AND tx_method = "{from_method} to {to_method}""#
         ));
     } else if tx_type != "Transfer" && !from_method.is_empty() {
-        query.push_str(&format!(r#" AND tx_method = "{}""#, from_method));
+        query.push_str(&format!(r#" AND tx_method = "{from_method}""#));
     }
 
     if !tags.is_empty() {
@@ -817,18 +806,17 @@ pub fn get_search_data(
             .map(|tag| {
                 format!(
                     r#"CASE 
-                          WHEN tags LIKE "{}, %" THEN 1
-                          WHEN tags LIKE "%, {}" THEN 1
-                          WHEN tags LIKE "%, {}," THEN 1
-                          WHEN tags = "{}" THEN 1
+                          WHEN tags LIKE "{tag}, %" THEN 1
+                          WHEN tags LIKE "%, {tag}" THEN 1
+                          WHEN tags LIKE "%, {tag}," THEN 1
+                          WHEN tags = "{tag}" THEN 1
                           ELSE 0
                       END = 1"#,
-                    tag, tag, tag, tag
                 )
             })
             .collect::<Vec<String>>()
             .join(" OR ");
-        query.push_str(&format!(" AND ({})", tag_conditions));
+        query.push_str(&format!(" AND ({tag_conditions})"));
     }
 
     let mut statement = conn.prepare(&query).unwrap();
