@@ -12,6 +12,7 @@ use crate::page_handler::{
 use crate::tx_handler::TxData;
 use crate::utility::{main_block, styled_block};
 
+#[cfg(not(tarpaulin_include))]
 pub fn search_ui(
     f: &mut Frame,
     search_data: &TxData,

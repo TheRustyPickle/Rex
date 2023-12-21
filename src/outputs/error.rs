@@ -70,6 +70,7 @@ impl fmt::Display for CheckingError {
 
 impl std::error::Error for CheckingError {}
 
+#[derive(Debug, PartialEq)]
 pub enum SteppingError {
     InvalidDate,
     InvalidTxMethod,
