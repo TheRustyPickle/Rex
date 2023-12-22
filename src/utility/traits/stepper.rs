@@ -188,33 +188,33 @@ pub trait FieldStepper: DataVerifier {
         let verify_status: VerifyingOutput = self.verify_tx_type(user_type);
         let tx_types = ["Income", "Expense", "Transfer"];
 
-        if user_type.is_empty() {
-            *user_type = "Income".to_string();
-            return Ok(());
-        }
+        if !user_type.is_empty() {
+            let mut current_index: usize =
+                match user_type.chars().next().unwrap().to_ascii_lowercase() {
+                    'e' => 1,
+                    't' => 2,
+                    // 'i' is 0
+                    _ => 0,
+                };
 
-        let mut current_index: usize = match user_type.chars().next().unwrap().to_ascii_lowercase()
-        {
-            'e' => 1,
-            't' => 2,
-            // 'i' included in 0
-            _ => 0,
-        };
-
-        match step_type {
-            StepType::StepUp => current_index = (current_index + 1) % tx_types.len(),
-            StepType::StepDown => {
-                current_index = (current_index + tx_types.len() - 1) % tx_types.len();
+            match step_type {
+                StepType::StepUp => current_index = (current_index + 1) % tx_types.len(),
+                StepType::StepDown => {
+                    current_index = (current_index + tx_types.len() - 1) % tx_types.len();
+                }
             }
+            *user_type = tx_types[current_index].to_string();
         }
 
-        *user_type = tx_types[current_index].to_string();
+        match verify_status {
+            VerifyingOutput::NotAccepted(_) => Err(SteppingError::InvalidTxType),
 
-        if let VerifyingOutput::NotAccepted(_) = verify_status {
-            return Err(SteppingError::InvalidTxType);
+            VerifyingOutput::Nothing(_) => {
+                *user_type = "Income".to_string();
+                Ok(())
+            }
+            VerifyingOutput::Accepted(_) => Ok(()),
         }
-
-        Ok(())
     }
 
     fn step_tags(
