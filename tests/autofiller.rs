@@ -78,6 +78,7 @@ fn autofiller_test() {
         "Selling goods",
         "coast",
         "r ex",
+        "",
     ]
     .into_iter()
     .map(|a| a.to_string())
@@ -90,6 +91,7 @@ fn autofiller_test() {
         "",
         "Food cost",
         "Car expense",
+        "",
     ]
     .into_iter()
     .map(|a| a.to_string())
@@ -111,9 +113,7 @@ fn autofiller_test() {
     }
 
     let data = vec![
-        "sup", "cash", "CoW", "Cis", "sup", "bank",
-        // Intentional to ensure autofill shows the info in the correct case as suggestion
-        "CaSh CoW", "Cash Cow",
+        "sup", "cash", "CoW", "Cis", "sup", "bank", "CaSh CoW", "Cash Cow", "",
     ]
     .into_iter()
     .map(|a| a.to_string())
@@ -127,6 +127,7 @@ fn autofiller_test() {
         "Super Special Bank",
         "Cash Cow",
         "",
+        "",
     ]
     .into_iter()
     .map(|a| a.to_string())
@@ -139,11 +140,13 @@ fn autofiller_test() {
         assert_eq!(result, test_data.expected[i]);
     }
 
-    let data = vec!["foo", "goo", "fod", "gid", "rac", "Car"]
-        .into_iter()
-        .map(|a| a.to_string())
-        .collect::<Vec<String>>();
-    let expected = vec!["Food", "Goods", "Food", "Goods", "Car", ""]
+    let data = vec![
+        "foo", "goo", "fod", "gid", "rac", "Car", "", "Food,", "Food, Go",
+    ]
+    .into_iter()
+    .map(|a| a.to_string())
+    .collect::<Vec<String>>();
+    let expected = vec!["Food", "Goods", "Food", "Goods", "Car", "", "", "", "Goods"]
         .into_iter()
         .map(|a| a.to_string())
         .collect::<Vec<String>>();

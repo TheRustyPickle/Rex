@@ -24,7 +24,11 @@ fn create_test_db(file_name: &str) -> Connection {
 
     let mut conn = Connection::open(file_name).unwrap();
     create_db(
-        vec!["Super Special Bank".to_string(), "Cash Cow".to_string()],
+        vec![
+            "Super Special Bank".to_string(),
+            "Cash Cow".to_string(),
+            "Danger Cash".to_string(),
+        ],
         &mut conn,
     )
     .unwrap();
@@ -268,4 +272,316 @@ fn test_stepper_date() {
         assert_eq!(to_verify, test_data.expected[i]);
         assert_eq!(result, test_data.result[i]);
     }
+}
+
+#[test]
+fn test_stepper_tx_method() {
+    let file_name = "stepper_tx_method.sqlite";
+    let mut conn = create_test_db(file_name);
+    add_dummy_tx(&mut conn);
+
+    let data = vec!["", "Super", "Super Special Bank", "Cash Cow", "Danger Cash"]
+        .into_iter()
+        .map(|a| a.to_string())
+        .collect::<Vec<String>>();
+
+    let expected = vec![
+        "Super Special Bank",
+        "Super Special Bank",
+        "Cash Cow",
+        "Danger Cash",
+        "Super Special Bank",
+    ]
+    .into_iter()
+    .map(|a| a.to_string())
+    .collect::<Vec<String>>();
+
+    let result = vec![
+        Ok(()),
+        Err(SteppingError::InvalidTxMethod),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+    ];
+
+    let test_data = Testing {
+        data: data.to_owned(),
+        expected,
+        result,
+    };
+
+    for i in 0..test_data.data.len() {
+        let mut to_verify = test_data.data[i].to_owned();
+        let result = test_data.step_tx_method(&mut to_verify, StepType::StepUp, &conn);
+
+        assert_eq!(to_verify, test_data.expected[i]);
+        assert_eq!(result, test_data.result[i]);
+    }
+
+    let expected = vec![
+        "Super Special Bank",
+        "Super Special Bank",
+        "Danger Cash",
+        "Super Special Bank",
+        "Cash Cow",
+    ]
+    .into_iter()
+    .map(|a| a.to_string())
+    .collect::<Vec<String>>();
+
+    let result = vec![
+        Ok(()),
+        Err(SteppingError::InvalidTxMethod),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+    ];
+
+    let test_data = Testing {
+        data,
+        expected,
+        result,
+    };
+
+    for i in 0..test_data.data.len() {
+        let mut to_verify = test_data.data[i].to_owned();
+        let result = test_data.step_tx_method(&mut to_verify, StepType::StepDown, &conn);
+
+        assert_eq!(to_verify, test_data.expected[i]);
+        assert_eq!(result, test_data.result[i]);
+    }
+
+    conn.close().unwrap();
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn test_stepper_amount() {
+    let data = vec!["0", "99999999999.99", "123456", "-123456", ""]
+        .into_iter()
+        .map(|a| a.to_string())
+        .collect::<Vec<String>>();
+
+    let expected = vec!["1.00", "9999999999.99", "123457.00", "123457.00", "1.00"]
+        .into_iter()
+        .map(|a| a.to_string())
+        .collect::<Vec<String>>();
+
+    let result = vec![Ok(()), Ok(()), Ok(()), Ok(()), Ok(())];
+
+    let test_data = Testing {
+        data: data.to_owned(),
+        expected,
+        result,
+    };
+
+    for i in 0..test_data.data.len() {
+        let mut to_verify = test_data.data[i].to_owned();
+        let result = test_data.step_amount(&mut to_verify, StepType::StepUp);
+
+        assert_eq!(to_verify, test_data.expected[i]);
+        assert_eq!(result, test_data.result[i]);
+    }
+
+    let expected = vec!["0.00", "9999999998.99", "123455.00", "123455.00", "1.00"]
+        .into_iter()
+        .map(|a| a.to_string())
+        .collect::<Vec<String>>();
+
+    let result = vec![Ok(()), Ok(()), Ok(()), Ok(()), Ok(())];
+
+    let test_data = Testing {
+        data,
+        expected,
+        result,
+    };
+
+    for i in 0..test_data.data.len() {
+        let mut to_verify = test_data.data[i].to_owned();
+        let result = test_data.step_amount(&mut to_verify, StepType::StepDown);
+
+        assert_eq!(to_verify, test_data.expected[i]);
+        assert_eq!(result, test_data.result[i]);
+    }
+}
+
+#[test]
+fn test_stepper_tx_type() {
+    let data = vec![
+        "", "e", "E", "t", "T", "i", "I", "v", "Expense", "Income", "Transfer",
+    ]
+    .into_iter()
+    .map(|a| a.to_string())
+    .collect::<Vec<String>>();
+
+    let expected = vec![
+        "Income", "Transfer", "Transfer", "Income", "Income", "Expense", "Expense", "", "Transfer",
+        "Expense", "Income",
+    ]
+    .into_iter()
+    .map(|a| a.to_string())
+    .collect::<Vec<String>>();
+
+    let result = vec![
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Err(SteppingError::InvalidTxType),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+    ];
+
+    let test_data = Testing {
+        data: data.to_owned(),
+        expected,
+        result,
+    };
+
+    for i in 0..test_data.data.len() {
+        let mut to_verify = test_data.data[i].to_owned();
+        let result = test_data.step_tx_type(&mut to_verify, StepType::StepUp);
+
+        assert_eq!(to_verify, test_data.expected[i]);
+        assert_eq!(result, test_data.result[i]);
+    }
+
+    let expected = vec![
+        "Income", "Income", "Income", "Expense", "Expense", "Transfer", "Transfer", "", "Income",
+        "Transfer", "Expense",
+    ]
+    .into_iter()
+    .map(|a| a.to_string())
+    .collect::<Vec<String>>();
+
+    let result = vec![
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Err(SteppingError::InvalidTxType),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+    ];
+
+    let test_data = Testing {
+        data,
+        expected,
+        result,
+    };
+
+    for i in 0..test_data.data.len() {
+        let mut to_verify = test_data.data[i].to_owned();
+        let result = test_data.step_tx_type(&mut to_verify, StepType::StepDown);
+
+        assert_eq!(to_verify, test_data.expected[i]);
+        assert_eq!(result, test_data.result[i]);
+    }
+}
+
+#[test]
+fn test_stepper_tags() {
+    let file_name = "tag_stepper_test.sqlite";
+    let mut conn = create_test_db(file_name);
+
+    let data = vec!["Hmm", "", "123"]
+        .into_iter()
+        .map(|a| a.to_string())
+        .collect::<Vec<String>>();
+    let expected = vec!["", "", ""]
+        .into_iter()
+        .map(|a| a.to_string())
+        .collect::<Vec<String>>();
+    let result = vec![
+        Err(SteppingError::InvalidTags),
+        Err(SteppingError::InvalidTags),
+        Err(SteppingError::InvalidTags),
+    ];
+
+    let test_data = Testing {
+        data,
+        expected,
+        result,
+    };
+
+    for i in 0..test_data.data.len() {
+        let mut to_verify = test_data.data[i].to_owned();
+        let result = test_data.step_tags(&mut to_verify, "", StepType::StepUp, &conn);
+
+        assert_eq!(to_verify, test_data.expected[i]);
+        assert_eq!(result, test_data.result[i]);
+    }
+
+    add_dummy_tx(&mut conn);
+
+    let data = vec!["", "car", "fOoD", "Goods", "Car,", "Car, Food", "Boom"]
+        .into_iter()
+        .map(|a| a.to_string())
+        .collect::<Vec<String>>();
+    let expected = vec!["Car", "Food", "Goods", "Car", "Car, Car", "Car, Goods", ""]
+        .into_iter()
+        .map(|a| a.to_string())
+        .collect::<Vec<String>>();
+    let result = vec![
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Err(SteppingError::InvalidTags),
+    ];
+
+    let test_data = Testing {
+        data: data.clone(),
+        expected,
+        result,
+    };
+
+    for i in 0..test_data.data.len() {
+        let mut to_verify = test_data.data[i].to_owned();
+        let result = test_data.step_tags(&mut to_verify, "", StepType::StepUp, &conn);
+
+        assert_eq!(to_verify, test_data.expected[i]);
+        assert_eq!(result, test_data.result[i]);
+    }
+
+    let expected = vec!["Car", "Goods", "Car", "Food", "Car, Car", "Car, Car", ""]
+        .into_iter()
+        .map(|a| a.to_string())
+        .collect::<Vec<String>>();
+    let result = vec![
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Ok(()),
+        Err(SteppingError::InvalidTags),
+    ];
+
+    let test_data = Testing {
+        data: data.clone(),
+        expected,
+        result,
+    };
+
+    for i in 0..test_data.data.len() {
+        let mut to_verify = test_data.data[i].to_owned();
+        let result = test_data.step_tags(&mut to_verify, "", StepType::StepDown, &conn);
+
+        assert_eq!(to_verify, test_data.expected[i]);
+        assert_eq!(result, test_data.result[i]);
+    }
+
+    conn.close().unwrap();
+    fs::remove_file(file_name).unwrap();
 }
