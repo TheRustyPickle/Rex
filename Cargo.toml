@@ -10,7 +10,7 @@ A TUI for managing Incomes and Expenses
 homepage = "https://github.com/TheRustyPickle/Rex"
 repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
-keywords = ["tui", "terminal", "tui-app", "money", "budget"]
+keywords = ["tui", "terminal", "tui-app", "ratatui", "terminal-ui"]
 categories = ["command-line-utilities"]
 exclude = ["logo.png"]
 
