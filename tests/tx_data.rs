@@ -430,3 +430,113 @@ fn tx_data_searching() {
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 }
+
+#[test]
+fn tx_data_editing() {
+    let mut tx_data = TxData::new_empty();
+
+    for i in vec!['2', '0', '2', '3', '-', '0', '7', '-', '0', '5'] {
+        tx_data.edit_date(Some(i))
+    }
+
+    tx_data.go_current_index(&TxTab::Details);
+
+    for i in vec!['S', 'o', 'm', 'e'] {
+        tx_data.edit_details(Some(i))
+    }
+
+    tx_data.go_current_index(&TxTab::FromMethod);
+
+    for i in vec!['t', 'e', 's', 't', '1'] {
+        tx_data.edit_from_method(Some(i))
+    }
+
+    tx_data.go_current_index(&TxTab::Amount);
+
+    for i in vec!['2', '0', '2', '3'] {
+        tx_data.edit_amount(Some(i))
+    }
+
+    tx_data.go_current_index(&TxTab::TxType);
+
+    for i in vec!['E'] {
+        tx_data.edit_tx_type(Some(i))
+    }
+
+    tx_data.go_current_index(&TxTab::ToMethod);
+
+    for i in vec!['t', 'e', 's', 't', ' ', '2'] {
+        tx_data.edit_to_method(Some(i))
+    }
+
+    tx_data.go_current_index(&TxTab::Tags);
+
+    for i in vec!['T', 'a', 'g'] {
+        tx_data.edit_tags(Some(i))
+    }
+
+    let expected_data: Vec<String> = vec![
+        "2023-07-05",
+        "Some",
+        "test1",
+        "test 2",
+        "2023",
+        "E",
+        "Tag",
+        "",
+    ]
+    .into_iter()
+    .map(ToString::to_string)
+    .collect();
+
+    assert_eq!(tx_data.get_all_texts(), expected_data);
+
+    tx_data.go_current_index(&TxTab::Date);
+
+    for _ in vec!['2', '0', '2', '3', '-', '0', '7', '-', '0', '5'] {
+        tx_data.edit_date(None)
+    }
+
+    tx_data.go_current_index(&TxTab::Details);
+
+    for _ in vec!['S', 'o', 'm', 'e'] {
+        tx_data.edit_details(None)
+    }
+
+    tx_data.go_current_index(&TxTab::FromMethod);
+
+    for _ in vec!['t', 'e', 's', 't', '1'] {
+        tx_data.edit_from_method(None)
+    }
+
+    tx_data.go_current_index(&TxTab::Amount);
+
+    for _ in vec!['2', '0', '2', '3'] {
+        tx_data.edit_amount(None)
+    }
+
+    tx_data.go_current_index(&TxTab::TxType);
+
+    for _ in vec!['E'] {
+        tx_data.edit_tx_type(None)
+    }
+
+    tx_data.go_current_index(&TxTab::ToMethod);
+
+    for _ in vec!['t', 'e', 's', 't', ' ', '2'] {
+        tx_data.edit_to_method(None)
+    }
+
+    tx_data.go_current_index(&TxTab::Tags);
+
+    for _ in vec!['T', 'a', 'g'] {
+        tx_data.edit_tags(None)
+    }
+
+    let expected_data: Vec<String> = vec!["", "", "", "", "", "", "", ""]
+        .into_iter()
+        .map(ToString::to_string)
+        .collect();
+
+    assert_eq!(tx_data.get_all_texts(), expected_data);
+}
