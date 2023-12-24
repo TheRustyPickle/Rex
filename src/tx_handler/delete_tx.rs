@@ -4,7 +4,7 @@ use crate::utility::{get_all_tx_methods, get_last_balance_id, get_last_balances}
 
 /// Updates the absolute final balance, balance data and deletes the selected transaction.
 /// Foreign key cascade takes care of the Changes data in the database.
-pub fn delete_tx(id_num: usize, conn: &mut Connection) -> sqlResult<()> {
+pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
     let sp = conn.savepoint()?;
 
     let tx_methods = get_all_tx_methods(&sp);

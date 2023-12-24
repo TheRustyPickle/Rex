@@ -12,6 +12,7 @@ use crate::page_handler::{
 use crate::tx_handler::TxData;
 use crate::utility::{main_block, styled_block};
 
+#[cfg(not(tarpaulin_include))]
 pub fn search_ui(
     f: &mut Frame,
     search_data: &TxData,
@@ -125,17 +126,19 @@ pub fn search_ui(
     // creates border around the entire terminal
     f.render_widget(main_block(), size);
 
-    let mut table_area = Table::new(rows)
-        .header(header)
-        .block(styled_block(&table_name))
-        .widths(&[
+    let mut table_area = Table::new(
+        rows,
+        [
             Constraint::Percentage(10),
             Constraint::Percentage(37),
             Constraint::Percentage(13),
             Constraint::Percentage(13),
             Constraint::Percentage(8),
             Constraint::Percentage(18),
-        ]);
+        ],
+    )
+    .header(header)
+    .block(styled_block(&table_name));
 
     let mut status_text = vec![];
 

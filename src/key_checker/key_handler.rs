@@ -811,26 +811,26 @@ impl<'a> InputKeyHandler<'a> {
                 // there is no transaction
                 // if arrow key up is pressed and table index is 0, select the Month widget
                 // else just select the upper index of the table
-                if self.all_tx_data.all_tx.is_empty() {
+                if self.all_tx_data.is_tx_empty() {
                     *self.home_tab = self.home_tab.change_tab_up();
                 } else if self.table.state.selected() == Some(0) {
                     *self.home_tab = HomeTab::Months;
                     self.table.state.select(None);
-                } else if !self.all_tx_data.all_tx.is_empty() {
+                } else if !self.all_tx_data.is_tx_empty() {
                     self.table.previous();
                 }
             }
             HomeTab::Years => {
                 // Do not select any table rows in the table section If
                 // there is no transaction
-                if self.all_tx_data.all_tx.is_empty() {
+                if self.all_tx_data.is_tx_empty() {
                     *self.home_tab = self.home_tab.change_tab_up();
                 } else {
                     // Move to the selected value on table widget
                     // to the last row if pressed up on Year section
                     self.table.state.select(Some(self.table.items.len() - 1));
                     *self.home_tab = self.home_tab.change_tab_up();
-                    if self.all_tx_data.all_tx.is_empty() {
+                    if self.all_tx_data.is_tx_empty() {
                         *self.home_tab = self.home_tab.change_tab_up();
                     }
                 }
@@ -847,19 +847,19 @@ impl<'a> InputKeyHandler<'a> {
                 // there is no transaction
                 // if arrow key down is pressed and table index is final, select the year widget
                 // else just select the next index of the table
-                if self.all_tx_data.all_tx.is_empty() {
+                if self.all_tx_data.is_tx_empty() {
                     *self.home_tab = self.home_tab.change_tab_down();
                 } else if self.table.state.selected() == Some(self.table.items.len() - 1) {
                     *self.home_tab = HomeTab::Years;
                     self.table.state.select(None);
-                } else if !self.all_tx_data.all_tx.is_empty() {
+                } else if !self.all_tx_data.is_tx_empty() {
                     self.table.next();
                 }
             }
             HomeTab::Months => {
                 // Do not select any table rows in the table section If
                 // there is no transaction
-                if self.all_tx_data.all_tx.is_empty() {
+                if self.all_tx_data.is_tx_empty() {
                     *self.home_tab = self.home_tab.change_tab_up();
                 } else {
                     *self.home_tab = self.home_tab.change_tab_down();
@@ -1509,7 +1509,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.search_table
                         .state
                         .select(Some(self.search_table.items.len() - 1));
-                } else if !self.search_txs.all_tx.is_empty() {
+                } else if !self.search_txs.is_tx_empty() {
                     self.search_table.previous();
                 }
                 Ok(())
@@ -1534,7 +1534,7 @@ impl<'a> InputKeyHandler<'a> {
             TxTab::Nothing => {
                 if self.search_table.state.selected() == Some(self.search_table.items.len() - 1) {
                     self.search_table.state.select(Some(0));
-                } else if !self.search_txs.all_tx.is_empty() {
+                } else if !self.search_txs.is_tx_empty() {
                     self.search_table.next();
                 }
                 Ok(())

@@ -86,14 +86,14 @@ impl TxData {
         tags: &str,
         id_num: i32,
     ) -> Self {
-        let new_date = if !date.is_empty() {
+        let new_date = if date.is_empty() {
+            String::new()
+        } else {
             let data = date.split('-').collect::<Vec<&str>>();
             let year = data[2];
             let month = data[1];
             let day = data[0];
-            format!("{}-{}-{}", year, month, day)
-        } else {
-            String::new()
+            format!("{year}-{month}-{day}")
         };
 
         TxData {
@@ -126,7 +126,7 @@ impl TxData {
         ]
     }
 
-    fn get_tx_method(&self) -> String {
+    pub fn get_tx_method(&self) -> String {
         if self.tx_type == "Transfer" {
             format!("{} to {}", self.from_method, self.to_method)
         } else {
@@ -198,9 +198,9 @@ impl TxData {
             // delete the tx that was being edited from the db using the id_num ->
             // add another tx using the new data but take the earlier id to add to the db
 
-            let status = delete_tx(self.id_num as usize, conn);
+            let status = delete_tx(self.id_num, conn);
             match status {
-                Ok(_) => {}
+                Ok(()) => {}
                 Err(e) => return Err(TxUpdateError::FailedEditTx(e).to_string()),
             }
 
@@ -216,7 +216,7 @@ impl TxData {
             );
 
             match status_add {
-                Ok(_) => Ok(()),
+                Ok(()) => Ok(()),
                 Err(e) => Err(TxUpdateError::FailedEditTx(e).to_string()),
             }
         } else {
@@ -231,7 +231,7 @@ impl TxData {
                 conn,
             );
             match status {
-                Ok(_) => Ok(()),
+                Ok(()) => Ok(()),
                 Err(e) => Err(TxUpdateError::FailedAddTx(e).to_string()),
             }
         }
@@ -281,11 +281,7 @@ impl TxData {
             TxTab::FromMethod => self.from_method = self.autofill.to_string(),
             TxTab::ToMethod => self.to_method = self.autofill.to_string(),
             TxTab::Tags => {
-                let mut splitted = self
-                    .tags
-                    .split(',')
-                    .map(|s| s.trim())
-                    .collect::<Vec<&str>>();
+                let mut splitted = self.tags.split(',').map(str::trim).collect::<Vec<&str>>();
 
                 splitted.pop().unwrap();
 
@@ -423,7 +419,7 @@ impl TxData {
     }
 
     pub fn check_all_empty(&self) -> bool {
-        let all_data = vec![
+        let all_data = [
             &self.date,
             &self.details,
             &self.from_method,
@@ -473,7 +469,7 @@ impl TxData {
         self.current_index
     }
 
-    /// Returns the length of the data based on which TxTab is selected
+    /// Returns the length of the data based on which `TxTab` is selected
     fn get_data_len(&self, current_tab: &TxTab) -> usize {
         match current_tab {
             TxTab::Date => self.date.len(),
@@ -492,9 +488,9 @@ impl TxData {
         let data_len = self.get_data_len(current_tab);
 
         if self.current_index > data_len {
-            self.current_index = data_len
+            self.current_index = data_len;
         } else if self.current_index > 0 {
-            self.current_index -= 1
+            self.current_index -= 1;
         }
     }
 
@@ -509,9 +505,9 @@ impl TxData {
         }
     }
 
-    /// Set current index to max point based on TxTab
+    /// Set current index to max point based on `TxTab`
     pub fn go_current_index(&mut self, current_tab: &TxTab) {
-        self.current_index = self.get_data_len(current_tab)
+        self.current_index = self.get_data_len(current_tab);
     }
 
     /// Steps up Date value by one
