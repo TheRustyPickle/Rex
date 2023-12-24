@@ -471,9 +471,9 @@ pub trait DataVerifier {
 
     /// Checks if:
     ///
-    /// - The transaction method starts with E or I
+    /// - The transaction method starts with E, I or T
     ///
-    /// Auto expands E to Expense and I to Income.
+    /// Auto expands E to Expense, I to Income and T to transfer.
     fn verify_tx_type(&self, user_type: &mut String) -> VerifyingOutput {
         *user_type = user_type.replace(' ', "");
 
@@ -495,6 +495,9 @@ pub trait DataVerifier {
         }
     }
 
+    /// Checks if:
+    ///
+    /// - All tags inserted is unique and is properly separated by commas
     fn verify_tags(&self, user_tag: &mut String) {
         let mut splitted = user_tag.split(',').map(str::trim).collect::<Vec<&str>>();
         splitted.retain(|s| !s.is_empty());
@@ -511,6 +514,10 @@ pub trait DataVerifier {
         *user_tag = unique.join(", ");
     }
 
+    /// Checks if:
+    ///
+    /// - All tags inserted is unique and is properly separated by commas
+    /// - There is no non-existing tags
     fn verify_tags_forced(&self, user_tag: &mut String, conn: &Connection) -> VerifyingOutput {
         if user_tag.is_empty() {
             return VerifyingOutput::Nothing(AType::Tags);
