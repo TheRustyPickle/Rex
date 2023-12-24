@@ -1,6 +1,10 @@
 extern crate rex_tui;
-use rex_tui::{db::create_db, tx_handler::add_tx, utility::*};
+
+use rex_tui::db::create_db;
+use rex_tui::tx_handler::add_tx;
+use rex_tui::utility::*;
 use rusqlite::Connection;
+use std::env::current_dir;
 use std::fs;
 
 fn create_test_db(file_name: &str) -> Connection {
@@ -99,7 +103,7 @@ fn github_parser_test() {
 more stuff"
         .to_string();
 
-    let parsed = parse_github_body(body);
+    let parsed = parse_github_body(&body);
 
     let expected_data = "
 • Some release
@@ -109,4 +113,20 @@ more stuff"
     .to_string();
 
     assert_eq!(parsed, expected_data);
+}
+
+#[test]
+fn test_location_json() {
+    let mut current_dir = current_dir().unwrap();
+    let json_exists = is_location_changed(&current_dir);
+    assert_eq!(json_exists, None);
+
+    create_change_location_file(&current_dir, &current_dir);
+
+    let json_exists = is_location_changed(&current_dir);
+    assert_eq!(json_exists, Some(current_dir.to_owned()));
+
+    current_dir.pop();
+    current_dir.push("location.json");
+    fs::remove_file(current_dir).unwrap();
 }

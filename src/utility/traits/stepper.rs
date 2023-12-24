@@ -64,24 +64,24 @@ pub trait FieldStepper: DataVerifier {
                             }
                         }
                     }
-                    *user_date = format!("{}-{:02}", year, month)
+                    *user_date = format!("{year}-{month:02}");
                 }
                 DateType::Yearly => {
                     let mut int_year: u16 = user_date.parse().unwrap();
                     match step_type {
                         StepType::StepUp => {
                             if int_year != 2037 {
-                                int_year += 1
+                                int_year += 1;
                             }
                         }
                         StepType::StepDown => {
                             if int_year != 2022 {
-                                int_year -= 1
+                                int_year -= 1;
                             }
                         }
                     }
 
-                    *user_date = int_year.to_string()
+                    *user_date = int_year.to_string();
                 }
             },
             VerifyingOutput::NotAccepted(_) => {
@@ -168,7 +168,7 @@ pub trait FieldStepper: DataVerifier {
                 // if value went below 0, make it 1
                 NAType::AmountBelowZero => {
                     if let StepType::StepUp = step_type {
-                        *user_amount = String::from("1.00")
+                        *user_amount = String::from("1.00");
                     }
                 }
                 _ => {
@@ -188,33 +188,33 @@ pub trait FieldStepper: DataVerifier {
         let verify_status: VerifyingOutput = self.verify_tx_type(user_type);
         let tx_types = ["Income", "Expense", "Transfer"];
 
-        if user_type.is_empty() {
-            *user_type = "Income".to_string();
-            return Ok(());
-        }
+        if !user_type.is_empty() {
+            let mut current_index: usize =
+                match user_type.chars().next().unwrap().to_ascii_lowercase() {
+                    'e' => 1,
+                    't' => 2,
+                    // 'i' is 0
+                    _ => 0,
+                };
 
-        let mut current_index: usize = match user_type.chars().next().unwrap().to_ascii_lowercase()
-        {
-            'i' => 0,
-            'e' => 1,
-            't' => 2,
-            _ => 0,
-        };
-
-        match step_type {
-            StepType::StepUp => current_index = (current_index + 1) % tx_types.len(),
-            StepType::StepDown => {
-                current_index = (current_index + tx_types.len() - 1) % tx_types.len()
+            match step_type {
+                StepType::StepUp => current_index = (current_index + 1) % tx_types.len(),
+                StepType::StepDown => {
+                    current_index = (current_index + tx_types.len() - 1) % tx_types.len();
+                }
             }
+            *user_type = tx_types[current_index].to_string();
         }
 
-        *user_type = tx_types[current_index].to_string();
+        match verify_status {
+            VerifyingOutput::NotAccepted(_) => Err(SteppingError::InvalidTxType),
 
-        if let VerifyingOutput::NotAccepted(_) = verify_status {
-            return Err(SteppingError::InvalidTxType);
+            VerifyingOutput::Nothing(_) => {
+                *user_type = "Income".to_string();
+                Ok(())
+            }
+            VerifyingOutput::Accepted(_) => Ok(()),
         }
-
-        Ok(())
     }
 
     fn step_tags(
@@ -229,11 +229,11 @@ pub trait FieldStepper: DataVerifier {
         // if current tag is empty
         // select the first possible tag if available
         if user_tag.is_empty() {
-            if !all_tags.is_empty() {
+            if all_tags.is_empty() {
+                return Err(SteppingError::InvalidTags);
+            } else {
                 *user_tag = String::from(&all_tags[0]);
                 return Ok(());
-            } else {
-                return Err(SteppingError::InvalidTags);
             }
         }
 
@@ -256,10 +256,10 @@ pub trait FieldStepper: DataVerifier {
             // if kept like this with extra comma, the last_tag would be empty. In this case
             // select the first tag available in the list or just join the first two tag with , + space
             if last_tag.is_empty() {
-                if !all_tags.is_empty() {
-                    current_tags.push(all_tags[0].to_owned());
+                if all_tags.is_empty() {
                     *user_tag = current_tags.join(", ");
                 } else {
+                    current_tags.push(all_tags[0].clone());
                     *user_tag = current_tags.join(", ");
                 }
             } else {
@@ -286,7 +286,7 @@ pub trait FieldStepper: DataVerifier {
             };
             // if the tag matches with something, get the index, select the next one.
             // start from beginning if reached at the end -> Join
-            current_tags.push(all_tags[next_index].to_owned());
+            current_tags.push(all_tags[next_index].clone());
             *user_tag = current_tags.join(", ");
         }
 

@@ -90,17 +90,19 @@ pub fn home_ui(
     // resizing the table headers to match a % of the
     // terminal space
 
-    let mut table_area = Table::new(rows)
-        .header(header)
-        .block(styled_block(&table_name))
-        .widths(&[
+    let mut table_area = Table::new(
+        rows,
+        [
             Constraint::Percentage(10),
             Constraint::Percentage(37),
             Constraint::Percentage(13),
             Constraint::Percentage(13),
             Constraint::Percentage(8),
             Constraint::Percentage(18),
-        ]);
+        ],
+    )
+    .header(header)
+    .block(styled_block(&table_name));
 
     // go through all data of the Balance widget and style it as necessary
     let bal_data = balance.iter().map(|item| {
@@ -131,9 +133,8 @@ pub fn home_ui(
 
     // use the acquired width data to allocated spaces
     // between columns on Balance widget.
-    let balance_area = Table::new(bal_data)
+    let balance_area = Table::new(bal_data, width_data)
         .block(styled_block("Balance"))
-        .widths(width_data)
         .style(Style::default().fg(BOX));
 
     match current_tab {

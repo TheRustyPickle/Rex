@@ -15,10 +15,6 @@ pub fn create_popup(f: &mut Frame, x_value: u16, y_value: u16, title: &str, text
     let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
     let text = create_bolded_text(&text);
 
-    // determines the size of the popup window
-    let x_value = x_value;
-    let y_value = y_value;
-
     let block = Block::default()
         .title(title)
         .borders(Borders::ALL)
@@ -55,16 +51,14 @@ pub fn create_popup(f: &mut Frame, x_value: u16, y_value: u16, title: &str, text
 pub fn create_deletion_popup(f: &mut Frame, deletion_status: &DeletionStatus) {
     let text = "Are you sure you want to delete this transaction?";
     let title = "TX Deletion";
-    let x_value = 40;
-    let y_value = 25;
     let size = f.size();
 
     let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
     let text = create_bolded_text(text);
 
     // determines the size of the popup window
-    let x_value = x_value;
-    let y_value = y_value;
+    let x_value = 40;
+    let y_value = 25;
 
     let block = Block::default()
         .title(title)
