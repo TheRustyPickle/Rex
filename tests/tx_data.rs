@@ -3,7 +3,7 @@ use chrono::prelude::Local;
 use rex_tui::db::create_db;
 use rex_tui::outputs::{AType, CheckingError, NAType, TxType, VerifyingOutput};
 use rex_tui::page_handler::{DateType, TxTab};
-use rex_tui::tx_handler::{TxData, add_tx};
+use rex_tui::tx_handler::{add_tx, TxData};
 use rusqlite::Connection;
 use std::fs;
 
@@ -219,9 +219,7 @@ fn test_tx_data_1() {
         "",
         0,
     );
-    assert!(
-        tx_data.check_all_fields().is_none()
-    );
+    assert!(tx_data.check_all_fields().is_none());
 }
 
 #[test]
@@ -346,30 +344,12 @@ fn tx_data_searching() {
 
     assert_eq!(tx_data.check_all_empty(), true);
 
-    let tx_data = TxData::custom(
-        "19-07-2023",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        0,
-    );
+    let tx_data = TxData::custom("19-07-2023", "", "", "", "", "", "", 0);
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 1);
 
-    let tx_data = TxData::custom(
-        "19-07-2023",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        0,
-    );
+    let tx_data = TxData::custom("19-07-2023", "", "", "", "", "", "", 0);
 
     let data = tx_data.get_search_tx(&DateType::Monthly, &conn);
     assert_eq!(data.0.len(), 2);
@@ -383,142 +363,52 @@ fn tx_data_searching() {
     let data = tx_data.get_search_tx(&DateType::Yearly, &conn);
     assert_eq!(data.0.len(), 2);
 
-    let tx_data = TxData::custom(
-        "",
-        "Testing transaction",
-        "",
-        "",
-        "",
-        "",
-        "",
-        0,
-    );
+    let tx_data = TxData::custom("", "Testing transaction", "", "", "", "", "", 0);
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 3);
 
-    let tx_data = TxData::custom(
-        "",
-        "",
-        "test1",
-        "",
-        "",
-        "",
-        "",
-        0,
-    );
+    let tx_data = TxData::custom("", "", "test1", "", "", "", "", 0);
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 1);
 
-    let tx_data = TxData::custom(
-        "",
-        "",
-        "test1",
-        "test 2",
-        "",
-        "Transfer",
-        "",
-        0,
-    );
+    let tx_data = TxData::custom("", "", "test1", "test 2", "", "Transfer", "", 0);
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 1);
 
-    let tx_data = TxData::custom(
-        "",
-        "",
-        "",
-        "",
-        "100.00",
-        "",
-        "",
-        0,
-    );
+    let tx_data = TxData::custom("", "", "", "", "100.00", "", "", 0);
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 2);
 
-    let tx_data = TxData::custom(
-        "",
-        "",
-        "",
-        "",
-        ">100.00",
-        "",
-        "",
-        0,
-    );
+    let tx_data = TxData::custom("", "", "", "", ">100.00", "", "", 0);
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 1);
 
-    let tx_data = TxData::custom(
-        "",
-        "",
-        "",
-        "",
-        "<200.00",
-        "",
-        "",
-        0,
-    );
+    let tx_data = TxData::custom("", "", "", "", "<200.00", "", "", 0);
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 2);
 
-    let tx_data = TxData::custom(
-        "",
-        "",
-        "",
-        "",
-        ">=100.00",
-        "",
-        "",
-        0,
-    );
+    let tx_data = TxData::custom("", "", "", "", ">=100.00", "", "", 0);
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 3);
 
-    let tx_data = TxData::custom(
-        "",
-        "",
-        "",
-        "",
-        "<=100.00",
-        "",
-        "",
-        0,
-    );
+    let tx_data = TxData::custom("", "", "", "", "<=100.00", "", "", 0);
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 2);
 
-    let tx_data = TxData::custom(
-        "",
-        "",
-        "",
-        "",
-        "",
-        "Transfer",
-        "",
-        0,
-    );
+    let tx_data = TxData::custom("", "", "", "", "", "Transfer", "", 0);
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 1);
 
-    let tx_data = TxData::custom(
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "Food, Car",
-        0,
-    );
+    let tx_data = TxData::custom("", "", "", "", "", "", "Food, Car", 0);
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 3);
