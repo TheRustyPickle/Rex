@@ -123,13 +123,22 @@ pub fn start_app<B: Backend>(
     // the initial page REX loading index
     let mut starter_index = 0;
 
+    // At what point the chart is current rendering to
     let mut chart_index: Option<f64> = None;
 
+    // Whether the chart is in hidden mode
     let mut chart_hidden_mode = false;
 
+    // Whether the summary is in hidden mode
     let mut summary_hidden_mode = false;
 
+    // The initial popup when deleting tx will start on Yes value
     let mut deletion_status: DeletionStatus = DeletionStatus::Yes;
+
+    // The current balance that is being shown on the home tab Balance column
+    let mut home_balance_load = Vec::new();
+    // The last value that was shown. If last and current value same, it stops looping and polls for key press
+    let mut last_seen_balance_load = Vec::new();
 
     // how it work:
     // Default value from above -> Goes to an interface page and render -> Wait for an event key press.
@@ -189,6 +198,7 @@ pub fn start_app<B: Backend>(
                         &mut balance,
                         &home_tab,
                         &mut width_data,
+                        &mut home_balance_load,
                         conn,
                     ),
 
@@ -247,6 +257,15 @@ pub fn start_app<B: Backend>(
                     continue;
                 }
             }
+            CurrentUi::Home => {
+                if !home_balance_load.is_empty()
+                    && home_balance_load != last_seen_balance_load
+                    && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
+                {
+                    last_seen_balance_load = home_balance_load.clone();
+                    continue;
+                }
+            }
 
             _ => {}
         }
@@ -285,6 +304,7 @@ pub fn start_app<B: Backend>(
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,
                 &mut deletion_status,
+                &mut home_balance_load,
                 conn,
             );
 

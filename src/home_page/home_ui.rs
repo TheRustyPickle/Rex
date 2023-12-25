@@ -20,6 +20,7 @@ pub fn home_ui(
     balance: &mut [Vec<String>],
     current_tab: &HomeTab,
     width_data: &mut [Constraint],
+    balance_load: &mut [f64],
     conn: &Connection,
 ) {
     let all_methods = get_all_tx_methods(conn);
@@ -107,8 +108,27 @@ pub fn home_ui(
     // go through all data of the Balance widget and style it as necessary
     let bal_data = balance.iter().map(|item| {
         let height = 1;
+
+        let is_balance_row = item[0] == "Balance";
+        let mut index = 0;
+
         let cells = item.iter().map(|c| {
-            let c = c.separate_with_commas();
+            let c = if c != "Balance" && is_balance_row {
+                let balance_data = balance_load.get_mut(index).unwrap();
+                let current_bal: f64 = c.parse().unwrap();
+
+                index += 1;
+
+                if current_bal > *balance_data {
+                    *balance_data += current_bal * 0.01;
+                    format!("{balance_data:.2}").separate_with_commas()
+                } else {
+                    c.separate_with_commas()
+                }
+            } else {
+                c.separate_with_commas()
+            };
+
             if c.contains('↑') {
                 Cell::from(c).style(Style::default().fg(BLUE))
             } else if c.contains('↓') {
