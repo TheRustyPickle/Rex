@@ -135,10 +135,32 @@ pub fn start_app<B: Backend>(
     // The initial popup when deleting tx will start on Yes value
     let mut deletion_status: DeletionStatus = DeletionStatus::Yes;
 
-    // The current balance that is being shown on the home tab Balance column
-    let mut home_balance_load = Vec::new();
-    // The last value that was shown. If last and current value same, it stops looping and polls for key press
-    let mut last_seen_balance_load = Vec::new();
+    // The current balance that is being shown on the home tab Balance column. Will change every loop util the actual balance is reached
+    let mut balance_load = vec![0.0; get_all_tx_methods(conn).len() + 1];
+    // The balance shown in the UI before the current actual balance that is being shown in the UI
+    let mut last_balance = Vec::new();
+    // The actual current balance that is being shown
+    let mut ongoing_balance = Vec::new();
+    // If the difference between the ongoing and last balance is 100, each loop it adds/reduces x.xx% of the difference to the balance
+    // till actual balance is reached. After each loop it gets increased by a little till 1.0 and key polling starts at 1.0, putting the app to sleep
+    // Also used for the changes row
+    let mut balance_load_percentage = 0.0;
+    // Similar to balance_load_percentage, but for expense and income row
+    let mut income_load_percentage = 0.0;
+    let mut expense_load_percentage = 0.0;
+
+    // Works similarly to balance load
+    let mut changes_load = balance_load.clone();
+    let mut last_changes = Vec::new();
+    let mut ongoing_changes = Vec::new();
+
+    let mut income_load = balance_load.clone();
+    let mut last_income = Vec::new();
+    let mut ongoing_income = Vec::new();
+
+    let mut expense_load = balance_load.clone();
+    let mut last_expense = Vec::new();
+    let mut ongoing_expense = Vec::new();
 
     // how it work:
     // Default value from above -> Goes to an interface page and render -> Wait for an event key press.
@@ -198,7 +220,21 @@ pub fn start_app<B: Backend>(
                         &mut balance,
                         &home_tab,
                         &mut width_data,
-                        &mut home_balance_load,
+                        &mut balance_load,
+                        &mut ongoing_balance,
+                        &mut last_balance,
+                        &mut changes_load,
+                        &mut ongoing_changes,
+                        &mut last_changes,
+                        &mut income_load,
+                        &mut ongoing_income,
+                        &mut last_income,
+                        &mut expense_load,
+                        &mut ongoing_expense,
+                        &mut last_expense,
+                        &mut balance_load_percentage,
+                        &mut income_load_percentage,
+                        &mut expense_load_percentage,
                         conn,
                     ),
 
@@ -258,11 +294,11 @@ pub fn start_app<B: Backend>(
                 }
             }
             CurrentUi::Home => {
-                if !home_balance_load.is_empty()
-                    && home_balance_load != last_seen_balance_load
+                if (balance_load_percentage < 1.0
+                    || income_load_percentage < 1.0
+                    || expense_load_percentage < 1.0)
                     && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
                 {
-                    last_seen_balance_load = home_balance_load.clone();
                     continue;
                 }
             }
@@ -304,7 +340,10 @@ pub fn start_app<B: Backend>(
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,
                 &mut deletion_status,
-                &mut home_balance_load,
+                &mut ongoing_balance,
+                &mut ongoing_changes,
+                &mut ongoing_income,
+                &mut ongoing_expense,
                 conn,
             );
 

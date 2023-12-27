@@ -387,3 +387,29 @@ impl DateType {
         }
     }
 }
+
+#[derive(PartialEq)]
+pub enum HomeRow {
+    Balance,
+    Changes,
+    Income,
+    Expense,
+    TopRow,
+}
+
+impl HomeRow {
+    #[cfg(not(tarpaulin_include))]
+    pub fn get_row(data: &[String]) -> Self {
+        if data[0] == "Balance" {
+            HomeRow::Balance
+        } else if data[0] == "Changes" {
+            HomeRow::Changes
+        } else if data[0] == "Income" {
+            HomeRow::Income
+        } else if data[0] == "Expense" {
+            HomeRow::Expense
+        } else {
+            HomeRow::TopRow
+        }
+    }
+}
