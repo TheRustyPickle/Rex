@@ -330,7 +330,7 @@ impl<'a> InputKeyHandler<'a> {
             let tx_type = &target_data[4];
 
             // based on what kind of transaction is selected, passes the tx data to the struct
-            // and changes the current interface
+            // and change the current interface
             if tx_type != "Transfer" {
                 *self.add_tx_data = TxData::custom(
                     &target_data[0],
@@ -360,6 +360,7 @@ impl<'a> InputKeyHandler<'a> {
                 );
                 *self.page = CurrentUi::AddTx;
             }
+            self.add_tx_data.add_tx_status("Info: Entering Transaction edit mode".to_string())
         }
     }
 
