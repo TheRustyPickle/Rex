@@ -360,7 +360,8 @@ impl<'a> InputKeyHandler<'a> {
                 );
                 *self.page = CurrentUi::AddTx;
             }
-            self.add_tx_data.add_tx_status("Info: Entering Transaction edit mode".to_string())
+            self.add_tx_data
+                .add_tx_status("Info: Entering Transaction edit mode".to_string())
         }
     }
 
