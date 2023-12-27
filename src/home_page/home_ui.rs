@@ -6,7 +6,7 @@ use rusqlite::Connection;
 use thousands::Separable;
 
 use crate::page_handler::{
-    HomeTab, IndexedData, TableData, BACKGROUND, BLUE, BOX, HEADER, RED, SELECTED, TEXT,
+    HomeRow, HomeTab, IndexedData, TableData, BACKGROUND, BLUE, BOX, HEADER, RED, SELECTED, TEXT,
 };
 use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block};
 
@@ -20,6 +20,21 @@ pub fn home_ui(
     balance: &mut [Vec<String>],
     current_tab: &HomeTab,
     width_data: &mut [Constraint],
+    balance_load: &mut [f64],
+    ongoing_balance: &mut Vec<String>,
+    last_balance: &mut Vec<String>,
+    changes_load: &mut [f64],
+    ongoing_changes: &mut Vec<String>,
+    last_changes: &mut Vec<String>,
+    income_load: &mut [f64],
+    ongoing_income: &mut Vec<String>,
+    last_income: &mut Vec<String>,
+    expense_load: &mut [f64],
+    ongoing_expense: &mut Vec<String>,
+    last_expense: &mut Vec<String>,
+    balance_load_percentage: &mut f64,
+    income_load_percentage: &mut f64,
+    expense_load_percentage: &mut f64,
     conn: &Connection,
 ) {
     let all_methods = get_all_tx_methods(conn);
@@ -104,11 +119,162 @@ pub fn home_ui(
     .header(header)
     .block(styled_block(&table_name));
 
+    if *balance_load_percentage < 1.0 {
+        *balance_load_percentage += 0.004;
+    } else {
+        *balance_load_percentage = 1.0
+    }
+
+    if *income_load_percentage < 1.0 {
+        *income_load_percentage += 0.004;
+    } else {
+        *income_load_percentage = 1.0
+    }
+
+    if *expense_load_percentage < 1.0 {
+        *expense_load_percentage += 0.004;
+    } else {
+        *expense_load_percentage = 1.0
+    }
+
     // go through all data of the Balance widget and style it as necessary
     let bal_data = balance.iter().map(|item| {
         let height = 1;
+
+        let row_type = HomeRow::get_row(item);
+        let mut index = 0;
+
+        match row_type {
+            HomeRow::Balance => {
+                if item[1..] != *ongoing_balance {
+                    *last_balance = ongoing_balance.clone();
+                    *ongoing_balance = item[1..].to_owned();
+                    *balance_load_percentage = 0.0;
+                }
+            }
+            HomeRow::Changes => {
+                if item[1..] != *ongoing_changes {
+                    *last_changes = ongoing_changes.clone();
+                    *ongoing_changes = item[1..].to_owned();
+                    *balance_load_percentage = 0.0;
+                }
+            }
+            HomeRow::Income => {
+                if item[1..] != *ongoing_income {
+                    *last_income = ongoing_income.clone();
+                    *ongoing_income = item[1..].to_owned();
+                    *income_load_percentage = 0.0;
+                }
+            }
+            HomeRow::Expense => {
+                if item[1..] != *ongoing_expense {
+                    *last_expense = ongoing_expense.clone();
+                    *ongoing_expense = item[1..].to_owned();
+                    *expense_load_percentage = 0.0;
+                }
+            }
+            HomeRow::TopRow => {}
+        }
+
         let cells = item.iter().map(|c| {
-            let c = c.separate_with_commas();
+            let c = if row_type != HomeRow::TopRow
+                && !["Balance", "Changes", "Income", "Expense"].contains(&c.as_str())
+            {
+                let load_data = match row_type {
+                    HomeRow::Balance => balance_load.get_mut(index).unwrap(),
+                    HomeRow::Changes => changes_load.get_mut(index).unwrap(),
+                    HomeRow::Expense => expense_load.get_mut(index).unwrap(),
+                    HomeRow::Income => income_load.get_mut(index).unwrap(),
+                    HomeRow::TopRow => unreachable!(),
+                };
+
+                let symbol = if c.contains('↑') || c.contains('↓') {
+                    c.chars().next()
+                } else {
+                    None
+                };
+
+                let actual_data: f64 = if row_type != HomeRow::Changes {
+                    c.parse().unwrap()
+                } else if let Some(sym) = symbol {
+                    let without_symbol = c.replace(sym, "");
+                    without_symbol.parse().unwrap()
+                } else {
+                    c.parse().unwrap()
+                };
+
+                let last_data: f64 = match row_type {
+                    HomeRow::Balance => last_balance.get(index).unwrap().parse().unwrap(),
+                    HomeRow::Changes => {
+                        let last_change_symbol = last_changes.get(index).unwrap();
+
+                        if last_change_symbol.contains('↑') || last_change_symbol.contains('↓')
+                        {
+                            let last_symbol = last_change_symbol.chars().next().unwrap();
+                            let without_symbol = last_change_symbol.replace(last_symbol, "");
+                            without_symbol.parse().unwrap()
+                        } else {
+                            last_change_symbol.parse().unwrap()
+                        }
+                    }
+                    HomeRow::Expense => last_expense.get(index).unwrap().parse().unwrap(),
+                    HomeRow::Income => last_income.get(index).unwrap().parse().unwrap(),
+                    HomeRow::TopRow => unreachable!(),
+                };
+
+                let difference = if last_data > actual_data {
+                    last_data - actual_data
+                } else {
+                    actual_data - last_data
+                };
+
+                index += 1;
+
+                if actual_data > last_data {
+                    match row_type {
+                        HomeRow::Balance | HomeRow::Changes => {
+                            *load_data = last_data + (difference * *balance_load_percentage)
+                        }
+                        HomeRow::Expense => {
+                            *load_data = last_data + (difference * *expense_load_percentage)
+                        }
+                        HomeRow::Income => {
+                            *load_data = last_data + (difference * *income_load_percentage)
+                        }
+                        HomeRow::TopRow => unreachable!(),
+                    }
+                } else if last_data > actual_data {
+                    match row_type {
+                        HomeRow::Balance | HomeRow::Changes => {
+                            *load_data = last_data - (difference * *balance_load_percentage)
+                        }
+                        HomeRow::Income => {
+                            *load_data = last_data - (difference * *income_load_percentage)
+                        }
+                        HomeRow::Expense => {
+                            *load_data = last_data - (difference * *expense_load_percentage)
+                        }
+                        HomeRow::TopRow => unreachable!(),
+                    }
+                } else {
+                    *load_data = actual_data;
+                }
+
+                if *load_data < 0.0 {
+                    *load_data = 0.0
+                }
+
+                if row_type != HomeRow::Changes {
+                    format!("{load_data:.2}").separate_with_commas()
+                } else if let Some(sym) = symbol {
+                    format!("{}{load_data:.2}", sym).separate_with_commas()
+                } else {
+                    format!("{load_data:.2}").separate_with_commas()
+                }
+            } else {
+                c.separate_with_commas()
+            };
+
             if c.contains('↑') {
                 Cell::from(c).style(Style::default().fg(BLUE))
             } else if c.contains('↓') {
