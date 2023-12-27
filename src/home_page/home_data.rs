@@ -58,17 +58,13 @@ impl TransactionData {
     /// Home Table's selected index
     pub fn get_balance(&self, index: usize) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
+        let mut total_balance = 0.0;
         for i in self.all_balance[index].iter() {
-            balance_data.push(format!("{:.2}", i.parse::<f64>().unwrap()));
+            let num_balance = i.parse::<f64>().unwrap();
+            total_balance += num_balance;
+            balance_data.push(format!("{:.2}", num_balance));
         }
-
-        let mut total_balance: f64 = 0.0;
-        for i in balance_data.iter().skip(1) {
-            let int_bal = i.parse::<f64>().unwrap();
-            total_balance += int_bal;
-        }
-        let formatted_total_balance = format!("{:.2}", total_balance);
-        balance_data.push(formatted_total_balance);
+        balance_data.push(format!("{:.2}", total_balance));
         balance_data
     }
 
@@ -77,17 +73,13 @@ impl TransactionData {
     pub fn get_last_balance(&self, conn: &Connection) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
         let db_data = get_last_balances(conn);
+        let mut total_balance = 0.0;
         for i in db_data.iter() {
-            balance_data.push(format!("{:.2}", i.parse::<f64>().unwrap()));
+            let num_balance = i.parse::<f64>().unwrap();
+            total_balance += num_balance;
+            balance_data.push(format!("{:.2}", num_balance));
         }
-
-        let mut total_balance: f64 = 0.0;
-        for i in balance_data.iter().skip(1) {
-            let int_bal = i.parse::<f64>().unwrap();
-            total_balance += int_bal;
-        }
-        let formatted_total_balance = format!("{:.2}", total_balance);
-        balance_data.push(formatted_total_balance);
+        balance_data.push(format!("{:.2}", total_balance));
         balance_data
     }
 
@@ -96,20 +88,7 @@ impl TransactionData {
     pub fn get_changes(&self, index: usize) -> Vec<String> {
         let mut changes_data = vec!["Changes".to_string()];
         for i in self.all_changes[index].iter() {
-            let mut new_value = i.to_string();
-            let splitted = i.split('.').collect::<Vec<&str>>();
-
-            // the splitting and checking is necessary to make sure all strings are
-            // properly ending with 2 values after dot.
-            // it's a string with ↓ or ↑
-            // so format!("{:.2}", parse to f64 won't work for the symbol.
-
-            if splitted[1].len() == 1 {
-                new_value = format!("{}0", i)
-            } else if splitted[1].is_empty() {
-                new_value = format!("{}.00", i)
-            }
-            changes_data.push(new_value);
+            changes_data.push(i.to_string());
         }
         changes_data
     }

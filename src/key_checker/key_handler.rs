@@ -49,7 +49,10 @@ pub struct InputKeyHandler<'a> {
     chart_hidden_mode: &'a mut bool,
     summary_hidden_mode: &'a mut bool,
     deletion_status: &'a mut DeletionStatus,
-    home_balance_load: &'a mut Vec<f64>,
+    ongoing_balance: &'a mut Vec<String>,
+    ongoing_changes: &'a mut Vec<String>,
+    ongoing_income: &'a mut Vec<String>,
+    ongoing_expense: &'a mut Vec<String>,
     conn: &'a mut Connection,
 }
 
@@ -87,7 +90,10 @@ impl<'a> InputKeyHandler<'a> {
         chart_hidden_mode: &'a mut bool,
         summary_hidden_mode: &'a mut bool,
         deletion_status: &'a mut DeletionStatus,
-        home_balance_load: &'a mut Vec<f64>,
+        ongoing_balance: &'a mut Vec<String>,
+        ongoing_changes: &'a mut Vec<String>,
+        ongoing_income: &'a mut Vec<String>,
+        ongoing_expense: &'a mut Vec<String>,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data
@@ -126,7 +132,10 @@ impl<'a> InputKeyHandler<'a> {
             summary_hidden_mode,
             chart_hidden_mode,
             deletion_status,
-            home_balance_load,
+            ongoing_balance,
+            ongoing_changes,
+            ongoing_income,
+            ongoing_expense,
             conn,
         }
     }
@@ -823,7 +832,6 @@ impl<'a> InputKeyHandler<'a> {
                 } else if !self.all_tx_data.is_tx_empty() {
                     self.table.previous();
                 }
-                self.reload_home_balance_load()
             }
             HomeTab::Years => {
                 // Do not select any table rows in the table section If
@@ -835,7 +843,6 @@ impl<'a> InputKeyHandler<'a> {
                     // to the last row if pressed up on Year section
                     self.table.state.select(Some(self.table.items.len() - 1));
                     *self.home_tab = self.home_tab.change_tab_up();
-                    self.reload_home_balance_load()
                 }
             }
             _ => *self.home_tab = self.home_tab.change_tab_up(),
@@ -858,7 +865,6 @@ impl<'a> InputKeyHandler<'a> {
                 } else if !self.all_tx_data.is_tx_empty() {
                     self.table.next();
                 }
-                self.reload_home_balance_load()
             }
             HomeTab::Months => {
                 // Do not select any table rows in the table section If
@@ -868,7 +874,6 @@ impl<'a> InputKeyHandler<'a> {
                 } else {
                     *self.home_tab = self.home_tab.change_tab_down();
                     self.table.state.select(Some(0));
-                    self.reload_home_balance_load()
                 };
             }
             _ => *self.home_tab = self.home_tab.change_tab_down(),
@@ -1460,8 +1465,11 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     fn reload_home_balance_load(&mut self) {
         // 0 for all methods + 1 more for the total balance column
-        let balance_data = vec![0.0; get_all_tx_methods(self.conn).len() + 1];
-        *self.home_balance_load = balance_data;
+        let balance_data = vec![String::from("0.0"); get_all_tx_methods(self.conn).len() + 1];
+        *self.ongoing_balance = balance_data.clone();
+        *self.ongoing_changes = vec![String::from("0.0"); balance_data.len()];
+        *self.ongoing_expense = balance_data.clone();
+        *self.ongoing_income = balance_data.clone();
     }
 
     #[cfg(not(tarpaulin_include))]
