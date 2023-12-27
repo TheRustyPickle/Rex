@@ -11,7 +11,7 @@ use crate::page_handler::{
 };
 use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
-use crate::utility::sort_table_data;
+use crate::utility::{get_all_tx_methods, sort_table_data};
 
 /// Stores all the data that is required to handle
 /// every single possible key press event from the
@@ -49,6 +49,10 @@ pub struct InputKeyHandler<'a> {
     chart_hidden_mode: &'a mut bool,
     summary_hidden_mode: &'a mut bool,
     deletion_status: &'a mut DeletionStatus,
+    ongoing_balance: &'a mut Vec<String>,
+    ongoing_changes: &'a mut Vec<String>,
+    ongoing_income: &'a mut Vec<String>,
+    ongoing_expense: &'a mut Vec<String>,
     conn: &'a mut Connection,
 }
 
@@ -86,6 +90,10 @@ impl<'a> InputKeyHandler<'a> {
         chart_hidden_mode: &'a mut bool,
         summary_hidden_mode: &'a mut bool,
         deletion_status: &'a mut DeletionStatus,
+        ongoing_balance: &'a mut Vec<String>,
+        ongoing_changes: &'a mut Vec<String>,
+        ongoing_income: &'a mut Vec<String>,
+        ongoing_expense: &'a mut Vec<String>,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data
@@ -124,6 +132,10 @@ impl<'a> InputKeyHandler<'a> {
             summary_hidden_mode,
             chart_hidden_mode,
             deletion_status,
+            ongoing_balance,
+            ongoing_changes,
+            ongoing_income,
+            ongoing_expense,
             conn,
         }
     }
@@ -144,13 +156,14 @@ impl<'a> InputKeyHandler<'a> {
             }
             _ => {}
         }
-        *self.page = CurrentUi::Home;
+        self.go_home()
     }
 
     /// Moves the interface to Home page
     #[cfg(not(tarpaulin_include))]
     pub fn go_home(&mut self) {
         *self.page = CurrentUi::Home;
+        self.reload_home_balance_load();
     }
 
     /// Moves the interface to Add Tx page
@@ -830,9 +843,6 @@ impl<'a> InputKeyHandler<'a> {
                     // to the last row if pressed up on Year section
                     self.table.state.select(Some(self.table.items.len() - 1));
                     *self.home_tab = self.home_tab.change_tab_up();
-                    if self.all_tx_data.is_tx_empty() {
-                        *self.home_tab = self.home_tab.change_tab_up();
-                    }
                 }
             }
             _ => *self.home_tab = self.home_tab.change_tab_up(),
@@ -1450,6 +1460,16 @@ impl<'a> InputKeyHandler<'a> {
     fn reload_search_data(&mut self) {
         *self.search_table = TableData::new(Vec::new());
         *self.search_txs = TransactionData::new_search(Vec::new(), Vec::new())
+    }
+
+    #[cfg(not(tarpaulin_include))]
+    fn reload_home_balance_load(&mut self) {
+        // 0 for all methods + 1 more for the total balance column
+        let balance_data = vec![String::from("0.0"); get_all_tx_methods(self.conn).len() + 1];
+        *self.ongoing_balance = balance_data.clone();
+        *self.ongoing_changes = vec![String::from("0.0"); balance_data.len()];
+        *self.ongoing_expense = balance_data.clone();
+        *self.ongoing_income = balance_data.clone();
     }
 
     #[cfg(not(tarpaulin_include))]
