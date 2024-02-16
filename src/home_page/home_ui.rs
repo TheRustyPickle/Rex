@@ -14,6 +14,7 @@ use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block};
 #[cfg(not(tarpaulin_include))]
 pub fn home_ui(
     f: &mut Frame,
+    to_reset: bool,
     months: &IndexedData,
     years: &IndexedData,
     table: &mut TableData,
@@ -146,28 +147,28 @@ pub fn home_ui(
 
         match row_type {
             HomeRow::Balance => {
-                if item[1..] != *ongoing_balance {
+                if to_reset {
                     *last_balance = ongoing_balance.clone();
                     *ongoing_balance = item[1..].to_owned();
                     *balance_load_percentage = 0.0;
                 }
             }
             HomeRow::Changes => {
-                if item[1..] != *ongoing_changes {
+                if to_reset {
                     *last_changes = ongoing_changes.clone();
                     *ongoing_changes = item[1..].to_owned();
                     *balance_load_percentage = 0.0;
                 }
             }
             HomeRow::Income => {
-                if item[1..] != *ongoing_income {
+                if to_reset {
                     *last_income = ongoing_income.clone();
                     *ongoing_income = item[1..].to_owned();
                     *income_load_percentage = 0.0;
                 }
             }
             HomeRow::Expense => {
-                if item[1..] != *ongoing_expense {
+                if to_reset {
                     *last_expense = ongoing_expense.clone();
                     *ongoing_expense = item[1..].to_owned();
                     *expense_load_percentage = 0.0;
@@ -260,7 +261,7 @@ pub fn home_ui(
                     *load_data = actual_data;
                 }
 
-                if *load_data < 0.0 {
+                if format!("{:.2}", load_data) == "-0.00" {
                     *load_data = 0.0
                 }
 
