@@ -162,6 +162,10 @@ pub fn start_app<B: Backend>(
     let mut last_expense = Vec::new();
     let mut ongoing_expense = Vec::new();
 
+    // Whether to reset home page stuff loading %
+    // Will only turn true on initial run and when a key is pressed
+    let mut to_reset = true;
+
     // how it work:
     // Default value from above -> Goes to an interface page and render -> Wait for an event key press.
     //
@@ -214,6 +218,7 @@ pub fn start_app<B: Backend>(
                 match page {
                     CurrentUi::Home => home_ui(
                         f,
+                        to_reset,
                         &home_months,
                         &home_years,
                         &mut table,
@@ -299,7 +304,12 @@ pub fn start_app<B: Backend>(
                     || expense_load_percentage < 1.0)
                     && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
                 {
+                    to_reset = false;
                     continue;
+                } else {
+                    // Polling has started here. Unless a new key is pressed, it will never proceed further.
+                    // So after it's detected, we will reset the data on the home page
+                    to_reset = true;
                 }
             }
 
