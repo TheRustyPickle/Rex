@@ -205,4 +205,8 @@ impl TransactionData {
         final_expense.push(format!("{:.2}", total_expense));
         final_expense
     }
+
+    pub fn get_tx(&self, index: usize) -> &Vec<String> {
+        &self.all_tx[index]
+    }
 }

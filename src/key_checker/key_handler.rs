@@ -11,7 +11,7 @@ use crate::page_handler::{
 };
 use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
-use crate::utility::{get_all_tx_methods, sort_table_data};
+use crate::utility::{get_all_tx_methods, sort_table_data, switch_tx_index};
 
 /// Stores all the data that is required to handle
 /// every single possible key press event from the
@@ -813,6 +813,64 @@ impl<'a> InputKeyHandler<'a> {
                         PopupState::DeleteFailed(TxUpdateError::FailedDeleteTx(err).to_string());
                 }
             }
+        }
+    }
+ 
+    #[cfg(not(tarpaulin_include))]
+    pub fn switch_tx_index_up(&mut self) {
+        if let Some(index) = self.table.state.selected() {
+            // Don't do anything if there is 1 or less items or is selecting the first index which can't be moved up
+            if self.table.items.len() < 1 || index == 0 {
+                return;
+            }
+
+            let selected_tx = self.all_tx_data.get_tx(index);
+            let previous_tx = self.all_tx_data.get_tx(index - 1);
+
+            if selected_tx[0] != previous_tx[0] {
+                // If both are not in the same date, no switching can happen
+                return;
+            }
+
+            let selected_tx_id = self.all_tx_data.get_id_num(index);
+            let previous_tx_id = self.all_tx_data.get_id_num(index - 1);
+
+            switch_tx_index(
+                selected_tx_id,
+                previous_tx_id,
+                selected_tx,
+                previous_tx,
+                self.conn,
+            );
+
+            self.reload_home_table();
+            self.table.state.select(Some(index - 1));
+        }
+    }
+
+    #[cfg(not(tarpaulin_include))]
+    pub fn switch_tx_index_down(&mut self) {
+        if let Some(index) = self.table.state.selected() {
+            // Don't do anything if there is 1 or less items or is selecting the last index which can't be moved up
+            if self.table.items.len() < 1 || index == self.table.items.len() - 1 {
+                return;
+            }
+
+            let selected_tx = self.all_tx_data.get_tx(index);
+            let next_tx = self.all_tx_data.get_tx(index + 1);
+
+            if selected_tx[0] != next_tx[0] {
+                // If both are not in the same date, no switching can happen
+                return;
+            }
+
+            let selected_tx_id = self.all_tx_data.get_id_num(index);
+            let next_tx_id = self.all_tx_data.get_id_num(index + 1);
+
+            switch_tx_index(selected_tx_id, next_tx_id, selected_tx, next_tx, self.conn);
+
+            self.reload_home_table();
+            self.table.state.select(Some(index + 1));
         }
     }
 }
