@@ -61,8 +61,8 @@ impl SummaryData {
             match tx_type.as_str() {
                 "Income" => {
                     if tx_amount > biggest_earning.0 {
-                        biggest_earning = (tx_amount, tx_method.to_string(), tx_date.to_string())
-                    }
+                        biggest_earning = (tx_amount, tx_method.to_string(), tx_date.to_string());
+                    };
                     total_income += tx_amount;
                     monthly_earning += tx_amount;
 
@@ -70,8 +70,8 @@ impl SummaryData {
                 }
                 "Expense" => {
                     if tx_amount > biggest_expense.0 {
-                        biggest_expense = (tx_amount, tx_method.to_string(), tx_date.to_string())
-                    }
+                        biggest_expense = (tx_amount, tx_method.to_string(), tx_date.to_string());
+                    };
                     total_expense += tx_amount;
                     monthly_expense += tx_amount;
 
@@ -106,7 +106,7 @@ impl SummaryData {
             0 => {
                 let target_id = month as i32 + (year as i32 * 12);
 
-                for tx_data in self.all_txs[&target_id].iter() {
+                for tx_data in &self.all_txs[&target_id] {
                     let tx_amount: f64 = tx_data[3].parse().unwrap();
                     let tx_type = &tx_data[4];
                     let tx_tags = tx_data[5].split(", ").collect::<Vec<&str>>();
@@ -140,7 +140,7 @@ impl SummaryData {
                 for i in 0..MONTHS.len() {
                     let target_id = i as i32 + (year as i32 * 12);
 
-                    for tx_data in self.all_txs[&target_id].iter() {
+                    for tx_data in &self.all_txs[&target_id] {
                         let tx_amount: f64 = tx_data[3].parse().unwrap();
                         let tx_type = &tx_data[4];
                         let tx_tags = tx_data[5].split(", ").collect::<Vec<&str>>();
@@ -176,7 +176,7 @@ impl SummaryData {
                     for i in 0..MONTHS.len() {
                         let target_id = i as i32 + (x as i32 * 12);
 
-                        for tx_data in self.all_txs[&target_id].iter() {
+                        for tx_data in &self.all_txs[&target_id] {
                             let tx_amount: f64 = tx_data[3].parse().unwrap();
                             let tx_type = &tx_data[4];
                             let tx_tags = tx_data[5].split(", ").collect::<Vec<&str>>();
@@ -270,7 +270,7 @@ impl SummaryData {
                     &mut method_expense,
                     month,
                     year,
-                )
+                );
             }
             1 => {
                 for i in 0..MONTHS.len() {
@@ -294,7 +294,7 @@ impl SummaryData {
                         &mut method_expense,
                         i,
                         year,
-                    )
+                    );
                 }
             }
             2 => {
@@ -320,7 +320,7 @@ impl SummaryData {
                             &mut method_expense,
                             i,
                             x,
-                        )
+                        );
                     }
                 }
             }
@@ -344,7 +344,7 @@ impl SummaryData {
 
         let mut method_data = Vec::new();
 
-        for method in all_methods.iter() {
+        for method in &all_methods {
             let earning_percentage = if method_earning[method] != 0.0 {
                 format!("{:.2}%", (method_earning[method] / total_income) * 100.0)
             } else {
@@ -376,7 +376,7 @@ impl SummaryData {
                 expense_percentage,
                 average_earning,
                 average_expense,
-            ])
+            ]);
         }
 
         let summary_data_1 = vec![
@@ -520,8 +520,8 @@ impl SummaryData {
         let mut total_income = 0.0;
         let mut total_expense = 0.0;
 
-        for (key, value) in income_tags.iter() {
-            let mut to_push = vec![key.to_string(), format!("{:.2}", value)];
+        for (key, value) in &income_tags {
+            let mut to_push = vec![(*key).to_string(), format!("{:.2}", value)];
             total_income += value;
 
             // if the same tag already exists on expense, get that value as well
@@ -529,16 +529,16 @@ impl SummaryData {
                 to_push.push(format!("{:.2}", expense_tags[key]));
                 total_expense += expense_tags[key];
             } else {
-                to_push.push(format!("{:.2}", 0.0))
+                to_push.push(format!("{:.2}", 0.0));
             }
             to_return.push(to_push);
         }
 
-        for (key, value) in expense_tags.iter() {
+        for (key, value) in &expense_tags {
             // gather data only from the tags that didn't exist on Income tag list
             if !income_tags.contains_key(key) {
                 to_return.push(vec![
-                    key.to_string(),
+                    (*key).to_string(),
                     format!("{:.2}", 0.0),
                     format!("{:.2}", value),
                 ]);
@@ -577,9 +577,6 @@ impl SummaryData {
         let total = value1 + value2;
         let percentage1 = (value1 / total) * 100.0;
         let percentage2 = (value2 / total) * 100.0;
-        (
-            format!("{:.2}%", percentage1),
-            format!("{:.2}%", percentage2),
-        )
+        (format!("{percentage1:.2}%",), format!("{percentage2:.2}%",))
     }
 }

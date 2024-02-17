@@ -302,11 +302,11 @@ pub fn search_ui(
     if let Some(a) = search_table.state.selected() {
         table_area = table_area.highlight_symbol(">> ");
         if search_table.items[a][4] == "Expense" {
-            table_area = table_area.highlight_style(selected_style_expense)
+            table_area = table_area.highlight_style(selected_style_expense);
         } else if search_table.items[a][4] == "Income" {
-            table_area = table_area.highlight_style(selected_style_income)
+            table_area = table_area.highlight_style(selected_style_income);
         } else if search_table.items[a][4] == "Transfer" {
-            table_area = table_area.highlight_style(Style::default().bg(SELECTED))
+            table_area = table_area.highlight_style(Style::default().bg(SELECTED));
         }
     }
 
@@ -329,5 +329,5 @@ pub fn search_ui(
         }
     }
 
-    f.render_stateful_widget(table_area, chunks[3], &mut search_table.state)
+    f.render_stateful_widget(table_area, chunks[3], &mut search_table.state);
 }

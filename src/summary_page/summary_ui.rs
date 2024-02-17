@@ -355,7 +355,7 @@ pub fn summary_ui(
         SummaryTab::Table => {
             table_area = table_area
                 .highlight_style(Style::default().bg(SELECTED))
-                .highlight_symbol(">> ")
+                .highlight_symbol(">> ");
         }
     }
 
