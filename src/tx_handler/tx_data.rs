@@ -711,4 +711,19 @@ impl TxData {
         self.go_current_index(&TxTab::Tags);
         status
     }
+
+    /// Add a previously deleted tx again but with a new `id_num`
+    pub fn switch_tx_id(&self, new_id: i32, conn: &mut Connection) {
+        add_tx(
+            &self.date,
+            &self.details,
+            &self.get_tx_method(),
+            &self.amount,
+            &self.tx_type,
+            &self.tags,
+            Some(&new_id.to_string()),
+            conn,
+        )
+        .unwrap();
+    }
 }

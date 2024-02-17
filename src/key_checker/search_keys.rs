@@ -27,7 +27,7 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 KeyCode::Enter => handler.select_date_field(),
                 KeyCode::Char(c) => {
                     if c.is_numeric() {
-                        handler.handle_number_press()
+                        handler.handle_number_press();
                     }
                 }
                 _ => {}
@@ -41,12 +41,11 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 _ => match handler.search_tab {
                     TxTab::Date => handler.handle_date(),
                     TxTab::Details => handler.handle_details(),
-                    TxTab::FromMethod => handler.handle_tx_method(),
-                    TxTab::ToMethod => handler.handle_tx_method(),
+                    TxTab::FromMethod | TxTab::ToMethod => handler.handle_tx_method(),
                     TxTab::Amount => handler.handle_amount(),
                     TxTab::TxType => handler.handle_tx_type(),
                     TxTab::Tags => handler.handle_tags(),
-                    _ => {}
+                    TxTab::Nothing => {}
                 },
             },
         },

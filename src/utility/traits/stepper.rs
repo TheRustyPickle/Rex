@@ -151,7 +151,7 @@ pub trait FieldStepper: DataVerifier {
 
                 match step_type {
                     StepType::StepUp => {
-                        if 9999999999.99 >= current_amount + 1.0 {
+                        if 9_999_999_999.99 >= current_amount + 1.0 {
                             current_amount += 1.0;
                         }
                     }
@@ -231,10 +231,9 @@ pub trait FieldStepper: DataVerifier {
         if user_tag.is_empty() {
             if all_tags.is_empty() {
                 return Err(SteppingError::InvalidTags);
-            } else {
-                *user_tag = String::from(&all_tags[0]);
-                return Ok(());
             }
+            *user_tag = String::from(&all_tags[0]);
+            return Ok(());
         }
 
         // tags are separated by comma. Collect all the tags

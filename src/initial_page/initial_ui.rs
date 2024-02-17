@@ -26,12 +26,12 @@ pub fn initial_ui(f: &mut Frame, start_from: usize) {
     f.render_widget(main_block(), size);
 
     // This is the text that is shown in the startup which is the project's name in ASCII format.
-    let text = r#"   _____    ______  __   __
+    let text = r"   _____    ______  __   __
   |  __ \  |  ____| \ \ / /
   | |__) | | |__     \ V / 
   |  _  /  |  __|     > <  
   | | \ \  | |____   / . \ 
-  |_|  \_\ |______| /_/ \_\"#
+  |_|  \_\ |______| /_/ \_\"
         .to_string();
 
     // To work with this and add a slight touch of animation, we will split the entire

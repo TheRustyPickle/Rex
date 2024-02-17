@@ -61,7 +61,7 @@ pub fn create_db(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
 
     let highlighted_tx_methods = tx_methods
         .iter()
-        .map(|method| format!("\"{}\"", method))
+        .map(|method| format!("\"{method}\""))
         .collect::<Vec<String>>()
         .join(",");
 
@@ -82,22 +82,21 @@ pub fn create_db(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
     Ok(())
 }
 
-/// creates the balance_all table of the DB
+/// creates the `balance_all` table of the DB
 pub fn create_balances_table(tx_methods: &[String], sp: &Savepoint) -> Result<()> {
     // balance_all table. Will contain tx methods as columns and their balances.
     // each row represents 1 month.
     let tx_methods_str = tx_methods
         .iter()
-        .map(|method| format!(r#""{}" REAL DEFAULT 0.00"#, method))
+        .map(|method| format!(r#""{method}" REAL DEFAULT 0.00"#))
         .collect::<Vec<String>>()
         .join(",");
 
     let query = format!(
         "CREATE TABLE balance_all (
             id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            {}
-        );",
-        tx_methods_str
+            {tx_methods_str}
+        );"
     );
 
     sp.execute(&query, [])?;
@@ -105,12 +104,12 @@ pub fn create_balances_table(tx_methods: &[String], sp: &Savepoint) -> Result<()
     Ok(())
 }
 
-/// create the changes_all table of the DB
+/// create the `changes_all` table of the DB
 pub fn create_changes_table(tx_methods: &[String], sp: &Savepoint) -> Result<()> {
     // changes_all column. Will contain all balance changes with up and down arrows
     let columns = tx_methods
         .iter()
-        .map(|column_name| format!(r#""{}" TEXT DEFAULT 0.00"#, column_name))
+        .map(|column_name| format!(r#""{column_name}" TEXT DEFAULT 0.00"#))
         .collect::<Vec<String>>()
         .join(",");
 
@@ -118,10 +117,9 @@ pub fn create_changes_table(tx_methods: &[String], sp: &Savepoint) -> Result<()>
         "CREATE TABLE changes_all (
             date TEXT,
             id_num INTEGER NOT NULL PRIMARY KEY,
-            {},
+            {columns},
             CONSTRAINT changes_all_FK FOREIGN KEY (id_num) REFERENCES tx_all(id_num) ON DELETE CASCADE
-        );",
-        columns
+        );"
     );
 
     sp.execute(&query, [])?;

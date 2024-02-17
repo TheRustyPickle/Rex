@@ -59,10 +59,10 @@ pub fn initialize_app(mut db_path: PathBuf, original_dir: PathBuf) -> Result<(),
                     UserInputType::AddNewTxMethod(tx_methods) => {
                         let status = add_new_tx_methods(tx_methods, &mut conn);
                         match status {
-                            Ok(_) => start_timer("Added Transaction Methods Successfully."),
+                            Ok(()) => start_timer("Added Transaction Methods Successfully."),
                             Err(e) => {
                                 println!("Error while adding new Transaction Methods. Error: {e:?}.");
-                                start_timer("")}
+                                start_timer("");}
                         }
                     }
                     UserInputType::RenameTxMethod(rename_data) => {
@@ -72,10 +72,10 @@ pub fn initialize_app(mut db_path: PathBuf, original_dir: PathBuf) -> Result<(),
                         let status = rename_column(old_name, new_name, &mut conn);
 
                         match status {
-                            Ok(_) => start_timer("Tx Method renamed successfully."),
+                            Ok(()) => start_timer("Tx Method renamed successfully."),
                             Err(e) => {
                                 println!("Error while renaming tx method. Error: {e:?}.");
-                                start_timer("")
+                                start_timer("");
                             }
                         }
                     }
@@ -83,7 +83,7 @@ pub fn initialize_app(mut db_path: PathBuf, original_dir: PathBuf) -> Result<(),
                         let status = reposition_column(tx_methods, &mut conn);
 
                         match status {
-                            Ok(_) => start_timer("Transaction Method repositioned successfully."),
+                            Ok(()) => start_timer("Transaction Method repositioned successfully."),
                             Err(e) => {
                                 println!("Error while repositioning tx method. Error: {e:?}");
                                 start_timer("");
@@ -91,7 +91,7 @@ pub fn initialize_app(mut db_path: PathBuf, original_dir: PathBuf) -> Result<(),
                         }
                     }
                     UserInputType::CancelledOperation => {
-                        start_timer("Operation Cancelled.")
+                        start_timer("Operation Cancelled.");
                     }
                     UserInputType::SetNewLocation(mut target_path) => {
                         create_change_location_file(&db_path, &target_path);
@@ -106,7 +106,7 @@ pub fn initialize_app(mut db_path: PathBuf, original_dir: PathBuf) -> Result<(),
                             }
                             Err(e) => {
                                 println!("Error while trying to copy app data. Error: {e:?}");
-                                start_timer("")
+                                start_timer("");
                             }
                         }
                     }

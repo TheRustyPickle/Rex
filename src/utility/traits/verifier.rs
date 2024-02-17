@@ -322,9 +322,8 @@ pub trait DataVerifier {
                         for char in working_value.chars().skip(location + 1) {
                             if calc_symbols.contains(&char) {
                                 break;
-                            } else {
-                                last_value.push(char);
                             }
+                            last_value.push(char);
                         }
 
                         // do the same thing as before but this time, reverse the string
@@ -335,9 +334,8 @@ pub trait DataVerifier {
                         {
                             if calc_symbols.contains(&char) {
                                 break;
-                            } else {
-                                first_value.push(char);
                             }
+                            first_value.push(char);
                         }
                         // un-reverse the string
                         first_value = first_value.chars().rev().collect();
