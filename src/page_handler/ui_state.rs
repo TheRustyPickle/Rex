@@ -72,7 +72,7 @@ impl IndexedData {
     pub fn new_monthly() -> Self {
         let month_index = Local::now().month() as usize - 1;
         IndexedData {
-            titles: MONTHS.into_iter().map(|s| s.to_string()).collect(),
+            titles: MONTHS.into_iter().map(ToString::to_string).collect(),
             index: month_index,
         }
     }
@@ -80,14 +80,14 @@ impl IndexedData {
     pub fn new_yearly() -> Self {
         let year_index = Local::now().year() as usize - 2022;
         IndexedData {
-            titles: YEARS.into_iter().map(|s| s.to_string()).collect(),
+            titles: YEARS.into_iter().map(ToString::to_string).collect(),
             index: year_index,
         }
     }
 
     pub fn new_modes() -> Self {
         IndexedData {
-            titles: MODES.into_iter().map(|s| s.to_string()).collect(),
+            titles: MODES.into_iter().map(ToString::to_string).collect(),
             index: 0,
         }
     }

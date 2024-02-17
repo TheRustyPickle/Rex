@@ -179,7 +179,7 @@ pub fn start_app<B: Backend>(
 
         // balance variable contains all the 'rows' of the Balance widget in the home page.
         // So each line is inside a vector. "" represents empty placeholder.
-        let mut balance: Vec<Vec<String>> = vec![vec!["".to_string()]];
+        let mut balance: Vec<Vec<String>> = vec![vec![String::new()]];
         balance[0].extend(get_all_tx_methods(conn));
         balance[0].extend(vec!["Total".to_string()]);
 
@@ -279,7 +279,7 @@ pub fn start_app<B: Backend>(
                         &search_date_type,
                     ),
                 }
-                popup_data.create_popup(f, &popup_state, &deletion_status)
+                popup_data.create_popup(f, &popup_state, &deletion_status);
             })
             .map_err(UiHandlingError::DrawingError)?;
 
@@ -306,11 +306,10 @@ pub fn start_app<B: Backend>(
                 {
                     to_reset = false;
                     continue;
-                } else {
-                    // Polling has started here. Unless a new key is pressed, it will never proceed further.
-                    // So after it's detected, we will reset the data on the home page
-                    to_reset = true;
                 }
+                // Polling has started here. Unless a new key is pressed, it will never proceed further.
+                // So after it's detected, we will reset the data on the home page
+                to_reset = true;
             }
 
             _ => {}

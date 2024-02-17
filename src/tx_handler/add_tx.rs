@@ -114,7 +114,7 @@ pub fn add_tx(
     // Add the current month's balances to the new balance data vector.
     // It's done this way to match the tx method location
     for i in &all_tx_methods {
-        new_balance_data.push(format!("{:.2}", current_month_balance[i]))
+        new_balance_data.push(format!("{:.2}", current_month_balance[i]));
     }
 
     //
@@ -153,14 +153,12 @@ pub fn add_tx(
     let set_values = all_tx_methods
         .iter()
         .zip(new_balance_data.iter())
-        .map(|(method, value)| format!(r#""{}" = "{}""#, method, value))
+        .map(|(method, value)| format!(r#""{method}" = "{value}""#,))
         .collect::<Vec<_>>()
         .join(", ");
 
-    let balance_query = format!(
-        "UPDATE balance_all SET {} WHERE id_num = {}",
-        set_values, target_id_num
-    );
+    let balance_query =
+        format!("UPDATE balance_all SET {set_values} WHERE id_num = {target_id_num}",);
 
     let last_balance_query: String = if tx_type == "Transfer" {
         format!(
@@ -179,13 +177,13 @@ pub fn add_tx(
         "INSERT INTO changes_all (id_num, date, {}) VALUES ({}, ?, {})",
         all_tx_methods
             .iter()
-            .map(|s| format!(r#""{}""#, s))
+            .map(|s| format!(r#""{s}""#,))
             .collect::<Vec<_>>()
             .join(", "),
         last_id,
         new_changes_data
             .iter()
-            .map(|s| format!(r#""{}""#, s))
+            .map(|s| format!(r#""{s}""#,))
             .collect::<Vec<_>>()
             .join(", ")
     );

@@ -2,7 +2,7 @@ use crate::db::{create_balances_table, create_changes_table};
 use crate::utility::get_all_tx_methods;
 use rusqlite::{Connection, Result, Savepoint};
 
-/// adds new tx methods as columns on balance_all and changes_all tables. Gets called after
+/// adds new tx methods as columns on `balance_all` and `changes_all` tables. Gets called after
 /// successful handling of 'J' from the app
 pub fn add_new_tx_methods(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
     // add a save point to reverse commits if failed
@@ -29,7 +29,7 @@ pub fn add_tags_column(conn: &mut Connection) -> Result<()> {
     Ok(())
 }
 
-/// Migrates existing database's balance_all column's data type from TEXT to REAL
+/// Migrates existing database's `balance_all` column's data type from TEXT to REAL
 pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
     let all_methods = get_all_tx_methods(conn);
 
@@ -45,20 +45,19 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
 
     let columns = all_methods
         .iter()
-        .map(|column_name| format!(r#""{}""#, column_name))
+        .map(|column_name| format!(r#""{column_name}""#))
         .collect::<Vec<String>>()
         .join(",");
 
     let values = all_methods
         .iter()
-        .map(|method| format!(r#"CAST("{}" as REAL)"#, method))
+        .map(|method| format!(r#"CAST("{method}" as REAL)"#))
         .collect::<Vec<_>>()
         .join(",");
 
     // insert everything from old table to the new balance_all
     let query = format!(
-        "INSERT INTO balance_all (id_num, {}) SELECT id_num, {} FROM balance_all_old",
-        columns, values
+        "INSERT INTO balance_all (id_num, {columns}) SELECT id_num, {values} FROM balance_all_old"
     );
 
     sp.execute(&query, [])?;
@@ -68,12 +67,12 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
         [],
     )?;
 
-    // fill up balance_all table with total year * 12 + 1 rows with 0 balance for all columns
+    // fill up `balance_all` table with total year * 12 + 1 rows with 0 balance for all columns
     let zero_values = vec!["0.00"; all_methods.len()];
 
     let highlighted_tx_methods = all_methods
         .iter()
-        .map(|method| format!("\"{}\"", method))
+        .map(|method| format!("\"{method}\""))
         .collect::<Vec<String>>()
         .join(",");
 
@@ -96,16 +95,16 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
         .collect::<Vec<_>>()
         .join(",");
 
-    let query = format!("UPDATE balance_all SET {} WHERE id_num = 193", new_values);
+    let query = format!("UPDATE balance_all SET {new_values} WHERE id_num = 193",);
     sp.execute(&query, [])?;
 
     let new_values = all_methods
         .iter()
-        .map(|data| format!(r#""{}" = 0.00"#, data))
+        .map(|data| format!(r#""{data}" = 0.00"#,))
         .collect::<Vec<_>>()
         .join(",");
 
-    let query = format!("UPDATE balance_all SET {} WHERE id_num = 49", new_values);
+    let query = format!("UPDATE balance_all SET {new_values} WHERE id_num = 49",);
 
     sp.execute(&query, [])?;
     sp.commit()?;
@@ -114,10 +113,8 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
 
 /// return the last balance from the db
 fn get_last_balance(sp: &Savepoint, all_methods: &Vec<String>) -> Vec<String> {
-    let mut query = format!(
-        "SELECT {:?} FROM balance_all ORDER BY id_num DESC LIMIT 1",
-        all_methods
-    );
+    let mut query =
+        format!("SELECT {all_methods:?} FROM balance_all ORDER BY id_num DESC LIMIT 1",);
     query = query.replace('[', "");
     query = query.replace(']', "");
 
@@ -177,19 +174,17 @@ pub fn reposition_column(tx_methods: Vec<String>, conn: &mut Connection) -> Resu
 
     let columns = tx_methods
         .iter()
-        .map(|column_name| format!(r#""{}""#, column_name))
+        .map(|column_name| format!(r#""{column_name}""#,))
         .collect::<Vec<String>>()
         .join(",");
 
     let query = format!(
-        "INSERT INTO balance_all (id_num, {}) SELECT id_num, {} FROM balance_all_old",
-        columns, columns
+        "INSERT INTO balance_all (id_num, {columns}) SELECT id_num, {columns} FROM balance_all_old"
     );
     sp.execute(&query, [])?;
 
     let query = format!(
-        "INSERT INTO changes_all (date, id_num, {}) SELECT date, id_num, {} FROM changes_all_old",
-        columns, columns
+        "INSERT INTO changes_all (date, id_num, {columns}) SELECT date, id_num, {columns} FROM changes_all_old"
     );
     sp.execute(&query, [])?;
 
