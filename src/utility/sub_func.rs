@@ -7,6 +7,7 @@ use std::process::Command;
 
 use crate::outputs::{ComparisonType, TerminalExecutionError};
 use crate::page_handler::{DateType, UserInputType};
+use crate::tx_handler::{delete_tx, TxData};
 use crate::utility::{
     check_comparison, check_restricted, clear_terminal, flush_output, get_all_tx_methods,
     get_sql_dates, take_input,
@@ -851,4 +852,63 @@ pub fn get_search_data(
     }
 
     (all_txs, all_ids)
+}
+
+/// Switches id_num of 2 txs in the DB to switch the indexes of the value in the UI table
+pub fn switch_tx_index(
+    id_1: i32,
+    id_2: i32,
+    tx_1: &Vec<String>,
+    tx_2: &Vec<String>,
+    conn: &mut Connection,
+) {
+    let tx_type_1 = &tx_1[4];
+    let tx_type_2 = &tx_2[4];
+
+    let tx_data_1 = if tx_type_1 == "Transfer" {
+        let splitted_method = tx_1[2].split(" to ").collect::<Vec<&str>>();
+        let from_method = splitted_method[0];
+        let to_method = splitted_method[1];
+
+        TxData::custom(
+            &tx_1[0],
+            &tx_1[1],
+            from_method,
+            to_method,
+            &tx_1[3],
+            "Transfer",
+            &tx_1[5],
+            id_1,
+        )
+    } else {
+        TxData::custom(
+            &tx_1[0], &tx_1[1], &tx_1[2], "", &tx_1[3], &tx_1[4], &tx_1[5], id_1,
+        )
+    };
+
+    let tx_data_2 = if tx_type_2 == "Transfer" {
+        let splitted_method = tx_2[2].split(" to ").collect::<Vec<&str>>();
+        let from_method = splitted_method[0];
+        let to_method = splitted_method[1];
+
+        TxData::custom(
+            &tx_2[0],
+            &tx_2[1],
+            from_method,
+            to_method,
+            &tx_2[3],
+            "Transfer",
+            &tx_2[5],
+            id_2,
+        )
+    } else {
+        TxData::custom(
+            &tx_2[0], &tx_2[1], &tx_2[2], "", &tx_2[3], &tx_2[4], &tx_2[5], id_1,
+        )
+    };
+
+    delete_tx(id_1, conn).unwrap();
+    delete_tx(id_2, conn).unwrap();
+    tx_data_1.switch_tx_id(id_2, conn);
+    tx_data_2.switch_tx_id(id_1, conn);
 }
