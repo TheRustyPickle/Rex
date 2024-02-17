@@ -325,7 +325,7 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn home_edit_tx(&mut self) {
         if let Some(a) = self.table.state.selected() {
-            let target_data = &self.all_tx_data.get_txs()[a];
+            let target_data = self.all_tx_data.get_tx(a);
             let target_id_num = self.all_tx_data.get_id_num(a);
             let tx_type = &target_data[4];
 
@@ -757,7 +757,7 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn search_edit_tx(&mut self) {
         if let Some(a) = self.search_table.state.selected() {
-            let target_data = &self.search_txs.get_txs()[a];
+            let target_data = &self.search_txs.get_tx(a);
             let target_id_num = self.search_txs.get_id_num(a);
             let tx_type = &target_data[4];
 
@@ -815,7 +815,7 @@ impl<'a> InputKeyHandler<'a> {
             }
         }
     }
- 
+
     #[cfg(not(tarpaulin_include))]
     pub fn switch_tx_index_up(&mut self) {
         if let Some(index) = self.table.state.selected() {
