@@ -712,7 +712,7 @@ impl TxData {
         status
     }
 
-    /// Add a previously deleted tx again but with a new id_num
+    /// Add a previously deleted tx again but with a new `id_num`
     pub fn switch_tx_id(&self, new_id: i32, conn: &mut Connection) {
         add_tx(
             &self.date,

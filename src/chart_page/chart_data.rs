@@ -85,10 +85,10 @@ impl ChartData {
             0 => {
                 let target_id = month as i32 + (year as i32 * 12);
                 for i in &self.all_txs[&target_id] {
-                    to_return_tx.push(i)
+                    to_return_tx.push(i);
                 }
                 for i in &self.all_balance[&target_id] {
-                    to_return_balance.push(i)
+                    to_return_balance.push(i);
                 }
             }
             // 1 = yearly mode. Select the data of all months of the given year
@@ -96,11 +96,11 @@ impl ChartData {
                 for i in 0..MONTHS.len() {
                     let target_id = i as i32 + (year as i32 * 12);
                     for i in &self.all_txs[&target_id] {
-                        to_return_tx.push(i)
+                        to_return_tx.push(i);
                     }
 
                     for i in &self.all_balance[&target_id] {
-                        to_return_balance.push(i)
+                        to_return_balance.push(i);
                     }
                 }
             }
@@ -110,11 +110,11 @@ impl ChartData {
                     for i in 0..MONTHS.len() {
                         let target_id = i as i32 + (x as i32 * 12);
                         for i in &self.all_txs[&target_id] {
-                            to_return_tx.push(i)
+                            to_return_tx.push(i);
                         }
 
                         for i in &self.all_balance[&target_id] {
-                            to_return_balance.push(i)
+                            to_return_balance.push(i);
                         }
                     }
                 }

@@ -7,13 +7,13 @@ use crate::utility::{get_all_changes, get_all_tx_methods, get_all_txs, get_last_
 /// This struct stores the transaction data, balance, changes and the id num
 /// Data storing format is:
 ///
-/// all_tx : `[[date, details, tx_method, amount, tx_type, tags],]`
+/// `all_tx` : `[[date, details, tx_method, amount, tx_type, tags],]`
 ///
-/// all_balance: `[["123.00", "123.00"],]`
+/// `all_balance`: `[["123.00", "123.00"],]`
 ///
-/// all_changes: `[["↓123.00", "↑123.00"],]`
+/// `all_changes`: `[["↓123.00", "↑123.00"],]`
 ///
-/// all_id_num : `["1", "2", "3",]`
+/// `all_id_num` : `["1", "2", "3",]`
 pub struct TransactionData {
     all_tx: Vec<Vec<String>>,
     all_balance: Vec<Vec<String>>,
@@ -59,12 +59,12 @@ impl TransactionData {
     pub fn get_balance(&self, index: usize) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
         let mut total_balance = 0.0;
-        for i in self.all_balance[index].iter() {
+        for i in &self.all_balance[index] {
             let num_balance = i.parse::<f64>().unwrap();
             total_balance += num_balance;
-            balance_data.push(format!("{:.2}", num_balance));
+            balance_data.push(format!("{num_balance:.2}"));
         }
-        balance_data.push(format!("{:.2}", total_balance));
+        balance_data.push(format!("{total_balance:.2}"));
         balance_data
     }
 
@@ -74,12 +74,12 @@ impl TransactionData {
         let mut balance_data = vec!["Balance".to_string()];
         let db_data = get_last_balances(conn);
         let mut total_balance = 0.0;
-        for i in db_data.iter() {
+        for i in &db_data {
             let num_balance = i.parse::<f64>().unwrap();
             total_balance += num_balance;
-            balance_data.push(format!("{:.2}", num_balance));
+            balance_data.push(format!("{num_balance:.2}",));
         }
-        balance_data.push(format!("{:.2}", total_balance));
+        balance_data.push(format!("{total_balance:.2}",));
         balance_data
     }
 
@@ -87,13 +87,13 @@ impl TransactionData {
     /// Home Table's selected index
     pub fn get_changes(&self, index: usize) -> Vec<String> {
         let mut changes_data = vec!["Changes".to_string()];
-        for i in self.all_changes[index].iter() {
+        for i in &self.all_changes[index] {
             changes_data.push(i.to_string());
         }
         changes_data
     }
 
-    /// Returns the id_num of the tx of the given index
+    /// Returns the `id_num` of the tx of the given index
     pub fn get_id_num(&self, index: usize) -> i32 {
         self.all_id_num[index].parse::<i32>().unwrap().to_owned()
     }
@@ -113,7 +113,7 @@ impl TransactionData {
 
         // Get all transaction methods from the database and set 0 as the default value
         let all_tx_methods = get_all_tx_methods(conn);
-        for method in all_tx_methods.iter() {
+        for method in &all_tx_methods {
             income_data.insert(method, 0.0);
         }
 
@@ -125,7 +125,7 @@ impl TransactionData {
 
         // Iterate over all transactions and accumulate the total income.
         let mut total_income = 0.0_f64;
-        for tx in self.all_tx.iter() {
+        for tx in &self.all_tx {
             let tx_type = &tx[4];
 
             if tx_type == "Income" {
@@ -138,18 +138,17 @@ impl TransactionData {
             if stopping_index == 0 {
                 // We have reached the stopping index, so exit the loop early.
                 break;
-            } else {
-                // Decrement the stopping index and continue with the loop.
-                stopping_index -= 1
             }
+            // Decrement the stopping index and continue with the loop.
+            stopping_index -= 1;
         }
 
-        for i in all_tx_methods.iter() {
+        for i in &all_tx_methods {
             final_income.push(format!("{:.2}", income_data[i]));
         }
 
         // Add the computed total income to the output vector.
-        final_income.push(format!("{:.2}", total_income));
+        final_income.push(format!("{total_income:.2}"));
         final_income
     }
 
@@ -166,7 +165,7 @@ impl TransactionData {
 
         // Get all transaction methods from the database and set 0 as the default value
         let all_tx_methods = get_all_tx_methods(conn);
-        for method in all_tx_methods.iter() {
+        for method in &all_tx_methods {
             expense_data.insert(method, 0.0);
         }
 
@@ -178,7 +177,7 @@ impl TransactionData {
 
         // Iterate over all transactions and accumulate the total expense.
         let mut total_expense = 0.0_f64;
-        for tx in self.all_tx.iter() {
+        for tx in &self.all_tx {
             let tx_type = &tx[4];
 
             if tx_type == "Expense" {
@@ -191,18 +190,17 @@ impl TransactionData {
             if stopping_index == 0 {
                 // We have reached the stopping index, so exit the loop early.
                 break;
-            } else {
-                // Decrement the stopping index and continue with the loop.
-                stopping_index -= 1
             }
+            // Decrement the stopping index and continue with the loop.
+            stopping_index -= 1;
         }
 
-        for i in all_tx_methods.iter() {
+        for i in &all_tx_methods {
             final_expense.push(format!("{:.2}", expense_data[i]));
         }
 
         // Add the computed total expense to the output vector.
-        final_expense.push(format!("{:.2}", total_expense));
+        final_expense.push(format!("{total_expense:.2}"));
         final_expense
     }
 

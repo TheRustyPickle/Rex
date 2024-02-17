@@ -123,19 +123,19 @@ pub fn home_ui(
     if *balance_load_percentage < 1.0 {
         *balance_load_percentage += 0.004;
     } else {
-        *balance_load_percentage = 1.0
+        *balance_load_percentage = 1.0;
     }
 
     if *income_load_percentage < 1.0 {
         *income_load_percentage += 0.004;
     } else {
-        *income_load_percentage = 1.0
+        *income_load_percentage = 1.0;
     }
 
     if *expense_load_percentage < 1.0 {
         *expense_load_percentage += 0.004;
     } else {
-        *expense_load_percentage = 1.0
+        *expense_load_percentage = 1.0;
     }
 
     // go through all data of the Balance widget and style it as necessary
@@ -234,26 +234,26 @@ pub fn home_ui(
                 if actual_data > last_data {
                     match row_type {
                         HomeRow::Balance | HomeRow::Changes => {
-                            *load_data = last_data + (difference * *balance_load_percentage)
+                            *load_data = last_data + (difference * *balance_load_percentage);
                         }
                         HomeRow::Expense => {
-                            *load_data = last_data + (difference * *expense_load_percentage)
+                            *load_data = last_data + (difference * *expense_load_percentage);
                         }
                         HomeRow::Income => {
-                            *load_data = last_data + (difference * *income_load_percentage)
+                            *load_data = last_data + (difference * *income_load_percentage);
                         }
                         HomeRow::TopRow => unreachable!(),
                     }
                 } else if last_data > actual_data {
                     match row_type {
                         HomeRow::Balance | HomeRow::Changes => {
-                            *load_data = last_data - (difference * *balance_load_percentage)
+                            *load_data = last_data - (difference * *balance_load_percentage);
                         }
                         HomeRow::Income => {
-                            *load_data = last_data - (difference * *income_load_percentage)
+                            *load_data = last_data - (difference * *income_load_percentage);
                         }
                         HomeRow::Expense => {
-                            *load_data = last_data - (difference * *expense_load_percentage)
+                            *load_data = last_data - (difference * *expense_load_percentage);
                         }
                         HomeRow::TopRow => unreachable!(),
                     }
@@ -261,14 +261,14 @@ pub fn home_ui(
                     *load_data = actual_data;
                 }
 
-                if format!("{:.2}", load_data) == "-0.00" {
-                    *load_data = 0.0
+                if format!("{load_data:.2}",) == "-0.00" {
+                    *load_data = 0.0;
                 }
 
                 if row_type != HomeRow::Changes {
                     format!("{load_data:.2}").separate_with_commas()
                 } else if let Some(sym) = symbol {
-                    format!("{}{load_data:.2}", sym).separate_with_commas()
+                    format!("{sym}{load_data:.2}",).separate_with_commas()
                 } else {
                     format!("{load_data:.2}").separate_with_commas()
                 }
@@ -321,11 +321,11 @@ pub fn home_ui(
             if let Some(a) = table.state.selected() {
                 table_area = table_area.highlight_symbol(">> ");
                 if table.items[a][4] == "Expense" {
-                    table_area = table_area.highlight_style(selected_style_expense)
+                    table_area = table_area.highlight_style(selected_style_expense);
                 } else if table.items[a][4] == "Income" {
-                    table_area = table_area.highlight_style(selected_style_income)
+                    table_area = table_area.highlight_style(selected_style_income);
                 } else if table.items[a][4] == "Transfer" {
-                    table_area = table_area.highlight_style(Style::default().bg(SELECTED))
+                    table_area = table_area.highlight_style(Style::default().bg(SELECTED));
                 }
             }
         }
@@ -338,5 +338,5 @@ pub fn home_ui(
     f.render_widget(year_tab, chunks[1]);
 
     // this one is different because the Transaction widget interface works differently
-    f.render_stateful_widget(table_area, chunks[3], &mut table.state)
+    f.render_stateful_widget(table_area, chunks[3], &mut table.state);
 }

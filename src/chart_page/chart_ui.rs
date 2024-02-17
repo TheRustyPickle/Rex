@@ -31,7 +31,7 @@ pub fn chart_ui(
 
     // don't create any other chunk if hidden mode is enabled. Create 1 chunk that will be used for the chart itself
     if chart_hidden_mode {
-        main_layout = main_layout.constraints([Constraint::Min(0)].as_ref())
+        main_layout = main_layout.constraints([Constraint::Min(0)].as_ref());
     } else {
         match mode_selection.index {
             0 => {
@@ -43,7 +43,7 @@ pub fn chart_ui(
                         Constraint::Min(0),
                     ]
                     .as_ref(),
-                )
+                );
             }
             1 => {
                 main_layout = main_layout.constraints(
@@ -53,11 +53,11 @@ pub fn chart_ui(
                         Constraint::Min(0),
                     ]
                     .as_ref(),
-                )
+                );
             }
             2 => {
                 main_layout =
-                    main_layout.constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
+                    main_layout.constraints([Constraint::Length(3), Constraint::Min(0)].as_ref());
             }
             _ => {}
         };
@@ -135,14 +135,14 @@ pub fn chart_ui(
         if let Some(val) = loop_remaining {
             if *val == 0.0 {
                 if total_loop > render_size {
-                    *loop_remaining = Some(total_loop - render_size)
+                    *loop_remaining = Some(total_loop - render_size);
                 } else {
-                    *loop_remaining = None
+                    *loop_remaining = None;
                 }
             } else if *val - render_size > 0.0 {
-                *loop_remaining = Some(*val - render_size)
+                *loop_remaining = Some(*val - render_size);
             } else {
-                *loop_remaining = None
+                *loop_remaining = None;
             }
         }
 
@@ -179,9 +179,9 @@ pub fn chart_ui(
                     let current_balance = current_balances[method_index].parse::<f64>().unwrap();
 
                     if current_balance > highest_balance {
-                        highest_balance = current_balance
+                        highest_balance = current_balance;
                     } else if current_balance < lowest_balance {
-                        lowest_balance = current_balance
+                        lowest_balance = current_balance;
                     }
 
                     if to_add_again {
@@ -200,7 +200,7 @@ pub fn chart_ui(
                         if datasets.get(method_index).is_some() {
                             datasets[method_index].extend(to_push);
                         } else {
-                            datasets.push(to_push)
+                            datasets.push(to_push);
                         }
 
                         last_balances.push(current_balance);
@@ -209,7 +209,7 @@ pub fn chart_ui(
 
                 if next_date == checking_date {
                     // the axis won't move if the next date is the same.
-                    to_add_again = true
+                    to_add_again = true;
                 } else {
                     to_add_again = false;
                     current_axis += 1.0;
@@ -261,7 +261,7 @@ pub fn chart_ui(
     // 10 labels, so loop 10 times
     for _i in 0..10 {
         to_add += diff;
-        labels.push(format!("{:.2}", to_add));
+        labels.push(format!("{to_add:.2}"));
     }
 
     let mut color_list = vec![
@@ -283,7 +283,7 @@ pub fn chart_ui(
     for i in 0..all_tx_methods.len() {
         // run out of colors = cyan default
         if color_list.is_empty() {
-            color_list.push(Color::Cyan)
+            color_list.push(Color::Cyan);
         }
         final_dataset.push(
             Dataset::default()
@@ -296,7 +296,7 @@ pub fn chart_ui(
                         .bg(BACKGROUND),
                 )
                 .data(&datasets[i]),
-        )
+        );
     }
 
     let chart = Chart::new(final_dataset)

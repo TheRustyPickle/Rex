@@ -14,10 +14,10 @@ struct GithubRelease {
 #[cfg(not(tarpaulin_include))]
 pub fn check_version() -> Result<Option<Vec<String>>, reqwest::Error> {
     let current_version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
-    static APP_USER_AGENT: &str = "Rex";
+    let agent = "Rex";
 
     let client = reqwest::blocking::Client::builder()
-        .user_agent(APP_USER_AGENT)
+        .user_agent(agent)
         .timeout(Duration::from_secs(2))
         .build()?;
 

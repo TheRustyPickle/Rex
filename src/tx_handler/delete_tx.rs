@@ -17,7 +17,7 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
     let mut final_last_balance = Vec::new();
 
     // get the deletion tx data
-    let query = format!("SELECT * FROM tx_all Where id_num = {}", id_num);
+    let query = format!("SELECT * FROM tx_all Where id_num = {id_num}",);
     let data = sp.query_row(&query, [], |row| {
         let final_data: Vec<String> = vec![row.get(0)?, row.get(2)?, row.get(3)?, row.get(4)?];
         Ok(final_data)
@@ -67,7 +67,7 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
             "SELECT {} FROM balance_all WHERE id_num = {}",
             tx_methods
                 .iter()
-                .map(|s| format!(r#""{}""#, s))
+                .map(|s| format!(r#""{s}""#,))
                 .collect::<Vec<_>>()
                 .join(", "),
             target_id_num
@@ -77,14 +77,14 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
             let mut final_data: Vec<String> = Vec::new();
             for i in 0..tx_methods.len() {
                 let row_data: f64 = row.get(i)?;
-                final_data.push(row_data.to_string())
+                final_data.push(row_data.to_string());
             }
             Ok(final_data)
         })?;
 
         let mut untouched = true;
 
-        for x in current_month_balance.iter() {
+        for x in &current_month_balance {
             if x != "0" {
                 untouched = false;
                 break;
@@ -113,15 +113,15 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
                 } else if tx_type == "Income" {
                     current_amount -= amount;
                 }
-                updated_month_balance.push(format!("{:.2}", current_amount));
+                updated_month_balance.push(format!("{current_amount:.2}",));
             } else if tx_methods[i] == from_method && current_month_balance[i] != "0.00" {
                 let mut current_amount = current_month_balance[i].parse::<f64>().unwrap();
                 current_amount += amount;
-                updated_month_balance.push(format!("{:.2}", current_amount));
+                updated_month_balance.push(format!("{current_amount:.2}",));
             } else if tx_methods[i] == to_method && current_month_balance[i] != "0.00" {
                 let mut current_amount = current_month_balance[i].parse::<f64>().unwrap();
                 current_amount -= amount;
-                updated_month_balance.push(format!("{:.2}", current_amount));
+                updated_month_balance.push(format!("{current_amount:.2}",));
             } else {
                 updated_month_balance.push(format!(
                     "{:.2}",
@@ -133,14 +133,12 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
         let set_values = tx_methods
             .iter()
             .zip(updated_month_balance.iter())
-            .map(|(method, value)| format!(r#""{}" = "{}""#, method, value))
+            .map(|(method, value)| format!(r#""{method}" = "{value}""#))
             .collect::<Vec<_>>()
             .join(", ");
 
-        let balance_query = format!(
-            "UPDATE balance_all SET {} WHERE id_num = {}",
-            set_values, target_id_num
-        );
+        let balance_query =
+            format!("UPDATE balance_all SET {set_values} WHERE id_num = {target_id_num}");
 
         sp.execute(&balance_query, [])?;
 
@@ -167,7 +165,7 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
         } else if tx_methods[i] == to_method && tx_type == "Transfer" {
             current_balance -= amount;
         }
-        final_last_balance.push(format!("{:.2}", current_balance));
+        final_last_balance.push(format!("{current_balance:.2}",));
     }
 
     let del_query = format!("DELETE FROM tx_all WHERE id_num = {id_num}");
@@ -177,7 +175,7 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
         tx_methods
             .iter()
             .zip(final_last_balance.iter())
-            .map(|(method, balance)| format!(r#""{}" = "{}""#, method, balance))
+            .map(|(method, balance)| format!(r#""{method}" = "{balance}""#))
             .collect::<Vec<_>>()
             .join(", "),
         last_balance_id

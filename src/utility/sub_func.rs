@@ -409,9 +409,8 @@ Example input: Bank, Cash, PayPal.\n\nEnter Transaction Methods: "
                 db_tx_methods.push(i.to_string());
             }
             break;
-        } else {
-            clear_terminal(&mut stdout);
         }
+        clear_terminal(&mut stdout);
     }
     UserInputType::AddNewTxMethod(db_tx_methods)
 }
@@ -455,9 +454,7 @@ Currently added Transaction Methods: \n"
 
         let method_number_result = user_input.parse::<usize>();
 
-        let method_number = if let Ok(num) = method_number_result {
-            num
-        } else {
+        let Ok(method_number) = method_number_result else {
             clear_terminal(&mut stdout);
             println!("Invalid method number. Example input: 1\n");
             continue;
@@ -512,9 +509,8 @@ Currently added Transaction Methods: \n"
             rename_data.push(tx_methods[method_number - 1].clone());
             rename_data.push(new_method_name);
             break;
-        } else {
-            clear_terminal(&mut stdout);
         }
+        clear_terminal(&mut stdout);
     }
     UserInputType::RenameTxMethod(rename_data)
 }
@@ -608,10 +604,10 @@ Currently added Transaction Methods: \n".to_string();
 
         if confirm_operation.to_lowercase().starts_with('y') {
             break;
-        } else {
-            reposition_data.clear();
-            clear_terminal(&mut stdout);
         }
+
+        reposition_data.clear();
+        clear_terminal(&mut stdout);
     }
 
     UserInputType::RepositionTxMethod(reposition_data)
@@ -756,7 +752,7 @@ pub fn get_search_data(
 
                 query.push_str(&format!(
                     r#" AND date BETWEEN date("{date_1}") AND date("{date_2}")"#,
-                ))
+                ));
             }
             DateType::Yearly => {
                 let year_index = date.parse::<usize>().unwrap() - 2022;
@@ -765,7 +761,7 @@ pub fn get_search_data(
 
                 query.push_str(&format!(
                     r#" AND date BETWEEN date("{date_1}") AND date("{date_2}")"#
-                ))
+                ));
             }
         }
     }
@@ -854,12 +850,12 @@ pub fn get_search_data(
     (all_txs, all_ids)
 }
 
-/// Switches id_num of 2 txs in the DB to switch the indexes of the value in the UI table
+/// Switches `id_num` of 2 txs in the DB to switch the indexes of the value in the UI table
 pub fn switch_tx_index(
     id_1: i32,
     id_2: i32,
-    tx_1: &Vec<String>,
-    tx_2: &Vec<String>,
+    tx_1: &[String],
+    tx_2: &[String],
     conn: &mut Connection,
 ) {
     let tx_type_1 = &tx_1[4];

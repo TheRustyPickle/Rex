@@ -13,8 +13,8 @@ impl fmt::Display for TerminalExecutionError {
     #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TerminalExecutionError::NotFound(output) => write!(f, "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{:?}", output),
-            TerminalExecutionError::ExecutionFailed(error) => write!(f, "Error while processing commands. Use a terminal/console to run the app. Output: {}", error),
+            TerminalExecutionError::NotFound(output) => write!(f, "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{output:?}", ),
+            TerminalExecutionError::ExecutionFailed(error) => write!(f, "Error while processing commands. Use a terminal/console to run the app. Output: {error}", ),
         }
     }
 }
@@ -32,7 +32,7 @@ impl fmt::Display for UiHandlingError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             UiHandlingError::DrawingError(err) => {
-                write!(f, "Error while trying to draw widgets. Error: {}", err)
+                write!(f, "Error while trying to draw widgets. Error: {err}",)
             }
             UiHandlingError::PollingError(err) => {
                 write!(f, "Error while polling for keyboard input. {err}")
@@ -121,20 +121,17 @@ impl fmt::Display for TxUpdateError {
             TxUpdateError::FailedAddTx(e) => {
                 write!(
                     f,
-                    "Delete Transaction: Something went wrong. Failed to delete transaction. Error: \n{}",
-                    e
+                    "Delete Transaction: Something went wrong. Failed to delete transaction. Error: \n{e}",
                 )
             }
             TxUpdateError::FailedEditTx(e) => write!(
                 f,
-                "Edit Transaction: Something went wrong. Failed to edit transaction. Error: {}",
-                e
+                "Edit Transaction: Something went wrong. Failed to edit transaction. Error: {e}",
             ),
             TxUpdateError::FailedDeleteTx(e) => {
                 write!(
                     f,
-                    "Add Transaction: Something went wrong. Failed to add transaction. Error: {}",
-                    e
+                    "Add Transaction: Something went wrong. Failed to add transaction. Error: {e}",
                 )
             }
         }

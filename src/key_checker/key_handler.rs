@@ -129,8 +129,8 @@ impl<'a> InputKeyHandler<'a> {
             search_txs,
             total_tags,
             chart_index,
-            summary_hidden_mode,
             chart_hidden_mode,
+            summary_hidden_mode,
             deletion_status,
             ongoing_balance,
             ongoing_changes,
@@ -156,7 +156,7 @@ impl<'a> InputKeyHandler<'a> {
             }
             _ => {}
         }
-        self.go_home()
+        self.go_home();
     }
 
     /// Moves the interface to Home page
@@ -169,13 +169,13 @@ impl<'a> InputKeyHandler<'a> {
     /// Moves the interface to Add Tx page
     #[cfg(not(tarpaulin_include))]
     pub fn go_add_tx(&mut self) {
-        *self.page = CurrentUi::AddTx
+        *self.page = CurrentUi::AddTx;
     }
 
     /// Moves the interface to Search page
     #[cfg(not(tarpaulin_include))]
     pub fn go_search(&mut self) {
-        *self.page = CurrentUi::Search
+        *self.page = CurrentUi::Search;
     }
 
     /// Moves the interface to Summary page
@@ -211,7 +211,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Chart => *self.popup = PopupState::ChartHelp,
             CurrentUi::Summary => *self.popup = PopupState::SummaryHelp,
             CurrentUi::Search => *self.popup = PopupState::SearchHelp,
-            _ => {}
+            CurrentUi::Initial => {}
         }
     }
 
@@ -221,12 +221,12 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::Home => {
                 if self.table.state.selected().is_some() {
-                    *self.popup = PopupState::TxDeletion
+                    *self.popup = PopupState::TxDeletion;
                 }
             }
             CurrentUi::Search => {
                 if self.search_table.state.selected().is_some() {
-                    *self.popup = PopupState::TxDeletion
+                    *self.popup = PopupState::TxDeletion;
                 }
             }
             _ => {}
@@ -236,7 +236,7 @@ impl<'a> InputKeyHandler<'a> {
     /// Removes popup status
     #[cfg(not(tarpaulin_include))]
     pub fn do_empty_popup(&mut self) {
-        *self.popup = PopupState::Nothing
+        *self.popup = PopupState::Nothing;
     }
 
     /// Hides chart top widgets
@@ -256,25 +256,22 @@ impl<'a> InputKeyHandler<'a> {
                 self.summary_table.state.select(Some(0));
             }
         } else {
-            *self.summary_tab = SummaryTab::ModeSelection
+            *self.summary_tab = SummaryTab::ModeSelection;
         }
     }
 
     /// Handles Enter key press if there is a new update and the update popup is on
     #[cfg(not(tarpaulin_include))]
     pub fn handle_update_popup(&mut self) -> Result<(), HandlingOutput> {
-        match self.key.code {
-            KeyCode::Enter => {
-                // If there is a new version, Enter will try to open the default browser with this link
-                open::that("https://github.com/WaffleMixer/Rex/releases/latest")
-                    .map_err(|_| HandlingOutput::PrintNewUpdate)?;
-                *self.popup = PopupState::Nothing;
-                Ok(())
-            }
-            _ => {
-                *self.popup = PopupState::Nothing;
-                Ok(())
-            }
+        if self.key.code == KeyCode::Enter {
+            // If there is a new version, Enter will try to open the default browser with this link
+            open::that("https://github.com/WaffleMixer/Rex/releases/latest")
+                .map_err(|_| HandlingOutput::PrintNewUpdate)?;
+            *self.popup = PopupState::Nothing;
+            Ok(())
+        } else {
+            *self.popup = PopupState::Nothing;
+            Ok(())
         }
     }
 
@@ -282,7 +279,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn search_tx(&mut self) {
         if self.search_data.check_all_empty() {
             self.search_data
-                .add_tx_status("Search: All fields cannot be empty".to_string())
+                .add_tx_status("Search: All fields cannot be empty".to_string());
         } else {
             let search_txs = self
                 .search_data
@@ -291,10 +288,9 @@ impl<'a> InputKeyHandler<'a> {
             if search_txs.0.is_empty() {
                 self.search_data.add_tx_status(
                     "Search: No transactions found with the provided input".to_string(),
-                )
+                );
             } else {
-                *self.search_txs =
-                    TransactionData::new_search(search_txs.0.to_owned(), search_txs.1);
+                *self.search_txs = TransactionData::new_search(search_txs.0.clone(), search_txs.1);
                 *self.search_table = TableData::new(search_txs.0);
                 self.search_table.state.select(Some(0));
             }
@@ -307,7 +303,7 @@ impl<'a> InputKeyHandler<'a> {
         let status = self.add_tx_data.add_tx(self.conn);
 
         match status {
-            Ok(_) => {
+            Ok(()) => {
                 self.go_home_reset();
                 // we just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
                 *self.home_tab = HomeTab::Months;
@@ -361,7 +357,7 @@ impl<'a> InputKeyHandler<'a> {
                 *self.page = CurrentUi::AddTx;
             }
             self.add_tx_data
-                .add_tx_status("Info: Entering Transaction edit mode".to_string())
+                .add_tx_status("Info: Entering Transaction edit mode".to_string());
         }
     }
 
@@ -371,7 +367,7 @@ impl<'a> InputKeyHandler<'a> {
         if let Some(index) = self.table.state.selected() {
             let status = self.all_tx_data.del_tx(index, self.conn);
             match status {
-                Ok(_) => {
+                Ok(()) => {
                     // transaction deleted so reload the data again
                     self.reload_home_table();
                     self.reload_chart_data();
@@ -459,7 +455,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.home_months.set_index_zero();
                     self.reload_home_table();
                 }
-                _ => {}
+                HomeTab::Table => {}
             },
             CurrentUi::AddTx => self.add_tx_data.move_index_left(self.add_tx_tab),
             CurrentUi::Search => self.search_data.move_index_left(self.search_tab),
@@ -498,11 +494,11 @@ impl<'a> InputKeyHandler<'a> {
                             self.summary_months.previous();
                             self.reload_summary();
                         }
-                        _ => {}
+                        SummaryTab::Table => {}
                     }
                 }
             }
-            _ => {}
+            CurrentUi::Initial => {}
         }
     }
 
@@ -520,7 +516,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.home_months.set_index_zero();
                     self.reload_home_table();
                 }
-                _ => {}
+                HomeTab::Table => {}
             },
             CurrentUi::AddTx => self.add_tx_data.move_index_right(self.add_tx_tab),
             CurrentUi::Search => self.search_data.move_index_right(self.search_tab),
@@ -557,9 +553,9 @@ impl<'a> InputKeyHandler<'a> {
                     self.summary_months.next();
                     self.reload_summary();
                 }
-                _ => {}
+                SummaryTab::Table => {}
             },
-            _ => {}
+            CurrentUi::Initial => {}
         }
     }
 
@@ -572,7 +568,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Summary => self.do_summary_up(),
             CurrentUi::Chart => self.do_chart_up(),
             CurrentUi::Search => self.do_search_up(),
-            _ => {}
+            CurrentUi::Initial => {}
         }
         self.check_autofill();
     }
@@ -586,7 +582,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Summary => self.do_summary_down(),
             CurrentUi::Chart => self.do_chart_down(),
             CurrentUi::Search => self.do_search_down(),
-            _ => {}
+            CurrentUi::Initial => {}
         }
         self.check_autofill();
     }
@@ -669,7 +665,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::AddTx => *self.add_tx_data = TxData::new(),
             CurrentUi::Search => {
                 *self.search_data = TxData::new_empty();
-                self.reload_search_data()
+                self.reload_search_data();
             }
             _ => {}
         }
@@ -701,7 +697,7 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn change_summary_sort(&mut self) {
         *self.summary_sort = self.summary_sort.next_type();
-        let summary_data = self.summary_table.items.to_owned();
+        let summary_data = self.summary_table.items.clone();
         let sorted_data = sort_table_data(summary_data, self.summary_sort);
         let selection_status = self.summary_table.state.selected();
         *self.summary_table = TableData::new(sorted_data);
@@ -736,7 +732,7 @@ impl<'a> InputKeyHandler<'a> {
                     }
                     CurrentUi::Search => {
                         self.search_delete_tx();
-                        *self.popup = PopupState::Nothing
+                        *self.popup = PopupState::Nothing;
                     }
                     _ => {}
                 },
@@ -801,7 +797,7 @@ impl<'a> InputKeyHandler<'a> {
         if let Some(index) = self.search_table.state.selected() {
             let status = self.search_txs.del_tx(index, self.conn);
             match status {
-                Ok(_) => {
+                Ok(()) => {
                     // transaction deleted so reload the data again
                     self.reload_home_table();
                     self.reload_chart_data();
@@ -820,7 +816,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn switch_tx_index_up(&mut self) {
         if let Some(index) = self.table.state.selected() {
             // Don't do anything if there is 1 or less items or is selecting the first index which can't be moved up
-            if self.table.items.len() < 1 || index == 0 {
+            if self.table.items.len() <= 1 || index == 0 {
                 return;
             }
 
@@ -852,7 +848,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn switch_tx_index_down(&mut self) {
         if let Some(index) = self.table.state.selected() {
             // Don't do anything if there is 1 or less items or is selecting the last index which can't be moved up
-            if self.table.items.len() < 1 || index == self.table.items.len() - 1 {
+            if self.table.items.len() <= 1 || index == self.table.items.len() - 1 {
                 return;
             }
 
@@ -905,7 +901,7 @@ impl<'a> InputKeyHandler<'a> {
                     *self.home_tab = self.home_tab.change_tab_up();
                 }
             }
-            _ => *self.home_tab = self.home_tab.change_tab_up(),
+            HomeTab::Months => *self.home_tab = self.home_tab.change_tab_up(),
         }
     }
 
@@ -936,7 +932,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.table.state.select(Some(0));
                 };
             }
-            _ => *self.home_tab = self.home_tab.change_tab_down(),
+            HomeTab::Years => *self.home_tab = self.home_tab.change_tab_down(),
         }
     }
 
@@ -949,7 +945,7 @@ impl<'a> InputKeyHandler<'a> {
                         if self.summary_table.state.selected() == Some(0) {
                             *self.summary_tab = self.summary_tab.change_tab_up_monthly();
                         } else {
-                            self.summary_table.previous()
+                            self.summary_table.previous();
                         }
                     }
                     SummaryTab::ModeSelection => {
@@ -959,7 +955,7 @@ impl<'a> InputKeyHandler<'a> {
                         } else {
                             *self.summary_tab = self.summary_tab.change_tab_up_monthly();
                             *self.summary_tab = self.summary_tab.change_tab_up_monthly();
-                            self.summary_table.state.select(None)
+                            self.summary_table.state.select(None);
                         }
                     }
                     _ => *self.summary_tab = self.summary_tab.change_tab_up_monthly(),
@@ -969,17 +965,17 @@ impl<'a> InputKeyHandler<'a> {
                         if self.summary_table.state.selected() == Some(0) {
                             *self.summary_tab = self.summary_tab.change_tab_up_yearly();
                         } else {
-                            self.summary_table.previous()
+                            self.summary_table.previous();
                         }
                     }
                     SummaryTab::ModeSelection => {
                         if self.total_tags > 0 {
                             self.summary_table.state.select(Some(self.total_tags - 1));
-                            *self.summary_tab = self.summary_tab.change_tab_up_yearly()
+                            *self.summary_tab = self.summary_tab.change_tab_up_yearly();
                         } else {
                             *self.summary_tab = self.summary_tab.change_tab_up_yearly();
                             *self.summary_tab = self.summary_tab.change_tab_up_yearly();
-                            self.summary_table.state.select(None)
+                            self.summary_table.state.select(None);
                         }
                     }
                     _ => *self.summary_tab = self.summary_tab.change_tab_up_yearly(),
@@ -989,7 +985,7 @@ impl<'a> InputKeyHandler<'a> {
                         if self.summary_table.state.selected() == Some(0) {
                             *self.summary_tab = self.summary_tab.change_tab_up_all_time();
                         } else {
-                            self.summary_table.previous()
+                            self.summary_table.previous();
                         }
                     }
                     SummaryTab::ModeSelection => {
@@ -999,7 +995,7 @@ impl<'a> InputKeyHandler<'a> {
                         } else {
                             *self.summary_tab = self.summary_tab.change_tab_up_all_time();
                             *self.summary_tab = self.summary_tab.change_tab_up_all_time();
-                            self.summary_table.state.select(None)
+                            self.summary_table.state.select(None);
                         }
                     }
                     _ => {}
@@ -1010,7 +1006,7 @@ impl<'a> InputKeyHandler<'a> {
             if self.summary_table.state.selected() == Some(0) {
                 self.summary_table.state.select(Some(self.total_tags - 1));
             } else {
-                self.summary_table.previous()
+                self.summary_table.previous();
             }
         }
     }
@@ -1024,7 +1020,7 @@ impl<'a> InputKeyHandler<'a> {
                         if self.summary_table.state.selected() == Some(self.total_tags - 1) {
                             *self.summary_tab = self.summary_tab.change_tab_down_monthly();
                         } else {
-                            self.summary_table.next()
+                            self.summary_table.next();
                         }
                     }
                     SummaryTab::Months => {
@@ -1034,7 +1030,7 @@ impl<'a> InputKeyHandler<'a> {
                         } else {
                             *self.summary_tab = self.summary_tab.change_tab_down_monthly();
                             *self.summary_tab = self.summary_tab.change_tab_down_monthly();
-                            self.summary_table.state.select(None)
+                            self.summary_table.state.select(None);
                         }
                     }
                     _ => *self.summary_tab = self.summary_tab.change_tab_down_monthly(),
@@ -1050,12 +1046,12 @@ impl<'a> InputKeyHandler<'a> {
                     SummaryTab::Years => {
                         if self.total_tags > 0 {
                             self.summary_table.state.select(Some(0));
-                            *self.summary_tab = self.summary_tab.change_tab_down_yearly()
+                            *self.summary_tab = self.summary_tab.change_tab_down_yearly();
                         } else {
                             *self.summary_tab = self.summary_tab.change_tab_down_yearly();
                             *self.summary_tab = self.summary_tab.change_tab_down_yearly();
-                            self.summary_table.state.select(None)
-                        }
+                            self.summary_table.state.select(None);
+                        };
                     }
                     _ => *self.summary_tab = self.summary_tab.change_tab_down_yearly(),
                 },
@@ -1064,7 +1060,7 @@ impl<'a> InputKeyHandler<'a> {
                         if self.summary_table.state.selected() == Some(self.total_tags - 1) {
                             *self.summary_tab = self.summary_tab.change_tab_down_all_time();
                         } else {
-                            self.summary_table.next()
+                            self.summary_table.next();
                         }
                     }
                     SummaryTab::ModeSelection => {
@@ -1074,7 +1070,7 @@ impl<'a> InputKeyHandler<'a> {
                         } else {
                             *self.summary_tab = self.summary_tab.change_tab_down_all_time();
                             *self.summary_tab = self.summary_tab.change_tab_down_all_time();
-                            self.summary_table.state.select(None)
+                            self.summary_table.state.select(None);
                         }
                     }
                     _ => {}
@@ -1085,7 +1081,7 @@ impl<'a> InputKeyHandler<'a> {
             if self.summary_table.state.selected() == Some(self.total_tags - 1) {
                 self.summary_table.state.select(Some(0));
             } else {
-                self.summary_table.next()
+                self.summary_table.next();
             }
         }
     }
@@ -1131,7 +1127,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = TxTab::Nothing
+                        *self.add_tx_tab = TxTab::Nothing;
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1175,7 +1171,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = TxTab::Nothing
+                        *self.add_tx_tab = TxTab::Nothing;
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1208,7 +1204,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = TxTab::Nothing
+                        *self.add_tx_tab = TxTab::Nothing;
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1238,7 +1234,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.add_tx_tab = TxTab::Nothing
+                        *self.add_tx_tab = TxTab::Nothing;
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1282,11 +1278,7 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     fn check_add_tx_tags(&mut self) {
         match self.key.code {
-            KeyCode::Enter => {
-                *self.add_tx_tab = TxTab::Nothing;
-                self.add_tx_data.check_tags();
-            }
-            KeyCode::Esc => {
+            KeyCode::Enter | KeyCode::Esc => {
                 *self.add_tx_tab = TxTab::Nothing;
                 self.add_tx_data.check_tags();
             }
@@ -1315,7 +1307,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.search_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.search_tab = TxTab::Nothing
+                        *self.search_tab = TxTab::Nothing;
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1359,7 +1351,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.search_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.search_tab = TxTab::Nothing
+                        *self.search_tab = TxTab::Nothing;
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1392,7 +1384,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.search_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.search_tab = TxTab::Nothing
+                        *self.search_tab = TxTab::Nothing;
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1422,7 +1414,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.search_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.search_tab = TxTab::Nothing
+                        *self.search_tab = TxTab::Nothing;
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1452,7 +1444,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.search_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
-                        *self.search_tab = TxTab::Nothing
+                        *self.search_tab = TxTab::Nothing;
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1519,7 +1511,7 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     fn reload_search_data(&mut self) {
         *self.search_table = TableData::new(Vec::new());
-        *self.search_txs = TransactionData::new_search(Vec::new(), Vec::new())
+        *self.search_txs = TransactionData::new_search(Vec::new(), Vec::new());
     }
 
     #[cfg(not(tarpaulin_include))]
@@ -1554,7 +1546,7 @@ impl<'a> InputKeyHandler<'a> {
         };
 
         if let Err(e) = status {
-            self.add_tx_data.add_tx_status(e.to_string())
+            self.add_tx_data.add_tx_status(e.to_string());
         }
     }
 
@@ -1571,7 +1563,7 @@ impl<'a> InputKeyHandler<'a> {
         };
 
         if let Err(e) = status {
-            self.add_tx_data.add_tx_status(e.to_string())
+            self.add_tx_data.add_tx_status(e.to_string());
         }
     }
 
@@ -1594,11 +1586,11 @@ impl<'a> InputKeyHandler<'a> {
                 }
                 Ok(())
             }
-            _ => Ok(()),
+            TxTab::Details => Ok(()),
         };
 
         if let Err(e) = status {
-            self.search_data.add_tx_status(e.to_string())
+            self.search_data.add_tx_status(e.to_string());
         }
     }
 
@@ -1619,11 +1611,11 @@ impl<'a> InputKeyHandler<'a> {
                 }
                 Ok(())
             }
-            _ => Ok(()),
+            TxTab::Details => Ok(()),
         };
 
         if let Err(e) = status {
-            self.search_data.add_tx_status(e.to_string())
+            self.search_data.add_tx_status(e.to_string());
         }
     }
 
