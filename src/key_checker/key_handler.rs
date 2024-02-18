@@ -171,7 +171,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn go_add_tx(&mut self) {
         *self.page = CurrentUi::AddTx;
         self.add_tx_data
-                .add_tx_status("Info: Entering Normal Transaction mode.".to_string());
+            .add_tx_status("Info: Entering Normal Transaction mode.".to_string());
     }
 
     /// Moves the interface to Search page
@@ -358,8 +358,9 @@ impl<'a> InputKeyHandler<'a> {
                 );
                 *self.page = CurrentUi::AddTx;
             }
-            self.add_tx_data
-                .add_tx_status("Info: Entering Transaction edit mode. Press C to reset.".to_string());
+            self.add_tx_data.add_tx_status(
+                "Info: Entering Transaction edit mode. Press C to reset.".to_string(),
+            );
         }
     }
 
