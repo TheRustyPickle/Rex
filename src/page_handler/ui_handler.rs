@@ -138,6 +138,8 @@ pub fn start_app<B: Backend>(
     // The current balance that is being shown on the home tab Balance column. Will change every loop util the actual balance is reached
     let mut balance_load = vec![0.0; get_all_tx_methods(conn).len() + 1];
     // The balance shown in the UI before the current actual balance that is being shown in the UI
+    // If went from row 2 to row 3, this will contain the balance or row 2 to calculate the difference
+    // we have to animate/load progressively
     let mut last_balance = Vec::new();
     // The actual current balance that is being shown
     let mut ongoing_balance = Vec::new();
