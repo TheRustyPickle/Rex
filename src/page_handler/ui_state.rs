@@ -322,6 +322,7 @@ pub enum UserInputType {
     RepositionTxMethod(Vec<String>),
     SetNewLocation(PathBuf),
     CancelledOperation,
+    BackupDBPath(Vec<PathBuf>),
     InvalidInput,
 }
 
@@ -333,6 +334,7 @@ impl UserInputType {
             "2" => UserInputType::RenameTxMethod(Vec::new()),
             "3" => UserInputType::RepositionTxMethod(Vec::new()),
             "4" => UserInputType::SetNewLocation(PathBuf::new()),
+            "5" => UserInputType::BackupDBPath(Vec::new()),
             "cancel" => UserInputType::CancelledOperation,
             _ => UserInputType::InvalidInput,
         }
