@@ -17,7 +17,7 @@ fn main() {
         set_current_dir(&working_path).unwrap();
 
         working_path.push("data.sqlite");
-        if initialize_app(working_path, original_dir).is_err() {
+        if initialize_app(&working_path, &original_dir).is_err() {
             std::process::exit(1);
         }
     } else {

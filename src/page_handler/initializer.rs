@@ -20,8 +20,8 @@ use crate::utility::{
 /// Initialize the tui loop
 #[cfg(not(tarpaulin_include))]
 pub fn initialize_app(
-    original_db_path: PathBuf,
-    original_dir: PathBuf,
+    original_db_path: &PathBuf,
+    original_dir: &PathBuf,
 ) -> Result<(), Box<dyn Error>> {
     let new_version_available = check_version()?;
 
@@ -39,12 +39,12 @@ pub fn initialize_app(
     }
 
     // If the location was changed/json file found, change the db directory.
-    let db_path = if let Some(mut location) = is_location_changed(&original_db_path) {
+    let db_path = if let Some(mut location) = is_location_changed(original_db_path) {
         set_current_dir(&location).unwrap();
         location.push("data.sqlite");
         location
     } else {
-        original_db_path.to_owned()
+        original_db_path.clone()
     };
     // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
     check_n_create_db(&db_path)?;
@@ -63,7 +63,7 @@ pub fn initialize_app(
             Ok(output) => match output {
                 HandlingOutput::TakeUserInput => match start_taking_input(&conn) {
                     UserInputType::AddNewTxMethod(tx_methods) => {
-                        let status = add_new_tx_methods(tx_methods, &mut conn);
+                        let status = add_new_tx_methods(&tx_methods, &mut conn);
                         match status {
                             Ok(()) => start_timer("Added Transaction Methods Successfully."),
                             Err(e) => {
@@ -86,7 +86,7 @@ pub fn initialize_app(
                         }
                     }
                     UserInputType::RepositionTxMethod(tx_methods) => {
-                        let status = reposition_column(tx_methods, &mut conn);
+                        let status = reposition_column(&tx_methods, &mut conn);
 
                         match status {
                             Ok(()) => start_timer("Transaction Method repositioned successfully."),
@@ -117,14 +117,14 @@ pub fn initialize_app(
                         }
                     }
                     UserInputType::BackupDBPath(paths) => {
-                        create_backup_location_file(&original_db_path, paths);
+                        create_backup_location_file(original_db_path, paths);
 
                         start_timer("Backup DB path locations set successfully.");
                     }
                     UserInputType::InvalidInput => unreachable!()
                 },
                 HandlingOutput::QuitUi => {
-                    save_backup_db(&db_path, &original_db_path);
+                    save_backup_db(&db_path, original_db_path);
                     break;
                 },
                 HandlingOutput::PrintNewUpdate => println!("Could not open browser.\n\nLatest Version Link: https://github.com/TheRustyPickle/Rex/releases/latest")

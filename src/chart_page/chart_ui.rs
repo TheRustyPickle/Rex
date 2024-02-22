@@ -287,7 +287,7 @@ pub fn chart_ui(
         }
         final_dataset.push(
             Dataset::default()
-                .name(all_tx_methods[i].to_owned())
+                .name(all_tx_methods[i].clone())
                 .marker(symbols::Marker::Braille)
                 .graph_type(GraphType::Line)
                 .style(

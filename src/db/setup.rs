@@ -23,7 +23,7 @@ pub const YEARS: [&str; 16] = [
 pub const MODES: [&str; 3] = ["Monthly", "Yearly", "All Time"];
 
 /// Creates the db that is used by this app
-pub fn create_db(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
+pub fn create_db(tx_methods: &[String], conn: &mut Connection) -> Result<()> {
     // add a save point to reverse commits if failed
     let sp = conn.savepoint()?;
 
@@ -41,9 +41,9 @@ pub fn create_db(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
         [],
     )?;
 
-    create_balances_table(&tx_methods, &sp)?;
+    create_balances_table(tx_methods, &sp)?;
 
-    create_changes_table(&tx_methods, &sp)?;
+    create_changes_table(tx_methods, &sp)?;
 
     sp.execute("CREATE UNIQUE INDEX all_tx_id_IDX ON tx_all (id_num);", [])?;
 
