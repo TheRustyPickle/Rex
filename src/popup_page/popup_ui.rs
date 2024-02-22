@@ -9,11 +9,11 @@ use crate::utility::create_bolded_text;
 
 /// Creates a popup on top of a window with the given size, title and text attributes
 #[cfg(not(tarpaulin_include))]
-pub fn create_popup(f: &mut Frame, x_value: u16, y_value: u16, title: &str, text: String) {
+pub fn create_popup(f: &mut Frame, x_value: u16, y_value: u16, title: &str, text: &str) {
     let size = f.size();
 
     let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
-    let text = create_bolded_text(&text);
+    let text = create_bolded_text(text);
 
     let block = Block::default()
         .title(title)

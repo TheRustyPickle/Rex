@@ -24,7 +24,7 @@ fn create_test_db(file_name: &str) -> Connection {
 
     let mut conn = Connection::open(file_name).unwrap();
     create_db(
-        vec![
+        &vec![
             "Super Special Bank".to_string(),
             "Cash Cow".to_string(),
             "Danger Cash".to_string(),
