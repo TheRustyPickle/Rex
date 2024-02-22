@@ -209,7 +209,7 @@ impl SummaryData {
             }
             _ => {}
         }
-        let mut table_data = self.generate_table_data(income_tags, expense_tags);
+        let mut table_data = self.generate_table_data(&income_tags, &expense_tags);
         table_data.sort();
         table_data
     }
@@ -513,14 +513,14 @@ impl SummaryData {
     /// Generates a vector to be used as table data from tag list
     fn generate_table_data(
         &self,
-        income_tags: HashMap<&str, f64>,
-        expense_tags: HashMap<&str, f64>,
+        income_tags: &HashMap<&str, f64>,
+        expense_tags: &HashMap<&str, f64>,
     ) -> Vec<Vec<String>> {
         let mut to_return = Vec::new();
         let mut total_income = 0.0;
         let mut total_expense = 0.0;
 
-        for (key, value) in &income_tags {
+        for (key, value) in income_tags {
             let mut to_push = vec![(*key).to_string(), format!("{:.2}", value)];
             total_income += value;
 
@@ -534,7 +534,7 @@ impl SummaryData {
             to_return.push(to_push);
         }
 
-        for (key, value) in &expense_tags {
+        for (key, value) in expense_tags {
             // gather data only from the tags that didn't exist on Income tag list
             if !income_tags.contains_key(key) {
                 to_return.push(vec![

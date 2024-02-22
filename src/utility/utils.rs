@@ -253,7 +253,7 @@ pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>>
         println!("Creating New Database. It may take some time...");
 
         let mut conn = Connection::open(verifying_path)?;
-        let status = create_db(db_tx_methods, &mut conn);
+        let status = create_db(&db_tx_methods, &mut conn);
         conn.close().unwrap();
         match status {
             Ok(()) => start_timer("Database creation successful."),
@@ -504,7 +504,7 @@ pub fn create_change_location_file(working_dir: &PathBuf, new_path: &Path) {
     serde_json::to_writer(&mut file, &location).unwrap();
 }
 
-/// Create a backup_paths.json file to store the location of where backup db will be located
+/// Create a `backup_paths.json` file to store the location of where backup db will be located
 pub fn create_backup_location_file(working_dir: &PathBuf, backup_paths: Vec<PathBuf>) {
     let mut target_dir = working_dir.to_owned();
     target_dir.pop();
