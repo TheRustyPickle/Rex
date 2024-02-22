@@ -466,6 +466,11 @@ struct LocationInfo {
     location: String,
 }
 
+#[derive(Serialize, Deserialize)]
+struct BackupPaths {
+    locations: Vec<String>,
+}
+
 /// Checks if location.json exists and returns a path if it exists
 pub fn is_location_changed(working_dir: &PathBuf) -> Option<PathBuf> {
     let mut json_path = working_dir.to_owned();
@@ -497,4 +502,54 @@ pub fn create_change_location_file(working_dir: &PathBuf, new_path: &Path) {
     let mut file = File::create(target_dir).unwrap();
 
     serde_json::to_writer(&mut file, &location).unwrap();
+}
+
+/// Create a backup_paths.json file to store the location of where backup db will be located
+pub fn create_backup_location_file(working_dir: &PathBuf, backup_paths: Vec<PathBuf>) {
+    let mut target_dir = working_dir.to_owned();
+    target_dir.pop();
+
+    let backup = BackupPaths {
+        locations: backup_paths
+            .into_iter()
+            .map(|path| path.to_str().unwrap().to_owned())
+            .collect(),
+    };
+
+    target_dir.push("backup_paths.json");
+    let mut file = File::create(target_dir).unwrap();
+    serde_json::to_writer(&mut file, &backup).unwrap();
+}
+
+pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
+    let mut json_path = original_db_path.to_owned();
+    json_path.pop();
+
+    json_path.push("backup_paths.json");
+
+    if !json_path.exists() {
+        return;
+    }
+
+    let mut file = File::open(json_path).unwrap();
+    let mut file_content = String::new();
+    file.read_to_string(&mut file_content).unwrap();
+    let location_info: BackupPaths = serde_json::from_str(&file_content).unwrap();
+
+    for path in location_info.locations {
+        let mut target_path = PathBuf::from(path);
+
+        if !target_path.exists() {
+            println!("Failed to find path {}", target_path.to_string_lossy());
+            continue;
+        }
+        target_path.push("data.sqlite");
+        if let Err(e) = fs::copy(db_path, &target_path) {
+            println!(
+                "Failed to copy DB to backup path {}. Error: {e:?}",
+                target_path.to_string_lossy()
+            );
+            continue;
+        }
+    }
 }

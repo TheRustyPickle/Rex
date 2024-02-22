@@ -274,7 +274,8 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
 1. Add New Transaction Methods
 2. Rename Transaction Method
 3. Reposition Transactions Methods
-4. Set a new location for app data\n"
+4. Set a new location for app data
+5. Set backup DB paths\n"
         );
         print!("Proceed with option number: ");
         flush_output(&stdout);
@@ -287,6 +288,7 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
             UserInputType::RenameTxMethod(_) => return get_rename_data(conn),
             UserInputType::RepositionTxMethod(_) => return get_reposition_data(conn),
             UserInputType::SetNewLocation(_) => return get_new_location(),
+            UserInputType::BackupDBPath(_) => return get_backup_db_paths(),
             UserInputType::CancelledOperation => return input_type,
             UserInputType::InvalidInput => clear_terminal(&mut stdout),
         }
@@ -417,7 +419,7 @@ Example input: Bank, Cash, PayPal.\n\nEnter Transaction Methods: "
 
 /// Gets a new tx method name from the user to replace an existing method
 #[cfg(not(tarpaulin_include))]
-pub fn get_rename_data(conn: &Connection) -> UserInputType {
+fn get_rename_data(conn: &Connection) -> UserInputType {
     let mut stdout = stdout();
 
     clear_terminal(&mut stdout);
@@ -517,7 +519,7 @@ Currently added Transaction Methods: \n"
 
 /// Gets a new sequence of tx methods to reformat their location
 #[cfg(not(tarpaulin_include))]
-pub fn get_reposition_data(conn: &Connection) -> UserInputType {
+fn get_reposition_data(conn: &Connection) -> UserInputType {
     let mut stdout = stdout();
 
     clear_terminal(&mut stdout);
@@ -615,7 +617,7 @@ Currently added Transaction Methods: \n".to_string();
 
 /// Asks the user for a location where the app data will be stored
 #[cfg(not(tarpaulin_include))]
-pub fn get_new_location() -> UserInputType {
+fn get_new_location() -> UserInputType {
     let mut stdout = stdout();
 
     clear_terminal(&mut stdout);
@@ -647,6 +649,15 @@ Windows: C:\\data\\save\\";
 
         let target_path = PathBuf::from(given_location);
 
+        if !target_path.is_absolute() {
+            clear_terminal(&mut stdout);
+            println!(
+                "The path {} must be absolute/start from root of the filesystem.\n",
+                target_path.to_string_lossy()
+            );
+            continue;
+        }
+
         if let Err(e) = fs::create_dir_all(&target_path) {
             clear_terminal(&mut stdout);
             println!("The given path is not valid. Error: {e:?}\n");
@@ -654,6 +665,77 @@ Windows: C:\\data\\save\\";
         }
 
         return UserInputType::SetNewLocation(target_path);
+    }
+}
+
+#[cfg(not(tarpaulin_include))]
+fn get_backup_db_paths() -> UserInputType {
+    let mut stdout = stdout();
+
+    clear_terminal(&mut stdout);
+
+    loop {
+        let mut backup_paths = Vec::new();
+
+        let initial_line = "Enter one or more location where the current app DB will be saved as a backup. The location must start from root. 
+        
+If the location does not exist, all missing folders will be created. Separate multiple paths with a comma (,).
+
+If previously saved paths exists, they will be overwritten.
+
+Example input:
+
+Linux: /mnt/sdb1/data/save/, /mnt/sdb1/another/backup/, /mnt/sdb1/backup/
+Windows: C:\\data\\save\\, C:\\backup\\save\\, C:\\folder\\app\\";
+
+        println!("{initial_line}");
+        print!("\nEnter backup locations: ");
+        flush_output(&stdout);
+
+        let given_location = take_input();
+
+        if given_location.is_empty() {
+            clear_terminal(&mut stdout);
+            continue;
+        }
+
+        if given_location.trim().to_lowercase().starts_with("cancel") {
+            return UserInputType::CancelledOperation;
+        }
+
+        let all_locations = given_location.split(',');
+
+        let mut failed_path_verification = false;
+
+        for location in all_locations {
+            let target_path = PathBuf::from(location.trim());
+
+            if !target_path.is_absolute() {
+                clear_terminal(&mut stdout);
+                println!(
+                    "The path {} must be absolute/start from root of the filesystem.\n",
+                    target_path.to_string_lossy()
+                );
+                failed_path_verification = true;
+                break;
+            }
+
+            if let Err(e) = fs::create_dir_all(&target_path) {
+                clear_terminal(&mut stdout);
+                println!(
+                    "The path {} is not valid. Error: {e:?}\n",
+                    target_path.to_string_lossy()
+                );
+                failed_path_verification = true;
+                break;
+            }
+            backup_paths.push(target_path);
+        }
+
+        if failed_path_verification {
+            continue;
+        }
+        return UserInputType::BackupDBPath(backup_paths);
     }
 }
 
