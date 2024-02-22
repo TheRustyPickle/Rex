@@ -703,7 +703,7 @@ Windows: C:\\data\\save\\, C:\\backup\\save\\, C:\\folder\\app\\";
             return UserInputType::CancelledOperation;
         }
 
-        let all_locations = given_location.split(",");
+        let all_locations = given_location.split(',');
 
         let mut failed_path_verification = false;
 

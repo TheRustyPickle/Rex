@@ -520,3 +520,36 @@ pub fn create_backup_location_file(working_dir: &PathBuf, backup_paths: Vec<Path
     let mut file = File::create(target_dir).unwrap();
     serde_json::to_writer(&mut file, &backup).unwrap();
 }
+
+pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
+    let mut json_path = original_db_path.to_owned();
+    json_path.pop();
+
+    json_path.push("backup_paths.json");
+
+    if !json_path.exists() {
+        return;
+    }
+
+    let mut file = File::open(json_path).unwrap();
+    let mut file_content = String::new();
+    file.read_to_string(&mut file_content).unwrap();
+    let location_info: BackupPaths = serde_json::from_str(&file_content).unwrap();
+
+    for path in location_info.locations {
+        let mut target_path = PathBuf::from(path);
+
+        if !target_path.exists() {
+            println!("Failed to find path {}", target_path.to_string_lossy());
+            continue;
+        }
+        target_path.push("data.sqlite");
+        if let Err(e) = fs::copy(db_path, &target_path) {
+            println!(
+                "Failed to copy DB to backup path {}. Error: {e:?}",
+                target_path.to_string_lossy()
+            );
+            continue;
+        }
+    }
+}
