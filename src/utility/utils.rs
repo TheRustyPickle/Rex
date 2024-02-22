@@ -309,7 +309,7 @@ pub fn create_bolded_text(text: &str) -> Vec<Line> {
 /// Tabs from some given data for the UI
 #[cfg(not(tarpaulin_include))]
 pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
-    let titles = data
+    let titles: Vec<Line> = data
         .titles
         .iter()
         .map(|t| Line::from(vec![Span::styled(t, Style::default().fg(TEXT))]))

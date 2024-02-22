@@ -41,7 +41,7 @@ pub fn add_tx_ui(f: &mut Frame, add_tx_data: &TxData, add_tx_tab: &TxTab) {
                 // details input chunk
                 Constraint::Length(3),
                 // status chunk
-                Constraint::Percentage(25),
+                Constraint::Percentage(100),
             ]
             .as_ref(),
         )
@@ -73,7 +73,7 @@ pub fn add_tx_ui(f: &mut Frame, add_tx_data: &TxData, add_tx_tab: &TxTab) {
                         Constraint::Percentage(16),
                         Constraint::Percentage(16),
                         Constraint::Percentage(16),
-                        Constraint::Percentage(16),
+                        Constraint::Percentage(20),
                     ]
                     .as_ref(),
                 )
