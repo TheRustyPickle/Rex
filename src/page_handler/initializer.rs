@@ -12,13 +12,17 @@ use crate::initial_page::check_version;
 use crate::outputs::HandlingOutput;
 use crate::page_handler::{start_app, UserInputType};
 use crate::utility::{
-    check_n_create_db, check_old_sql, create_change_location_file, enter_tui_interface,
-    exit_tui_interface, is_location_changed, start_taking_input, start_terminal, start_timer,
+    check_n_create_db, check_old_sql, create_backup_location_file, create_change_location_file,
+    enter_tui_interface, exit_tui_interface, is_location_changed, save_backup_db,
+    start_taking_input, start_terminal, start_timer,
 };
 
 /// Initialize the tui loop
 #[cfg(not(tarpaulin_include))]
-pub fn initialize_app(mut db_path: PathBuf, original_dir: PathBuf) -> Result<(), Box<dyn Error>> {
+pub fn initialize_app(
+    original_db_path: PathBuf,
+    original_dir: PathBuf,
+) -> Result<(), Box<dyn Error>> {
     let new_version_available = check_version()?;
 
     // If is not terminal, try to start a terminal otherwise create an error.txt file with the error message
@@ -35,11 +39,13 @@ pub fn initialize_app(mut db_path: PathBuf, original_dir: PathBuf) -> Result<(),
     }
 
     // If the location was changed/json file found, change the db directory.
-    if let Some(mut location) = is_location_changed(&db_path) {
+    let db_path = if let Some(mut location) = is_location_changed(&original_db_path) {
         set_current_dir(&location).unwrap();
         location.push("data.sqlite");
-        db_path = location;
-    }
+        location
+    } else {
+        original_db_path.to_owned()
+    };
     // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
     check_n_create_db(&db_path)?;
 
@@ -110,9 +116,17 @@ pub fn initialize_app(mut db_path: PathBuf, original_dir: PathBuf) -> Result<(),
                             }
                         }
                     }
+                    UserInputType::BackupDBPath(paths) => {
+                        create_backup_location_file(&original_db_path, paths);
+
+                        start_timer("Backup DB path locations set successfully.");
+                    }
                     UserInputType::InvalidInput => unreachable!()
                 },
-                HandlingOutput::QuitUi => break,
+                HandlingOutput::QuitUi => {
+                    save_backup_db(&db_path, &original_db_path);
+                    break;
+                },
                 HandlingOutput::PrintNewUpdate => println!("Could not open browser.\n\nLatest Version Link: https://github.com/TheRustyPickle/Rex/releases/latest")
             },
             Err(error) => {
