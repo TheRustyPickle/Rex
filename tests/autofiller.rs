@@ -20,7 +20,7 @@ fn create_test_db(file_name: &str) -> Connection {
 
     let mut conn = Connection::open(file_name).unwrap();
     create_db(
-        vec!["Super Special Bank".to_string(), "Cash Cow".to_string()],
+        &vec!["Super Special Bank".to_string(), "Cash Cow".to_string()],
         &mut conn,
     )
     .unwrap();

@@ -115,7 +115,7 @@ pub fn search_ui(
                         Constraint::Percentage(16),
                         Constraint::Percentage(16),
                         Constraint::Percentage(16),
-                        Constraint::Percentage(16),
+                        Constraint::Percentage(20),
                     ]
                     .as_ref(),
                 )

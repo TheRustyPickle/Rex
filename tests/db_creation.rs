@@ -13,7 +13,7 @@ fn create_test_db(file_name: &str) -> Connection {
     }
 
     let mut conn = Connection::open(file_name).unwrap();
-    create_db(vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    create_db(&vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
     conn
 }
 
@@ -41,7 +41,7 @@ fn check_adding_new_tx_method() {
     let file_name = "test_db_2.sqlite";
     let mut conn = create_test_db(file_name);
 
-    let status = add_new_tx_methods(vec!["test3".to_string(), "test 4".to_string()], &mut conn);
+    let status = add_new_tx_methods(&vec!["test3".to_string(), "test 4".to_string()], &mut conn);
 
     let tx_methods = get_all_tx_methods(&conn);
     let expected_tx_methods = vec![
@@ -92,7 +92,7 @@ fn check_repositioning_columns() {
 
     let old_last_balances = get_last_balances(&conn);
 
-    let status = reposition_column(vec!["test 2".to_string(), "test1".to_string()], &mut conn);
+    let status = reposition_column(&vec!["test 2".to_string(), "test1".to_string()], &mut conn);
     let tx_methods = get_all_tx_methods(&conn);
     let expected_tx_methods = vec!["test 2".to_string(), "test1".to_string()];
 

@@ -15,7 +15,7 @@ fn create_test_db(file_name: &str) -> Connection {
     }
 
     let mut conn = Connection::open(file_name).unwrap();
-    create_db(vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    create_db(&vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
     conn
 }
 
@@ -72,8 +72,8 @@ fn check_chart_date() {
 
     let expected_data_1 = Vec::new();
     let expected_data_2 = vec![
-        NaiveDate::from_ymd(2023, 7, 19),
-        NaiveDate::from_ymd(2023, 7, 25),
+        NaiveDate::from_ymd_opt(2023, 7, 19).unwrap(),
+        NaiveDate::from_ymd_opt(2023, 7, 25).unwrap(),
     ];
 
     assert_eq!(chart_dates_1, expected_data_1);
@@ -85,12 +85,12 @@ fn check_chart_date() {
     let chart_dates_2 = chart_data.get_all_dates(&chart_mode, 6, 1);
 
     let expected_data_1 = vec![
-        NaiveDate::from_ymd(2023, 7, 19),
-        NaiveDate::from_ymd(2023, 7, 25),
+        NaiveDate::from_ymd_opt(2023, 7, 19).unwrap(),
+        NaiveDate::from_ymd_opt(2023, 7, 25).unwrap(),
     ];
     let expected_data_2 = vec![
-        NaiveDate::from_ymd(2023, 7, 19),
-        NaiveDate::from_ymd(2023, 7, 25),
+        NaiveDate::from_ymd_opt(2023, 7, 19).unwrap(),
+        NaiveDate::from_ymd_opt(2023, 7, 25).unwrap(),
     ];
 
     assert_eq!(chart_dates_1, expected_data_1);
@@ -102,14 +102,14 @@ fn check_chart_date() {
     let chart_dates_2 = chart_data.get_all_dates(&chart_mode, 6, 1);
 
     let expected_data_1 = vec![
-        NaiveDate::from_ymd(2022, 8, 19),
-        NaiveDate::from_ymd(2023, 7, 19),
-        NaiveDate::from_ymd(2023, 7, 25),
+        NaiveDate::from_ymd_opt(2022, 8, 19).unwrap(),
+        NaiveDate::from_ymd_opt(2023, 7, 19).unwrap(),
+        NaiveDate::from_ymd_opt(2023, 7, 25).unwrap(),
     ];
     let expected_data_2 = vec![
-        NaiveDate::from_ymd(2022, 8, 19),
-        NaiveDate::from_ymd(2023, 7, 19),
-        NaiveDate::from_ymd(2023, 7, 25),
+        NaiveDate::from_ymd_opt(2022, 8, 19).unwrap(),
+        NaiveDate::from_ymd_opt(2023, 7, 19).unwrap(),
+        NaiveDate::from_ymd_opt(2023, 7, 25).unwrap(),
     ];
 
     assert_eq!(chart_dates_1, expected_data_1);

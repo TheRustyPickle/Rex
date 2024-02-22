@@ -731,7 +731,7 @@ impl<'a> InputKeyHandler<'a> {
                 DeletionStatus::Yes => match self.page {
                     CurrentUi::Home => {
                         self.home_delete_tx();
-                        *self.popup = PopupState::Nothing
+                        *self.popup = PopupState::Nothing;
                     }
                     CurrentUi::Search => {
                         self.search_delete_tx();
@@ -1043,7 +1043,7 @@ impl<'a> InputKeyHandler<'a> {
                         if self.summary_table.state.selected() == Some(self.total_tags - 1) {
                             *self.summary_tab = self.summary_tab.change_tab_down_yearly();
                         } else {
-                            self.summary_table.next()
+                            self.summary_table.next();
                         }
                     }
                     SummaryTab::Years => {

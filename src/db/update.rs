@@ -4,16 +4,16 @@ use rusqlite::{Connection, Result, Savepoint};
 
 /// adds new tx methods as columns on `balance_all` and `changes_all` tables. Gets called after
 /// successful handling of 'J' from the app
-pub fn add_new_tx_methods(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
+pub fn add_new_tx_methods(tx_methods: &[String], conn: &mut Connection) -> Result<()> {
     // add a save point to reverse commits if failed
     let sp = conn.savepoint()?;
 
-    for i in &tx_methods {
+    for i in tx_methods {
         let query = format!(r#"ALTER TABLE balance_all ADD COLUMN "{i}" REAL DEFAULT 0.00"#);
         sp.execute(&query, [])?;
     }
 
-    for i in &tx_methods {
+    for i in tx_methods {
         let query = format!(r#"ALTER TABLE changes_all ADD COLUMN "{i}" TEXT DEFAULT 0.00"#);
         sp.execute(&query, [])?;
     }
@@ -160,7 +160,7 @@ pub fn rename_column(old_name: &str, new_name: &str, conn: &mut Connection) -> R
 }
 
 /// repositions tx method positions in the db
-pub fn reposition_column(tx_methods: Vec<String>, conn: &mut Connection) -> Result<()> {
+pub fn reposition_column(tx_methods: &[String], conn: &mut Connection) -> Result<()> {
     let sp = conn.savepoint()?;
 
     let query = "ALTER TABLE balance_all RENAME TO balance_all_old";
@@ -169,8 +169,8 @@ pub fn reposition_column(tx_methods: Vec<String>, conn: &mut Connection) -> Resu
     let query = "ALTER TABLE changes_all RENAME TO changes_all_old";
     sp.execute(query, [])?;
 
-    create_balances_table(&tx_methods, &sp)?;
-    create_changes_table(&tx_methods, &sp)?;
+    create_balances_table(tx_methods, &sp)?;
+    create_changes_table(tx_methods, &sp)?;
 
     let columns = tx_methods
         .iter()
