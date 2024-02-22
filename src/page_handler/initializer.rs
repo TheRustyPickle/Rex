@@ -13,8 +13,8 @@ use crate::outputs::HandlingOutput;
 use crate::page_handler::{start_app, UserInputType};
 use crate::utility::{
     check_n_create_db, check_old_sql, create_backup_location_file, create_change_location_file,
-    enter_tui_interface, exit_tui_interface, is_location_changed, start_taking_input,
-    start_terminal, start_timer,
+    enter_tui_interface, exit_tui_interface, is_location_changed, save_backup_db,
+    start_taking_input, start_terminal, start_timer,
 };
 
 /// Initialize the tui loop
@@ -123,7 +123,10 @@ pub fn initialize_app(
                     }
                     UserInputType::InvalidInput => unreachable!()
                 },
-                HandlingOutput::QuitUi => break,
+                HandlingOutput::QuitUi => {
+                    save_backup_db(&db_path, &original_db_path);
+                    break;
+                },
                 HandlingOutput::PrintNewUpdate => println!("Could not open browser.\n\nLatest Version Link: https://github.com/TheRustyPickle/Rex/releases/latest")
             },
             Err(error) => {
