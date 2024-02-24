@@ -359,6 +359,13 @@ pub fn summary_ui(
         }
     }
 
+    // Always keep some items rendered on the upper side of the table
+    if let Some(index) = table_data.state.selected() {
+        if index > 7 {
+            *table_data.state.offset_mut() = index - 7;
+        }
+    }
+
     if summary_hidden_mode {
         f.render_stateful_widget(summary_area_1, left_summary[0], &mut summary_table_1.state);
         f.render_stateful_widget(summary_area_2, left_summary[1], &mut summary_table_2.state);
