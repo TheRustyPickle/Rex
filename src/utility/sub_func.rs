@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use crate::outputs::{ComparisonType, TerminalExecutionError};
-use crate::page_handler::{DateType, UserInputType};
+use crate::page_handler::{DateType, ResetType, UserInputType};
 use crate::tx_handler::{delete_tx, TxData};
 use crate::utility::{
     check_comparison, check_restricted, clear_terminal, flush_output, get_all_tx_methods,
@@ -289,7 +289,7 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
             UserInputType::RepositionTxMethod(_) => return get_reposition_data(conn),
             UserInputType::SetNewLocation(_) => return get_new_location(),
             UserInputType::BackupDBPath(_) => return get_backup_db_paths(),
-            UserInputType::CancelledOperation => return input_type,
+            UserInputType::CancelledOperation | UserInputType::ResetData(_) => return input_type,
             UserInputType::InvalidInput => clear_terminal(&mut stdout),
         }
     }
@@ -626,7 +626,9 @@ fn get_new_location() -> UserInputType {
         let initial_line = "Enter a new location where the app will look for data. The location must start from root. 
         
 If the location does not exist, all missing folders will be created and app data will be copied. 
-        
+
+Empty input will be considered as reset any saved location.
+
 Example location:
         
 Linux: /mnt/sdb1/data/save/
@@ -639,8 +641,8 @@ Windows: C:\\data\\save\\";
         let given_location = take_input();
 
         if given_location.is_empty() {
-            clear_terminal(&mut stdout);
-            continue;
+            println!("Clearing saved location");
+            return UserInputType::ResetData(ResetType::NewLocation);
         }
 
         if given_location.trim().to_lowercase().starts_with("cancel") {
@@ -683,6 +685,8 @@ If the location does not exist, all missing folders will be created. Separate mu
 
 If previously saved paths exists, they will be overwritten.
 
+Empty input will be considered as reset all saved backup paths.
+
 Example input:
 
 Linux: /mnt/sdb1/data/save/, /mnt/sdb1/another/backup/, /mnt/sdb1/backup/
@@ -695,8 +699,8 @@ Windows: C:\\data\\save\\, C:\\backup\\save\\, C:\\folder\\app\\";
         let given_location = take_input();
 
         if given_location.is_empty() {
-            clear_terminal(&mut stdout);
-            continue;
+            println!("Clearing all backup paths");
+            return UserInputType::ResetData(ResetType::BackupDB);
         }
 
         if given_location.trim().to_lowercase().starts_with("cancel") {

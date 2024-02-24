@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::error::Error;
 use std::fs::{self, File};
-use std::io::{stdout, Read, Stdout, Write};
+use std::io::{stdout, Read, Result as ioResult, Stdout, Write};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use std::{process, thread};
@@ -336,6 +336,7 @@ pub fn start_timer<T: std::fmt::Display>(input: T) {
         handle.flush().unwrap();
         thread::sleep(Duration::from_millis(1000));
     }
+    println!("\n");
 }
 
 /// Takes a user input and returns the trimmed input as String
@@ -505,8 +506,8 @@ pub fn create_change_location_file(working_dir: &PathBuf, new_path: &Path) {
 }
 
 /// Create a `backup_paths.json` file to store the location of where backup db will be located
-pub fn create_backup_location_file(working_dir: &PathBuf, backup_paths: Vec<PathBuf>) {
-    let mut target_dir = working_dir.to_owned();
+pub fn create_backup_location_file(original_db_path: &PathBuf, backup_paths: Vec<PathBuf>) {
+    let mut target_dir = original_db_path.to_owned();
     target_dir.pop();
 
     let backup = BackupPaths {
@@ -552,4 +553,30 @@ pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
             continue;
         }
     }
+}
+
+pub fn delete_backup_db(original_db_path: &PathBuf) -> ioResult<()> {
+    let mut json_path = original_db_path.to_owned();
+    json_path.pop();
+
+    json_path.push("backup_paths.json");
+
+    if !json_path.exists() {
+        return Ok(());
+    }
+
+    fs::remove_file(json_path)
+}
+
+pub fn delete_location_change(original_db_path: &PathBuf) -> ioResult<()> {
+    let mut json_path = original_db_path.to_owned();
+    json_path.pop();
+
+    json_path.push("location.json");
+
+    if !json_path.exists() {
+        return Ok(());
+    }
+
+    fs::remove_file(json_path)
 }
