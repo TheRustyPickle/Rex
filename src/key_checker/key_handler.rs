@@ -204,6 +204,11 @@ impl<'a> InputKeyHandler<'a> {
         self.reload_chart();
     }
 
+    #[cfg(not(tarpaulin_include))]
+    pub fn go_history(&mut self) {
+        *self.page = CurrentUi::History;
+    }
+
     /// Turns on help popup
     #[cfg(not(tarpaulin_include))]
     pub fn do_help_popup(&mut self) {
@@ -213,7 +218,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Chart => *self.popup = PopupState::ChartHelp,
             CurrentUi::Summary => *self.popup = PopupState::SummaryHelp,
             CurrentUi::Search => *self.popup = PopupState::SearchHelp,
-            CurrentUi::Initial => {}
+            CurrentUi::Initial | CurrentUi::History => {}
         }
     }
 
@@ -501,7 +506,7 @@ impl<'a> InputKeyHandler<'a> {
                     }
                 }
             }
-            CurrentUi::Initial => {}
+            CurrentUi::Initial | CurrentUi::History => {}
         }
     }
 
@@ -558,7 +563,7 @@ impl<'a> InputKeyHandler<'a> {
                 }
                 SummaryTab::Table => {}
             },
-            CurrentUi::Initial => {}
+            CurrentUi::Initial | CurrentUi::History => {}
         }
     }
 
@@ -571,7 +576,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Summary => self.do_summary_up(),
             CurrentUi::Chart => self.do_chart_up(),
             CurrentUi::Search => self.do_search_up(),
-            CurrentUi::Initial => {}
+            CurrentUi::Initial | CurrentUi::History => {}
         }
         self.check_autofill();
     }
@@ -585,7 +590,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Summary => self.do_summary_down(),
             CurrentUi::Chart => self.do_chart_down(),
             CurrentUi::Search => self.do_search_down(),
-            CurrentUi::Initial => {}
+            CurrentUi::Initial | CurrentUi::History => {}
         }
         self.check_autofill();
     }
