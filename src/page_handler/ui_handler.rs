@@ -9,11 +9,13 @@ use std::time::Duration;
 
 use crate::add_tx_page::add_tx_ui;
 use crate::chart_page::{chart_ui, ChartData};
+use crate::history_page::history_ui;
 use crate::home_page::home_ui;
 use crate::home_page::TransactionData;
 use crate::initial_page::initial_ui;
 use crate::key_checker::{
-    add_tx_keys, chart_keys, home_keys, initial_keys, search_keys, summary_keys, InputKeyHandler,
+    add_tx_keys, chart_keys, history_keys, home_keys, initial_keys, search_keys, summary_keys,
+    InputKeyHandler,
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
@@ -280,6 +282,7 @@ pub fn start_app<B: Backend>(
                         &mut search_table,
                         &search_date_type,
                     ),
+                    CurrentUi::History => history_ui(f),
                 }
                 popup_data.create_popup(f, &popup_state, &deletion_status);
             })
@@ -365,6 +368,7 @@ pub fn start_app<B: Backend>(
                 CurrentUi::Chart => chart_keys(&mut handler),
                 CurrentUi::Summary => summary_keys(&mut handler),
                 CurrentUi::Search => search_keys(&mut handler),
+                CurrentUi::History => history_keys(&mut handler),
             };
 
             if let Some(output) = status {
