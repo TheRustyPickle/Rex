@@ -18,7 +18,7 @@ use std::time::Duration;
 use std::{process, thread};
 use strsim::normalized_levenshtein;
 
-use crate::db::{add_tags_column, create_db, update_balance_type, YEARS};
+use crate::db::{add_tags_column, create_db, migrate_to_activities, update_balance_type, YEARS};
 use crate::outputs::ComparisonType;
 use crate::page_handler::{
     DateType, IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED, TEXT,
@@ -197,6 +197,19 @@ pub fn check_old_sql(conn: &mut Connection) {
             }
         }
     }
+
+    if !get_all_table_names(conn).contains(&"activities".to_string()) {
+        println!("Outdated database detected. Updating...");
+        let status = migrate_to_activities(conn);
+        match status {
+            Ok(()) => start_timer("Database updating successfully complete."),
+            Err(e) => {
+                println!("Database updating failed. Try again. Error: {e}");
+                println!("Commits reversed. Exiting...");
+                process::exit(1);
+            }
+        }
+    }
 }
 
 /// Checks if the `balance_all` table is outdated
@@ -216,6 +229,20 @@ pub fn check_old_balance_sql(conn: &Connection) -> bool {
             break;
         }
     }
+    result
+}
+
+pub fn get_all_table_names(conn: &Connection) -> Vec<String> {
+    let mut stmt = conn
+        .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+        .unwrap();
+    let table_names = stmt.query_map([], |row| row.get(0)).unwrap();
+
+    let mut result = Vec::new();
+    for table_name in table_names {
+        result.push(table_name.unwrap());
+    }
+
     result
 }
 

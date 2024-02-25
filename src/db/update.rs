@@ -1,6 +1,10 @@
-use crate::db::{create_balances_table, create_changes_table};
-use crate::utility::get_all_tx_methods;
 use rusqlite::{Connection, Result, Savepoint};
+
+use crate::db::{
+    create_activities_table, create_activity_txs_table, create_balances_table,
+    create_changes_table, create_missing_indexes,
+};
+use crate::utility::get_all_tx_methods;
 
 /// adds new tx methods as columns on `balance_all` and `changes_all` tables. Gets called after
 /// successful handling of 'J' from the app
@@ -190,6 +194,19 @@ pub fn reposition_column(tx_methods: &[String], conn: &mut Connection) -> Result
 
     sp.execute("DROP TABLE balance_all_old", [])?;
     sp.execute("DROP TABLE changes_all_old", [])?;
+
+    sp.commit()?;
+
+    Ok(())
+}
+
+/// Create new tables to migrate to the new form of database to include activities
+pub fn migrate_to_activities(conn: &mut Connection) -> Result<()> {
+    let sp = conn.savepoint()?;
+
+    create_activities_table(&sp)?;
+    create_activity_txs_table(&sp)?;
+    create_missing_indexes(&sp)?;
 
     sp.commit()?;
 
