@@ -28,6 +28,9 @@ pub fn create_db(tx_methods: &[String], conn: &mut Connection) -> Result<()> {
     let sp = conn.savepoint()?;
 
     // tx_all table. Will contain all tx data
+    // Amount should have been REAL, old mistake, can't be bothered to migrate to REAL at this point
+    // Same for date column
+    // Also not too frequently searched by amount field anyway. Only when searching txs. Not a priority
     sp.execute(
         "CREATE TABLE tx_all (
         date TEXT,
@@ -44,6 +47,12 @@ pub fn create_db(tx_methods: &[String], conn: &mut Connection) -> Result<()> {
     create_balances_table(tx_methods, &sp)?;
 
     create_changes_table(tx_methods, &sp)?;
+
+    create_activities_table(&sp)?;
+
+    create_activity_txs_table(&sp)?;
+
+    create_missing_indexes(&sp)?;
 
     sp.execute("CREATE UNIQUE INDEX all_tx_id_IDX ON tx_all (id_num);", [])?;
 
@@ -123,6 +132,61 @@ pub fn create_changes_table(tx_methods: &[String], sp: &Savepoint) -> Result<()>
     );
 
     sp.execute(&query, [])?;
+
+    Ok(())
+}
+
+pub fn create_activities_table(sp: &Savepoint) -> Result<()> {
+    sp.execute(
+        "CREATE TABLE activities (
+        date TEXT,
+        activity_type TEXT,
+        description TEXT,
+        activity_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT
+    );",
+        [],
+    )?;
+
+    Ok(())
+}
+
+pub fn create_activity_txs_table(sp: &Savepoint) -> Result<()> {
+    sp.execute(
+        "CREATE TABLE activity_txs (
+        date TEXT,
+        details TEXT,
+        tx_method TEXT,
+        amount TEXT,
+        tx_type TEXT,
+        id_num INTEGER,
+        tags TEXT,
+        activity_num INTEGER NOT NULL,
+        CONSTRAINT activity_tx_FK FOREIGN KEY (activity_num) REFERENCES activities(activity_num) ON DELETE CASCADE
+    );",
+        [],
+    )?;
+    Ok(())
+}
+
+pub fn create_missing_indexes(sp: &Savepoint) -> Result<()> {
+    sp.execute("CREATE INDEX activities_date_idx ON activities(date);", [])?;
+
+    sp.execute("CREATE INDEX tx_all_date_idx ON tx_all(date);", [])?;
+
+    sp.execute(
+        "CREATE INDEX activity_txs_date_idx ON activity_txs(date);",
+        [],
+    )?;
+
+    sp.execute(
+        "CREATE UNIQUE INDEX activities_activity_num_idx ON activities(activity_num);",
+        [],
+    )?;
+
+    sp.execute(
+        "CREATE INDEX activity_txs_activity_num_idx ON activity_txs(activity_num);",
+        [],
+    )?;
 
     Ok(())
 }

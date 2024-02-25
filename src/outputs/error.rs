@@ -1,8 +1,8 @@
 use rusqlite::Error as sqlError;
+use std::error::Error;
 use std::fmt::{self, Display, Result};
 use std::io::Error as ioError;
 use std::process::Output;
-use std::error::Error;
 
 #[derive(Debug)]
 pub enum TerminalExecutionError {
