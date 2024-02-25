@@ -323,8 +323,14 @@ pub enum UserInputType {
     RepositionTxMethod(Vec<String>),
     SetNewLocation(PathBuf),
     CancelledOperation,
+    ResetData(ResetType),
     BackupDBPath(Vec<PathBuf>),
     InvalidInput,
+}
+
+pub enum ResetType {
+    NewLocation,
+    BackupDB,
 }
 
 impl UserInputType {
@@ -415,4 +421,38 @@ impl HomeRow {
             HomeRow::TopRow
         }
     }
+}
+
+pub enum HistoryTab {
+    Years,
+    Months,
+    List,
+}
+
+impl HistoryTab {
+    #[cfg(not(tarpaulin_include))]
+    pub fn change_tab_up(&mut self) -> Self {
+        match &self {
+            HistoryTab::Years => HistoryTab::List,
+            HistoryTab::Months => HistoryTab::Years,
+            HistoryTab::List => HistoryTab::Months,
+        }
+    }
+
+    #[cfg(not(tarpaulin_include))]
+    pub fn change_tab_down(&mut self) -> Self {
+        match &self {
+            HistoryTab::List => HistoryTab::Years,
+            HistoryTab::Years => HistoryTab::Months,
+            HistoryTab::Months => HistoryTab::List,
+        }
+    }
+}
+
+pub enum ActivityType {
+    NewTX,
+    EditTX,
+    DeleteTX,
+    IDNumSwap,
+    SearchTX,
 }

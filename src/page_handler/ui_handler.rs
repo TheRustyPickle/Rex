@@ -19,8 +19,8 @@ use crate::key_checker::{
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
-    ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData, PopupState, SortingType,
-    SummaryTab, TableData, TxTab,
+    ChartTab, CurrentUi, DateType, DeletionStatus, HistoryTab, HomeTab, IndexedData, PopupState,
+    SortingType, SummaryTab, TableData, TxTab,
 };
 use crate::popup_page::PopupData;
 use crate::search_page::search_ui;
@@ -65,6 +65,10 @@ pub fn start_app<B: Backend>(
     let mut summary_years = IndexedData::new_yearly();
     // contains the summary page mode selection list that is indexed
     let mut summary_modes = IndexedData::new_modes();
+    // contains the History page month list that is indexed
+    let mut history_years = IndexedData::new_yearly();
+    // contains the History page month list that is indexed
+    let mut history_months = IndexedData::new_monthly();
 
     // the selected widget on the Home Page. Default set to the month selection
     let mut home_tab = HomeTab::Months;
@@ -101,6 +105,7 @@ pub fn start_app<B: Backend>(
     let mut search_tab = TxTab::Nothing;
     // Store the current searching date type
     let mut search_date_type = DateType::Exact;
+    let mut history_tab = HistoryTab::Years;
 
     // Holds the data that will be/are inserted into the Add Tx page's input fields
     let mut add_tx_data = TxData::new();
@@ -282,7 +287,9 @@ pub fn start_app<B: Backend>(
                         &mut search_table,
                         &search_date_type,
                     ),
-                    CurrentUi::History => history_ui(f),
+                    CurrentUi::History => {
+                        history_ui(f, &history_months, &history_years, &history_tab)
+                    }
                 }
                 popup_data.create_popup(f, &popup_state, &deletion_status);
             })
@@ -350,6 +357,9 @@ pub fn start_app<B: Backend>(
                 &mut search_tab,
                 &mut search_table,
                 &mut search_txs,
+                &mut history_years,
+                &mut history_months,
+                &mut history_tab,
                 &mut chart_index,
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,
