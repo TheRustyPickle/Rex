@@ -9,6 +9,10 @@ pub fn history_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
         PopupState::Nothing => match handler.key.code {
             KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
             KeyCode::Char('f') => handler.go_home(),
+            KeyCode::Right => handler.handle_right_arrow(),
+            KeyCode::Left => handler.handle_left_arrow(),
+            KeyCode::Up => handler.handle_up_arrow(),
+            KeyCode::Down => handler.handle_down_arrow(),
             _ => {}
         },
         _ => handler.do_empty_popup(),
