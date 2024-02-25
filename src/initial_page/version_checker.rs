@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use crate::utility::parse_github_body;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct GithubRelease {
     name: String,
     body: String,

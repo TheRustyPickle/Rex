@@ -344,9 +344,6 @@ pub fn home_ui(
     f.render_widget(month_tab, chunks[2]);
     f.render_widget(year_tab, chunks[1]);
 
-    
-    
-    
     // this one is different because the Transaction widget interface works differently
     f.render_stateful_widget(table_area, chunks[3], &mut table.state);
 }
