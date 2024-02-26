@@ -21,7 +21,8 @@ use strsim::normalized_levenshtein;
 use crate::db::{add_tags_column, create_db, migrate_to_activities, update_balance_type, YEARS};
 use crate::outputs::ComparisonType;
 use crate::page_handler::{
-    DateType, IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED, TEXT,
+    ActivityType, DateType, IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED,
+    TEXT,
 };
 use crate::utility::get_user_tx_methods;
 
@@ -607,3 +608,13 @@ pub fn delete_location_change(original_db_path: &PathBuf) -> ioResult<()> {
 
     fs::remove_file(json_path)
 }
+
+// NOTE activity tx fetching must be done using the first and last activity num gotten
+// NOTE activity num fetching should happen with date value, activity tx fetching will happen based on what id numbers we get
+
+pub fn add_new_activity(activity_type: ActivityType, conn: &Connection) -> i32 {
+    // TODO add a new activity and get the activity num of the new activity
+    todo!()
+}
+
+pub fn add_new_activity_tx(tx_data: Vec<&str>, activity_num: i32, conn: &Connection) {}

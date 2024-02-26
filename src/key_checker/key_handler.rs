@@ -6,12 +6,14 @@ use crate::home_page::TransactionData;
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
 use crate::page_handler::{
-    ChartTab, CurrentUi, DateType, DeletionStatus, HistoryTab, HomeTab, IndexedData, PopupState,
-    SortingType, SummaryTab, TableData, TxTab,
+    ActivityType, ChartTab, CurrentUi, DateType, DeletionStatus, HistoryTab, HomeTab, IndexedData,
+    PopupState, SortingType, SummaryTab, TableData, TxTab,
 };
 use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
-use crate::utility::{get_all_tx_methods, sort_table_data, switch_tx_index};
+use crate::utility::{
+    add_new_activity, add_new_activity_tx, get_all_tx_methods, sort_table_data, switch_tx_index,
+};
 
 /// Stores all the data that is required to handle
 /// every single possible key press event from the
@@ -382,6 +384,9 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn home_delete_tx(&mut self) {
         if let Some(index) = self.table.state.selected() {
+            let tx_data = self.all_tx_data.get_tx(index).to_owned();
+            let id_num = self.all_tx_data.get_id_num(index);
+
             let status = self.all_tx_data.del_tx(index, self.conn);
             match status {
                 Ok(()) => {
@@ -397,6 +402,14 @@ impl<'a> InputKeyHandler<'a> {
                     } else {
                         self.table.state.select(Some(index - 1));
                     }
+
+                    let activity_num =
+                        add_new_activity(ActivityType::DeleteTX(Some(id_num)), self.conn);
+                    add_new_activity_tx(
+                        tx_data.iter().map(|s| s.as_str()).collect(),
+                        activity_num,
+                        self.conn,
+                    )
                 }
                 Err(err) => {
                     *self.popup =

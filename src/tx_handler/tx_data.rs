@@ -6,11 +6,12 @@ use crate::outputs::{
     CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, TxUpdateError,
     VerifyingOutput,
 };
-use crate::page_handler::{DateType, TxTab};
+use crate::page_handler::{ActivityType, DateType, TxTab};
 use crate::tx_handler::{add_tx, delete_tx};
 use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
 use crate::utility::{
-    add_char_to, check_comparison, get_all_tx_methods, get_last_balances, get_search_data,
+    add_char_to, add_new_activity, add_new_activity_tx, check_comparison, get_all_tx_methods,
+    get_last_balances, get_search_data,
 };
 
 /// Contains all data for a Transaction to work
@@ -197,7 +198,7 @@ impl TxData {
             // how saving an edited tx works
             // delete the tx that was being edited from the db using the id_num ->
             // add another tx using the new data but take the earlier id to add to the db
-
+            // TODO a new method to fetch one tx from the db using id num. Need both old and the new status
             let status = delete_tx(self.id_num, conn);
             match status {
                 Ok(()) => {}
@@ -216,7 +217,12 @@ impl TxData {
             );
 
             match status_add {
-                Ok(()) => Ok(()),
+                Ok(()) => {
+                    let activity_num =
+                        add_new_activity(ActivityType::EditTX(Some(self.id_num)), conn);
+                    add_new_activity_tx(self.get_all_texts(), activity_num, conn);
+                    Ok(())
+                }
                 Err(e) => Err(TxUpdateError::FailedEditTx(e).to_string()),
             }
         } else {
@@ -231,7 +237,11 @@ impl TxData {
                 conn,
             );
             match status {
-                Ok(()) => Ok(()),
+                Ok(()) => {
+                    let activity_num = add_new_activity(ActivityType::NewTX, conn);
+                    add_new_activity_tx(self.get_all_texts(), activity_num, conn);
+                    Ok(())
+                }
                 Err(e) => Err(TxUpdateError::FailedAddTx(e).to_string()),
             }
         }

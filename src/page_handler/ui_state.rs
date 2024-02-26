@@ -451,8 +451,51 @@ impl HistoryTab {
 
 pub enum ActivityType {
     NewTX,
-    EditTX,
-    DeleteTX,
-    IDNumSwap,
-    SearchTX,
+    EditTX(Option<i32>),
+    DeleteTX(Option<i32>),
+    IDNumSwap(Option<i32>, Option<i32>),
+    SearchTX(Option<u8>),
+}
+
+impl ActivityType {
+    pub fn from_str(data: &str) -> Self {
+        match data {
+            "Add TX" => Self::NewTX,
+            "Edit TX" => Self::EditTX(None),
+            "Delete TX" => Self::DeleteTX(None),
+            "TX Position Swap" => Self::IDNumSwap(None, None),
+            "Search TX" => Self::SearchTX(None),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn to_details(&self) -> String {
+        match self {
+            Self::NewTX => String::from("A new Transaction was added with"),
+            Self::EditTX(id) => format!("A transaction was edited with ID {}", id.unwrap()),
+            Self::DeleteTX(id) => format!("A transaction was deleted with ID {}", id.unwrap()),
+            Self::IDNumSwap(id_1, id_2) => format!(
+                "Transaction with ID num {} and ID num {} was swapped",
+                id_1.unwrap(),
+                id_2.unwrap()
+            ),
+            Self::SearchTX(total) => {
+                if total.unwrap() == 1 {
+                    format!("Transactions were searched with one field")
+                } else {
+                    format!("Transactions were searched with multiple fields")
+                }
+            }
+        }
+    }
+
+    pub fn to_str(&self) -> String {
+        match self {
+            Self::NewTX => String::from("Add TX"),
+            Self::EditTX(_) => String::from("Edit TX"),
+            Self::DeleteTX(_) => String::from("Delete TX"),
+            Self::IDNumSwap(_, _) => String::from("TX Position Swap"),
+            Self::SearchTX(_) => String::from("Search TX"),
+        }
+    }
 }
