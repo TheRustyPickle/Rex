@@ -158,8 +158,8 @@ pub fn create_activity_txs_table(sp: &Savepoint) -> Result<()> {
         tx_method TEXT,
         amount TEXT,
         tx_type TEXT,
-        id_num INTEGER,
         tags TEXT,
+        id_num INTEGER,
         activity_num INTEGER NOT NULL,
         CONSTRAINT activity_tx_FK FOREIGN KEY (activity_num) REFERENCES activities(activity_num) ON DELETE CASCADE
     );",
