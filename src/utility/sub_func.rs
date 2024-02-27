@@ -6,11 +6,11 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use crate::outputs::{ComparisonType, TerminalExecutionError};
-use crate::page_handler::{DateType, ResetType, UserInputType};
+use crate::page_handler::{ActivityType, DateType, ResetType, UserInputType};
 use crate::tx_handler::{delete_tx, TxData};
 use crate::utility::{
-    check_comparison, check_restricted, clear_terminal, flush_output, get_all_tx_methods,
-    get_sql_dates, take_input,
+    add_new_activity, add_new_activity_tx, check_comparison, check_restricted, clear_terminal,
+    flush_output, get_all_tx_methods, get_sql_dates, take_input,
 };
 
 /// Returns the balance of all methods based on year and month point.
@@ -822,9 +822,20 @@ pub fn get_search_data(
     let mut all_txs = Vec::new();
     let mut all_ids = Vec::new();
 
+    let tx_method = if tx_type == "Transfer" {
+        format!("{from_method} to {to_method}").trim().to_string()
+    } else if from_method.is_empty() && to_method.is_empty() {
+        String::new()
+    } else {
+        from_method.to_string()
+    };
+
+    let mut valid_fields = 0;
+
     let mut query = "SELECT * FROM tx_all WHERE 1=1".to_string();
 
     if !date.is_empty() {
+        valid_fields += 1;
         match date_type {
             DateType::Exact => query.push_str(&format!(r#" AND date = "{date}""#)),
             DateType::Monthly => {
@@ -853,14 +864,17 @@ pub fn get_search_data(
     }
 
     if !details.is_empty() {
+        valid_fields += 1;
         query.push_str(&format!(r#" AND details LIKE "%{details}%""#,));
     }
 
     if !tx_type.is_empty() {
+        valid_fields += 1;
         query.push_str(&format!(r#" AND tx_type = "{tx_type}""#,));
     }
 
     if !amount.is_empty() {
+        valid_fields += 1;
         let comparison_type = check_comparison(amount);
 
         let comparison_symbol = match comparison_type {
@@ -875,15 +889,26 @@ pub fn get_search_data(
         query.push_str(&format!(r#" AND {comparison_type} "{amount}""#));
     }
 
-    if tx_type == "Transfer" && !from_method.is_empty() && !to_method.is_empty() {
-        query.push_str(&format!(
-            r#" AND tx_method = "{from_method} to {to_method}""#
-        ));
+    if tx_type == "Transfer" {
+        if !from_method.is_empty() && !to_method.is_empty() {
+            valid_fields += 1;
+            query.push_str(&format!(
+                r#" AND tx_method = "{from_method} to {to_method}""#
+            ));
+        } else if !from_method.is_empty() {
+            valid_fields += 1;
+            query.push_str(&format!(r#" AND tx_method LIKE "{from_method} to %" "#));
+        } else if !to_method.is_empty() {
+            valid_fields += 1;
+            query.push_str(&format!(r#" AND tx_method LIKE "% to {to_method}""#));
+        }
     } else if tx_type != "Transfer" && !from_method.is_empty() {
+        valid_fields += 1;
         query.push_str(&format!(r#" AND tx_method = "{from_method}""#));
     }
 
     if !tags.is_empty() {
+        valid_fields += 1;
         let all_tags = tags.split(", ");
         let tag_conditions = all_tags
             .map(|tag| {
@@ -932,6 +957,12 @@ pub fn get_search_data(
         all_ids.push(id_num.to_string());
         all_txs.push(data);
     }
+
+    let activity_type = ActivityType::SearchTX(Some(valid_fields));
+    let search_data = vec![date, details, &tx_method, amount, tx_type, tags, ""];
+
+    let activity_num = add_new_activity(activity_type, conn);
+    add_new_activity_tx(search_data, activity_num, conn);
 
     (all_txs, all_ids)
 }

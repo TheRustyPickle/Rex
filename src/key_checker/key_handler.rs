@@ -384,8 +384,9 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn home_delete_tx(&mut self) {
         if let Some(index) = self.table.state.selected() {
-            let tx_data = self.all_tx_data.get_tx(index).to_owned();
+            let mut tx_data = self.all_tx_data.get_tx(index).to_owned();
             let id_num = self.all_tx_data.get_id_num(index);
+            tx_data.push(id_num.to_string());
 
             let status = self.all_tx_data.del_tx(index, self.conn);
             match status {
@@ -405,11 +406,7 @@ impl<'a> InputKeyHandler<'a> {
 
                     let activity_num =
                         add_new_activity(ActivityType::DeleteTX(Some(id_num)), self.conn);
-                    add_new_activity_tx(
-                        tx_data.iter().map(|s| s.as_str()).collect(),
-                        activity_num,
-                        self.conn,
-                    )
+                    add_new_activity_tx(tx_data, activity_num, self.conn)
                 }
                 Err(err) => {
                     *self.popup =

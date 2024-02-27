@@ -1,3 +1,4 @@
+use chrono::Local;
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen,
@@ -11,6 +12,7 @@ use rusqlite::{Connection, Result as sqlResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::error::Error;
+use std::fmt::Display;
 use std::fs::{self, File};
 use std::io::{stdout, Read, Result as ioResult, Stdout, Write};
 use std::path::{Path, PathBuf};
@@ -609,12 +611,100 @@ pub fn delete_location_change(original_db_path: &PathBuf) -> ioResult<()> {
     fs::remove_file(json_path)
 }
 
+pub fn get_tx_id_num(id_num: i32, conn: &Connection) -> Vec<String> {
+    let query = format!("SELECT * FROM tx_all WHERE id_num = {id_num}");
+
+    let tx_data = conn.query_row(&query, [], |row| {
+        let date: String = row.get(0).unwrap();
+        let id_num: i32 = row.get(5).unwrap();
+        let collected_date = date.split('-').collect::<Vec<&str>>();
+        let new_date = format!(
+            "{}-{}-{}",
+            collected_date[2], collected_date[1], collected_date[0]
+        );
+        Ok(vec![
+            new_date,
+            row.get(1).unwrap(),
+            row.get(2).unwrap(),
+            row.get(3).unwrap(),
+            row.get(4).unwrap(),
+            row.get(6).unwrap(),
+            id_num.to_string(),
+        ])
+    });
+
+    tx_data.unwrap()
+}
+
+pub fn get_last_tx(conn: &Connection) -> Vec<String> {
+    let query = "SELECT * FROM tx_all ORDER BY id_num DESC LIMIT 1";
+
+    let tx_data = conn.query_row(query, [], |row| {
+        let date: String = row.get(0).unwrap();
+        let id_num: i32 = row.get(5).unwrap();
+        let collected_date = date.split('-').collect::<Vec<&str>>();
+        let new_date = format!(
+            "{}-{}-{}",
+            collected_date[2], collected_date[1], collected_date[0]
+        );
+        Ok(vec![
+            new_date,
+            row.get(1).unwrap(),
+            row.get(2).unwrap(),
+            row.get(3).unwrap(),
+            row.get(4).unwrap(),
+            row.get(6).unwrap(),
+            id_num.to_string(),
+        ])
+    });
+
+    tx_data.unwrap()
+}
+
 // NOTE activity tx fetching must be done using the first and last activity num gotten
 // NOTE activity num fetching should happen with date value, activity tx fetching will happen based on what id numbers we get
 
 pub fn add_new_activity(activity_type: ActivityType, conn: &Connection) -> i32 {
-    // TODO add a new activity and get the activity num of the new activity
-    todo!()
+    let activity_type_str = activity_type.to_str();
+    let activity_details = activity_type.to_details();
+    let current_date = Local::now().date_naive().to_string();
+
+    let query = format!(
+        r#"INSERT INTO activities 
+    (date, activity_type, description) 
+    VALUES ("{current_date}", "{activity_type_str}", "{activity_details}")"#
+    );
+
+    conn.execute(&query, []).unwrap();
+
+    let query = "SELECT activity_num FROM activities ORDER BY activity_num DESC LIMIT 1";
+
+    let activity_num = conn.query_row(query, [], |row| {
+        let id_num: i32 = row.get(0).unwrap();
+        Ok(id_num)
+    });
+
+    activity_num.unwrap()
 }
 
-pub fn add_new_activity_tx(tx_data: Vec<&str>, activity_num: i32, conn: &Connection) {}
+pub fn add_new_activity_tx<T: AsRef<str> + Display>(
+    tx_data: Vec<T>,
+    activity_num: i32,
+    conn: &Connection,
+) {
+    let date = &tx_data[0];
+    let details = &tx_data[1];
+    let tx_method = &tx_data[2];
+    let amount = &tx_data[3];
+    let tx_type = &tx_data[4];
+    let tags = &tx_data[5];
+    let id_num = &tx_data[6];
+
+    let query = format!(
+        r#"INSERT INTO activity_txs 
+    (date, details, tx_method, amount, tx_type, tags, id_num, activity_num)
+    VALUES ("{date}", "{details}", "{tx_method}", "{amount}", "{tx_type}", "{tags}", "{id_num}", "{activity_num}")"#
+    );
+
+    conn.execute(&query, []).unwrap();
+}

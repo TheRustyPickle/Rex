@@ -471,7 +471,7 @@ impl ActivityType {
 
     pub fn to_details(&self) -> String {
         match self {
-            Self::NewTX => String::from("A new Transaction was added with"),
+            Self::NewTX => String::from("A new Transaction was added"),
             Self::EditTX(id) => format!("A transaction was edited with ID {}", id.unwrap()),
             Self::DeleteTX(id) => format!("A transaction was deleted with ID {}", id.unwrap()),
             Self::IDNumSwap(id_1, id_2) => format!(
@@ -481,9 +481,9 @@ impl ActivityType {
             ),
             Self::SearchTX(total) => {
                 if total.unwrap() == 1 {
-                    format!("Transactions were searched with one field")
+                    String::from("Transactions were searched with one field")
                 } else {
-                    format!("Transactions were searched with multiple fields")
+                    String::from("Transactions were searched with multiple fields")
                 }
             }
         }
