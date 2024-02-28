@@ -10,6 +10,7 @@ use std::time::Duration;
 use crate::add_tx_page::add_tx_ui;
 use crate::chart_page::{chart_ui, ChartData};
 use crate::history_page::history_ui;
+use crate::history_page::HistoryData;
 use crate::home_page::home_ui;
 use crate::home_page::TransactionData;
 use crate::initial_page::initial_ui;
@@ -28,8 +29,6 @@ use crate::summary_page::{summary_ui, SummaryData};
 use crate::tx_handler::TxData;
 use crate::utility::{get_all_tx_methods, get_empty_changes};
 
-// TODO: More colors? Needs to be turned into an array
-// and maintain an index for which color to select based on the scheme
 pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
 pub const TEXT: Color = Color::Rgb(153, 78, 236);
 pub const BOX: Color = Color::Rgb(255, 87, 51);
@@ -81,6 +80,8 @@ pub fn start_app<B: Backend>(
 
     // Stores all data relevant for home page such as balance, changes and txs
     let mut all_tx_data = TransactionData::new(home_months.index, home_years.index, conn);
+    // Stores all activity for a specific month of a year alongside the txs involved in an activity
+    let mut history_data = HistoryData::new(history_months.index, history_years.index, conn);
 
     let mut search_txs = TransactionData::new_search(Vec::new(), Vec::new());
     // data for the Home Page's tx table

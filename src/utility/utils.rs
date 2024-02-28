@@ -700,11 +700,30 @@ pub fn add_new_activity_tx<T: AsRef<str> + Display>(
     let tags = &tx_data[5];
     let id_num = &tx_data[6];
 
+    let mut string_date = date.to_string();
+    let splitted_date = string_date.split('-').collect::<Vec<&str>>();
+
+    if splitted_date[0].len() == 2 {
+        string_date = reverse_date_format(string_date);
+    }
+
     let query = format!(
         r#"INSERT INTO activity_txs 
     (date, details, tx_method, amount, tx_type, tags, id_num, activity_num)
-    VALUES ("{date}", "{details}", "{tx_method}", "{amount}", "{tx_type}", "{tags}", "{id_num}", "{activity_num}")"#
+    VALUES ("{string_date}", "{details}", "{tx_method}", "{amount}", "{tx_type}", "{tags}", "{id_num}", "{activity_num}")"#
     );
 
     conn.execute(&query, []).unwrap();
+}
+
+pub fn reverse_date_format(date: String) -> String {
+    if date.is_empty() {
+        return date;
+    }
+    let collected_date = date.split('-').collect::<Vec<&str>>();
+    let new_date = format!(
+        "{}-{}-{}",
+        collected_date[2], collected_date[1], collected_date[0]
+    );
+    new_date
 }
