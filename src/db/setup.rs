@@ -159,8 +159,9 @@ pub fn create_activity_txs_table(sp: &Savepoint) -> Result<()> {
         amount TEXT,
         tx_type TEXT,
         tags TEXT,
-        id_num INTEGER,
+        id_num TEXT,
         activity_num INTEGER NOT NULL,
+        insertion_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
         CONSTRAINT activity_tx_FK FOREIGN KEY (activity_num) REFERENCES activities(activity_num) ON DELETE CASCADE
     );",
         [],
@@ -185,6 +186,11 @@ pub fn create_missing_indexes(sp: &Savepoint) -> Result<()> {
 
     sp.execute(
         "CREATE INDEX activity_txs_activity_num_idx ON activity_txs(activity_num);",
+        [],
+    )?;
+
+    sp.execute(
+        "CREATE UNIQUE INDEX activity_txs_insertion_id_idx ON activity_txs(insertion_id);",
         [],
     )?;
 

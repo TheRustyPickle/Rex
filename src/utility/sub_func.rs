@@ -5,12 +5,13 @@ use std::io::stdout;
 use std::path::PathBuf;
 use std::process::Command;
 
+use crate::history_page::{ActivityData, ActivityTx};
 use crate::outputs::{ComparisonType, TerminalExecutionError};
 use crate::page_handler::{ActivityType, DateType, ResetType, UserInputType};
 use crate::tx_handler::{delete_tx, TxData};
 use crate::utility::{
     add_new_activity, add_new_activity_tx, check_comparison, check_restricted, clear_terminal,
-    flush_output, get_all_tx_methods, get_sql_dates, take_input,
+    flush_output, get_all_tx_methods, get_sql_dates, reverse_date_format, take_input,
 };
 
 /// Returns the balance of all methods based on year and month point.
@@ -143,16 +144,11 @@ pub fn get_all_txs(
     let rows = statement
         .query_map([&datetime_1, &datetime_2], |row| {
             // collect the row data and put them in a vec
-            let date: String = row.get(0).unwrap();
+            let date = reverse_date_format(row.get(0).unwrap());
             let id_num: i32 = row.get(5).unwrap();
-            let collected_date = date.split('-').collect::<Vec<&str>>();
-            let new_date = format!(
-                "{}-{}-{}",
-                collected_date[2], collected_date[1], collected_date[0]
-            );
 
             Ok(vec![
-                new_date,
+                date,
                 row.get(1).unwrap(),
                 row.get(2).unwrap(),
                 row.get(3).unwrap(),
@@ -931,16 +927,11 @@ pub fn get_search_data(
 
     let rows = statement
         .query_map([], |row| {
-            let date: String = row.get(0).unwrap();
+            let date = reverse_date_format(row.get(0).unwrap());
             let id_num: i32 = row.get(5).unwrap();
-            let collected_date = date.split('-').collect::<Vec<&str>>();
-            let new_date = format!(
-                "{}-{}-{}",
-                collected_date[2], collected_date[1], collected_date[0]
-            );
 
             Ok(vec![
-                new_date,
+                date,
                 row.get(1).unwrap(),
                 row.get(2).unwrap(),
                 row.get(3).unwrap(),
@@ -1024,4 +1015,87 @@ pub fn switch_tx_index(
     delete_tx(id_2, conn).unwrap();
     tx_data_1.switch_tx_id(id_2, conn);
     tx_data_2.switch_tx_id(id_1, conn);
+}
+
+pub fn get_all_activities(
+    month: usize,
+    year: usize,
+    conn: &Connection,
+) -> (Vec<ActivityData>, HashMap<i32, Vec<ActivityTx>>) {
+    let (datetime_1, datetime_2) = get_sql_dates(month, year, &DateType::Monthly);
+
+    let mut statement = conn
+        .prepare("SELECT * from activities WHERE date BETWEEN date(?) AND date(?)")
+        .unwrap();
+
+    let mut min_activity_num = i32::MAX;
+    let mut max_activity_num = i32::MIN;
+
+    let rows: Vec<ActivityData> = statement
+        .query_map([datetime_1, datetime_2], |row| {
+            let date = reverse_date_format(row.get(0).unwrap());
+            Ok(ActivityData::new(
+                date,
+                row.get(1).unwrap(),
+                row.get(2).unwrap(),
+                row.get(3).unwrap(),
+            ))
+        })
+        .unwrap()
+        .map(|wrapped_data| {
+            let data = wrapped_data.unwrap();
+            let id = data.activity_num();
+
+            if id > max_activity_num {
+                max_activity_num = id;
+            }
+
+            if id < min_activity_num {
+                min_activity_num = id;
+            }
+            data
+        })
+        .collect();
+
+    let activity_txs = get_all_activity_txs(min_activity_num, max_activity_num, conn);
+
+    (rows, activity_txs)
+}
+
+pub fn get_all_activity_txs(
+    min_num: i32,
+    max_num: i32,
+    conn: &Connection,
+) -> HashMap<i32, Vec<ActivityTx>> {
+    let mut statement = conn
+        .prepare("SELECT * from activity_txs WHERE activity_num >= ? AND activity_num <= ?")
+        .unwrap();
+
+    let mut activity_tx_data = HashMap::new();
+
+    for wrapped_data in statement
+        .query_map([min_num, max_num], |row| {
+            let date = reverse_date_format(row.get(0).unwrap());
+            Ok(ActivityTx::new(
+                date,
+                row.get(1).unwrap(),
+                row.get(2).unwrap(),
+                row.get(3).unwrap(),
+                row.get(4).unwrap(),
+                row.get(5).unwrap(),
+                row.get(6).unwrap(),
+                row.get(7).unwrap(),
+                row.get(8).unwrap(),
+            ))
+        })
+        .unwrap()
+    {
+        let data = wrapped_data.unwrap();
+        activity_tx_data
+            .entry(data.activity_num())
+            .or_insert(Vec::new())
+            .push(data);
+    }
+
+    activity_tx_data
 }
