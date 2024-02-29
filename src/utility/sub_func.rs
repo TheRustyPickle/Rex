@@ -137,7 +137,7 @@ pub fn get_all_txs(
     // preparing the query for db, getting current month's all transactions
     let mut statement = conn
         .prepare(
-            "SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY date, id_num",
+            "SELECT * FROM tx_all WHERE date BETWEEN date(?) AND date(?) ORDER BY date, id_num",
         )
         .expect("could not prepare statement");
 
@@ -1013,8 +1013,11 @@ pub fn switch_tx_index(
 
     delete_tx(id_1, conn).unwrap();
     delete_tx(id_2, conn).unwrap();
-    tx_data_1.switch_tx_id(id_2, conn);
-    tx_data_2.switch_tx_id(id_1, conn);
+
+    let activity_num = add_new_activity(ActivityType::IDNumSwap(Some(id_1), Some(id_2)), conn);
+
+    tx_data_1.switch_tx_id(id_2, activity_num, conn);
+    tx_data_2.switch_tx_id(id_1, activity_num, conn);
 }
 
 pub fn get_all_activities(

@@ -735,7 +735,7 @@ impl TxData {
     }
 
     /// Add a previously deleted tx again but with a new `id_num`
-    pub fn switch_tx_id(&self, new_id: i32, conn: &mut Connection) {
+    pub fn switch_tx_id(&self, new_id: i32, activity_num: i32, conn: &mut Connection) {
         add_tx(
             &self.date,
             &self.details,
@@ -747,5 +747,19 @@ impl TxData {
             conn,
         )
         .unwrap();
+
+        add_new_activity_tx(
+            vec![
+                &self.date,
+                &self.details,
+                &self.get_tx_method(),
+                &self.amount,
+                &self.tx_type,
+                &self.tags,
+                &new_id.to_string(),
+            ],
+            activity_num,
+            conn,
+        );
     }
 }
