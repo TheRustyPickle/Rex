@@ -1,4 +1,4 @@
-use chrono::Local;
+use chrono::{Local, Months, NaiveDate};
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen,
@@ -157,8 +157,14 @@ pub fn get_sql_dates(month: usize, year: usize, date_type: &DateType) -> (String
     match date_type {
         DateType::Monthly => {
             let datetime_1 = format!("{}-{:02}-01", YEARS[year], month + 1);
-            let datetime_2 = format!("{}-{:02}-31", YEARS[year], month + 1);
-            (datetime_1, datetime_2)
+            let last_date =
+                NaiveDate::from_ymd_opt(YEARS[year].parse().unwrap(), (month + 1) as u32, 1)
+                    .unwrap()
+                    .checked_add_months(Months::new(1))
+                    .unwrap()
+                    .pred_opt()
+                    .unwrap();
+            (datetime_1, last_date.to_string())
         }
         DateType::Yearly => {
             let datetime_1 = format!("{}-01-01", YEARS[year]);
