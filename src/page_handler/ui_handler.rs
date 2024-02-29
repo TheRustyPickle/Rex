@@ -126,7 +126,11 @@ pub fn start_app<B: Backend>(
         summary_years.index,
     ));
 
+    // data for the Search Page's table
     let mut search_table = TableData::new(Vec::new());
+
+    // data for the History Page's table
+    let mut history_table = TableData::new(history_data.get_txs());
 
     // the initial page REX loading index
     let mut starter_index = 0;
@@ -288,9 +292,14 @@ pub fn start_app<B: Backend>(
                         &mut search_table,
                         &search_date_type,
                     ),
-                    CurrentUi::History => {
-                        history_ui(f, &history_months, &history_years, &history_tab)
-                    }
+                    CurrentUi::History => history_ui(
+                        f,
+                        &history_months,
+                        &history_years,
+                        &history_tab,
+                        &history_data,
+                        &mut history_table,
+                    ),
                 }
                 popup_data.create_popup(f, &popup_state, &deletion_status);
             })
@@ -361,6 +370,8 @@ pub fn start_app<B: Backend>(
                 &mut history_years,
                 &mut history_months,
                 &mut history_tab,
+                &mut history_data,
+                &mut history_table,
                 &mut chart_index,
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,
