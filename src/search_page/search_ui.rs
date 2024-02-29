@@ -310,6 +310,12 @@ pub fn search_ui(
         }
     }
 
+    if let Some(index) = search_table.state.selected() {
+        if index > 7 {
+            *search_table.state.offset_mut() = index - 7;
+        }
+    }
+
     // render the previously generated data into an interface
     f.render_widget(details_sec, chunks[1]);
     f.render_widget(status_sec, chunks[2]);
