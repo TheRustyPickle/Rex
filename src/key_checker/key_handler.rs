@@ -318,7 +318,12 @@ impl<'a> InputKeyHandler<'a> {
                 *self.search_txs = TransactionData::new_search(search_txs.0.clone(), search_txs.1);
                 *self.search_table = TableData::new(search_txs.0);
                 self.search_table.state.select(Some(0));
+                self.search_data.add_tx_status(format!(
+                    "Search: Found {} Transactions",
+                    self.search_table.items.len()
+                ));
             }
+            self.reload_history_table();
         }
     }
 

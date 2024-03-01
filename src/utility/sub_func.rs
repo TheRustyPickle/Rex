@@ -818,8 +818,12 @@ pub fn get_search_data(
     let mut all_txs = Vec::new();
     let mut all_ids = Vec::new();
 
-    let tx_method = if tx_type == "Transfer" {
+    let tx_method = if tx_type == "Transfer" && !from_method.is_empty() && !to_method.is_empty() {
         format!("{from_method} to {to_method}").trim().to_string()
+    } else if tx_type == "Transfer" && !from_method.is_empty() && to_method.is_empty() {
+        format!("{from_method} to ?").trim().to_string()
+    } else if tx_type == "Transfer" && from_method.is_empty() && !to_method.is_empty() {
+        format!("? to {to_method}").trim().to_string()
     } else if from_method.is_empty() && to_method.is_empty() {
         String::new()
     } else {

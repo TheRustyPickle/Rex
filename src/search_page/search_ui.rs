@@ -146,7 +146,7 @@ pub fn search_ui(
     // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
         let (initial, rest) = i.split_once(':').unwrap();
-        if !i.contains("Accepted") && !i.contains("Nothing") {
+        if !i.contains("Accepted") && !i.contains("Nothing") && !i.contains("Search: Found") {
             status_text.push(Line::from(vec![
                 Span::styled(
                     initial,
@@ -311,8 +311,8 @@ pub fn search_ui(
     }
 
     if let Some(index) = search_table.state.selected() {
-        if index > 7 {
-            *search_table.state.offset_mut() = index - 7;
+        if index > 10 {
+            *search_table.state.offset_mut() = index - 10;
         }
     }
 

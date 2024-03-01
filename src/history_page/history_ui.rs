@@ -124,7 +124,17 @@ pub fn history_ui(
 
     let activity_tx_rows = activity_txs_table.items.iter().map(|item| {
         let height = 1;
-        let cells = item.iter().map(|c| Cell::from(c.separate_with_commas()));
+        // First index is the date field. Do not add commas to the value
+        // In case search happens by yearly value, this can add comma to the year
+        let mut first_index_passed = false;
+        let cells = item.iter().map(|c| {
+            if first_index_passed {
+                Cell::from(c.separate_with_commas())
+            } else {
+                first_index_passed = true;
+                Cell::from(c.to_string())
+            }
+        });
         Row::new(cells)
             .height(height as u16)
             .bottom_margin(0)
@@ -144,24 +154,20 @@ pub fn history_ui(
 
     let activity_txs_table_area = Table::new(activity_tx_rows, activity_tx_header_widths)
         .header(activity_tx_header)
-        .block(styled_block("Affected TX Data"));
+        .block(styled_block("TX Details"));
 
     let mut month_tab = create_tab(months, "Months");
     let mut year_tab = create_tab(years, "Years");
 
     match current_tab {
-        // previously added a black block to year and month widget if a value is not selected
-        // Now we will turn that black block into green if a value is selected
         HistoryTab::Months => {
             month_tab = month_tab
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
-
         HistoryTab::Years => {
             year_tab = year_tab
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
-        // changes the color of row based on Expense or Income tx type on Transaction widget.
         HistoryTab::List => {
             if table_data.state.selected().is_some() {
                 activity_table_area = activity_table_area
