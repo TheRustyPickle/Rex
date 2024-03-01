@@ -316,7 +316,7 @@ pub fn start_app<B: Backend>(
                 }
             }
             CurrentUi::Chart => {
-                // If chart animation has ended, start polling 
+                // If chart animation has ended, start polling
                 if chart_index.is_some()
                     && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
                 {
