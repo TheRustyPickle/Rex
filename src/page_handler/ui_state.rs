@@ -168,6 +168,7 @@ pub enum CurrentUi {
     Chart,
     Summary,
     Search,
+    History,
 }
 
 /// Indicates which popup is currently on and is being shown in the screen
@@ -322,8 +323,14 @@ pub enum UserInputType {
     RepositionTxMethod(Vec<String>),
     SetNewLocation(PathBuf),
     CancelledOperation,
+    ResetData(ResetType),
     BackupDBPath(Vec<PathBuf>),
     InvalidInput,
+}
+
+pub enum ResetType {
+    NewLocation,
+    BackupDB,
 }
 
 impl UserInputType {
@@ -412,6 +419,83 @@ impl HomeRow {
             HomeRow::Expense
         } else {
             HomeRow::TopRow
+        }
+    }
+}
+
+pub enum HistoryTab {
+    Years,
+    Months,
+    List,
+}
+
+impl HistoryTab {
+    #[cfg(not(tarpaulin_include))]
+    pub fn change_tab_up(&mut self) -> Self {
+        match &self {
+            HistoryTab::Years => HistoryTab::List,
+            HistoryTab::Months => HistoryTab::Years,
+            HistoryTab::List => HistoryTab::Months,
+        }
+    }
+
+    #[cfg(not(tarpaulin_include))]
+    pub fn change_tab_down(&mut self) -> Self {
+        match &self {
+            HistoryTab::List => HistoryTab::Years,
+            HistoryTab::Years => HistoryTab::Months,
+            HistoryTab::Months => HistoryTab::List,
+        }
+    }
+}
+
+pub enum ActivityType {
+    NewTX,
+    EditTX(Option<i32>),
+    DeleteTX(Option<i32>),
+    IDNumSwap(Option<i32>, Option<i32>),
+    SearchTX(Option<u8>),
+}
+
+impl ActivityType {
+    pub fn from_str(data: &str) -> Self {
+        match data {
+            "Add TX" => Self::NewTX,
+            "Edit TX" => Self::EditTX(None),
+            "Delete TX" => Self::DeleteTX(None),
+            "TX Position Swap" => Self::IDNumSwap(None, None),
+            "Search TX" => Self::SearchTX(None),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn to_details(&self) -> String {
+        match self {
+            Self::NewTX => String::from("A new Transaction was added"),
+            Self::EditTX(id) => format!("A transaction was edited with ID {}", id.unwrap()),
+            Self::DeleteTX(id) => format!("A transaction was deleted with ID {}", id.unwrap()),
+            Self::IDNumSwap(id_1, id_2) => format!(
+                "Transaction with ID num {} and ID num {} was swapped",
+                id_1.unwrap(),
+                id_2.unwrap()
+            ),
+            Self::SearchTX(total) => {
+                if total.unwrap() == 1 {
+                    String::from("Transactions were searched with one field")
+                } else {
+                    String::from("Transactions were searched with multiple fields")
+                }
+            }
+        }
+    }
+
+    pub fn to_str(&self) -> String {
+        match self {
+            Self::NewTX => String::from("Add TX"),
+            Self::EditTX(_) => String::from("Edit TX"),
+            Self::DeleteTX(_) => String::from("Delete TX"),
+            Self::IDNumSwap(_, _) => String::from("TX Position Swap"),
+            Self::SearchTX(_) => String::from("Search TX"),
         }
     }
 }

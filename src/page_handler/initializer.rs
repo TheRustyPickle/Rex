@@ -10,11 +10,11 @@ use std::process;
 use crate::db::{add_new_tx_methods, rename_column, reposition_column};
 use crate::initial_page::check_version;
 use crate::outputs::HandlingOutput;
-use crate::page_handler::{start_app, UserInputType};
+use crate::page_handler::{start_app, ResetType, UserInputType};
 use crate::utility::{
     check_n_create_db, check_old_sql, create_backup_location_file, create_change_location_file,
-    enter_tui_interface, exit_tui_interface, is_location_changed, save_backup_db,
-    start_taking_input, start_terminal, start_timer,
+    delete_backup_db, delete_location_change, enter_tui_interface, exit_tui_interface,
+    is_location_changed, save_backup_db, start_taking_input, start_terminal, start_timer,
 };
 
 /// Initialize the tui loop
@@ -107,7 +107,7 @@ pub fn initialize_app(
 
                         match file_copy_status {
                             Ok(_) => {
-                                println!("New location set successfully. The app must be restarted for it to take effect. Exiting.");
+                                start_timer("New location set successfully. The app must be restarted for it to take effect. It will exit after this.");
                                 process::exit(0)
                             }
                             Err(e) => {
@@ -120,6 +120,32 @@ pub fn initialize_app(
                         create_backup_location_file(original_db_path, paths);
 
                         start_timer("Backup DB path locations set successfully.");
+                    }
+                    UserInputType::ResetData(reset_type) => {
+
+                        match reset_type {
+                            ResetType::NewLocation => {
+                                match delete_location_change(original_db_path) {
+                                    Ok(()) => {
+                                        start_timer("New location data removed successfully. The app must be restarted for it to take effect. It will exit after this.");
+                                        process::exit(0)
+                                    }
+                                    Err(e) => {
+                                        println!("Error while trying to delete saved location data. Error: {e:?}");
+                                        start_timer("");
+                                    }
+                                }
+                            }
+                            ResetType::BackupDB => {
+                                match delete_backup_db(original_db_path) {
+                                    Ok(()) => start_timer("Backup DB Path removed successfully."),
+                                    Err(e) => {
+                                        println!("Error while trying to delete saved backup location data. Error: {e:?}");
+                                        start_timer("");
+                                    }
+                                }
+                            }
+                        }
                     }
                     UserInputType::InvalidInput => unreachable!()
                 },

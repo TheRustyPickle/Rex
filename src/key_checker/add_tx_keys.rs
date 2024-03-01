@@ -19,6 +19,7 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 KeyCode::Char('s') => handler.add_tx(),
                 KeyCode::Char('w') => handler.go_search(),
                 KeyCode::Char('c') => handler.clear_input(),
+                KeyCode::Char('y') => handler.go_history(),
                 KeyCode::Enter => handler.select_date_field(),
                 KeyCode::Char(c) => {
                     if c.is_numeric() {

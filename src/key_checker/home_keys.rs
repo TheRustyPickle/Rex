@@ -18,6 +18,7 @@ pub fn home_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Char('w') => handler.go_search(),
             KeyCode::Char('e') => handler.home_edit_tx(),
             KeyCode::Char('d') => handler.do_deletion_popup(),
+            KeyCode::Char('y') => handler.go_history(),
             KeyCode::Char(',') => handler.switch_tx_index_up(),
             KeyCode::Char('.') => handler.switch_tx_index_down(),
             KeyCode::Right => handler.handle_right_arrow(),

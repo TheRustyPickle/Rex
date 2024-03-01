@@ -146,7 +146,7 @@ pub fn search_ui(
     // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
         let (initial, rest) = i.split_once(':').unwrap();
-        if !i.contains("Accepted") && !i.contains("Nothing") {
+        if !i.contains("Accepted") && !i.contains("Nothing") && !i.contains("Search: Found") {
             status_text.push(Line::from(vec![
                 Span::styled(
                     initial,
@@ -307,6 +307,12 @@ pub fn search_ui(
             table_area = table_area.highlight_style(selected_style_income);
         } else if search_table.items[a][4] == "Transfer" {
             table_area = table_area.highlight_style(Style::default().bg(SELECTED));
+        }
+    }
+
+    if let Some(index) = search_table.state.selected() {
+        if index > 10 {
+            *search_table.state.offset_mut() = index - 10;
         }
     }
 
