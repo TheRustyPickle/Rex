@@ -818,6 +818,7 @@ pub fn get_search_data(
     let mut all_txs = Vec::new();
     let mut all_ids = Vec::new();
 
+    // This will be used for the activity tx
     let tx_method = if tx_type == "Transfer" && !from_method.is_empty() && !to_method.is_empty() {
         format!("{from_method} to {to_method}").trim().to_string()
     } else if tx_type == "Transfer" && !from_method.is_empty() && to_method.is_empty() {
@@ -890,6 +891,8 @@ pub fn get_search_data(
     }
 
     if tx_type == "Transfer" {
+        // If neither are empty, look for exact matches
+        // Otherwise do partial matching
         if !from_method.is_empty() && !to_method.is_empty() {
             valid_fields += 1;
             query.push_str(&format!(
@@ -1024,6 +1027,7 @@ pub fn switch_tx_index(
     tx_data_2.switch_tx_id(id_1, activity_num, conn);
 }
 
+/// Returns all activities recorded within a given month and a year and all the activity txs related to the activities
 pub fn get_all_activities(
     month: usize,
     year: usize,
@@ -1035,6 +1039,7 @@ pub fn get_all_activities(
         .prepare("SELECT * from activities WHERE date BETWEEN date(?) AND date(?)")
         .unwrap();
 
+    // Activity tx fetching happens based on the minimum activity num and the maximum activity num
     let mut min_activity_num = i32::MAX;
     let mut max_activity_num = i32::MIN;
 
@@ -1069,6 +1074,7 @@ pub fn get_all_activities(
     (rows, activity_txs)
 }
 
+/// Returns all activity txs within the given activity number range
 pub fn get_all_activity_txs(
     min_num: i32,
     max_num: i32,
@@ -1078,6 +1084,9 @@ pub fn get_all_activity_txs(
         .prepare("SELECT * from activity_txs WHERE activity_num >= ? AND activity_num <= ?")
         .unwrap();
 
+    // Contains data in the format {activity_num: Vec<ActivityTx>}
+    // In case of search or edit txs, a single activity can impact multiple txs
+    // The rest will always have only 1 tx
     let mut activity_tx_data = HashMap::new();
 
     for wrapped_data in statement

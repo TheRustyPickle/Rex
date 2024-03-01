@@ -135,6 +135,7 @@ impl HistoryData {
         }
     }
 
+    /// Convert all activity to a Vector where each value of the vector is a vector of the activity
     pub fn get_txs(&self) -> Vec<Vec<String>> {
         let mut txs = Vec::new();
 
@@ -145,6 +146,7 @@ impl HistoryData {
         txs
     }
 
+    /// Convert all activity txs to a Vector where each value of the vector is a vector of the tx data
     pub fn get_activity_txs(&self, index: Option<usize>) -> Vec<Vec<String>> {
         let Some(index) = index else {
             return Vec::new();
@@ -186,10 +188,12 @@ impl HistoryData {
         txs
     }
 
+    /// Whether there is any activity data
     pub fn is_activity_empty(&self) -> bool {
         self.activities.is_empty()
     }
 
+    /// Whether the activity at this index should have an extra field in the UI
     pub fn add_extra_field(&self, index: usize) -> bool {
         let target_activity = self.activities.get(index).unwrap();
 
