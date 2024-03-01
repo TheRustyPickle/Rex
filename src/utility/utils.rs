@@ -694,7 +694,7 @@ pub fn add_new_activity(activity_type: ActivityType, conn: &Connection) -> i32 {
 }
 
 pub fn add_new_activity_tx<T: AsRef<str> + Display>(
-    tx_data: Vec<T>,
+    tx_data: &[T],
     activity_num: i32,
     conn: &Connection,
 ) {

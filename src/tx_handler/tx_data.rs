@@ -230,8 +230,8 @@ impl TxData {
                         &self.tags,
                         &id_num,
                     ];
-                    add_new_activity_tx(new_tx, activity_num, conn);
-                    add_new_activity_tx(deleted_tx, activity_num, conn);
+                    add_new_activity_tx(&new_tx, activity_num, conn);
+                    add_new_activity_tx(&deleted_tx, activity_num, conn);
                     Ok(())
                 }
                 Err(e) => Err(TxUpdateError::FailedEditTx(e).to_string()),
@@ -251,7 +251,7 @@ impl TxData {
                 Ok(()) => {
                     let activity_num = add_new_activity(ActivityType::NewTX, conn);
                     let last_tx = get_last_tx(conn);
-                    add_new_activity_tx(last_tx, activity_num, conn);
+                    add_new_activity_tx(&last_tx, activity_num, conn);
                     Ok(())
                 }
                 Err(e) => Err(TxUpdateError::FailedAddTx(e).to_string()),
@@ -749,7 +749,7 @@ impl TxData {
         .unwrap();
 
         add_new_activity_tx(
-            vec![
+            &[
                 &self.date,
                 &self.details,
                 &self.get_tx_method(),

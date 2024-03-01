@@ -95,18 +95,17 @@ impl ActivityTx {
                     self.id_num.clone(),
                     String::from("New Tx"),
                 ];
-            } else {
-                return vec![
-                    self.date.clone(),
-                    self.details.clone(),
-                    self.tx_method.clone(),
-                    self.amount.clone(),
-                    self.tx_type.clone(),
-                    self.tags.clone(),
-                    self.id_num.clone(),
-                    String::from("Old Tx"),
-                ];
             }
+            return vec![
+                self.date.clone(),
+                self.details.clone(),
+                self.tx_method.clone(),
+                self.amount.clone(),
+                self.tx_type.clone(),
+                self.tags.clone(),
+                self.id_num.clone(),
+                String::from("Old Tx"),
+            ];
         }
 
         vec![
@@ -140,7 +139,7 @@ impl HistoryData {
         let mut txs = Vec::new();
 
         for tx in &self.activities {
-            txs.push(tx.to_vec())
+            txs.push(tx.to_vec());
         }
 
         txs
@@ -181,7 +180,7 @@ impl HistoryData {
             if is_swap {
                 data.push(String::from("New ID"));
             }
-            txs.push(data)
+            txs.push(data);
         }
 
         txs

@@ -957,7 +957,7 @@ pub fn get_search_data(
     let search_data = vec![date, details, &tx_method, amount, tx_type, tags, ""];
 
     let activity_num = add_new_activity(activity_type, conn);
-    add_new_activity_tx(search_data, activity_num, conn);
+    add_new_activity_tx(&search_data, activity_num, conn);
 
     (all_txs, all_ids)
 }

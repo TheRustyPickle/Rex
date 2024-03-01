@@ -420,7 +420,7 @@ impl<'a> InputKeyHandler<'a> {
 
                     let activity_num =
                         add_new_activity(ActivityType::DeleteTX(Some(id_num)), self.conn);
-                    add_new_activity_tx(tx_data, activity_num, self.conn)
+                    add_new_activity_tx(&tx_data, activity_num, self.conn);
                 }
                 Err(err) => {
                     *self.popup =
@@ -1717,7 +1717,7 @@ impl<'a> InputKeyHandler<'a> {
             HistoryTab::List => {
                 if self.history_table.state.selected() == Some(0) {
                     self.history_table.state.select(None);
-                    *self.history_tab = self.history_tab.change_tab_up()
+                    *self.history_tab = self.history_tab.change_tab_up();
                 } else {
                     self.history_table.previous();
                 }
@@ -1733,10 +1733,10 @@ impl<'a> InputKeyHandler<'a> {
             }
             HistoryTab::Months => {
                 if self.history_data.is_activity_empty() {
-                    *self.history_tab = self.history_tab.change_tab_up()
+                    *self.history_tab = self.history_tab.change_tab_up();
                 } else {
                     *self.history_tab = self.history_tab.change_tab_down();
-                    self.history_table.state.select(Some(0))
+                    self.history_table.state.select(Some(0));
                 }
             }
             HistoryTab::List => {
