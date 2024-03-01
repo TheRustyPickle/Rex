@@ -19,13 +19,14 @@ pub fn history_ui(
     let activity_txs_data = history_data.get_activity_txs(table_data.state.selected());
     let mut activity_txs_table = TableData::new(activity_txs_data);
 
-    let is_edit_tx = if let Some(index) = table_data.state.selected() {
+    let add_extra_field = if let Some(index) = table_data.state.selected() {
         history_data.add_extra_field(index)
     } else {
         false
     };
 
-    let activity_tx_header_vec = if is_edit_tx {
+    // Extra status field for search txs and edit txs
+    let activity_tx_header_vec = if add_extra_field {
         vec![
             "Date",
             "Details",
@@ -48,7 +49,8 @@ pub fn history_ui(
         ]
     };
 
-    let activity_tx_header_widths = if is_edit_tx {
+    // Based on extra field, allocate size
+    let activity_tx_header_widths = if add_extra_field {
         vec![
             Constraint::Percentage(10),
             Constraint::Percentage(33),

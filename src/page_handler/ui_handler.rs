@@ -106,6 +106,7 @@ pub fn start_app<B: Backend>(
     let mut search_tab = TxTab::Nothing;
     // Store the current searching date type
     let mut search_date_type = DateType::Exact;
+    // Store the current selected widget on History page
     let mut history_tab = HistoryTab::Years;
 
     // Holds the data that will be/are inserted into the Add Tx page's input fields
@@ -193,7 +194,7 @@ pub fn start_app<B: Backend>(
 
         // balance variable contains all the 'rows' of the Balance widget in the home page.
         // So each line is inside a vector. "" represents empty placeholder.
-        let mut balance: Vec<Vec<String>> = vec![vec![String::new()]];
+        let mut balance = vec![vec![String::new()]];
         balance[0].extend(get_all_tx_methods(conn));
         balance[0].extend(vec!["Total".to_string()]);
 
@@ -305,15 +306,17 @@ pub fn start_app<B: Backend>(
             })
             .map_err(UiHandlingError::DrawingError)?;
 
-        // poll for key press on two page for a duration. If not found, start next loop
+        // Based on the UI status, either start polling for key press or continue the loop
         match page {
             CurrentUi::Initial => {
+                // Initial page will loop indefinitely to animate the text
                 if !poll(Duration::from_millis(40)).map_err(UiHandlingError::PollingError)? {
                     starter_index = (starter_index + 1) % 28;
                     continue;
                 }
             }
             CurrentUi::Chart => {
+                // If chart animation has ended, start polling 
                 if chart_index.is_some()
                     && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
                 {
@@ -321,6 +324,7 @@ pub fn start_app<B: Backend>(
                 }
             }
             CurrentUi::Home => {
+                // If balance loading hasn't ended yet, continue the loop
                 if (balance_load_percentage < 1.0
                     || income_load_percentage < 1.0
                     || expense_load_percentage < 1.0)
@@ -330,7 +334,7 @@ pub fn start_app<B: Backend>(
                     continue;
                 }
                 // Polling has started here. Unless a new key is pressed, it will never proceed further.
-                // So after it's detected, we will reset the data on the home page
+                // So after it's detected, we will reset the loading data on the home page
                 to_reset = true;
             }
 
@@ -393,6 +397,8 @@ pub fn start_app<B: Backend>(
                 CurrentUi::History => history_keys(&mut handler),
             };
 
+            // If there is a status it means it needs to be handled outside the UI
+            // Example quitting or J press for user inputs
             if let Some(output) = status {
                 return Ok(output);
             }

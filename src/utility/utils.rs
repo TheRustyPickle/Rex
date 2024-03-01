@@ -558,6 +558,7 @@ pub fn create_backup_location_file(original_db_path: &PathBuf, backup_paths: Vec
     serde_json::to_writer(&mut file, &backup).unwrap();
 }
 
+/// Copies the latest DB to the backup location specified in `backend_paths.json`
 pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
     let mut json_path = original_db_path.to_owned();
     json_path.pop();
@@ -591,6 +592,7 @@ pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
     }
 }
 
+/// Deletes `backup_paths.json` which contains all locations where backup DB is located.
 pub fn delete_backup_db(original_db_path: &PathBuf) -> ioResult<()> {
     let mut json_path = original_db_path.to_owned();
     json_path.pop();
@@ -604,6 +606,7 @@ pub fn delete_backup_db(original_db_path: &PathBuf) -> ioResult<()> {
     fs::remove_file(json_path)
 }
 
+/// Deletes `locations.json` file which stores alternative location information of the DB.
 pub fn delete_location_change(original_db_path: &PathBuf) -> ioResult<()> {
     let mut json_path = original_db_path.to_owned();
     json_path.pop();
@@ -617,6 +620,7 @@ pub fn delete_location_change(original_db_path: &PathBuf) -> ioResult<()> {
     fs::remove_file(json_path)
 }
 
+/// Returns a transaction detail from a given ID number
 pub fn get_tx_id_num(id_num: i32, conn: &Connection) -> Vec<String> {
     let query = format!("SELECT * FROM tx_all WHERE id_num = {id_num}");
 
@@ -642,6 +646,7 @@ pub fn get_tx_id_num(id_num: i32, conn: &Connection) -> Vec<String> {
     tx_data.unwrap()
 }
 
+/// Returns the details of the last added transaction
 pub fn get_last_tx(conn: &Connection) -> Vec<String> {
     let query = "SELECT * FROM tx_all ORDER BY id_num DESC LIMIT 1";
 
@@ -667,9 +672,7 @@ pub fn get_last_tx(conn: &Connection) -> Vec<String> {
     tx_data.unwrap()
 }
 
-// NOTE activity tx fetching must be done using the first and last activity num gotten
-// NOTE activity num fetching should happen with date value, activity tx fetching will happen based on what id numbers we get
-
+/// Add a new activity row to the DB
 pub fn add_new_activity(activity_type: ActivityType, conn: &Connection) -> i32 {
     let activity_type_str = activity_type.to_str();
     let activity_details = activity_type.to_details();
@@ -683,6 +686,7 @@ pub fn add_new_activity(activity_type: ActivityType, conn: &Connection) -> i32 {
 
     conn.execute(&query, []).unwrap();
 
+    // Fetch the latest row's activity num so this can be used to reference activity txs
     let query = "SELECT activity_num FROM activities ORDER BY activity_num DESC LIMIT 1";
 
     let activity_num = conn.query_row(query, [], |row| {
@@ -693,6 +697,7 @@ pub fn add_new_activity(activity_type: ActivityType, conn: &Connection) -> i32 {
     activity_num.unwrap()
 }
 
+/// Add a new tx that is related to a given activity number
 pub fn add_new_activity_tx<T: AsRef<str> + Display>(
     tx_data: &[T],
     activity_num: i32,
@@ -722,6 +727,8 @@ pub fn add_new_activity_tx<T: AsRef<str> + Display>(
     conn.execute(&query, []).unwrap();
 }
 
+/// Switch from YYYY-MM-DD to DD-MM-YYYY or vice versa.
+/// Will return the original value if either empty or does not have 2 dashes in the string
 pub fn reverse_date_format(date: String) -> String {
     if date.is_empty() {
         return date;
