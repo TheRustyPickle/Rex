@@ -727,6 +727,9 @@ pub fn reverse_date_format(date: String) -> String {
         return date;
     }
     let collected_date = date.split('-').collect::<Vec<&str>>();
+    if collected_date.len() != 3 {
+        return date;
+    }
     let new_date = format!(
         "{}-{}-{}",
         collected_date[2], collected_date[1], collected_date[0]
