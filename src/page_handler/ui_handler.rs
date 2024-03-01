@@ -9,16 +9,19 @@ use std::time::Duration;
 
 use crate::add_tx_page::add_tx_ui;
 use crate::chart_page::{chart_ui, ChartData};
+use crate::history_page::history_ui;
+use crate::history_page::HistoryData;
 use crate::home_page::home_ui;
 use crate::home_page::TransactionData;
 use crate::initial_page::initial_ui;
 use crate::key_checker::{
-    add_tx_keys, chart_keys, home_keys, initial_keys, search_keys, summary_keys, InputKeyHandler,
+    add_tx_keys, chart_keys, history_keys, home_keys, initial_keys, search_keys, summary_keys,
+    InputKeyHandler,
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
-    ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData, PopupState, SortingType,
-    SummaryTab, TableData, TxTab,
+    ChartTab, CurrentUi, DateType, DeletionStatus, HistoryTab, HomeTab, IndexedData, PopupState,
+    SortingType, SummaryTab, TableData, TxTab,
 };
 use crate::popup_page::PopupData;
 use crate::search_page::search_ui;
@@ -26,8 +29,6 @@ use crate::summary_page::{summary_ui, SummaryData};
 use crate::tx_handler::TxData;
 use crate::utility::{get_all_tx_methods, get_empty_changes};
 
-// TODO: More colors? Needs to be turned into an array
-// and maintain an index for which color to select based on the scheme
 pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
 pub const TEXT: Color = Color::Rgb(153, 78, 236);
 pub const BOX: Color = Color::Rgb(255, 87, 51);
@@ -63,6 +64,10 @@ pub fn start_app<B: Backend>(
     let mut summary_years = IndexedData::new_yearly();
     // contains the summary page mode selection list that is indexed
     let mut summary_modes = IndexedData::new_modes();
+    // contains the History page month list that is indexed
+    let mut history_years = IndexedData::new_yearly();
+    // contains the History page month list that is indexed
+    let mut history_months = IndexedData::new_monthly();
 
     // the selected widget on the Home Page. Default set to the month selection
     let mut home_tab = HomeTab::Months;
@@ -75,6 +80,8 @@ pub fn start_app<B: Backend>(
 
     // Stores all data relevant for home page such as balance, changes and txs
     let mut all_tx_data = TransactionData::new(home_months.index, home_years.index, conn);
+    // Stores all activity for a specific month of a year alongside the txs involved in an activity
+    let mut history_data = HistoryData::new(history_months.index, history_years.index, conn);
 
     let mut search_txs = TransactionData::new_search(Vec::new(), Vec::new());
     // data for the Home Page's tx table
@@ -99,6 +106,8 @@ pub fn start_app<B: Backend>(
     let mut search_tab = TxTab::Nothing;
     // Store the current searching date type
     let mut search_date_type = DateType::Exact;
+    // Store the current selected widget on History page
+    let mut history_tab = HistoryTab::Years;
 
     // Holds the data that will be/are inserted into the Add Tx page's input fields
     let mut add_tx_data = TxData::new();
@@ -118,7 +127,11 @@ pub fn start_app<B: Backend>(
         summary_years.index,
     ));
 
+    // data for the Search Page's table
     let mut search_table = TableData::new(Vec::new());
+
+    // data for the History Page's table
+    let mut history_table = TableData::new(history_data.get_txs());
 
     // the initial page REX loading index
     let mut starter_index = 0;
@@ -181,7 +194,7 @@ pub fn start_app<B: Backend>(
 
         // balance variable contains all the 'rows' of the Balance widget in the home page.
         // So each line is inside a vector. "" represents empty placeholder.
-        let mut balance: Vec<Vec<String>> = vec![vec![String::new()]];
+        let mut balance = vec![vec![String::new()]];
         balance[0].extend(get_all_tx_methods(conn));
         balance[0].extend(vec!["Total".to_string()]);
 
@@ -280,20 +293,30 @@ pub fn start_app<B: Backend>(
                         &mut search_table,
                         &search_date_type,
                     ),
+                    CurrentUi::History => history_ui(
+                        f,
+                        &history_months,
+                        &history_years,
+                        &history_tab,
+                        &history_data,
+                        &mut history_table,
+                    ),
                 }
                 popup_data.create_popup(f, &popup_state, &deletion_status);
             })
             .map_err(UiHandlingError::DrawingError)?;
 
-        // poll for key press on two page for a duration. If not found, start next loop
+        // Based on the UI status, either start polling for key press or continue the loop
         match page {
             CurrentUi::Initial => {
+                // Initial page will loop indefinitely to animate the text
                 if !poll(Duration::from_millis(40)).map_err(UiHandlingError::PollingError)? {
                     starter_index = (starter_index + 1) % 28;
                     continue;
                 }
             }
             CurrentUi::Chart => {
+                // If chart animation has ended, start polling
                 if chart_index.is_some()
                     && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
                 {
@@ -301,6 +324,7 @@ pub fn start_app<B: Backend>(
                 }
             }
             CurrentUi::Home => {
+                // If balance loading hasn't ended yet, continue the loop
                 if (balance_load_percentage < 1.0
                     || income_load_percentage < 1.0
                     || expense_load_percentage < 1.0)
@@ -310,7 +334,7 @@ pub fn start_app<B: Backend>(
                     continue;
                 }
                 // Polling has started here. Unless a new key is pressed, it will never proceed further.
-                // So after it's detected, we will reset the data on the home page
+                // So after it's detected, we will reset the loading data on the home page
                 to_reset = true;
             }
 
@@ -347,6 +371,11 @@ pub fn start_app<B: Backend>(
                 &mut search_tab,
                 &mut search_table,
                 &mut search_txs,
+                &mut history_years,
+                &mut history_months,
+                &mut history_tab,
+                &mut history_data,
+                &mut history_table,
                 &mut chart_index,
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,
@@ -365,8 +394,11 @@ pub fn start_app<B: Backend>(
                 CurrentUi::Chart => chart_keys(&mut handler),
                 CurrentUi::Summary => summary_keys(&mut handler),
                 CurrentUi::Search => search_keys(&mut handler),
+                CurrentUi::History => history_keys(&mut handler),
             };
 
+            // If there is a status it means it needs to be handled outside the UI
+            // Example quitting or J press for user inputs
             if let Some(output) = status {
                 return Ok(output);
             }

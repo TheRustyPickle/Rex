@@ -1,3 +1,4 @@
+use chrono::{Local, Months, NaiveDate};
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen,
@@ -11,17 +12,19 @@ use rusqlite::{Connection, Result as sqlResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::error::Error;
+use std::fmt::Display;
 use std::fs::{self, File};
-use std::io::{stdout, Read, Stdout, Write};
+use std::io::{stdout, Read, Result as ioResult, Stdout, Write};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use std::{process, thread};
 use strsim::normalized_levenshtein;
 
-use crate::db::{add_tags_column, create_db, update_balance_type, YEARS};
+use crate::db::{add_tags_column, create_db, migrate_to_activities, update_balance_type, YEARS};
 use crate::outputs::ComparisonType;
 use crate::page_handler::{
-    DateType, IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED, TEXT,
+    ActivityType, DateType, IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED,
+    TEXT,
 };
 use crate::utility::get_user_tx_methods;
 
@@ -154,8 +157,14 @@ pub fn get_sql_dates(month: usize, year: usize, date_type: &DateType) -> (String
     match date_type {
         DateType::Monthly => {
             let datetime_1 = format!("{}-{:02}-01", YEARS[year], month + 1);
-            let datetime_2 = format!("{}-{:02}-31", YEARS[year], month + 1);
-            (datetime_1, datetime_2)
+            let last_date =
+                NaiveDate::from_ymd_opt(YEARS[year].parse().unwrap(), (month + 1) as u32, 1)
+                    .unwrap()
+                    .checked_add_months(Months::new(1))
+                    .unwrap()
+                    .pred_opt()
+                    .unwrap();
+            (datetime_1, last_date.to_string())
         }
         DateType::Yearly => {
             let datetime_1 = format!("{}-01-01", YEARS[year]);
@@ -197,6 +206,19 @@ pub fn check_old_sql(conn: &mut Connection) {
             }
         }
     }
+
+    if !get_all_table_names(conn).contains(&"activities".to_string()) {
+        println!("Outdated database detected. Updating...");
+        let status = migrate_to_activities(conn);
+        match status {
+            Ok(()) => start_timer("Database updating successfully complete."),
+            Err(e) => {
+                println!("Database updating failed. Try again. Error: {e}");
+                println!("Commits reversed. Exiting...");
+                process::exit(1);
+            }
+        }
+    }
 }
 
 /// Checks if the `balance_all` table is outdated
@@ -216,6 +238,20 @@ pub fn check_old_balance_sql(conn: &Connection) -> bool {
             break;
         }
     }
+    result
+}
+
+pub fn get_all_table_names(conn: &Connection) -> Vec<String> {
+    let mut stmt = conn
+        .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+        .unwrap();
+    let table_names = stmt.query_map([], |row| row.get(0)).unwrap();
+
+    let mut result = Vec::new();
+    for table_name in table_names {
+        result.push(table_name.unwrap());
+    }
+
     result
 }
 
@@ -336,6 +372,7 @@ pub fn start_timer<T: std::fmt::Display>(input: T) {
         handle.flush().unwrap();
         thread::sleep(Duration::from_millis(1000));
     }
+    println!("\n");
 }
 
 /// Takes a user input and returns the trimmed input as String
@@ -505,8 +542,8 @@ pub fn create_change_location_file(working_dir: &PathBuf, new_path: &Path) {
 }
 
 /// Create a `backup_paths.json` file to store the location of where backup db will be located
-pub fn create_backup_location_file(working_dir: &PathBuf, backup_paths: Vec<PathBuf>) {
-    let mut target_dir = working_dir.to_owned();
+pub fn create_backup_location_file(original_db_path: &PathBuf, backup_paths: Vec<PathBuf>) {
+    let mut target_dir = original_db_path.to_owned();
     target_dir.pop();
 
     let backup = BackupPaths {
@@ -521,6 +558,7 @@ pub fn create_backup_location_file(working_dir: &PathBuf, backup_paths: Vec<Path
     serde_json::to_writer(&mut file, &backup).unwrap();
 }
 
+/// Copies the latest DB to the backup location specified in `backend_paths.json`
 pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
     let mut json_path = original_db_path.to_owned();
     json_path.pop();
@@ -552,4 +590,156 @@ pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
             continue;
         }
     }
+}
+
+/// Deletes `backup_paths.json` which contains all locations where backup DB is located.
+pub fn delete_backup_db(original_db_path: &PathBuf) -> ioResult<()> {
+    let mut json_path = original_db_path.to_owned();
+    json_path.pop();
+
+    json_path.push("backup_paths.json");
+
+    if !json_path.exists() {
+        return Ok(());
+    }
+
+    fs::remove_file(json_path)
+}
+
+/// Deletes `locations.json` file which stores alternative location information of the DB.
+pub fn delete_location_change(original_db_path: &PathBuf) -> ioResult<()> {
+    let mut json_path = original_db_path.to_owned();
+    json_path.pop();
+
+    json_path.push("location.json");
+
+    if !json_path.exists() {
+        return Ok(());
+    }
+
+    fs::remove_file(json_path)
+}
+
+/// Returns a transaction detail from a given ID number
+pub fn get_tx_id_num(id_num: i32, conn: &Connection) -> Vec<String> {
+    let query = format!("SELECT * FROM tx_all WHERE id_num = {id_num}");
+
+    let tx_data = conn.query_row(&query, [], |row| {
+        let date: String = row.get(0).unwrap();
+        let id_num: i32 = row.get(5).unwrap();
+        let collected_date = date.split('-').collect::<Vec<&str>>();
+        let new_date = format!(
+            "{}-{}-{}",
+            collected_date[2], collected_date[1], collected_date[0]
+        );
+        Ok(vec![
+            new_date,
+            row.get(1).unwrap(),
+            row.get(2).unwrap(),
+            row.get(3).unwrap(),
+            row.get(4).unwrap(),
+            row.get(6).unwrap(),
+            id_num.to_string(),
+        ])
+    });
+
+    tx_data.unwrap()
+}
+
+/// Returns the details of the last added transaction
+pub fn get_last_tx(conn: &Connection) -> Vec<String> {
+    let query = "SELECT * FROM tx_all ORDER BY id_num DESC LIMIT 1";
+
+    let tx_data = conn.query_row(query, [], |row| {
+        let date: String = row.get(0).unwrap();
+        let id_num: i32 = row.get(5).unwrap();
+        let collected_date = date.split('-').collect::<Vec<&str>>();
+        let new_date = format!(
+            "{}-{}-{}",
+            collected_date[2], collected_date[1], collected_date[0]
+        );
+        Ok(vec![
+            new_date,
+            row.get(1).unwrap(),
+            row.get(2).unwrap(),
+            row.get(3).unwrap(),
+            row.get(4).unwrap(),
+            row.get(6).unwrap(),
+            id_num.to_string(),
+        ])
+    });
+
+    tx_data.unwrap()
+}
+
+/// Add a new activity row to the DB
+pub fn add_new_activity(activity_type: ActivityType, conn: &Connection) -> i32 {
+    let activity_type_str = activity_type.to_str();
+    let activity_details = activity_type.to_details();
+    let current_date = Local::now().date_naive().to_string();
+
+    let query = format!(
+        r#"INSERT INTO activities 
+    (date, activity_type, description) 
+    VALUES ("{current_date}", "{activity_type_str}", "{activity_details}")"#
+    );
+
+    conn.execute(&query, []).unwrap();
+
+    // Fetch the latest row's activity num so this can be used to reference activity txs
+    let query = "SELECT activity_num FROM activities ORDER BY activity_num DESC LIMIT 1";
+
+    let activity_num = conn.query_row(query, [], |row| {
+        let id_num: i32 = row.get(0).unwrap();
+        Ok(id_num)
+    });
+
+    activity_num.unwrap()
+}
+
+/// Add a new tx that is related to a given activity number
+pub fn add_new_activity_tx<T: AsRef<str> + Display>(
+    tx_data: &[T],
+    activity_num: i32,
+    conn: &Connection,
+) {
+    let date = &tx_data[0];
+    let details = &tx_data[1];
+    let tx_method = &tx_data[2];
+    let amount = &tx_data[3];
+    let tx_type = &tx_data[4];
+    let tags = &tx_data[5];
+    let id_num = &tx_data[6];
+
+    let mut string_date = date.to_string();
+    let splitted_date = string_date.split('-').collect::<Vec<&str>>();
+
+    if splitted_date[0].len() == 2 {
+        string_date = reverse_date_format(string_date);
+    }
+
+    let query = format!(
+        r#"INSERT INTO activity_txs 
+    (date, details, tx_method, amount, tx_type, tags, id_num, activity_num)
+    VALUES ("{string_date}", "{details}", "{tx_method}", "{amount}", "{tx_type}", "{tags}", "{id_num}", "{activity_num}")"#
+    );
+
+    conn.execute(&query, []).unwrap();
+}
+
+/// Switch from YYYY-MM-DD to DD-MM-YYYY or vice versa.
+/// Will return the original value if either empty or does not have 2 dashes in the string
+pub fn reverse_date_format(date: String) -> String {
+    if date.is_empty() {
+        return date;
+    }
+    let collected_date = date.split('-').collect::<Vec<&str>>();
+    if collected_date.len() != 3 {
+        return date;
+    }
+    let new_date = format!(
+        "{}-{}-{}",
+        collected_date[2], collected_date[1], collected_date[0]
+    );
+    new_date
 }

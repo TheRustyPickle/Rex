@@ -5,12 +5,13 @@ use std::io::stdout;
 use std::path::PathBuf;
 use std::process::Command;
 
+use crate::history_page::{ActivityData, ActivityTx};
 use crate::outputs::{ComparisonType, TerminalExecutionError};
-use crate::page_handler::{DateType, UserInputType};
+use crate::page_handler::{ActivityType, DateType, ResetType, UserInputType};
 use crate::tx_handler::{delete_tx, TxData};
 use crate::utility::{
-    check_comparison, check_restricted, clear_terminal, flush_output, get_all_tx_methods,
-    get_sql_dates, take_input,
+    add_new_activity, add_new_activity_tx, check_comparison, check_restricted, clear_terminal,
+    flush_output, get_all_tx_methods, get_sql_dates, reverse_date_format, take_input,
 };
 
 /// Returns the balance of all methods based on year and month point.
@@ -136,23 +137,18 @@ pub fn get_all_txs(
     // preparing the query for db, getting current month's all transactions
     let mut statement = conn
         .prepare(
-            "SELECT * FROM tx_all Where date BETWEEN date(?) AND date(?) ORDER BY date, id_num",
+            "SELECT * FROM tx_all WHERE date BETWEEN date(?) AND date(?) ORDER BY date, id_num",
         )
         .expect("could not prepare statement");
 
     let rows = statement
         .query_map([&datetime_1, &datetime_2], |row| {
             // collect the row data and put them in a vec
-            let date: String = row.get(0).unwrap();
+            let date = reverse_date_format(row.get(0).unwrap());
             let id_num: i32 = row.get(5).unwrap();
-            let collected_date = date.split('-').collect::<Vec<&str>>();
-            let new_date = format!(
-                "{}-{}-{}",
-                collected_date[2], collected_date[1], collected_date[0]
-            );
 
             Ok(vec![
-                new_date,
+                date,
                 row.get(1).unwrap(),
                 row.get(2).unwrap(),
                 row.get(3).unwrap(),
@@ -289,7 +285,7 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
             UserInputType::RepositionTxMethod(_) => return get_reposition_data(conn),
             UserInputType::SetNewLocation(_) => return get_new_location(),
             UserInputType::BackupDBPath(_) => return get_backup_db_paths(),
-            UserInputType::CancelledOperation => return input_type,
+            UserInputType::CancelledOperation | UserInputType::ResetData(_) => return input_type,
             UserInputType::InvalidInput => clear_terminal(&mut stdout),
         }
     }
@@ -626,7 +622,9 @@ fn get_new_location() -> UserInputType {
         let initial_line = "Enter a new location where the app will look for data. The location must start from root. 
         
 If the location does not exist, all missing folders will be created and app data will be copied. 
-        
+
+Empty input will be considered as reset any saved location.
+
 Example location:
         
 Linux: /mnt/sdb1/data/save/
@@ -639,8 +637,8 @@ Windows: C:\\data\\save\\";
         let given_location = take_input();
 
         if given_location.is_empty() {
-            clear_terminal(&mut stdout);
-            continue;
+            println!("Clearing saved location");
+            return UserInputType::ResetData(ResetType::NewLocation);
         }
 
         if given_location.trim().to_lowercase().starts_with("cancel") {
@@ -683,6 +681,8 @@ If the location does not exist, all missing folders will be created. Separate mu
 
 If previously saved paths exists, they will be overwritten.
 
+Empty input will be considered as reset all saved backup paths.
+
 Example input:
 
 Linux: /mnt/sdb1/data/save/, /mnt/sdb1/another/backup/, /mnt/sdb1/backup/
@@ -695,8 +695,8 @@ Windows: C:\\data\\save\\, C:\\backup\\save\\, C:\\folder\\app\\";
         let given_location = take_input();
 
         if given_location.is_empty() {
-            clear_terminal(&mut stdout);
-            continue;
+            println!("Clearing all backup paths");
+            return UserInputType::ResetData(ResetType::BackupDB);
         }
 
         if given_location.trim().to_lowercase().starts_with("cancel") {
@@ -818,9 +818,25 @@ pub fn get_search_data(
     let mut all_txs = Vec::new();
     let mut all_ids = Vec::new();
 
+    // This will be used for the activity tx
+    let tx_method = if tx_type == "Transfer" && !from_method.is_empty() && !to_method.is_empty() {
+        format!("{from_method} to {to_method}").trim().to_string()
+    } else if tx_type == "Transfer" && !from_method.is_empty() && to_method.is_empty() {
+        format!("{from_method} to ?").trim().to_string()
+    } else if tx_type == "Transfer" && from_method.is_empty() && !to_method.is_empty() {
+        format!("? to {to_method}").trim().to_string()
+    } else if from_method.is_empty() && to_method.is_empty() {
+        String::new()
+    } else {
+        from_method.to_string()
+    };
+
+    let mut valid_fields = 0;
+
     let mut query = "SELECT * FROM tx_all WHERE 1=1".to_string();
 
     if !date.is_empty() {
+        valid_fields += 1;
         match date_type {
             DateType::Exact => query.push_str(&format!(r#" AND date = "{date}""#)),
             DateType::Monthly => {
@@ -849,14 +865,17 @@ pub fn get_search_data(
     }
 
     if !details.is_empty() {
+        valid_fields += 1;
         query.push_str(&format!(r#" AND details LIKE "%{details}%""#,));
     }
 
     if !tx_type.is_empty() {
+        valid_fields += 1;
         query.push_str(&format!(r#" AND tx_type = "{tx_type}""#,));
     }
 
     if !amount.is_empty() {
+        valid_fields += 1;
         let comparison_type = check_comparison(amount);
 
         let comparison_symbol = match comparison_type {
@@ -871,15 +890,28 @@ pub fn get_search_data(
         query.push_str(&format!(r#" AND {comparison_type} "{amount}""#));
     }
 
-    if tx_type == "Transfer" && !from_method.is_empty() && !to_method.is_empty() {
-        query.push_str(&format!(
-            r#" AND tx_method = "{from_method} to {to_method}""#
-        ));
+    if tx_type == "Transfer" {
+        // If neither are empty, look for exact matches
+        // Otherwise do partial matching
+        if !from_method.is_empty() && !to_method.is_empty() {
+            valid_fields += 1;
+            query.push_str(&format!(
+                r#" AND tx_method = "{from_method} to {to_method}""#
+            ));
+        } else if !from_method.is_empty() {
+            valid_fields += 1;
+            query.push_str(&format!(r#" AND tx_method LIKE "{from_method} to %" "#));
+        } else if !to_method.is_empty() {
+            valid_fields += 1;
+            query.push_str(&format!(r#" AND tx_method LIKE "% to {to_method}""#));
+        }
     } else if tx_type != "Transfer" && !from_method.is_empty() {
+        valid_fields += 1;
         query.push_str(&format!(r#" AND tx_method = "{from_method}""#));
     }
 
     if !tags.is_empty() {
+        valid_fields += 1;
         let all_tags = tags.split(", ");
         let tag_conditions = all_tags
             .map(|tag| {
@@ -902,16 +934,11 @@ pub fn get_search_data(
 
     let rows = statement
         .query_map([], |row| {
-            let date: String = row.get(0).unwrap();
+            let date = reverse_date_format(row.get(0).unwrap());
             let id_num: i32 = row.get(5).unwrap();
-            let collected_date = date.split('-').collect::<Vec<&str>>();
-            let new_date = format!(
-                "{}-{}-{}",
-                collected_date[2], collected_date[1], collected_date[0]
-            );
 
             Ok(vec![
-                new_date,
+                date,
                 row.get(1).unwrap(),
                 row.get(2).unwrap(),
                 row.get(3).unwrap(),
@@ -928,6 +955,12 @@ pub fn get_search_data(
         all_ids.push(id_num.to_string());
         all_txs.push(data);
     }
+
+    let activity_type = ActivityType::SearchTX(Some(valid_fields));
+    let search_data = vec![date, details, &tx_method, amount, tx_type, tags, ""];
+
+    let activity_num = add_new_activity(activity_type, conn);
+    add_new_activity_tx(&search_data, activity_num, conn);
 
     (all_txs, all_ids)
 }
@@ -987,6 +1020,98 @@ pub fn switch_tx_index(
 
     delete_tx(id_1, conn).unwrap();
     delete_tx(id_2, conn).unwrap();
-    tx_data_1.switch_tx_id(id_2, conn);
-    tx_data_2.switch_tx_id(id_1, conn);
+
+    let activity_num = add_new_activity(ActivityType::IDNumSwap(Some(id_1), Some(id_2)), conn);
+
+    tx_data_1.switch_tx_id(id_2, activity_num, conn);
+    tx_data_2.switch_tx_id(id_1, activity_num, conn);
+}
+
+/// Returns all activities recorded within a given month and a year and all the activity txs related to the activities
+pub fn get_all_activities(
+    month: usize,
+    year: usize,
+    conn: &Connection,
+) -> (Vec<ActivityData>, HashMap<i32, Vec<ActivityTx>>) {
+    let (datetime_1, datetime_2) = get_sql_dates(month, year, &DateType::Monthly);
+
+    let mut statement = conn
+        .prepare("SELECT * from activities WHERE date BETWEEN date(?) AND date(?)")
+        .unwrap();
+
+    // Activity tx fetching happens based on the minimum activity num and the maximum activity num
+    let mut min_activity_num = i32::MAX;
+    let mut max_activity_num = i32::MIN;
+
+    let rows: Vec<ActivityData> = statement
+        .query_map([datetime_1, datetime_2], |row| {
+            let date = reverse_date_format(row.get(0).unwrap());
+            Ok(ActivityData::new(
+                date,
+                row.get(1).unwrap(),
+                row.get(2).unwrap(),
+                row.get(3).unwrap(),
+            ))
+        })
+        .unwrap()
+        .map(|wrapped_data| {
+            let data = wrapped_data.unwrap();
+            let id = data.activity_num();
+
+            if id > max_activity_num {
+                max_activity_num = id;
+            }
+
+            if id < min_activity_num {
+                min_activity_num = id;
+            }
+            data
+        })
+        .collect();
+
+    let activity_txs = get_all_activity_txs(min_activity_num, max_activity_num, conn);
+
+    (rows, activity_txs)
+}
+
+/// Returns all activity txs within the given activity number range
+pub fn get_all_activity_txs(
+    min_num: i32,
+    max_num: i32,
+    conn: &Connection,
+) -> HashMap<i32, Vec<ActivityTx>> {
+    let mut statement = conn
+        .prepare("SELECT * from activity_txs WHERE activity_num >= ? AND activity_num <= ?")
+        .unwrap();
+
+    // Contains data in the format {activity_num: Vec<ActivityTx>}
+    // In case of search or edit txs, a single activity can impact multiple txs
+    // The rest will always have only 1 tx
+    let mut activity_tx_data = HashMap::new();
+
+    for wrapped_data in statement
+        .query_map([min_num, max_num], |row| {
+            let date = reverse_date_format(row.get(0).unwrap());
+            Ok(ActivityTx::new(
+                date,
+                row.get(1).unwrap(),
+                row.get(2).unwrap(),
+                row.get(3).unwrap(),
+                row.get(4).unwrap(),
+                row.get(5).unwrap(),
+                row.get(6).unwrap(),
+                row.get(7).unwrap(),
+                row.get(8).unwrap(),
+            ))
+        })
+        .unwrap()
+    {
+        let data = wrapped_data.unwrap();
+        activity_tx_data
+            .entry(data.activity_num())
+            .or_insert(Vec::new())
+            .push(data);
+    }
+
+    activity_tx_data
 }

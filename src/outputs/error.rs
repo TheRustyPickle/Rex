@@ -1,17 +1,18 @@
 use rusqlite::Error as sqlError;
-use std::fmt;
-use std::io::Error;
+use std::error::Error;
+use std::fmt::{self, Display, Result};
+use std::io::Error as ioError;
 use std::process::Output;
 
 #[derive(Debug)]
 pub enum TerminalExecutionError {
     NotFound(Output),
-    ExecutionFailed(Error),
+    ExecutionFailed(ioError),
 }
 
-impl fmt::Display for TerminalExecutionError {
+impl Display for TerminalExecutionError {
     #[cfg(not(tarpaulin_include))]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
         match self {
             TerminalExecutionError::NotFound(output) => write!(f, "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{output:?}", ),
             TerminalExecutionError::ExecutionFailed(error) => write!(f, "Error while processing commands. Use a terminal/console to run the app. Output: {error}", ),
@@ -19,17 +20,17 @@ impl fmt::Display for TerminalExecutionError {
     }
 }
 
-impl std::error::Error for TerminalExecutionError {}
+impl Error for TerminalExecutionError {}
 
 #[derive(Debug)]
 pub enum UiHandlingError {
-    DrawingError(Error),
-    PollingError(Error),
+    DrawingError(ioError),
+    PollingError(ioError),
 }
 
-impl fmt::Display for UiHandlingError {
+impl Display for UiHandlingError {
     #[cfg(not(tarpaulin_include))]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
         match self {
             UiHandlingError::DrawingError(err) => {
                 write!(f, "Error while trying to draw widgets. Error: {err}",)
@@ -41,7 +42,7 @@ impl fmt::Display for UiHandlingError {
     }
 }
 
-impl std::error::Error for UiHandlingError {}
+impl Error for UiHandlingError {}
 
 #[derive(Debug, PartialEq)]
 pub enum CheckingError {
@@ -52,9 +53,9 @@ pub enum CheckingError {
     SameTxMethod,
 }
 
-impl fmt::Display for CheckingError {
+impl Display for CheckingError {
     #[cfg(not(tarpaulin_include))]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
         match self {
             CheckingError::EmptyDate => write!(f, "Date: Date cannot be empty"),
             CheckingError::EmptyMethod => write!(f, "Tx Method: TX Method cannot be empty"),
@@ -68,7 +69,7 @@ impl fmt::Display for CheckingError {
     }
 }
 
-impl std::error::Error for CheckingError {}
+impl Error for CheckingError {}
 
 #[derive(Debug, PartialEq)]
 pub enum SteppingError {
@@ -80,9 +81,9 @@ pub enum SteppingError {
     UnknownBValue,
 }
 
-impl fmt::Display for SteppingError {
+impl Display for SteppingError {
     #[cfg(not(tarpaulin_include))]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
         match self {
             SteppingError::InvalidDate => {
                 write!(f, "Date: Failed to step due to invalid date format")
@@ -114,9 +115,9 @@ pub enum TxUpdateError {
     FailedDeleteTx(sqlError),
 }
 
-impl fmt::Display for TxUpdateError {
+impl Display for TxUpdateError {
     #[cfg(not(tarpaulin_include))]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
         match self {
             TxUpdateError::FailedAddTx(e) => {
                 write!(
