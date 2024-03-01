@@ -80,9 +80,9 @@ impl ActivityTx {
         self.activity_num
     }
 
-    pub fn to_vec(&self, compare_with: Option<i32>) -> Vec<String> {
-        if let Some(id) = compare_with {
-            let is_smaller = if id == self.insertion_id { true } else { false };
+    pub fn to_vec(&self, smaller_num: Option<i32>) -> Vec<String> {
+        if let Some(id) = smaller_num {
+            let is_smaller = id == self.insertion_id;
 
             if is_smaller {
                 return vec![
@@ -159,19 +159,25 @@ impl HistoryData {
 
         let mut is_swap = false;
 
-        let compare_with = if target_txs.len() == 2 {
-            if let ActivityType::IDNumSwap(_, _) = self.activities[index].activity_type {
-                is_swap = true;
-                None
+        let smaller_num = if target_txs.len() == 2 {
+            let first_tx_id = target_txs[0].insertion_id;
+            let second_tx_id = target_txs[1].insertion_id;
+
+            if first_tx_id < second_tx_id {
+                Some(first_tx_id)
             } else {
-                Some(target_txs[0].insertion_id)
+                Some(second_tx_id)
             }
         } else {
             None
         };
 
+        if let ActivityType::IDNumSwap(_, _) = self.activities[index].activity_type {
+            is_swap = true;
+        }
+
         for tx in target_txs {
-            let mut data = tx.to_vec(compare_with);
+            let mut data = tx.to_vec(smaller_num);
             if is_swap {
                 data.push(String::from("New ID"));
             }
