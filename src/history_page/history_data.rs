@@ -160,7 +160,7 @@ impl HistoryData {
 
         let mut is_swap = false;
 
-        let smaller_num = if target_txs.len() == 2 {
+        let mut smaller_num = if target_txs.len() == 2 {
             let first_tx_id = target_txs[0].insertion_id;
             let second_tx_id = target_txs[1].insertion_id;
 
@@ -175,6 +175,7 @@ impl HistoryData {
 
         if let ActivityType::IDNumSwap(_, _) = self.activities[index].activity_type {
             is_swap = true;
+            smaller_num = None;
         }
 
         for tx in target_txs {
