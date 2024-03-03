@@ -224,7 +224,7 @@ impl<'a> InputKeyHandler<'a> {
 
     #[cfg(not(tarpaulin_include))]
     pub fn go_history(&mut self) {
-        *self.page = CurrentUi::History;
+        *self.page = CurrentUi::Activity;
     }
 
     /// Turns on help popup
@@ -236,7 +236,8 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Chart => *self.popup = PopupState::ChartHelp,
             CurrentUi::Summary => *self.popup = PopupState::SummaryHelp,
             CurrentUi::Search => *self.popup = PopupState::SearchHelp,
-            CurrentUi::Initial | CurrentUi::History => {}
+            CurrentUi::Activity => *self.popup = PopupState::ActivityHelp,
+            CurrentUi::Initial => {}
         }
     }
 
@@ -539,7 +540,7 @@ impl<'a> InputKeyHandler<'a> {
                     }
                 }
             }
-            CurrentUi::History => match self.history_tab {
+            CurrentUi::Activity => match self.history_tab {
                 HistoryTab::Years => {
                     self.history_months.set_index_zero();
                     self.history_years.previous();
@@ -608,7 +609,7 @@ impl<'a> InputKeyHandler<'a> {
                 }
                 SummaryTab::Table => {}
             },
-            CurrentUi::History => match self.history_tab {
+            CurrentUi::Activity => match self.history_tab {
                 HistoryTab::Years => {
                     self.history_months.set_index_zero();
                     self.history_years.next();
@@ -633,7 +634,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Summary => self.do_summary_up(),
             CurrentUi::Chart => self.do_chart_up(),
             CurrentUi::Search => self.do_search_up(),
-            CurrentUi::History => self.do_history_up(),
+            CurrentUi::Activity => self.do_history_up(),
             CurrentUi::Initial => {}
         }
         self.check_autofill();
@@ -648,7 +649,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Summary => self.do_summary_down(),
             CurrentUi::Chart => self.do_chart_down(),
             CurrentUi::Search => self.do_search_down(),
-            CurrentUi::History => self.do_history_down(),
+            CurrentUi::Activity => self.do_history_down(),
             CurrentUi::Initial => {}
         }
         self.check_autofill();

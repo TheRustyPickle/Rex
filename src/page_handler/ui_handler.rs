@@ -293,7 +293,7 @@ pub fn start_app<B: Backend>(
                         &mut search_table,
                         &search_date_type,
                     ),
-                    CurrentUi::History => history_ui(
+                    CurrentUi::Activity => history_ui(
                         f,
                         &history_months,
                         &history_years,
@@ -394,7 +394,7 @@ pub fn start_app<B: Backend>(
                 CurrentUi::Chart => chart_keys(&mut handler),
                 CurrentUi::Summary => summary_keys(&mut handler),
                 CurrentUi::Search => search_keys(&mut handler),
-                CurrentUi::History => history_keys(&mut handler),
+                CurrentUi::Activity => history_keys(&mut handler),
             };
 
             // If there is a status it means it needs to be handled outside the UI

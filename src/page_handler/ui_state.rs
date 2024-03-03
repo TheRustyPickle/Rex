@@ -168,7 +168,7 @@ pub enum CurrentUi {
     Chart,
     Summary,
     Search,
-    History,
+    Activity,
 }
 
 /// Indicates which popup is currently on and is being shown in the screen
@@ -179,6 +179,7 @@ pub enum PopupState {
     ChartHelp,
     SummaryHelp,
     SearchHelp,
+    ActivityHelp,
     DeleteFailed(String),
     TxDeletion,
     Nothing,
