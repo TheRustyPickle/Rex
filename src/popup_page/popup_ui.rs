@@ -1,7 +1,7 @@
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Span, Text};
-use ratatui::widgets::{Block, Borders, Clear, Paragraph};
+use ratatui::widgets::{Block, Borders, Clear, Paragraph, Wrap};
 use ratatui::Frame;
 
 use crate::page_handler::{DeletionStatus, BACKGROUND, BLUE, BOX, HIGHLIGHTED, RED, TEXT};
@@ -32,7 +32,9 @@ pub fn create_popup(f: &mut Frame, x_value: u16, y_value: u16, title: &str, text
     f.render_widget(Clear, area);
     f.render_widget(block, area);
 
-    let help_sec = Paragraph::new(Text::from(text)).style(Style::default().bg(BACKGROUND).fg(TEXT));
+    let help_sec = Paragraph::new(Text::from(text))
+        .style(Style::default().bg(BACKGROUND).fg(TEXT))
+        .wrap(Wrap::default());
 
     let dismiss_sec = Paragraph::new("Press Any Key To Dismiss")
         .style(
