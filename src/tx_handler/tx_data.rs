@@ -461,6 +461,7 @@ impl TxData {
 
     /// Checks for b on amount field to replace with the balance of the tx method field
     fn check_b_field(&mut self, conn: &Connection) -> Result<(), VerifyingOutput> {
+        self.check_suffixes();
         let user_amount = self.amount.to_lowercase();
 
         // 'b' represents the current balance of the original tx method
@@ -480,6 +481,23 @@ impl TxData {
             return Err(VerifyingOutput::NotAccepted(NAType::InvalidBValue));
         }
         Ok(())
+    }
+
+    /// If `k` and `m` are present, multiplies the current number 1 thousand and 1 million respectively
+    fn check_suffixes(&mut self) {
+        let mut user_amount = self.amount.to_lowercase();
+
+        if user_amount.contains('k') {
+            user_amount = user_amount.replace("k", "");
+            let amount: f64 = user_amount.parse().unwrap();
+            self.amount = (amount * 1_000.0).to_string();
+        }
+
+        if user_amount.contains('m') {
+            user_amount = user_amount.replace("m", "");
+            let amount: f64 = user_amount.parse().unwrap();
+            self.amount = (amount * 1_000_000.0).to_string();
+        }
     }
 
     pub fn clear_date(&mut self) {
