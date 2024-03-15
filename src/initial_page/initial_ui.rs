@@ -31,12 +31,12 @@ pub fn initial_ui(f: &mut Frame, start_from: usize) {
 
     let help_chunk_1 = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
         .split(horizontal_help_chunks[0]);
 
     let help_chunk_2 = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
         .split(horizontal_help_chunks[1]);
 
     f.render_widget(main_block(), size);
@@ -115,7 +115,9 @@ E: Edit Selected Transaction
 ,: Move the transaction upward (Only if on the same date)
 .: Move the transaction downward (Only if on the same date)";
 
-    let unmodified_fourth_help = "Arrow Left/Right: Move cursor left/right (If a field is selected)    
+    let unmodified_fourth_help =
+        "Arrow Left/Right: Move cursor left/right (If a field is selected)    
+Arrow Up/Down: Go to the next value of the field (If a field is selected)
 1: Edit Date  
 2: Edit TX details
 3: Edit TX Type
@@ -124,8 +126,9 @@ E: Edit Selected Transaction
 6: Edit Tags
 S: Save inputted data as a Transaction
 C: Clear all fields and reset
+X: Change date type (Only on search page)
 Enter: Select the first field if nothing is selected
-Enter: Submit a field and continue
+Enter: Verify, submit a field and continue
 Esc: Stop editing a field";
 
     // bold a part of the text before rendering
@@ -156,19 +159,23 @@ Esc: Stop editing a field";
 
     let help_1 = Paragraph::new(first_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Page Keys")).wrap(Wrap::default());
+        .block(styled_block("Page Keys"))
+        .wrap(Wrap::default());
 
     let help_2 = Paragraph::new(second_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Other Keys")).wrap(Wrap::default());
+        .block(styled_block("Other Keys"))
+        .wrap(Wrap::default());
 
     let help_3 = Paragraph::new(third_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Home Page Keys")).wrap(Wrap::default());
+        .block(styled_block("Home Page Keys"))
+        .wrap(Wrap::default());
 
     let help_4 = Paragraph::new(fourth_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Transaction Field Keys")).wrap(Wrap::default());
+        .block(styled_block("Transaction Field Keys"))
+        .wrap(Wrap::default());
 
     f.render_widget(paragraph, chunks[0]);
     f.render_widget(paragraph_2, chunks[1]);
