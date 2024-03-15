@@ -3,14 +3,14 @@ use ratatui::Frame;
 use crate::page_handler::{DeletionStatus, PopupState};
 use crate::popup_page::{create_deletion_popup, create_popup};
 
-const F: &str = "F: Home Page";
-const A: &str = "A: Add Transaction Page";
-const R: &str = "R: Chart Page";
-const Z: &str = "Z: Summary Page";
-const Y: &str = "Y: Activity Page";
-const W: &str = "W: Search Page";
-const Q: &str = "Q: Quit";
-const H: &str = "H: Show help";
+pub const F: &str = "F: Home Page";
+pub const A: &str = "A: Add Transaction Page";
+pub const R: &str = "R: Chart Page";
+pub const Z: &str = "Z: Summary Page";
+pub const Y: &str = "Y: Activity Page";
+pub const W: &str = "W: Search Page";
+pub const Q: &str = "Q: Quit";
+pub const H: &str = "H: Show help";
 
 /// Stores data to create a new popup
 pub struct PopupData<'a> {
@@ -172,7 +172,7 @@ Arrow Left/Right: Move value of the widget
         self.set("Help", 70, 70);
         format!("This is the Home page where all txs added so far, the balances and the changes are shown
 
-J: Starts taking input to add/rename/reposition Transaction Method
+J: Take user input for various actions
 E: Edit the selected transaction on the table
 D: Delete the selected transaction on the table
 ,: Swaps the location of the selected transaction with the transaction above it
