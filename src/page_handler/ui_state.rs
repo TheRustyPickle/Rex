@@ -404,6 +404,8 @@ pub enum HomeRow {
     Changes,
     Income,
     Expense,
+    DailyIncome,
+    DailyExpense,
     TopRow,
 }
 
@@ -418,6 +420,10 @@ impl HomeRow {
             HomeRow::Income
         } else if data[0] == "Expense" {
             HomeRow::Expense
+        } else if data[0] == "Daily Income" {
+            HomeRow::DailyIncome
+        } else if data[0] == "Daily Expense" {
+            HomeRow::DailyExpense
         } else {
             HomeRow::TopRow
         }

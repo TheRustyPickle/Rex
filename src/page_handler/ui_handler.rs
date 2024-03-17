@@ -159,10 +159,7 @@ pub fn start_app<B: Backend>(
     // If the difference between the ongoing and last balance is 100, each loop it adds/reduces x.xx% of the difference to the balance
     // till actual balance is reached. After each loop it gets increased by a little till 1.0 and key polling starts at 1.0, putting the app to sleep
     // Also used for the changes row
-    let mut balance_load_percentage = 0.0;
-    // Similar to balance_load_percentage, but for expense and income row
-    let mut income_load_percentage = 0.0;
-    let mut expense_load_percentage = 0.0;
+    let mut load_percentage = 0.0;
 
     // Works similarly to balance load
     let mut changes_load = balance_load.clone();
@@ -176,6 +173,14 @@ pub fn start_app<B: Backend>(
     let mut expense_load = balance_load.clone();
     let mut last_expense = Vec::new();
     let mut ongoing_expense = Vec::new();
+
+    let mut daily_income_load = balance_load.clone();
+    let mut daily_last_income = Vec::new();
+    let mut daily_ongoing_income = Vec::new();
+
+    let mut daily_expense_load = balance_load.clone();
+    let mut daily_last_expense = Vec::new();
+    let mut daily_ongoing_expense = Vec::new();
 
     // Whether to reset home page stuff loading %
     // Will only turn true on initial run and when a key is pressed
@@ -226,7 +231,8 @@ pub fn start_app<B: Backend>(
         // total_income & total_expense data changes on each month/year index change.
         balance.push(all_tx_data.get_total_income(current_table_index, conn));
         balance.push(all_tx_data.get_total_expense(current_table_index, conn));
-
+        balance.push(all_tx_data.get_daily_income(current_table_index, conn));
+        balance.push(all_tx_data.get_daily_expense(current_table_index, conn));
         // passing out relevant data to the ui function
         terminal
             .draw(|f| {
@@ -252,9 +258,13 @@ pub fn start_app<B: Backend>(
                         &mut expense_load,
                         &mut ongoing_expense,
                         &mut last_expense,
-                        &mut balance_load_percentage,
-                        &mut income_load_percentage,
-                        &mut expense_load_percentage,
+                        &mut daily_income_load,
+                        &mut daily_ongoing_income,
+                        &mut daily_last_income,
+                        &mut daily_expense_load,
+                        &mut daily_ongoing_expense,
+                        &mut daily_last_expense,
+                        &mut load_percentage,
                         conn,
                     ),
 
@@ -325,9 +335,7 @@ pub fn start_app<B: Backend>(
             }
             CurrentUi::Home => {
                 // If balance loading hasn't ended yet, continue the loop
-                if (balance_load_percentage < 1.0
-                    || income_load_percentage < 1.0
-                    || expense_load_percentage < 1.0)
+                if load_percentage < 1.0
                     && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
                 {
                     to_reset = false;
@@ -384,6 +392,8 @@ pub fn start_app<B: Backend>(
                 &mut ongoing_changes,
                 &mut ongoing_income,
                 &mut ongoing_expense,
+                &mut daily_ongoing_income,
+                &mut daily_ongoing_expense,
                 conn,
             );
 

@@ -33,9 +33,13 @@ pub fn home_ui(
     expense_load: &mut [f64],
     ongoing_expense: &mut Vec<String>,
     last_expense: &mut Vec<String>,
-    balance_load_percentage: &mut f64,
-    income_load_percentage: &mut f64,
-    expense_load_percentage: &mut f64,
+    daily_income_load: &mut [f64],
+    daily_ongoing_income: &mut Vec<String>,
+    daily_last_income: &mut Vec<String>,
+    daily_expense_load: &mut [f64],
+    daily_ongoing_expense: &mut Vec<String>,
+    daily_last_expense: &mut Vec<String>,
+    load_percentage: &mut f64,
     conn: &Connection,
 ) {
     let all_methods = get_all_tx_methods(conn);
@@ -87,7 +91,7 @@ pub fn home_ui(
         .margin(2)
         .constraints(
             [
-                Constraint::Length(7),
+                Constraint::Length(9),
                 Constraint::Length(3),
                 Constraint::Length(3),
                 Constraint::Min(0),
@@ -120,22 +124,14 @@ pub fn home_ui(
     .header(header)
     .block(styled_block(&table_name));
 
-    if *balance_load_percentage < 1.0 {
-        *balance_load_percentage += 0.004;
+    if (*load_percentage + 0.004) <= 1.0 {
+        *load_percentage += 0.004;
     } else {
-        *balance_load_percentage = 1.0;
+        *load_percentage = 1.0;
     }
 
-    if *income_load_percentage < 1.0 {
-        *income_load_percentage += 0.004;
-    } else {
-        *income_load_percentage = 1.0;
-    }
-
-    if *expense_load_percentage < 1.0 {
-        *expense_load_percentage += 0.004;
-    } else {
-        *expense_load_percentage = 1.0;
+    if to_reset {
+        *load_percentage = 0.0;
     }
 
     // go through all data of the Balance widget and style it as necessary
@@ -150,28 +146,36 @@ pub fn home_ui(
                 if to_reset {
                     *last_balance = ongoing_balance.clone();
                     *ongoing_balance = item[1..].to_owned();
-                    *balance_load_percentage = 0.0;
                 }
             }
             HomeRow::Changes => {
                 if to_reset {
                     *last_changes = ongoing_changes.clone();
                     *ongoing_changes = item[1..].to_owned();
-                    *balance_load_percentage = 0.0;
                 }
             }
             HomeRow::Income => {
                 if to_reset {
                     *last_income = ongoing_income.clone();
                     *ongoing_income = item[1..].to_owned();
-                    *income_load_percentage = 0.0;
                 }
             }
             HomeRow::Expense => {
                 if to_reset {
                     *last_expense = ongoing_expense.clone();
                     *ongoing_expense = item[1..].to_owned();
-                    *expense_load_percentage = 0.0;
+                }
+            }
+            HomeRow::DailyIncome => {
+                if to_reset {
+                    *daily_last_income = daily_ongoing_income.clone();
+                    *daily_ongoing_income = item[1..].to_owned();
+                }
+            }
+            HomeRow::DailyExpense => {
+                if to_reset {
+                    *daily_last_expense = daily_ongoing_expense.clone();
+                    *daily_ongoing_expense = item[1..].to_owned();
                 }
             }
             HomeRow::TopRow => {}
@@ -179,13 +183,24 @@ pub fn home_ui(
 
         let cells = item.iter().map(|c| {
             let c = if row_type != HomeRow::TopRow
-                && !["Balance", "Changes", "Income", "Expense"].contains(&c.as_str())
+                && ![
+                    "Balance",
+                    "Changes",
+                    "Income",
+                    "Expense",
+                    "Daily Income",
+                    "Daily Expense",
+                ]
+                .contains(&c.as_str())
             {
+                // Get the load data we need to update for this redraw
                 let load_data = match row_type {
                     HomeRow::Balance => balance_load.get_mut(index).unwrap(),
                     HomeRow::Changes => changes_load.get_mut(index).unwrap(),
                     HomeRow::Expense => expense_load.get_mut(index).unwrap(),
                     HomeRow::Income => income_load.get_mut(index).unwrap(),
+                    HomeRow::DailyIncome => daily_income_load.get_mut(index).unwrap(),
+                    HomeRow::DailyExpense => daily_expense_load.get_mut(index).unwrap(),
                     HomeRow::TopRow => unreachable!(),
                 };
 
@@ -204,6 +219,7 @@ pub fn home_ui(
                     c.parse().unwrap()
                 };
 
+                // The data that is currently being shown, before this redraw happens
                 let last_data: f64 = match row_type {
                     HomeRow::Balance => last_balance.get(index).unwrap().parse().unwrap(),
                     HomeRow::Changes => {
@@ -220,9 +236,14 @@ pub fn home_ui(
                     }
                     HomeRow::Expense => last_expense.get(index).unwrap().parse().unwrap(),
                     HomeRow::Income => last_income.get(index).unwrap().parse().unwrap(),
+                    HomeRow::DailyIncome => daily_last_income.get(index).unwrap().parse().unwrap(),
+                    HomeRow::DailyExpense => {
+                        daily_last_expense.get(index).unwrap().parse().unwrap()
+                    }
                     HomeRow::TopRow => unreachable!(),
                 };
 
+                // Difference can go both ways, either from 0 to a positive number or to a negative number
                 let difference = if last_data > actual_data {
                     last_data - actual_data
                 } else {
@@ -231,38 +252,27 @@ pub fn home_ui(
 
                 index += 1;
 
+                // If going from 0 to positive number, we add the load percentage % amount from the actual amount that is to be shown
+                // to the load data
+                // If going the other way, we remove load percentage % amount
+                // If neither then they are both equal, nothing to do, loading has finished
                 if actual_data > last_data {
                     match row_type {
-                        HomeRow::Balance | HomeRow::Changes => {
-                            *load_data = last_data + (difference * *balance_load_percentage);
-                        }
-                        HomeRow::Expense => {
-                            *load_data = last_data + (difference * *expense_load_percentage);
-                        }
-                        HomeRow::Income => {
-                            *load_data = last_data + (difference * *income_load_percentage);
-                        }
                         HomeRow::TopRow => unreachable!(),
+                        _ => *load_data = last_data + (difference * *load_percentage),
                     }
                 } else if last_data > actual_data {
                     match row_type {
-                        HomeRow::Balance | HomeRow::Changes => {
-                            *load_data = last_data - (difference * *balance_load_percentage);
-                        }
-                        HomeRow::Income => {
-                            *load_data = last_data - (difference * *income_load_percentage);
-                        }
-                        HomeRow::Expense => {
-                            *load_data = last_data - (difference * *expense_load_percentage);
-                        }
                         HomeRow::TopRow => unreachable!(),
+                        _ => *load_data = last_data - (difference * *load_percentage),
                     }
                 } else {
                     *load_data = actual_data;
                 }
 
-                if format!("{load_data:.2}",) == "-0.00" {
-                    *load_data = 0.0;
+                // 100% has been reached, show the actual balance to the UI now
+                if *load_percentage == 1.0 {
+                    *load_data = actual_data;
                 }
 
                 if row_type != HomeRow::Changes {
@@ -286,6 +296,8 @@ pub fn home_ui(
                 || c == "Total"
                 || c == "Income"
                 || c == "Expense"
+                || c == "Daily Income"
+                || c == "Daily Expense"
             {
                 Cell::from(c).style(Style::default().add_modifier(Modifier::BOLD))
             } else {

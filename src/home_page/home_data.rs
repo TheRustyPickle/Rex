@@ -207,4 +207,123 @@ impl TransactionData {
     pub fn get_tx(&self, index: usize) -> &Vec<String> {
         &self.all_tx[index]
     }
+
+    /// Returns total expense accumulated till the current scrolling table index on the ongoing date
+    pub fn get_daily_expense(
+        &self,
+        current_index: Option<usize>,
+        conn: &Connection,
+    ) -> Vec<String> {
+        let all_tx_methods = get_all_tx_methods(conn);
+        let mut final_expense: Vec<String> = vec!["Daily Expense".to_string()];
+
+        let Some(mut index) = current_index else {
+            // + 1 to act as the total column value
+            for _ in 0..all_tx_methods.len() + 1 {
+                final_expense.push("0.00".to_string())
+            }
+            return final_expense;
+        };
+
+        let mut expense_data = HashMap::new();
+        let mut total_expense = 0.0_f64;
+
+        // Get all transaction methods, set 0 as the default value
+        for method in &all_tx_methods {
+            expense_data.insert(method, 0.0);
+        }
+
+        let ongoing_date = self.all_tx[index][0].clone();
+
+        // Keep reducing the ongoing index till 0 is hit or the date is different
+        loop {
+            let target_tx = &self.all_tx[index];
+
+            let tx_type = &target_tx[4];
+
+            if tx_type == "Expense" {
+                let date = &target_tx[0];
+                let amount = &target_tx[3];
+                let tx_method = &target_tx[2];
+
+                if date != &ongoing_date {
+                    break;
+                }
+
+                let parsed_amount = amount.parse::<f64>().unwrap();
+                total_expense += parsed_amount;
+                *expense_data.get_mut(tx_method).unwrap() += parsed_amount;
+            }
+
+            if index == 0 {
+                break;
+            }
+
+            index -= 1;
+        }
+
+        for i in &all_tx_methods {
+            final_expense.push(format!("{:.2}", expense_data[i]));
+        }
+
+        // Add the computed total expense to the output vector.
+        final_expense.push(format!("{total_expense:.2}"));
+        final_expense
+    }
+
+    /// Returns total income accumulated till the current scrolling table index on the ongoing date
+    pub fn get_daily_income(&self, current_index: Option<usize>, conn: &Connection) -> Vec<String> {
+        let all_tx_methods = get_all_tx_methods(conn);
+        let mut final_income: Vec<String> = vec!["Daily Income".to_string()];
+
+        let Some(mut index) = current_index else {
+            for _ in 0..all_tx_methods.len() + 1 {
+                final_income.push("0.00".to_string())
+            }
+            return final_income;
+        };
+
+        let mut income_data = HashMap::new();
+        let mut total_income = 0.0_f64;
+
+        // Get all transaction methods and set 0 as the default value
+        for method in &all_tx_methods {
+            income_data.insert(method, 0.0);
+        }
+
+        let ongoing_date = self.all_tx[index][0].clone();
+
+        // Keep reducing the ongoing index till 0 is hit or the date is different
+        loop {
+            let target_tx = &self.all_tx[index];
+
+            let tx_type = &target_tx[4];
+
+            if tx_type == "Income" {
+                let date = &target_tx[0];
+                let amount = &target_tx[3];
+                let tx_method = &target_tx[2];
+                if date != &ongoing_date {
+                    break;
+                }
+
+                let parsed_amount = amount.parse::<f64>().unwrap();
+                total_income += parsed_amount;
+                *income_data.get_mut(tx_method).unwrap() += parsed_amount;
+            }
+
+            if index == 0 {
+                break;
+            }
+            index -= 1;
+        }
+
+        for i in &all_tx_methods {
+            final_income.push(format!("{:.2}", income_data[i]));
+        }
+
+        // Add the computed total expense to the output vector.
+        final_income.push(format!("{total_income:.2}"));
+        final_income
+    }
 }
