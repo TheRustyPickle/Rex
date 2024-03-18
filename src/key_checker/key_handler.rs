@@ -61,6 +61,8 @@ pub struct InputKeyHandler<'a> {
     ongoing_changes: &'a mut Vec<String>,
     ongoing_income: &'a mut Vec<String>,
     ongoing_expense: &'a mut Vec<String>,
+    daily_ongoing_income: &'a mut Vec<String>,
+    daily_ongoing_expense: &'a mut Vec<String>,
     conn: &'a mut Connection,
 }
 
@@ -107,6 +109,8 @@ impl<'a> InputKeyHandler<'a> {
         ongoing_changes: &'a mut Vec<String>,
         ongoing_income: &'a mut Vec<String>,
         ongoing_expense: &'a mut Vec<String>,
+        daily_ongoing_income: &'a mut Vec<String>,
+        daily_ongoing_expense: &'a mut Vec<String>,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data
@@ -154,6 +158,8 @@ impl<'a> InputKeyHandler<'a> {
             ongoing_changes,
             ongoing_income,
             ongoing_expense,
+            daily_ongoing_income,
+            daily_ongoing_expense,
             conn,
         }
     }
@@ -1592,6 +1598,8 @@ impl<'a> InputKeyHandler<'a> {
         *self.ongoing_changes = vec![String::from("0.0"); balance_data.len()];
         *self.ongoing_expense = balance_data.clone();
         *self.ongoing_income = balance_data.clone();
+        *self.daily_ongoing_expense = balance_data.clone();
+        *self.daily_ongoing_income = balance_data.clone();
     }
 
     #[cfg(not(tarpaulin_include))]

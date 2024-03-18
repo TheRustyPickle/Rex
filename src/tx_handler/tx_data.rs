@@ -488,13 +488,13 @@ impl TxData {
         let mut user_amount = self.amount.to_lowercase();
 
         if user_amount.contains('k') {
-            user_amount = user_amount.replace("k", "");
+            user_amount = user_amount.replace('k', "");
             let amount: f64 = user_amount.parse().unwrap();
             self.amount = (amount * 1_000.0).to_string();
         }
 
         if user_amount.contains('m') {
-            user_amount = user_amount.replace("m", "");
+            user_amount = user_amount.replace('m', "");
             let amount: f64 = user_amount.parse().unwrap();
             self.amount = (amount * 1_000_000.0).to_string();
         }

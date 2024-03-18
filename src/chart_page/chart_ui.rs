@@ -31,33 +31,26 @@ pub fn chart_ui(
 
     // don't create any other chunk if hidden mode is enabled. Create 1 chunk that will be used for the chart itself
     if chart_hidden_mode {
-        main_layout = main_layout.constraints([Constraint::Min(0)].as_ref());
+        main_layout = main_layout.constraints([Constraint::Min(0)]);
     } else {
         match mode_selection.index {
             0 => {
-                main_layout = main_layout.constraints(
-                    [
-                        Constraint::Length(3),
-                        Constraint::Length(3),
-                        Constraint::Length(3),
-                        Constraint::Min(0),
-                    ]
-                    .as_ref(),
-                );
+                main_layout = main_layout.constraints([
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Min(0),
+                ]);
             }
             1 => {
-                main_layout = main_layout.constraints(
-                    [
-                        Constraint::Length(3),
-                        Constraint::Length(3),
-                        Constraint::Min(0),
-                    ]
-                    .as_ref(),
-                );
+                main_layout = main_layout.constraints([
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Min(0),
+                ]);
             }
             2 => {
-                main_layout =
-                    main_layout.constraints([Constraint::Length(3), Constraint::Min(0)].as_ref());
+                main_layout = main_layout.constraints([Constraint::Length(3), Constraint::Min(0)]);
             }
             _ => {}
         };
@@ -76,7 +69,7 @@ pub fn chart_ui(
 
     let all_tx_methods = get_all_tx_methods(conn);
 
-    // a vector containing another vector with vec![X, Y] coordinate of where to render chart points
+    // a vector containing another vector vec![X, Y] with coordinate of where to render chart points
     let mut datasets: Vec<Vec<(f64, f64)>> = Vec::new();
     let mut last_balances = Vec::new();
 
@@ -318,8 +311,6 @@ pub fn chart_ui(
         );
 
     match current_page {
-        // previously added a black block to year and month widget if a value is not selected
-        // Now we will turn that black block into green if a value is selected
         ChartTab::Months => {
             month_tab = month_tab
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));

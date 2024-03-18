@@ -78,15 +78,12 @@ pub fn history_ui(
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints(
-            [
-                Constraint::Length(3),
-                Constraint::Length(3),
-                Constraint::Min(0),
-                Constraint::Length(5),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Min(0),
+            Constraint::Length(5),
+        ])
         .split(size);
 
     f.render_widget(main_block(), size);
