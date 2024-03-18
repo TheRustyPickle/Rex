@@ -158,7 +158,7 @@ pub fn start_app<B: Backend>(
     let mut ongoing_balance = Vec::new();
     // If the difference between the ongoing and last balance is 100, each loop it adds/reduces x.xx% of the difference to the balance
     // till actual balance is reached. After each loop it gets increased by a little till 1.0 and key polling starts at 1.0, putting the app to sleep
-    // Also used for the changes row
+    // A single var is used to keep track of load % for all values on the home page
     let mut load_percentage = 0.0;
 
     // Works similarly to balance load

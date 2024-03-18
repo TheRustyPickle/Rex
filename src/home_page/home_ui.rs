@@ -10,6 +10,16 @@ use crate::page_handler::{
 };
 use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block};
 
+const BALANCE_BOLD: [&str; 7] = [
+    "Balance",
+    "Changes",
+    "Total",
+    "Income",
+    "Expense",
+    "Daily Income",
+    "Daily Expense",
+];
+
 /// The function draws the Home page of the interface.
 #[cfg(not(tarpaulin_include))]
 pub fn home_ui(
@@ -89,15 +99,12 @@ pub fn home_ui(
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints(
-            [
-                Constraint::Length(9),
-                Constraint::Length(3),
-                Constraint::Length(3),
-                Constraint::Min(0),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Length(9),
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Min(0),
+        ])
         .split(size);
 
     f.render_widget(main_block(), size);
@@ -204,12 +211,14 @@ pub fn home_ui(
                     HomeRow::TopRow => unreachable!(),
                 };
 
+                // Changes row can contain arrow symbols
                 let symbol = if c.contains('↑') || c.contains('↓') {
                     c.chars().next()
                 } else {
                     None
                 };
 
+                // If loading was complete then this value is to be shown
                 let actual_data: f64 = if row_type != HomeRow::Changes {
                     c.parse().unwrap()
                 } else if let Some(sym) = symbol {
@@ -266,8 +275,6 @@ pub fn home_ui(
                         HomeRow::TopRow => unreachable!(),
                         _ => *load_data = last_data - (difference * *load_percentage),
                     }
-                } else {
-                    *load_data = actual_data;
                 }
 
                 // 100% has been reached, show the actual balance to the UI now
@@ -275,9 +282,9 @@ pub fn home_ui(
                     *load_data = actual_data;
                 }
 
-                if row_type != HomeRow::Changes {
-                    format!("{load_data:.2}").separate_with_commas()
-                } else if let Some(sym) = symbol {
+                // re-add the previously removed symbol if is the Changes row
+                // Otherwise separate the number with commas
+                if let Some(sym) = symbol {
                     format!("{sym}{load_data:.2}",).separate_with_commas()
                 } else {
                     format!("{load_data:.2}").separate_with_commas()
@@ -290,15 +297,7 @@ pub fn home_ui(
                 Cell::from(c).style(Style::default().fg(BLUE))
             } else if c.contains('↓') {
                 Cell::from(c).style(Style::default().fg(RED))
-            } else if all_methods.contains(&c)
-                || c == "Balance"
-                || c == "Changes"
-                || c == "Total"
-                || c == "Income"
-                || c == "Expense"
-                || c == "Daily Income"
-                || c == "Daily Expense"
-            {
+            } else if all_methods.contains(&c) || BALANCE_BOLD.contains(&c.as_str()) {
                 Cell::from(c).style(Style::default().add_modifier(Modifier::BOLD))
             } else {
                 Cell::from(c)
