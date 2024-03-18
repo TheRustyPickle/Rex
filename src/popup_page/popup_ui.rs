@@ -26,7 +26,7 @@ pub fn create_popup(f: &mut Frame, x_value: u16, y_value: u16, title: &str, text
     let new_chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints([Constraint::Min(1), Constraint::Length(1)].as_ref())
+        .constraints([Constraint::Min(1), Constraint::Length(1)])
         .split(area);
 
     f.render_widget(Clear, area);
@@ -73,13 +73,13 @@ pub fn create_deletion_popup(f: &mut Frame, deletion_status: &DeletionStatus) {
     let new_chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints([Constraint::Min(1), Constraint::Length(5)].as_ref())
+        .constraints([Constraint::Min(1), Constraint::Length(5)])
         .split(area);
 
     let selection_chunk = Layout::default()
         .direction(Direction::Horizontal)
         .margin(2)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(new_chunks[1]);
 
     f.render_widget(Clear, area);
@@ -133,25 +133,19 @@ pub fn create_deletion_popup(f: &mut Frame, deletion_status: &DeletionStatus) {
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Percentage((100 - percent_y) / 2),
-                Constraint::Percentage(percent_y),
-                Constraint::Percentage((100 - percent_y) / 2),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
         .split(r);
 
     Layout::default()
         .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Percentage((100 - percent_x) / 2),
-                Constraint::Percentage(percent_x),
-                Constraint::Percentage((100 - percent_x) / 2),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
         .split(popup_layout[1])[1]
 }

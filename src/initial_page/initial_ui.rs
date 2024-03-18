@@ -14,14 +14,11 @@ pub fn initial_ui(f: &mut Frame, start_from: usize) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints(
-            [
-                Constraint::Length(8),
-                Constraint::Length(1),
-                Constraint::Min(5),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Length(8),
+            Constraint::Length(1),
+            Constraint::Min(5),
+        ])
         .split(size);
 
     let horizontal_help_chunks = Layout::default()
