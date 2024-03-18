@@ -34,17 +34,14 @@ pub fn add_tx_ui(f: &mut Frame, add_tx_data: &TxData, add_tx_tab: &TxTab) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
-        .constraints(
-            [
-                // input chunk
-                Constraint::Length(3),
-                // details input chunk
-                Constraint::Length(3),
-                // status chunk
-                Constraint::Percentage(100),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            // input chunk
+            Constraint::Length(3),
+            // details input chunk
+            Constraint::Length(3),
+            // status chunk
+            Constraint::Percentage(100),
+        ])
         .split(size);
 
     // based on the tx type divide the first chunk into 5 or 6 parts horizontally
@@ -53,30 +50,24 @@ pub fn add_tx_ui(f: &mut Frame, add_tx_data: &TxData, add_tx_tab: &TxTab) {
         match tx_type {
             TxType::IncomeExpense => Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints(
-                    [
-                        Constraint::Percentage(20),
-                        Constraint::Percentage(20),
-                        Constraint::Percentage(20),
-                        Constraint::Percentage(20),
-                        Constraint::Percentage(20),
-                    ]
-                    .as_ref(),
-                )
+                .constraints([
+                    Constraint::Percentage(20),
+                    Constraint::Percentage(20),
+                    Constraint::Percentage(20),
+                    Constraint::Percentage(20),
+                    Constraint::Percentage(20),
+                ])
                 .split(chunks[0]),
             TxType::Transfer => Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints(
-                    [
-                        Constraint::Percentage(16),
-                        Constraint::Percentage(16),
-                        Constraint::Percentage(16),
-                        Constraint::Percentage(16),
-                        Constraint::Percentage(16),
-                        Constraint::Percentage(20),
-                    ]
-                    .as_ref(),
-                )
+                .constraints([
+                    Constraint::Percentage(16),
+                    Constraint::Percentage(16),
+                    Constraint::Percentage(16),
+                    Constraint::Percentage(16),
+                    Constraint::Percentage(16),
+                    Constraint::Percentage(20),
+                ])
                 .split(chunks[0]),
         }
     };

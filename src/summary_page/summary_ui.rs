@@ -92,57 +92,45 @@ pub fn summary_ui(
     let mut summary_layout = Layout::default().direction(Direction::Horizontal);
 
     if summary_hidden_mode {
-        main_layout = main_layout.constraints(
-            [
-                Constraint::Length(method_len + 3),
-                Constraint::Length(9),
-                Constraint::Min(0),
-            ]
-            .as_ref(),
-        );
+        main_layout = main_layout.constraints([
+            Constraint::Length(method_len + 3),
+            Constraint::Length(9),
+            Constraint::Min(0),
+        ]);
         summary_layout =
             summary_layout.constraints([Constraint::Percentage(50), Constraint::Percentage(50)]);
     } else {
         match mode_selection.index {
             0 => {
-                main_layout = main_layout.constraints(
-                    [
-                        Constraint::Length(3),
-                        Constraint::Length(3),
-                        Constraint::Length(3),
-                        Constraint::Length(method_len + 3),
-                        Constraint::Length(9),
-                        Constraint::Min(0),
-                    ]
-                    .as_ref(),
-                );
+                main_layout = main_layout.constraints([
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(method_len + 3),
+                    Constraint::Length(9),
+                    Constraint::Min(0),
+                ]);
                 summary_layout = summary_layout
                     .constraints([Constraint::Percentage(50), Constraint::Percentage(50)]);
             }
             1 => {
-                main_layout = main_layout.constraints(
-                    [
-                        Constraint::Length(3),
-                        Constraint::Length(3),
-                        Constraint::Length(method_len + 3),
-                        Constraint::Length(9),
-                        Constraint::Min(0),
-                    ]
-                    .as_ref(),
-                );
+                main_layout = main_layout.constraints([
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(method_len + 3),
+                    Constraint::Length(9),
+                    Constraint::Min(0),
+                ]);
                 summary_layout = summary_layout
                     .constraints([Constraint::Percentage(50), Constraint::Percentage(50)]);
             }
             2 => {
-                main_layout = main_layout.constraints(
-                    [
-                        Constraint::Length(3),
-                        Constraint::Length(method_len + 3),
-                        Constraint::Length(9),
-                        Constraint::Min(0),
-                    ]
-                    .as_ref(),
-                );
+                main_layout = main_layout.constraints([
+                    Constraint::Length(3),
+                    Constraint::Length(method_len + 3),
+                    Constraint::Length(9),
+                    Constraint::Min(0),
+                ]);
                 summary_layout = summary_layout
                     .constraints([Constraint::Percentage(50), Constraint::Percentage(50)]);
             }
