@@ -182,6 +182,7 @@ pub enum PopupState {
     ActivityHelp,
     DeleteFailed(String),
     TxDeletion,
+    ShowDetails(String),
     Nothing,
 }
 
