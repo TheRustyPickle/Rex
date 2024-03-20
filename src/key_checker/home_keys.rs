@@ -21,6 +21,7 @@ pub fn home_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Char('y') => handler.go_history(),
             KeyCode::Char(',') => handler.switch_tx_index_up(),
             KeyCode::Char('.') => handler.switch_tx_index_down(),
+            KeyCode::Char('v') => handler.show_home_tx_details(),
             KeyCode::Right => handler.handle_right_arrow(),
             KeyCode::Left => handler.handle_left_arrow(),
             KeyCode::Up => handler.handle_up_arrow(),

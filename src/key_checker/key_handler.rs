@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 
 use crate::chart_page::ChartData;
-use crate::history_page::HistoryData;
+use crate::activity_page::HistoryData;
 use crate::home_page::TransactionData;
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
@@ -943,6 +943,22 @@ impl<'a> InputKeyHandler<'a> {
             self.reload_home_table();
             self.reload_history_table();
             self.table.state.select(Some(index + 1));
+        }
+    }
+
+    /// Opens a popup that shows the details of the selected transaction
+    pub fn show_home_tx_details(&mut self) {
+        if let Some(index) = self.table.state.selected() {
+            let selected_tx = self.all_tx_data.get_tx(index);
+            let tx_details = &selected_tx[1];
+
+            *self.popup = PopupState::ShowDetails(tx_details.to_string())
+        }
+    }
+
+    pub fn show_activity_tx_details(&mut self) {
+        if let Some(index) = self.history_table.state.selected() {
+
         }
     }
 }
