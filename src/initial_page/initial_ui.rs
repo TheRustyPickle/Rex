@@ -4,7 +4,7 @@ use ratatui::widgets::{Paragraph, Wrap};
 use ratatui::Frame;
 
 use crate::page_handler::{BACKGROUND, RED, TEXT};
-use crate::popup_page::{A, F, H, Q, R, W, Y, Z};
+use crate::popup_page::{A, F, H, Q, R, V, W, Y, Z};
 use crate::utility::{create_bolded_text, main_block, styled_block};
 
 /// The function draws the Initial page of the interface.
@@ -103,14 +103,16 @@ X: Change sort type on summary/Change date type on Search page
 Double R: Go to the Chart page and hide top widget. Press again to unhide
 Double Z: Go to the Summary page and hide top widget. Press again to unhide";
 
-    let unmodified_third_help =
+    let unmodified_third_help = format!(
         "Arrow Up/Down: Move between year/month/transaction selections and scroll
 Arrow Left/Right: Change values of the year/month selection
 D: Delete selected Transaction
 J: Take user input for various actions
 E: Edit Selected Transaction
+{V}
 ,: Move the transaction upward (Only if on the same date)
-.: Move the transaction downward (Only if on the same date)";
+.: Move the transaction downward (Only if on the same date)"
+    );
 
     let unmodified_fourth_help =
         "Arrow Left/Right: Move cursor left/right (If a field is selected)    
@@ -131,7 +133,7 @@ Esc: Stop editing a field";
     // bold a part of the text before rendering
     let first_text = create_bolded_text(&unmodified_first_help);
     let second_text = create_bolded_text(unmodified_second_help);
-    let third_text = create_bolded_text(unmodified_third_help);
+    let third_text = create_bolded_text(&unmodified_third_help);
     let fourth_text = create_bolded_text(unmodified_fourth_help);
 
     let middle_text = "Press Any Key To Continue";
