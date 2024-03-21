@@ -11,6 +11,7 @@ pub const Y: &str = "Y: Activity Page";
 pub const W: &str = "W: Search Page";
 pub const Q: &str = "Q: Quit";
 pub const H: &str = "H: Show help";
+pub const V: &str = "V: Show selected transaction details";
 
 /// Stores data to create a new popup
 pub struct PopupData<'a> {
@@ -180,6 +181,7 @@ E: Edit the selected transaction on the table
 D: Delete the selected transaction on the table
 ,: Swaps the location of the selected transaction with the transaction above it
 .: Swaps the location of the selected transaction with the transaction below it
+{V}
 
 Arrow Up/Down: Cycle widgets/table value
 Arrow Left/Right: Move value of the widget
@@ -261,6 +263,8 @@ Example amount : <1000, >=10000
             The bottom widget will show affected transaction details by an activity.
 
 Following are the supported keys here
+
+{V}
 
 Arrow Up/Down: Cycle widgets
 Arrow Left/Right: Move value of the widget
