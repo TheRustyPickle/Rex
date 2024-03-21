@@ -218,9 +218,9 @@ impl TransactionData {
         let mut final_expense: Vec<String> = vec!["Daily Expense".to_string()];
 
         let Some(mut index) = current_index else {
-            // + 1 to act as the total column value
-            for _ in 0..all_tx_methods.len() + 1 {
-                final_expense.push("0.00".to_string())
+            // Inclusive range to include the extra Total column value
+            for _ in 0..=all_tx_methods.len() {
+                final_expense.push("0.00".to_string());
             }
             return final_expense;
         };
@@ -277,8 +277,8 @@ impl TransactionData {
         let mut final_income: Vec<String> = vec!["Daily Income".to_string()];
 
         let Some(mut index) = current_index else {
-            for _ in 0..all_tx_methods.len() + 1 {
-                final_income.push("0.00".to_string())
+            for _ in 0..=all_tx_methods.len() {
+                final_income.push("0.00".to_string());
             }
             return final_income;
         };

@@ -7,20 +7,20 @@ use ratatui::Terminal;
 use rusqlite::Connection;
 use std::time::Duration;
 
+use crate::activity_page::activity_ui;
+use crate::activity_page::ActivityData;
 use crate::add_tx_page::add_tx_ui;
 use crate::chart_page::{chart_ui, ChartData};
-use crate::history_page::history_ui;
-use crate::history_page::HistoryData;
 use crate::home_page::home_ui;
 use crate::home_page::TransactionData;
 use crate::initial_page::initial_ui;
 use crate::key_checker::{
-    add_tx_keys, chart_keys, history_keys, home_keys, initial_keys, search_keys, summary_keys,
+    activity_keys, add_tx_keys, chart_keys, home_keys, initial_keys, search_keys, summary_keys,
     InputKeyHandler,
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
-    ChartTab, CurrentUi, DateType, DeletionStatus, HistoryTab, HomeTab, IndexedData, PopupState,
+    ActivityTab, ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData, PopupState,
     SortingType, SummaryTab, TableData, TxTab,
 };
 use crate::popup_page::PopupData;
@@ -64,10 +64,10 @@ pub fn start_app<B: Backend>(
     let mut summary_years = IndexedData::new_yearly();
     // contains the summary page mode selection list that is indexed
     let mut summary_modes = IndexedData::new_modes();
-    // contains the History page month list that is indexed
-    let mut history_years = IndexedData::new_yearly();
-    // contains the History page month list that is indexed
-    let mut history_months = IndexedData::new_monthly();
+    // contains the Activity page month list that is indexed
+    let mut activity_years = IndexedData::new_yearly();
+    // contains the Activity page month list that is indexed
+    let mut activity_months = IndexedData::new_monthly();
 
     // the selected widget on the Home Page. Default set to the month selection
     let mut home_tab = HomeTab::Months;
@@ -81,7 +81,7 @@ pub fn start_app<B: Backend>(
     // Stores all data relevant for home page such as balance, changes and txs
     let mut all_tx_data = TransactionData::new(home_months.index, home_years.index, conn);
     // Stores all activity for a specific month of a year alongside the txs involved in an activity
-    let mut history_data = HistoryData::new(history_months.index, history_years.index, conn);
+    let mut activity_data = ActivityData::new(activity_months.index, activity_years.index, conn);
 
     let mut search_txs = TransactionData::new_search(Vec::new(), Vec::new());
     // data for the Home Page's tx table
@@ -106,8 +106,8 @@ pub fn start_app<B: Backend>(
     let mut search_tab = TxTab::Nothing;
     // Store the current searching date type
     let mut search_date_type = DateType::Exact;
-    // Store the current selected widget on History page
-    let mut history_tab = HistoryTab::Years;
+    // Store the current selected widget on Activity page
+    let mut activity_tab = ActivityTab::Years;
 
     // Holds the data that will be/are inserted into the Add Tx page's input fields
     let mut add_tx_data = TxData::new();
@@ -130,8 +130,8 @@ pub fn start_app<B: Backend>(
     // data for the Search Page's table
     let mut search_table = TableData::new(Vec::new());
 
-    // data for the History Page's table
-    let mut history_table = TableData::new(history_data.get_txs());
+    // data for the Activity Page's table
+    let mut activity_table = TableData::new(activity_data.get_txs());
 
     // the initial page REX loading index
     let mut starter_index = 0;
@@ -303,13 +303,13 @@ pub fn start_app<B: Backend>(
                         &mut search_table,
                         &search_date_type,
                     ),
-                    CurrentUi::Activity => history_ui(
+                    CurrentUi::Activity => activity_ui(
                         f,
-                        &history_months,
-                        &history_years,
-                        &history_tab,
-                        &history_data,
-                        &mut history_table,
+                        &activity_months,
+                        &activity_years,
+                        &activity_tab,
+                        &activity_data,
+                        &mut activity_table,
                     ),
                 }
                 popup_data.create_popup(f, &popup_state, &deletion_status);
@@ -379,11 +379,11 @@ pub fn start_app<B: Backend>(
                 &mut search_tab,
                 &mut search_table,
                 &mut search_txs,
-                &mut history_years,
-                &mut history_months,
-                &mut history_tab,
-                &mut history_data,
-                &mut history_table,
+                &mut activity_months,
+                &mut activity_years,
+                &mut activity_tab,
+                &mut activity_data,
+                &mut activity_table,
                 &mut chart_index,
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,
@@ -404,7 +404,7 @@ pub fn start_app<B: Backend>(
                 CurrentUi::Chart => chart_keys(&mut handler),
                 CurrentUi::Summary => summary_keys(&mut handler),
                 CurrentUi::Search => search_keys(&mut handler),
-                CurrentUi::Activity => history_keys(&mut handler),
+                CurrentUi::Activity => activity_keys(&mut handler),
             };
 
             // If there is a status it means it needs to be handled outside the UI
