@@ -946,18 +946,37 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// Opens a popup that shows the details of the selected transaction
+    /// Opens a popup that shows the details of the selected transaction on the Home page
     pub fn show_home_tx_details(&mut self) {
         if let Some(index) = self.table.state.selected() {
             let selected_tx = self.all_tx_data.get_tx(index);
             let tx_details = &selected_tx[1];
 
-            *self.popup = PopupState::ShowDetails(tx_details.to_string())
+            *self.popup = PopupState::ShowDetails(tx_details.to_string());
         }
     }
 
+    /// Opens a popup that shows the details of the selected activity tx details on the Activity page
     pub fn show_activity_tx_details(&mut self) {
-        if let Some(index) = self.activity_table.state.selected() {}
+        if let Some(index) = self.activity_table.state.selected() {
+            let activity_txs = self.activity_data.get_activity_txs(Some(index));
+
+            let mut popup_text = String::new();
+
+            if activity_txs.len() == 2 {
+                for (index, tx) in activity_txs.iter().enumerate() {
+                    let tx_details = &tx[1];
+                    popup_text += &format!("Transaction {}: {tx_details}", index + 1);
+                    if index == 0 {
+                        popup_text += "\n\n";
+                    }
+                }
+            } else {
+                let tx_details = &activity_txs[0][1];
+                popup_text += &format!("Transaction 1: {tx_details}");
+            }
+            *self.popup = PopupState::ShowDetails(popup_text);
+        }
     }
 }
 
