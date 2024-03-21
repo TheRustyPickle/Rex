@@ -22,7 +22,7 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 KeyCode::Char('x') => handler.change_search_date_type(),
                 KeyCode::Char('e') => handler.search_edit_tx(),
                 KeyCode::Char('d') => handler.do_deletion_popup(),
-                KeyCode::Char('y') => handler.go_history(),
+                KeyCode::Char('y') => handler.go_activity(),
                 KeyCode::Up => handler.handle_up_arrow(),
                 KeyCode::Down => handler.handle_down_arrow(),
                 KeyCode::Enter => handler.select_date_field(),

@@ -11,6 +11,7 @@ pub const Y: &str = "Y: Activity Page";
 pub const W: &str = "W: Search Page";
 pub const Q: &str = "Q: Quit";
 pub const H: &str = "H: Show help";
+pub const V: &str = "V: Show selected transaction details";
 
 /// Stores data to create a new popup
 pub struct PopupData<'a> {
@@ -52,6 +53,9 @@ impl<'a> PopupData<'a> {
             PopupState::DeleteFailed(err) => self.get_delete_failed_text(err),
             PopupState::SearchHelp => self.get_search_help_text(),
             PopupState::ActivityHelp => self.get_activity_help_text(),
+            PopupState::ShowDetails(details) => {
+                self.get_transaction_details_text(details.to_string())
+            }
             PopupState::Nothing | PopupState::TxDeletion => String::new(),
         };
 
@@ -177,6 +181,7 @@ E: Edit the selected transaction on the table
 D: Delete the selected transaction on the table
 ,: Swaps the location of the selected transaction with the transaction above it
 .: Swaps the location of the selected transaction with the transaction below it
+{V}
 
 Arrow Up/Down: Cycle widgets/table value
 Arrow Left/Right: Move value of the widget
@@ -259,6 +264,8 @@ Example amount : <1000, >=10000
 
 Following are the supported keys here
 
+{V}
+
 Arrow Up/Down: Cycle widgets
 Arrow Left/Right: Move value of the widget
 
@@ -271,5 +278,10 @@ Arrow Left/Right: Move value of the widget
 {Q}
 "
         )
+    }
+
+    fn get_transaction_details_text(&mut self, details: String) -> String {
+        self.set("Transaction Details", 50, 30);
+        details
     }
 }
