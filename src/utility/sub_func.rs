@@ -5,7 +5,7 @@ use std::io::stdout;
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::history_page::{ActivityData, ActivityTx};
+use crate::activity_page::{ActivityDetails, ActivityTx};
 use crate::outputs::{ComparisonType, TerminalExecutionError};
 use crate::page_handler::{ActivityType, DateType, ResetType, UserInputType};
 use crate::tx_handler::{delete_tx, TxData};
@@ -1032,7 +1032,7 @@ pub fn get_all_activities(
     month: usize,
     year: usize,
     conn: &Connection,
-) -> (Vec<ActivityData>, HashMap<i32, Vec<ActivityTx>>) {
+) -> (Vec<ActivityDetails>, HashMap<i32, Vec<ActivityTx>>) {
     let (datetime_1, datetime_2) = get_sql_dates(month, year, &DateType::Monthly);
 
     let mut statement = conn
@@ -1043,10 +1043,10 @@ pub fn get_all_activities(
     let mut min_activity_num = i32::MAX;
     let mut max_activity_num = i32::MIN;
 
-    let rows: Vec<ActivityData> = statement
+    let rows: Vec<ActivityDetails> = statement
         .query_map([datetime_1, datetime_2], |row| {
             let date = reverse_date_format(row.get(0).unwrap());
-            Ok(ActivityData::new(
+            Ok(ActivityDetails::new(
                 date,
                 row.get(1).unwrap(),
                 row.get(2).unwrap(),

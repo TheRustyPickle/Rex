@@ -431,28 +431,28 @@ impl HomeRow {
     }
 }
 
-pub enum HistoryTab {
+pub enum ActivityTab {
     Years,
     Months,
     List,
 }
 
-impl HistoryTab {
+impl ActivityTab {
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up(&mut self) -> Self {
         match &self {
-            HistoryTab::Years => HistoryTab::List,
-            HistoryTab::Months => HistoryTab::Years,
-            HistoryTab::List => HistoryTab::Months,
+            ActivityTab::Years => ActivityTab::List,
+            ActivityTab::Months => ActivityTab::Years,
+            ActivityTab::List => ActivityTab::Months,
         }
     }
 
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down(&mut self) -> Self {
         match &self {
-            HistoryTab::List => HistoryTab::Years,
-            HistoryTab::Years => HistoryTab::Months,
-            HistoryTab::Months => HistoryTab::List,
+            ActivityTab::List => ActivityTab::Years,
+            ActivityTab::Years => ActivityTab::Months,
+            ActivityTab::Months => ActivityTab::List,
         }
     }
 }

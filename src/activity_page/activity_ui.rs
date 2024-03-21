@@ -4,23 +4,25 @@ use ratatui::widgets::{Cell, Row, Table};
 use ratatui::Frame;
 use thousands::Separable;
 
-use crate::history_page::HistoryData;
-use crate::page_handler::{HistoryTab, IndexedData, TableData, BACKGROUND, HEADER, SELECTED, TEXT};
+use crate::activity_page::ActivityData;
+use crate::page_handler::{
+    ActivityTab, IndexedData, TableData, BACKGROUND, HEADER, SELECTED, TEXT,
+};
 use crate::utility::{create_tab, main_block, styled_block};
 
-pub fn history_ui(
+pub fn activity_ui(
     f: &mut Frame,
     months: &IndexedData,
     years: &IndexedData,
-    current_tab: &HistoryTab,
-    history_data: &HistoryData,
+    current_tab: &ActivityTab,
+    activity_data: &ActivityData,
     table_data: &mut TableData,
 ) {
-    let activity_txs_data = history_data.get_activity_txs(table_data.state.selected());
+    let activity_txs_data = activity_data.get_activity_txs(table_data.state.selected());
     let mut activity_txs_table = TableData::new(activity_txs_data);
 
     let add_extra_field = if let Some(index) = table_data.state.selected() {
-        history_data.add_extra_field(index)
+        activity_data.add_extra_field(index)
     } else {
         false
     };
@@ -159,15 +161,15 @@ pub fn history_ui(
     let mut year_tab = create_tab(years, "Years");
 
     match current_tab {
-        HistoryTab::Months => {
+        ActivityTab::Months => {
             month_tab = month_tab
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
-        HistoryTab::Years => {
+        ActivityTab::Years => {
             year_tab = year_tab
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
-        HistoryTab::List => {
+        ActivityTab::List => {
             if table_data.state.selected().is_some() {
                 activity_table_area = activity_table_area
                     .highlight_symbol(">> ")

@@ -1,13 +1,13 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 
+use crate::activity_page::ActivityData;
 use crate::chart_page::ChartData;
-use crate::activity_page::HistoryData;
 use crate::home_page::TransactionData;
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
 use crate::page_handler::{
-    ActivityType, ChartTab, CurrentUi, DateType, DeletionStatus, HistoryTab, HomeTab, IndexedData,
+    ActivityTab, ActivityType, ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData,
     PopupState, SortingType, SummaryTab, TableData, TxTab,
 };
 use crate::summary_page::SummaryData;
@@ -47,11 +47,11 @@ pub struct InputKeyHandler<'a> {
     pub search_tab: &'a mut TxTab,
     search_table: &'a mut TableData,
     search_txs: &'a mut TransactionData,
-    history_years: &'a mut IndexedData,
-    history_months: &'a mut IndexedData,
-    history_tab: &'a mut HistoryTab,
-    history_data: &'a mut HistoryData,
-    history_table: &'a mut TableData,
+    activity_months: &'a mut IndexedData,
+    activity_years: &'a mut IndexedData,
+    activity_tab: &'a mut ActivityTab,
+    activity_data: &'a mut ActivityData,
+    activity_table: &'a mut TableData,
     total_tags: usize,
     chart_index: &'a mut Option<f64>,
     chart_hidden_mode: &'a mut bool,
@@ -96,11 +96,11 @@ impl<'a> InputKeyHandler<'a> {
         search_tab: &'a mut TxTab,
         search_table: &'a mut TableData,
         search_txs: &'a mut TransactionData,
-        history_years: &'a mut IndexedData,
-        history_months: &'a mut IndexedData,
-        history_tab: &'a mut HistoryTab,
-        history_data: &'a mut HistoryData,
-        history_table: &'a mut TableData,
+        activity_months: &'a mut IndexedData,
+        activity_years: &'a mut IndexedData,
+        activity_tab: &'a mut ActivityTab,
+        activity_data: &'a mut ActivityData,
+        activity_table: &'a mut TableData,
         chart_index: &'a mut Option<f64>,
         chart_hidden_mode: &'a mut bool,
         summary_hidden_mode: &'a mut bool,
@@ -144,11 +144,11 @@ impl<'a> InputKeyHandler<'a> {
             search_tab,
             search_table,
             search_txs,
-            history_years,
-            history_months,
-            history_tab,
-            history_data,
-            history_table,
+            activity_months,
+            activity_years,
+            activity_tab,
+            activity_data,
+            activity_table,
             total_tags,
             chart_index,
             chart_hidden_mode,
@@ -229,7 +229,7 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     #[cfg(not(tarpaulin_include))]
-    pub fn go_history(&mut self) {
+    pub fn go_activity(&mut self) {
         *self.page = CurrentUi::Activity;
     }
 
@@ -330,7 +330,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.search_table.items.len()
                 ));
             }
-            self.reload_history_table();
+            self.reload_activity_table();
         }
     }
 
@@ -348,7 +348,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.reload_chart_data();
                 self.reload_summary_data();
                 self.reload_search_data();
-                self.reload_history_table();
+                self.reload_activity_table();
             }
             Err(e) => self.add_tx_data.add_tx_status(e),
         }
@@ -416,7 +416,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.reload_chart_data();
                     self.reload_summary_data();
                     self.reload_search_data();
-                    self.reload_history_table();
+                    self.reload_activity_table();
 
                     if index == 0 {
                         self.table.state.select(None);
@@ -546,17 +546,17 @@ impl<'a> InputKeyHandler<'a> {
                     }
                 }
             }
-            CurrentUi::Activity => match self.history_tab {
-                HistoryTab::Years => {
-                    self.history_months.set_index_zero();
-                    self.history_years.previous();
-                    self.reload_history_table();
+            CurrentUi::Activity => match self.activity_tab {
+                ActivityTab::Years => {
+                    self.activity_months.set_index_zero();
+                    self.activity_years.previous();
+                    self.reload_activity_table();
                 }
-                HistoryTab::Months => {
-                    self.history_months.previous();
-                    self.reload_history_table();
+                ActivityTab::Months => {
+                    self.activity_months.previous();
+                    self.reload_activity_table();
                 }
-                HistoryTab::List => {}
+                ActivityTab::List => {}
             },
             CurrentUi::Initial => {}
         }
@@ -615,17 +615,17 @@ impl<'a> InputKeyHandler<'a> {
                 }
                 SummaryTab::Table => {}
             },
-            CurrentUi::Activity => match self.history_tab {
-                HistoryTab::Years => {
-                    self.history_months.set_index_zero();
-                    self.history_years.next();
-                    self.reload_history_table();
+            CurrentUi::Activity => match self.activity_tab {
+                ActivityTab::Years => {
+                    self.activity_months.set_index_zero();
+                    self.activity_years.next();
+                    self.reload_activity_table();
                 }
-                HistoryTab::Months => {
-                    self.history_months.next();
-                    self.reload_history_table();
+                ActivityTab::Months => {
+                    self.activity_months.next();
+                    self.reload_activity_table();
                 }
-                HistoryTab::List => {}
+                ActivityTab::List => {}
             },
             CurrentUi::Initial => {}
         }
@@ -640,7 +640,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Summary => self.do_summary_up(),
             CurrentUi::Chart => self.do_chart_up(),
             CurrentUi::Search => self.do_search_up(),
-            CurrentUi::Activity => self.do_history_up(),
+            CurrentUi::Activity => self.do_activity_up(),
             CurrentUi::Initial => {}
         }
         self.check_autofill();
@@ -655,7 +655,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Summary => self.do_summary_down(),
             CurrentUi::Chart => self.do_chart_down(),
             CurrentUi::Search => self.do_search_down(),
-            CurrentUi::Activity => self.do_history_down(),
+            CurrentUi::Activity => self.do_activity_down(),
             CurrentUi::Initial => {}
         }
         self.check_autofill();
@@ -914,7 +914,7 @@ impl<'a> InputKeyHandler<'a> {
             );
 
             self.reload_home_table();
-            self.reload_history_table();
+            self.reload_activity_table();
             self.table.state.select(Some(index - 1));
         }
     }
@@ -941,7 +941,7 @@ impl<'a> InputKeyHandler<'a> {
             switch_tx_index(selected_tx_id, next_tx_id, selected_tx, next_tx, self.conn);
 
             self.reload_home_table();
-            self.reload_history_table();
+            self.reload_activity_table();
             self.table.state.select(Some(index + 1));
         }
     }
@@ -957,9 +957,7 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     pub fn show_activity_tx_details(&mut self) {
-        if let Some(index) = self.history_table.state.selected() {
-
-        }
+        if let Some(index) = self.activity_table.state.selected() {}
     }
 }
 
@@ -1619,13 +1617,13 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     #[cfg(not(tarpaulin_include))]
-    fn reload_history_table(&mut self) {
-        *self.history_data = HistoryData::new(
-            self.history_months.index,
-            self.history_years.index,
+    fn reload_activity_table(&mut self) {
+        *self.activity_data = ActivityData::new(
+            self.activity_months.index,
+            self.activity_years.index,
             self.conn,
         );
-        *self.history_table = TableData::new(self.history_data.get_txs());
+        *self.activity_table = TableData::new(self.activity_data.get_txs());
     }
 
     #[cfg(not(tarpaulin_include))]
@@ -1724,52 +1722,53 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     #[cfg(not(tarpaulin_include))]
-    fn do_history_up(&mut self) {
-        match self.history_tab {
-            HistoryTab::Years => {
-                if self.history_data.is_activity_empty() {
-                    *self.history_tab = self.history_tab.change_tab_down();
+    fn do_activity_up(&mut self) {
+        match self.activity_tab {
+            ActivityTab::Years => {
+                if self.activity_data.is_activity_empty() {
+                    *self.activity_tab = self.activity_tab.change_tab_down();
                 } else {
-                    *self.history_tab = self.history_tab.change_tab_up();
-                    self.history_table
+                    *self.activity_tab = self.activity_tab.change_tab_up();
+                    self.activity_table
                         .state
-                        .select(Some(self.history_table.items.len() - 1));
+                        .select(Some(self.activity_table.items.len() - 1));
                 }
             }
-            HistoryTab::Months => {
-                *self.history_tab = self.history_tab.change_tab_up();
+            ActivityTab::Months => {
+                *self.activity_tab = self.activity_tab.change_tab_up();
             }
-            HistoryTab::List => {
-                if self.history_table.state.selected() == Some(0) {
-                    self.history_table.state.select(None);
-                    *self.history_tab = self.history_tab.change_tab_up();
+            ActivityTab::List => {
+                if self.activity_table.state.selected() == Some(0) {
+                    self.activity_table.state.select(None);
+                    *self.activity_tab = self.activity_tab.change_tab_up();
                 } else {
-                    self.history_table.previous();
+                    self.activity_table.previous();
                 }
             }
         }
     }
 
     #[cfg(not(tarpaulin_include))]
-    fn do_history_down(&mut self) {
-        match self.history_tab {
-            HistoryTab::Years => {
-                *self.history_tab = self.history_tab.change_tab_down();
+    fn do_activity_down(&mut self) {
+        match self.activity_tab {
+            ActivityTab::Years => {
+                *self.activity_tab = self.activity_tab.change_tab_down();
             }
-            HistoryTab::Months => {
-                if self.history_data.is_activity_empty() {
-                    *self.history_tab = self.history_tab.change_tab_up();
+            ActivityTab::Months => {
+                if self.activity_data.is_activity_empty() {
+                    *self.activity_tab = self.activity_tab.change_tab_up();
                 } else {
-                    *self.history_tab = self.history_tab.change_tab_down();
-                    self.history_table.state.select(Some(0));
+                    *self.activity_tab = self.activity_tab.change_tab_down();
+                    self.activity_table.state.select(Some(0));
                 }
             }
-            HistoryTab::List => {
-                if self.history_table.state.selected() == Some(self.history_table.items.len() - 1) {
-                    *self.history_tab = self.history_tab.change_tab_down();
-                    self.history_table.state.select(None);
+            ActivityTab::List => {
+                if self.activity_table.state.selected() == Some(self.activity_table.items.len() - 1)
+                {
+                    *self.activity_tab = self.activity_tab.change_tab_down();
+                    self.activity_table.state.select(None);
                 } else {
-                    self.history_table.next();
+                    self.activity_table.next();
                 }
             }
         }

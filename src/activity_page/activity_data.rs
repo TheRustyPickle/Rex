@@ -4,21 +4,21 @@ use std::collections::HashMap;
 use crate::page_handler::ActivityType;
 use crate::utility::get_all_activities;
 
-pub struct ActivityData {
+pub struct ActivityDetails {
     created_on: String,
     activity_type: ActivityType,
     description: String,
     activity_num: i32,
 }
 
-impl ActivityData {
+impl ActivityDetails {
     pub fn new(
         date: String,
         activity_type: String,
         description: String,
         activity_num: i32,
     ) -> Self {
-        ActivityData {
+        ActivityDetails {
             created_on: date,
             activity_type: ActivityType::from_str(&activity_type),
             description,
@@ -120,16 +120,16 @@ impl ActivityTx {
     }
 }
 
-pub struct HistoryData {
-    pub activities: Vec<ActivityData>,
+pub struct ActivityData {
+    pub activities: Vec<ActivityDetails>,
     activity_txs: HashMap<i32, Vec<ActivityTx>>,
 }
 
-impl HistoryData {
+impl ActivityData {
     pub fn new(month: usize, year: usize, conn: &Connection) -> Self {
         let (activities, activity_txs) = get_all_activities(month, year, conn);
 
-        HistoryData {
+        ActivityData {
             activities,
             activity_txs,
         }
