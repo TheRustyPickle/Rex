@@ -1,7 +1,7 @@
+mod activity_page;
 mod add_tx_page;
 pub mod chart_page;
 pub mod db;
-mod history_page;
 pub mod home_page;
 mod initial_page;
 mod key_checker;

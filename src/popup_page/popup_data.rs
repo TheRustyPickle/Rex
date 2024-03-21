@@ -52,7 +52,9 @@ impl<'a> PopupData<'a> {
             PopupState::DeleteFailed(err) => self.get_delete_failed_text(err),
             PopupState::SearchHelp => self.get_search_help_text(),
             PopupState::ActivityHelp => self.get_activity_help_text(),
-            PopupState::ShowDetails(details) => self.get_transaction_details_text(details.to_string()),
+            PopupState::ShowDetails(details) => {
+                self.get_transaction_details_text(details.to_string())
+            }
             PopupState::Nothing | PopupState::TxDeletion => String::new(),
         };
 
@@ -275,7 +277,7 @@ Arrow Left/Right: Move value of the widget
     }
 
     fn get_transaction_details_text(&mut self, details: String) -> String {
-        self.set("Transaction Details", 50, 40);
+        self.set("Transaction Details", 50, 30);
         details
     }
 }
