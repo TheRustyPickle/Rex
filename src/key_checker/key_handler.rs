@@ -1,5 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
+use std::collections::HashMap;
 
 use crate::activity_page::ActivityData;
 use crate::chart_page::ChartData;
@@ -38,6 +39,7 @@ pub struct InputKeyHandler<'a> {
     chart_months: &'a mut IndexedData,
     chart_years: &'a mut IndexedData,
     chart_modes: &'a mut IndexedData,
+    chart_tx_methods: &'a mut IndexedData,
     summary_months: &'a mut IndexedData,
     summary_years: &'a mut IndexedData,
     summary_modes: &'a mut IndexedData,
@@ -63,6 +65,7 @@ pub struct InputKeyHandler<'a> {
     ongoing_expense: &'a mut Vec<String>,
     daily_ongoing_income: &'a mut Vec<String>,
     daily_ongoing_expense: &'a mut Vec<String>,
+    chart_activated_methods: &'a mut HashMap<String, bool>,
     conn: &'a mut Connection,
 }
 
@@ -87,6 +90,7 @@ impl<'a> InputKeyHandler<'a> {
         chart_months: &'a mut IndexedData,
         chart_years: &'a mut IndexedData,
         chart_modes: &'a mut IndexedData,
+        chart_tx_methods: &'a mut IndexedData,
         summary_months: &'a mut IndexedData,
         summary_years: &'a mut IndexedData,
         summary_modes: &'a mut IndexedData,
@@ -111,6 +115,7 @@ impl<'a> InputKeyHandler<'a> {
         ongoing_expense: &'a mut Vec<String>,
         daily_ongoing_income: &'a mut Vec<String>,
         daily_ongoing_expense: &'a mut Vec<String>,
+        chart_activated_methods: &'a mut HashMap<String, bool>,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data
@@ -135,6 +140,7 @@ impl<'a> InputKeyHandler<'a> {
             chart_months,
             chart_years,
             chart_modes,
+            chart_tx_methods,
             summary_months,
             summary_years,
             summary_modes,
@@ -160,6 +166,7 @@ impl<'a> InputKeyHandler<'a> {
             ongoing_expense,
             daily_ongoing_income,
             daily_ongoing_expense,
+            chart_activated_methods,
             conn,
         }
     }
@@ -523,6 +530,9 @@ impl<'a> InputKeyHandler<'a> {
                             self.chart_months.previous();
                             self.reload_chart();
                         }
+                        ChartTab::TxMethods => {
+                            self.chart_tx_methods.previous();
+                        }
                     }
                 }
             }
@@ -595,6 +605,9 @@ impl<'a> InputKeyHandler<'a> {
                         ChartTab::Months => {
                             self.chart_months.next();
                             self.reload_chart();
+                        }
+                        ChartTab::TxMethods => {
+                            self.chart_tx_methods.next();
                         }
                     }
                 }
@@ -946,6 +959,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
     /// Opens a popup that shows the details of the selected transaction on the Home page
     pub fn show_home_tx_details(&mut self) {
         if let Some(index) = self.table.state.selected() {
@@ -956,6 +970,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
     /// Opens a popup that shows the details of the selected activity tx details on the Activity page
     pub fn show_activity_tx_details(&mut self) {
         if let Some(index) = self.activity_table.state.selected() {
@@ -976,6 +991,23 @@ impl<'a> InputKeyHandler<'a> {
                 popup_text += &format!("Transaction 1: {tx_details}");
             }
             *self.popup = PopupState::ShowDetails(popup_text);
+        }
+    }
+
+    pub fn switch_chart_tx_method_activation(&mut self) {
+        if !*self.chart_hidden_mode {
+            if let ChartTab::TxMethods = self.chart_tab {
+                let selected_index = self.chart_tx_methods.index;
+                let all_tx_methods = get_all_tx_methods(self.conn);
+
+                let selected_method = &all_tx_methods[selected_index];
+                let activation_status = self
+                    .chart_activated_methods
+                    .get_mut(selected_method)
+                    .unwrap();
+                *activation_status = !*activation_status;
+                self.reload_chart();
+            }
         }
     }
 }
@@ -1201,6 +1233,7 @@ impl<'a> InputKeyHandler<'a> {
             match self.chart_modes.index {
                 0 => *self.chart_tab = self.chart_tab.change_tab_up_monthly(),
                 1 => *self.chart_tab = self.chart_tab.change_tab_up_yearly(),
+                2 => *self.chart_tab = self.chart_tab.change_tab_up_all_time(),
                 _ => {}
             }
         }
@@ -1212,6 +1245,7 @@ impl<'a> InputKeyHandler<'a> {
             match self.chart_modes.index {
                 0 => *self.chart_tab = self.chart_tab.change_tab_down_monthly(),
                 1 => *self.chart_tab = self.chart_tab.change_tab_down_yearly(),
+                2 => *self.chart_tab = self.chart_tab.change_tab_down_all_time(),
                 _ => {}
             }
         }
