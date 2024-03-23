@@ -1,9 +1,11 @@
 use chrono::prelude::Local;
 use chrono::Datelike;
 use ratatui::widgets::TableState;
+use rusqlite::Connection;
 use std::path::PathBuf;
 
 use crate::db::{MODES, MONTHS, YEARS};
+use crate::utility::get_all_tx_methods;
 
 /// The struct stores all transaction data for the Transaction widget
 /// and creates an index to keep track of which transactions row is selected
@@ -88,6 +90,13 @@ impl IndexedData {
     pub fn new_modes() -> Self {
         IndexedData {
             titles: MODES.into_iter().map(ToString::to_string).collect(),
+            index: 0,
+        }
+    }
+
+    pub fn new_tx_methods(conn: &Connection) -> Self {
+        IndexedData {
+            titles: get_all_tx_methods(conn),
             index: 0,
         }
     }
@@ -190,6 +199,7 @@ pub enum ChartTab {
     ModeSelection,
     Years,
     Months,
+    TxMethods,
 }
 
 impl ChartTab {
@@ -198,9 +208,10 @@ impl ChartTab {
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_monthly(&mut self) -> Self {
         match &self {
-            ChartTab::ModeSelection => ChartTab::Months,
+            ChartTab::ModeSelection => ChartTab::TxMethods,
             ChartTab::Years => ChartTab::ModeSelection,
             ChartTab::Months => ChartTab::Years,
+            ChartTab::TxMethods => ChartTab::Months,
         }
     }
 
@@ -211,7 +222,8 @@ impl ChartTab {
         match &self {
             ChartTab::ModeSelection => ChartTab::Years,
             ChartTab::Years => ChartTab::Months,
-            ChartTab::Months => ChartTab::ModeSelection,
+            ChartTab::Months => ChartTab::TxMethods,
+            ChartTab::TxMethods => ChartTab::ModeSelection,
         }
     }
 
@@ -220,9 +232,10 @@ impl ChartTab {
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_yearly(&mut self) -> Self {
         match &self {
-            ChartTab::ModeSelection => ChartTab::Years,
+            ChartTab::ModeSelection => ChartTab::TxMethods,
             ChartTab::Years => ChartTab::ModeSelection,
-            ChartTab::Months => ChartTab::Months,
+            ChartTab::TxMethods => ChartTab::Years,
+            ChartTab::Months => unreachable!(),
         }
     }
 
@@ -232,8 +245,31 @@ impl ChartTab {
     pub fn change_tab_down_yearly(&mut self) -> Self {
         match &self {
             ChartTab::ModeSelection => ChartTab::Years,
-            ChartTab::Years => ChartTab::ModeSelection,
-            ChartTab::Months => ChartTab::Months,
+            ChartTab::Years => ChartTab::TxMethods,
+            ChartTab::TxMethods => ChartTab::ModeSelection,
+            ChartTab::Months => unreachable!(),
+        }
+    }
+
+    /// Moves the current selected tab to the upper value. If at the 1st value, the
+    /// the final value is selected.
+    #[cfg(not(tarpaulin_include))]
+    pub fn change_tab_up_all_time(&mut self) -> Self {
+        match &self {
+            ChartTab::ModeSelection => ChartTab::TxMethods,
+            ChartTab::TxMethods => ChartTab::ModeSelection,
+            ChartTab::Months | ChartTab::Years => unreachable!(),
+        }
+    }
+
+    /// Moves the current selected tab to the bottom value. If at the last value, the
+    /// the 1st value is selected.
+    #[cfg(not(tarpaulin_include))]
+    pub fn change_tab_down_all_time(&mut self) -> Self {
+        match &self {
+            ChartTab::ModeSelection => ChartTab::TxMethods,
+            ChartTab::TxMethods => ChartTab::ModeSelection,
+            ChartTab::Months | ChartTab::Years => unreachable!(),
         }
     }
 }

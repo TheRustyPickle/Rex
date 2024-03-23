@@ -58,6 +58,9 @@ pub fn start_app<B: Backend>(
     let mut chart_years = IndexedData::new_yearly();
     // contains the chart page mode selection list that is indexed
     let mut chart_modes = IndexedData::new_modes();
+    // contains the chart page tx method selection list that is indexed
+    let mut chart_tx_methods = IndexedData::new_tx_methods(conn);
+
     // contains the summary page month list that is indexed
     let mut summary_months = IndexedData::new_monthly();
     // contains the summary page year list that is indexed
@@ -182,6 +185,12 @@ pub fn start_app<B: Backend>(
     let mut daily_last_expense = Vec::new();
     let mut daily_ongoing_expense = Vec::new();
 
+    // Contains whether in the chart whether a tx method is activated or not
+    let mut chart_activated_methods = get_all_tx_methods(conn)
+        .into_iter()
+        .map(|s| (s, true))
+        .collect();
+
     // Whether to reset home page stuff loading %
     // Will only turn true on initial run and when a key is pressed
     let mut to_reset = true;
@@ -277,10 +286,12 @@ pub fn start_app<B: Backend>(
                         &chart_months,
                         &chart_years,
                         &chart_modes,
+                        &chart_tx_methods,
                         &chart_data,
                         &chart_tab,
                         chart_hidden_mode,
                         &mut chart_index,
+                        &chart_activated_methods,
                         conn,
                     ),
 
@@ -370,6 +381,7 @@ pub fn start_app<B: Backend>(
                 &mut chart_months,
                 &mut chart_years,
                 &mut chart_modes,
+                &mut chart_tx_methods,
                 &mut summary_months,
                 &mut summary_years,
                 &mut summary_modes,
@@ -394,6 +406,7 @@ pub fn start_app<B: Backend>(
                 &mut ongoing_expense,
                 &mut daily_ongoing_income,
                 &mut daily_ongoing_expense,
+                &mut chart_activated_methods,
                 conn,
             );
 

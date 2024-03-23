@@ -1,14 +1,16 @@
 use chrono::{naive::NaiveDate, Duration};
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Color, Modifier, Style};
+use ratatui::symbols::Marker;
 use ratatui::text::Span;
 use ratatui::widgets::{Axis, Block, Chart, Dataset, GraphType};
-use ratatui::{symbols, Frame};
+use ratatui::Frame;
 use rusqlite::Connection;
+use std::collections::HashMap;
 
 use crate::chart_page::ChartData;
 use crate::page_handler::{ChartTab, IndexedData, BACKGROUND, BOX, SELECTED};
-use crate::utility::{create_tab, get_all_tx_methods, main_block};
+use crate::utility::{create_tab, create_tab_activation, get_all_tx_methods, main_block};
 
 /// Creates the balance chart from the transactions
 #[cfg(not(tarpaulin_include))]
@@ -17,10 +19,12 @@ pub fn chart_ui(
     months: &IndexedData,
     years: &IndexedData,
     mode_selection: &IndexedData,
+    chart_tx_methods: &IndexedData,
     chart_data: &ChartData,
     current_page: &ChartTab,
     chart_hidden_mode: bool,
     loop_remaining: &mut Option<f64>,
+    chart_activated_methods: &HashMap<String, bool>,
     conn: &Connection,
 ) {
     let size = f.size();
@@ -36,21 +40,39 @@ pub fn chart_ui(
         match mode_selection.index {
             0 => {
                 main_layout = main_layout.constraints([
+                    // Modes
                     Constraint::Length(3),
+                    // Years
                     Constraint::Length(3),
+                    // Months
                     Constraint::Length(3),
+                    // Tx Method
+                    Constraint::Length(3),
+                    // Chart
                     Constraint::Min(0),
                 ]);
             }
             1 => {
                 main_layout = main_layout.constraints([
+                    // Modes
                     Constraint::Length(3),
+                    // Years
                     Constraint::Length(3),
+                    // Tx method
+                    Constraint::Length(3),
+                    // Chart
                     Constraint::Min(0),
                 ]);
             }
             2 => {
-                main_layout = main_layout.constraints([Constraint::Length(3), Constraint::Min(0)]);
+                main_layout = main_layout.constraints([
+                    // Modes
+                    Constraint::Length(3),
+                    // Tx method
+                    Constraint::Length(3),
+                    // Chart
+                    Constraint::Min(0),
+                ]);
             }
             _ => {}
         };
@@ -66,6 +88,12 @@ pub fn chart_ui(
     let mut year_tab = create_tab(years, "Years");
 
     let mut mode_selection_tab = create_tab(mode_selection, "Modes");
+
+    let mut tx_method_selection_tab = create_tab_activation(
+        chart_tx_methods,
+        "Tx Method Selection",
+        chart_activated_methods,
+    );
 
     let all_tx_methods = get_all_tx_methods(conn);
 
@@ -171,10 +199,15 @@ pub fn chart_ui(
                     // keep track of the highest and the lowest point of the balance
                     let current_balance = current_balances[method_index].parse::<f64>().unwrap();
 
-                    if current_balance > highest_balance {
-                        highest_balance = current_balance;
-                    } else if current_balance < lowest_balance {
-                        lowest_balance = current_balance;
+                    // We will not consider the highest/lowest balance if the method is currently deactivated on chart
+                    // We can't directly skip it because the dataset vector expects something in the index of this method
+                    // We will have the data but it just won't be shown on the chart
+                    if chart_activated_methods[&all_tx_methods[method_index]] {
+                        if current_balance > highest_balance {
+                            highest_balance = current_balance;
+                        } else if current_balance < lowest_balance {
+                            lowest_balance = current_balance;
+                        }
                     }
 
                     if to_add_again {
@@ -278,10 +311,15 @@ pub fn chart_ui(
         if color_list.is_empty() {
             color_list.push(Color::Cyan);
         }
+
+        if !chart_activated_methods[&all_tx_methods[i]] {
+            continue;
+        }
+
         final_dataset.push(
             Dataset::default()
                 .name(all_tx_methods[i].clone())
-                .marker(symbols::Marker::Braille)
+                .marker(Marker::Braille)
                 .graph_type(GraphType::Line)
                 .style(
                     Style::default()
@@ -324,6 +362,10 @@ pub fn chart_ui(
             mode_selection_tab = mode_selection_tab
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
+        ChartTab::TxMethods => {
+            tx_method_selection_tab = tx_method_selection_tab
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+        }
     }
 
     if chart_hidden_mode {
@@ -335,14 +377,17 @@ pub fn chart_ui(
             0 => {
                 f.render_widget(year_tab, chunks[1]);
                 f.render_widget(month_tab, chunks[2]);
-                f.render_widget(chart, chunks[3]);
+                f.render_widget(tx_method_selection_tab, chunks[3]);
+                f.render_widget(chart, chunks[4]);
             }
             1 => {
                 f.render_widget(year_tab, chunks[1]);
-                f.render_widget(chart, chunks[2]);
+                f.render_widget(tx_method_selection_tab, chunks[2]);
+                f.render_widget(chart, chunks[3]);
             }
             2 => {
-                f.render_widget(chart, chunks[1]);
+                f.render_widget(tx_method_selection_tab, chunks[1]);
+                f.render_widget(chart, chunks[2]);
             }
             _ => {}
         }
