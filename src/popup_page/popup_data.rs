@@ -129,6 +129,7 @@ Example amount: 100 + b, b + b, 5 * b
 Following are the supported keys here
 
 R: Hides the top widgets for full chart view
+Space: Enable/Disable tx method from the chart
 
 Arrow Up/Down: Cycle widgets
 Arrow Left/Right: Move value of the widget

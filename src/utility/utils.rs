@@ -10,7 +10,7 @@ use ratatui::widgets::{Block, BorderType, Borders, Tabs};
 use ratatui::Terminal;
 use rusqlite::{Connection, Result as sqlResult};
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::Display;
 use std::fs::{self, File};
@@ -24,7 +24,7 @@ use crate::db::{add_tags_column, create_db, migrate_to_activities, update_balanc
 use crate::outputs::ComparisonType;
 use crate::page_handler::{
     ActivityType, DateType, IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED,
-    TEXT,
+    RED, TEXT,
 };
 use crate::utility::get_user_tx_methods;
 
@@ -360,6 +360,33 @@ pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
                 .add_modifier(Modifier::BOLD)
                 .bg(HIGHLIGHTED),
         )
+}
+
+/// Create a tab with some values where each value's color will depend on the provided HashMap bool value
+#[cfg(not(tarpaulin_include))]
+pub fn create_tab_activation<'a, S: ::std::hash::BuildHasher>(
+    data: &'a IndexedData,
+    name: &'a str,
+    // No idea what the BuildHasher does. Clippy pedantic said it so I did it.
+    activation: &HashMap<String, bool, S>,
+) -> Tabs<'a> {
+    let titles: Vec<Line> = data
+        .titles
+        .iter()
+        .map(|t| {
+            if activation[t] {
+                Line::from(vec![Span::styled(t, Style::default().fg(TEXT))])
+            } else {
+                Line::from(vec![Span::styled(t, Style::default().fg(RED))])
+            }
+        })
+        .collect();
+
+    Tabs::new(titles)
+        .block(styled_block(name))
+        .select(data.index)
+        .style(Style::default().fg(BOX))
+        .highlight_style(Style::default())
 }
 
 /// Does the 5 second timer after input taking ends
