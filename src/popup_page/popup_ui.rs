@@ -1,7 +1,9 @@
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Span, Text};
-use ratatui::widgets::{Block, Borders, Clear, Paragraph, Wrap};
+use ratatui::widgets::{
+    Block, Borders, Clear, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, Wrap,
+};
 use ratatui::Frame;
 
 use crate::page_handler::{DeletionStatus, BACKGROUND, BLUE, BOX, HIGHLIGHTED, RED, TEXT};
@@ -9,10 +11,15 @@ use crate::utility::create_bolded_text;
 
 /// Creates a popup on top of a window with the given size, title and text attributes
 #[cfg(not(tarpaulin_include))]
-pub fn create_popup(f: &mut Frame, x_value: u16, y_value: u16, title: &str, text: &str) {
+pub fn create_popup(f: &mut Frame, title: &str, text: &str, position: usize) {
     let size = f.size();
+    let x_value = 60;
+    let y_value = 60;
 
     let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
+
+    let text_len = text.split('\n').count() + 5;
+
     let text = create_bolded_text(text);
 
     let block = Block::default()
@@ -34,9 +41,10 @@ pub fn create_popup(f: &mut Frame, x_value: u16, y_value: u16, title: &str, text
 
     let help_sec = Paragraph::new(Text::from(text))
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .wrap(Wrap::default());
+        .wrap(Wrap::default())
+        .scroll((position as u16, 0));
 
-    let dismiss_sec = Paragraph::new("Press Any Key To Dismiss")
+    let dismiss_sec = Paragraph::new("Use Arrow Keys To Scroll. Press Any Other Key To Dismiss")
         .style(
             Style::default()
                 .bg(BACKGROUND)
@@ -45,8 +53,14 @@ pub fn create_popup(f: &mut Frame, x_value: u16, y_value: u16, title: &str, text
         )
         .alignment(Alignment::Center);
 
+    let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight);
+    let mut scrollbar_state = ScrollbarState::new(text_len)
+        .position(position)
+        .content_length(text_len - 5);
+
     f.render_widget(help_sec, new_chunks[0]);
     f.render_widget(dismiss_sec, new_chunks[1]);
+    f.render_stateful_widget(scrollbar, new_chunks[0], &mut scrollbar_state);
 }
 
 #[cfg(not(tarpaulin_include))]

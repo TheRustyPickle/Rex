@@ -14,7 +14,7 @@ use crate::utility::{create_tab, create_tab_activation, get_all_tx_methods, main
 
 /// Creates the balance chart from the transactions
 #[cfg(not(tarpaulin_include))]
-pub fn chart_ui(
+pub fn chart_ui<S: ::std::hash::BuildHasher>(
     f: &mut Frame,
     months: &IndexedData,
     years: &IndexedData,
@@ -24,7 +24,7 @@ pub fn chart_ui(
     current_page: &ChartTab,
     chart_hidden_mode: bool,
     loop_remaining: &mut Option<f64>,
-    chart_activated_methods: &HashMap<String, bool>,
+    chart_activated_methods: &HashMap<String, bool, S>,
     conn: &Connection,
 ) {
     let size = f.size();

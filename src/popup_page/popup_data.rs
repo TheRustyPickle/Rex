@@ -16,25 +16,17 @@ pub const V: &str = "V: Show selected transaction details";
 /// Stores data to create a new popup
 pub struct PopupData<'a> {
     title: &'a str,
-    x_value: u16,
-    y_value: u16,
 }
 
 impl<'a> PopupData<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn new() -> Self {
-        PopupData {
-            title: "",
-            x_value: 0,
-            y_value: 0,
-        }
+        PopupData { title: "" }
     }
 
     #[cfg(not(tarpaulin_include))]
-    pub fn set(&mut self, title: &'a str, x_value: u16, y_value: u16) {
+    pub fn set_title(&mut self, title: &'a str) {
         self.title = title;
-        self.x_value = x_value;
-        self.y_value = y_value;
     }
 
     #[cfg(not(tarpaulin_include))]
@@ -43,6 +35,8 @@ impl<'a> PopupData<'a> {
         f: &mut Frame,
         popup_type: &PopupState,
         deletion_status: &DeletionStatus,
+        popup_scroll_position: usize,
+        max_popup_scroll: &mut usize,
     ) {
         let status = match popup_type {
             PopupState::NewUpdate(data) => self.get_new_update_text(data),
@@ -62,14 +56,19 @@ impl<'a> PopupData<'a> {
         if let PopupState::TxDeletion = popup_type {
             create_deletion_popup(f, deletion_status);
         } else if !status.is_empty() {
-            create_popup(f, self.x_value, self.y_value, self.title, &status);
+            let new_line_count = status.split('\n').count();
+            *max_popup_scroll = if new_line_count > 5 {
+                new_line_count - 2
+            } else {
+                new_line_count
+            };
+            create_popup(f, self.title, &status, popup_scroll_position);
         }
     }
 
     #[cfg(not(tarpaulin_include))]
     fn get_new_update_text(&mut self, data: &[String]) -> String {
-        let update_data_len = data[1].split('\n').collect::<Vec<&str>>().len() * 2;
-        self.set("New Update", 50, 25 + update_data_len as u16);
+        self.set_title("New Update");
         format!(
             "New version {} is now available\n
 Updates:
@@ -81,7 +80,7 @@ Enter: Redirect to the new version",
 
     #[cfg(not(tarpaulin_include))]
     fn get_add_tx_help_text(&mut self) -> String {
-        self.set("Help", 80, 90);
+        self.set_title("Help");
         format!(
             "This page is for adding new transactions. Following are the supported keys here. \
 On Transfer transaction there will be one additional field pushing Tags to the key 7. 
@@ -122,7 +121,7 @@ Example amount: 100 + b, b + b, 5 * b
 
     #[cfg(not(tarpaulin_include))]
     fn get_chart_help_text(&mut self) -> String {
-        self.set("Help", 60, 50);
+        self.set_title("Help");
         format!(
             "This page shows the movement of balances within the selected period of time
         
@@ -147,7 +146,7 @@ Arrow Left/Right: Move value of the widget
 
     #[cfg(not(tarpaulin_include))]
     fn get_summary_help_text(&mut self) -> String {
-        self.set("Help", 50, 60);
+        self.set_title("Help");
         format!(
             "This page shows various information based on all transactions \
             and is for tracking incomes and expenses based on tags \
@@ -174,7 +173,7 @@ Arrow Left/Right: Move value of the widget
 
     #[cfg(not(tarpaulin_include))]
     fn get_home_help_text(&mut self) -> String {
-        self.set("Help", 70, 70);
+        self.set_title("Help");
         format!("This is the Home page where all txs added so far, the balances and the changes are shown
 
 J: Take user input for various actions
@@ -201,13 +200,13 @@ Swapping transaction location will only work if they are on the same date.
 
     #[cfg(not(tarpaulin_include))]
     fn get_delete_failed_text(&mut self, err: &str) -> String {
-        self.set("Delete Failed", 50, 25);
+        self.set_title("Delete Failed");
         err.to_string()
     }
 
     #[cfg(not(tarpaulin_include))]
     fn get_search_help_text(&mut self) -> String {
-        self.set("Help", 70, 100);
+        self.set_title("Help");
         format!(
             "This page is for searching transactions. \
             On Transfer transaction there will be one additional field pushing Tags to the key 7.
@@ -258,7 +257,7 @@ Example amount : <1000, >=10000
     }
 
     fn get_activity_help_text(&mut self) -> String {
-        self.set("Help", 60, 50);
+        self.set_title("Help");
         format!(
             "This page shows the activities recorded in the selected period of time. \
             The bottom widget will show affected transaction details by an activity.
@@ -282,7 +281,7 @@ Arrow Left/Right: Move value of the widget
     }
 
     fn get_transaction_details_text(&mut self, details: String) -> String {
-        self.set("Transaction Details", 50, 30);
+        self.set_title("Transaction Details");
         details
     }
 }
