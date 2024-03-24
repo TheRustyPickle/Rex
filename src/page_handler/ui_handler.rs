@@ -191,6 +191,9 @@ pub fn start_app<B: Backend>(
         .map(|s| (s, true))
         .collect();
 
+    let mut popup_scroll_position = 0;
+    let mut max_popup_scroll = 0;
+
     // Whether to reset home page stuff loading %
     // Will only turn true on initial run and when a key is pressed
     let mut to_reset = true;
@@ -323,7 +326,13 @@ pub fn start_app<B: Backend>(
                         &mut activity_table,
                     ),
                 }
-                popup_data.create_popup(f, &popup_state, &deletion_status);
+                popup_data.create_popup(
+                    f,
+                    &popup_state,
+                    &deletion_status,
+                    popup_scroll_position,
+                    &mut max_popup_scroll,
+                );
             })
             .map_err(UiHandlingError::DrawingError)?;
 
@@ -407,6 +416,8 @@ pub fn start_app<B: Backend>(
                 &mut daily_ongoing_income,
                 &mut daily_ongoing_expense,
                 &mut chart_activated_methods,
+                &mut popup_scroll_position,
+                &mut max_popup_scroll,
                 conn,
             );
 

@@ -362,7 +362,7 @@ pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
         )
 }
 
-/// Create a tab with some values where each value's color will depend on the provided HashMap bool value
+/// Create a tab with some values where each value's color will depend on the provided `HashMap` bool value
 #[cfg(not(tarpaulin_include))]
 pub fn create_tab_activation<'a, S: ::std::hash::BuildHasher>(
     data: &'a IndexedData,

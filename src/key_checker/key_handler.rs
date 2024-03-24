@@ -66,6 +66,8 @@ pub struct InputKeyHandler<'a> {
     daily_ongoing_income: &'a mut Vec<String>,
     daily_ongoing_expense: &'a mut Vec<String>,
     chart_activated_methods: &'a mut HashMap<String, bool>,
+    popup_scroll_position: &'a mut usize,
+    max_popup_scroll: &'a mut usize,
     conn: &'a mut Connection,
 }
 
@@ -116,6 +118,8 @@ impl<'a> InputKeyHandler<'a> {
         daily_ongoing_income: &'a mut Vec<String>,
         daily_ongoing_expense: &'a mut Vec<String>,
         chart_activated_methods: &'a mut HashMap<String, bool>,
+        popup_scroll_position: &'a mut usize,
+        max_popup_scroll: &'a mut usize,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data
@@ -167,6 +171,8 @@ impl<'a> InputKeyHandler<'a> {
             daily_ongoing_income,
             daily_ongoing_expense,
             chart_activated_methods,
+            popup_scroll_position,
+            max_popup_scroll,
             conn,
         }
     }
@@ -276,6 +282,7 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn do_empty_popup(&mut self) {
         *self.popup = PopupState::Nothing;
+        self.reload_popup_scroll_position();
     }
 
     /// Hides chart top widgets
@@ -994,6 +1001,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub fn switch_chart_tx_method_activation(&mut self) {
         if !*self.chart_hidden_mode {
             if let ChartTab::TxMethods = self.chart_tab {
@@ -1009,6 +1017,24 @@ impl<'a> InputKeyHandler<'a> {
                 self.reload_chart();
             }
         }
+    }
+
+    #[cfg(not(tarpaulin_include))]
+    pub fn popup_scroll_up(&mut self) {
+        if *self.popup_scroll_position != 0 {
+            *self.popup_scroll_position -= 1;
+        } else {
+            *self.popup_scroll_position = *self.max_popup_scroll;
+        }
+    }
+
+    #[cfg(not(tarpaulin_include))]
+    pub fn popup_scroll_down(&mut self) {
+        if self.popup_scroll_position < self.max_popup_scroll {
+            *self.popup_scroll_position += 1;
+        } else {
+            *self.popup_scroll_position = 0;
+        };
     }
 }
 
@@ -1834,5 +1860,11 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Search => self.search_data.check_autofill(self.search_tab, self.conn),
             _ => {}
         }
+    }
+
+    #[cfg(not(tarpaulin_include))]
+    fn reload_popup_scroll_position(&mut self) {
+        *self.popup_scroll_position = 0;
+        *self.max_popup_scroll = 0;
     }
 }
