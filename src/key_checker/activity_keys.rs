@@ -21,6 +21,11 @@ pub fn activity_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Down => handler.handle_down_arrow(),
             _ => {}
         },
+        PopupState::ActivityHelp => match handler.key.code {
+            KeyCode::Up => handler.popup_scroll_up(),
+            KeyCode::Down => handler.popup_scroll_down(),
+            _ => handler.do_empty_popup(),
+        },
         _ => handler.do_empty_popup(),
     }
 
