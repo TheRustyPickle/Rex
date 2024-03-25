@@ -45,6 +45,11 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 },
             },
         },
+        PopupState::AddTxHelp => match handler.key.code {
+            KeyCode::Up => handler.popup_scroll_up(),
+            KeyCode::Down => handler.popup_scroll_down(),
+            _ => handler.do_empty_popup(),
+        },
         _ => handler.do_empty_popup(),
     }
 

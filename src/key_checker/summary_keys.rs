@@ -25,6 +25,11 @@ pub fn summary_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Enter => handler.search_tag(),
             _ => {}
         },
+        PopupState::SummaryHelp => match handler.key.code {
+            KeyCode::Up => handler.popup_scroll_up(),
+            KeyCode::Down => handler.popup_scroll_down(),
+            _ => handler.do_empty_popup(),
+        },
         _ => handler.do_empty_popup(),
     }
 

@@ -24,6 +24,11 @@ pub fn chart_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Char(' ') => handler.switch_chart_tx_method_activation(),
             _ => {}
         },
+        PopupState::ChartHelp => match handler.key.code {
+            KeyCode::Up => handler.popup_scroll_up(),
+            KeyCode::Down => handler.popup_scroll_down(),
+            _ => handler.do_empty_popup(),
+        },
         _ => handler.do_empty_popup(),
     }
     None
