@@ -102,11 +102,13 @@ Arrow Left/Right: Move cursor on input fields
 
 C: Clear all fields
 b: On amount field 'b' gets replaced with the current balance of Tx Method field
+k: On amount field 'k' is considered as 1000 or a thousand
+m: On amount field 'm' is considered as 1,000,000 or a million
 Calculation: Amount field supports simple calculation with +, -, *, /
 Tags: This field can be treated as the category of this transaction.
 Empty tags field gets replaced with Unknown. Separate more than 1 tags with a comma
 
-Example amount: 100 + b, b + b, 5 * b
+Example amount: 100 + b, b + b, 5 * b, 1.2k + 1m
 
 {F}
 {R}
@@ -231,9 +233,11 @@ Arrow Up/Down: Steps value up/down by 1
 Arrow Left/Right: Move cursor on input fields
 C: Clear all fields
 b: On amount field 'b' gets replaced with the current balance of Tx Method field
+k: On amount field 'k' is considered as 1000 or a thousand
+m: On amount field 'm' is considered as 1,000,000 or a million
 Calculation: Amount field supports simple calculation with +, -, *, /
 
-Example amount: 100 + b, b + b, 5 * b
+Example amount: 100 + b, b + b, 5 * b, 1.2k + 5m
 
 Details Field: If details field is filled up, it will try to find transactions \
                 that matches the given input. It doesn't have to be an exact match
