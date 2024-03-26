@@ -483,20 +483,94 @@ impl TxData {
         Ok(())
     }
 
-    /// If `k` and `m` are present, multiplies the current number 1 thousand and 1 million respectively
+    /// If `k` and `m` are present, multiplies the number 1 thousand and 1 million respectively
     fn check_suffixes(&mut self) {
         let mut user_amount = self.amount.to_lowercase();
+        let mut failed_to_parse = false;
 
-        if user_amount.contains('k') {
-            user_amount = user_amount.replace('k', "");
-            let amount: f64 = user_amount.parse().unwrap();
-            self.amount = (amount * 1_000.0).to_string();
+        // target char list
+        let target_letters = ['k', 'm'];
+
+        'starter: for letter in target_letters {
+            // How many times this target char is present in the string
+            let count = user_amount.chars().filter(|c| c == &letter).count();
+
+            // We will loop the `count` of times to ensure all the target are handled
+            for _ in 0..count {
+                // Convert the string to a vec of char for easier indexing
+                let amount_vec: Vec<char> = user_amount.chars().collect();
+
+                // The index where the 'k' or 'm' is in the string
+                let target_index = user_amount.find(letter).unwrap();
+                let mut gathered_value = String::new();
+
+                // Ending here would be smaller than the target index.
+                // We are looping from target index to the beginning of the string
+                let mut ending_index = 0;
+
+                for index in (0..target_index).rev() {
+                    let value = amount_vec[index];
+                    if value == ' ' {
+                        continue;
+                    }
+
+                    if value == '.' {
+                        gathered_value = format!("{value}{gathered_value}");
+                        continue;
+                    }
+
+                    // if the char is a number, convert to u16 and save it on gathered value
+                    if let Ok(num_amount) = value.to_string().parse::<u16>() {
+                        gathered_value = format!("{num_amount}{gathered_value}");
+                    } else {
+                        // 100 + 5k
+                        // If this is the + char, then break the loop. The ending index is index of '+' + 1
+                        // + 1 so we don't replace the original char itself after the calculation is done
+                        ending_index = index + 1;
+                        break;
+                    }
+                }
+
+                // In the case like this: 1k1, 5m12
+                // This is invalid. This ensure the next char where k or m was found is not a number
+                // If number, we can't parse it here
+                for value in amount_vec
+                    .iter()
+                    .take(user_amount.len())
+                    .skip(target_index + 1)
+                {
+                    if *value == ' ' {
+                        continue;
+                    }
+
+                    if value.to_string().parse::<u16>().is_ok() {
+                        failed_to_parse = true;
+                        break 'starter;
+                    }
+                    break;
+                }
+
+                if let Ok(parsed_value) = gathered_value.parse::<f64>() {
+                    let suffixed_added_value = match letter {
+                        'k' => parsed_value * 1_000.0,
+                        'm' => parsed_value * 1_000_000.0,
+                        _ => unreachable!(),
+                    };
+
+                    // Example string: 100 + 5k
+                    // Target index would be the index of 'k' and ending index is the index of '+' + 1
+                    // Replace everything in that range with the new calculated value
+                    user_amount = user_amount.replacen(
+                        &user_amount[ending_index..=target_index],
+                        &suffixed_added_value.to_string(),
+                        1,
+                    );
+                }
+            }
         }
 
-        if user_amount.contains('m') {
-            user_amount = user_amount.replace('m', "");
-            let amount: f64 = user_amount.parse().unwrap();
-            self.amount = (amount * 1_000_000.0).to_string();
+        if !failed_to_parse {
+            self.amount = user_amount;
         }
     }
 
