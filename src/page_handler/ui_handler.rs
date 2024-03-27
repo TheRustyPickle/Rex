@@ -27,7 +27,7 @@ use crate::popup_page::PopupData;
 use crate::search_page::search_ui;
 use crate::summary_page::{summary_ui, SummaryData};
 use crate::tx_handler::TxData;
-use crate::utility::{get_all_tx_methods, get_empty_changes};
+use crate::utility::get_all_tx_methods;
 
 pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
 pub const TEXT: Color = Color::Rgb(153, 78, 236);
@@ -198,6 +198,19 @@ pub fn start_app<B: Backend>(
     // Will only turn true on initial run and when a key is pressed
     let mut to_reset = true;
 
+    // Home and Add Tx Page balance data
+    let mut balance_data = Vec::new();
+    // Home and add tx page balance section's column space
+    let mut width_data = Vec::new();
+    let total_columns = get_all_tx_methods(conn).len() + 2;
+    let width_percent = (100 / total_columns) as u16;
+
+    // save the % of space each column should take in the Balance section based on the total
+    // transaction methods/columns available
+    for _ in 0..total_columns {
+        width_data.push(Constraint::Percentage(width_percent));
+    }
+
     // how it work:
     // Default value from above -> Goes to an interface page and render -> Wait for an event key press.
     //
@@ -207,44 +220,6 @@ pub fn start_app<B: Backend>(
     // If keypress is detected, send most of the &mut values to InputKeyHandler -> Gets mutated based on key press
     // -> loop ends -> start from beginning -> Send the new mutated values to the interface -> Keep up
     loop {
-        let current_table_index = table.state.selected();
-
-        // balance variable contains all the 'rows' of the Balance widget in the home page.
-        // So each line is inside a vector. "" represents empty placeholder.
-        let mut balance = vec![vec![String::new()]];
-        balance[0].extend(get_all_tx_methods(conn));
-        balance[0].extend(vec!["Total".to_string()]);
-
-        // save the % of space each column should take in the Balance section based on the total
-        // transaction methods/columns available
-        let width_percent = 100 / balance[0].len() as u16;
-        let mut width_data = vec![];
-        for _i in 0..balance[0].len() {
-            width_data.push(Constraint::Percentage(width_percent));
-        }
-
-        // current_table_index is the Home Page table widget index. If a row is selected,
-        // get the balance there was once that transaction happened + the changes it did
-        // otherwise, get the absolute final balance after all transaction happened + no changes.
-
-        match current_table_index {
-            // pass out the current index to get the necessary balance & changes data
-            Some(a) => {
-                balance.push(all_tx_data.get_balance(a));
-                balance.push(all_tx_data.get_changes(a));
-            }
-            // if none selected, get empty changes + the absolute final balance
-            None => {
-                balance.push(all_tx_data.get_last_balance(conn));
-                balance.push(get_empty_changes(conn));
-            }
-        }
-
-        // total_income & total_expense data changes on each month/year index change.
-        balance.push(all_tx_data.get_total_income(current_table_index, conn));
-        balance.push(all_tx_data.get_total_expense(current_table_index, conn));
-        balance.push(all_tx_data.get_daily_income(current_table_index, conn));
-        balance.push(all_tx_data.get_daily_expense(current_table_index, conn));
         // passing out relevant data to the ui function
         terminal
             .draw(|f| {
@@ -255,7 +230,7 @@ pub fn start_app<B: Backend>(
                         &home_months,
                         &home_years,
                         &mut table,
-                        &mut balance,
+                        &mut balance_data,
                         &home_tab,
                         &mut width_data,
                         &mut balance_load,
@@ -280,7 +255,20 @@ pub fn start_app<B: Backend>(
                         conn,
                     ),
 
-                    CurrentUi::AddTx => add_tx_ui(f, &add_tx_data, &add_tx_tab),
+                    CurrentUi::AddTx => add_tx_ui(
+                        f,
+                        to_reset,
+                        &add_tx_data,
+                        &add_tx_tab,
+                        &mut width_data,
+                        &mut balance_load,
+                        &mut ongoing_balance,
+                        &mut last_balance,
+                        &mut changes_load,
+                        &mut ongoing_changes,
+                        &mut last_changes,
+                        conn,
+                    ),
 
                     CurrentUi::Initial => initial_ui(f, starter_index),
 
@@ -374,6 +362,7 @@ pub fn start_app<B: Backend>(
             let mut handler = InputKeyHandler::new(
                 key,
                 &mut page,
+                &mut balance_data,
                 &mut popup_state,
                 &mut add_tx_tab,
                 &mut chart_tab,
