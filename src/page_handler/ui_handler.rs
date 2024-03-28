@@ -258,6 +258,7 @@ pub fn start_app<B: Backend>(
                     CurrentUi::AddTx => add_tx_ui(
                         f,
                         to_reset,
+                        &mut balance_data,
                         &add_tx_data,
                         &add_tx_tab,
                         &mut width_data,
@@ -267,6 +268,7 @@ pub fn start_app<B: Backend>(
                         &mut changes_load,
                         &mut ongoing_changes,
                         &mut last_changes,
+                        &mut load_percentage,
                         conn,
                     ),
 
@@ -341,7 +343,7 @@ pub fn start_app<B: Backend>(
                     continue;
                 }
             }
-            CurrentUi::Home => {
+            CurrentUi::Home | CurrentUi::AddTx => {
                 // If balance loading hasn't ended yet, continue the loop
                 if load_percentage < 1.0
                     && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?

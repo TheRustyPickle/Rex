@@ -213,6 +213,7 @@ impl<'a> InputKeyHandler<'a> {
         *self.page = CurrentUi::AddTx;
         self.add_tx_data
             .add_tx_status("Info: Entering Normal Transaction mode.".to_string());
+        self.reload_add_tx_balance_load();
     }
 
     /// Moves the interface to Search page
@@ -1337,6 +1338,7 @@ impl<'a> InputKeyHandler<'a> {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::FromMethod;
                         self.go_correct_index();
+                        self.reload_add_tx_balance_data();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1347,6 +1349,7 @@ impl<'a> InputKeyHandler<'a> {
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Nothing;
+                        self.reload_add_tx_balance_data();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1380,6 +1383,7 @@ impl<'a> InputKeyHandler<'a> {
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Nothing;
+                        self.reload_add_tx_balance_data();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1400,6 +1404,7 @@ impl<'a> InputKeyHandler<'a> {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Amount;
                         self.go_correct_index();
+                        self.reload_add_tx_balance_data();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1410,6 +1415,7 @@ impl<'a> InputKeyHandler<'a> {
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Nothing;
+                        self.reload_add_tx_balance_data();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1430,6 +1436,7 @@ impl<'a> InputKeyHandler<'a> {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Tags;
                         self.go_correct_index();
+                        self.reload_add_tx_balance_data();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1440,6 +1447,7 @@ impl<'a> InputKeyHandler<'a> {
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Nothing;
+                        self.reload_add_tx_balance_data();
                     }
                     VerifyingOutput::NotAccepted(_) => {}
                 }
@@ -1654,7 +1662,7 @@ impl<'a> InputKeyHandler<'a> {
         *self.all_tx_data =
             TransactionData::new(self.home_months.index, self.home_years.index, self.conn);
         *self.table = TableData::new(self.all_tx_data.get_txs());
-        self.reload_home_balance_data()
+        self.reload_home_balance_data();
     }
 
     #[cfg(not(tarpaulin_include))]
@@ -1870,12 +1878,14 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Reset scroll position to 0
     #[cfg(not(tarpaulin_include))]
     fn reload_popup_scroll_position(&mut self) {
         *self.popup_scroll_position = 0;
         *self.max_popup_scroll = 0;
     }
 
+    /// Update add home page balance section data that is being shown on the UI
     #[cfg(not(tarpaulin_include))]
     fn reload_home_balance_data(&mut self) {
         let mut balance_data = vec![vec![String::new()]];
@@ -1914,6 +1924,29 @@ impl<'a> InputKeyHandler<'a> {
             self.all_tx_data
                 .get_daily_expense(current_table_index, self.conn),
         );
+
+        *self.balance_data = balance_data;
+    }
+
+    /// Force add tx page's balance load to start from 0.0
+    #[cfg(not(tarpaulin_include))]
+    fn reload_add_tx_balance_load(&mut self) {
+        // 0 for all methods + 1 more for the total balance column
+        let ongoing_data = vec![String::from("0.0"); get_all_tx_methods(self.conn).len() + 1];
+        *self.ongoing_balance = ongoing_data.clone();
+        *self.ongoing_changes = vec![String::from("0.0"); ongoing_data.len()];
+        self.reload_add_tx_balance_data();
+    }
+
+    /// Update add tx page balance section data that is being shown on the UI
+    #[cfg(not(tarpaulin_include))]
+    fn reload_add_tx_balance_data(&mut self) {
+        let mut balance_data = vec![vec![String::new()]];
+        balance_data[0].extend(get_all_tx_methods(self.conn));
+        balance_data[0].extend(vec!["Total".to_string()]);
+
+        balance_data.push(self.add_tx_data.generate_balance_section(self.conn));
+        balance_data.push(self.add_tx_data.generate_changes_section(self.conn));
 
         *self.balance_data = balance_data;
     }
