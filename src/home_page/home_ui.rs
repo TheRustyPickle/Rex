@@ -10,7 +10,7 @@ use crate::page_handler::{
 };
 use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block};
 
-const BALANCE_BOLD: [&str; 7] = [
+pub const BALANCE_BOLD: [&str; 7] = [
     "Balance",
     "Changes",
     "Total",
