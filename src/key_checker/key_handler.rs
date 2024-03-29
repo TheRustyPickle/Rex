@@ -243,7 +243,7 @@ impl<'a> InputKeyHandler<'a> {
         self.chart_months.set_index_zero();
         *self.chart_tab = ChartTab::ModeSelection;
         *self.chart_hidden_mode = false;
-        self.reload_chart();
+        self.reload_chart_index();
     }
 
     #[cfg(not(tarpaulin_include))]
@@ -366,7 +366,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.reload_home_table();
                 self.reload_chart_data();
                 self.reload_summary_data();
-                self.reload_search_data();
+                self.reset_search_data();
                 self.reload_activity_table();
             }
             Err(e) => self.add_tx_data.add_tx_status(e),
@@ -434,7 +434,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.reload_home_table();
                     self.reload_chart_data();
                     self.reload_summary_data();
-                    self.reload_search_data();
+                    self.reset_search_data();
                     self.reload_activity_table();
 
                     if index == 0 {
@@ -531,16 +531,16 @@ impl<'a> InputKeyHandler<'a> {
                     match self.chart_tab {
                         ChartTab::ModeSelection => {
                             self.chart_modes.previous();
-                            self.reload_chart();
+                            self.reload_chart_index();
                         }
                         ChartTab::Years => {
                             self.chart_years.previous();
                             self.chart_months.set_index_zero();
-                            self.reload_chart();
+                            self.reload_chart_index();
                         }
                         ChartTab::Months => {
                             self.chart_months.previous();
-                            self.reload_chart();
+                            self.reload_chart_index();
                         }
                         ChartTab::TxMethods => {
                             self.chart_tx_methods.previous();
@@ -607,16 +607,16 @@ impl<'a> InputKeyHandler<'a> {
                     match self.chart_tab {
                         ChartTab::ModeSelection => {
                             self.chart_modes.next();
-                            self.reload_chart();
+                            self.reload_chart_index();
                         }
                         ChartTab::Years => {
                             self.chart_years.next();
                             self.chart_months.set_index_zero();
-                            self.reload_chart();
+                            self.reload_chart_index();
                         }
                         ChartTab::Months => {
                             self.chart_months.next();
-                            self.reload_chart();
+                            self.reload_chart_index();
                         }
                         ChartTab::TxMethods => {
                             self.chart_tx_methods.next();
@@ -764,7 +764,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::AddTx => *self.add_tx_data = TxData::new(),
             CurrentUi::Search => {
                 *self.search_data = TxData::new_empty();
-                self.reload_search_data();
+                self.reset_search_data();
             }
             _ => {}
         }
@@ -901,7 +901,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.reload_home_table();
                     self.reload_chart_data();
                     self.reload_summary_data();
-                    self.reload_search_data();
+                    self.reset_search_data();
                 }
                 Err(err) => {
                     *self.popup =
@@ -1019,7 +1019,7 @@ impl<'a> InputKeyHandler<'a> {
                     .get_mut(selected_method)
                     .unwrap();
                 *activation_status = !*activation_status;
-                self.reload_chart();
+                self.reload_chart_index();
             }
         }
     }
@@ -1044,6 +1044,7 @@ impl<'a> InputKeyHandler<'a> {
 }
 
 impl<'a> InputKeyHandler<'a> {
+    /// Handle Arrow Up key press on the Home page
     #[cfg(not(tarpaulin_include))]
     fn do_home_up(&mut self) {
         match &self.home_tab {
@@ -1078,6 +1079,7 @@ impl<'a> InputKeyHandler<'a> {
         self.reload_home_balance_data();
     }
 
+    /// Handle Arrow Down key press on the Home page
     #[cfg(not(tarpaulin_include))]
     fn do_home_down(&mut self) {
         match &self.home_tab {
@@ -1110,6 +1112,7 @@ impl<'a> InputKeyHandler<'a> {
         self.reload_home_balance_data();
     }
 
+    /// Handle Arrow Up key press on the Summary page
     #[cfg(not(tarpaulin_include))]
     fn do_summary_up(&mut self) {
         if !*self.summary_hidden_mode {
@@ -1185,6 +1188,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle Arrow Down key press on the Summary page
     #[cfg(not(tarpaulin_include))]
     fn do_summary_down(&mut self) {
         if !*self.summary_hidden_mode {
@@ -1260,6 +1264,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle Arrow Up key press on the chart page
     #[cfg(not(tarpaulin_include))]
     fn do_chart_up(&mut self) {
         if !*self.chart_hidden_mode {
@@ -1272,6 +1277,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle Arrow Down key press on the chart page
     #[cfg(not(tarpaulin_include))]
     fn do_chart_down(&mut self) {
         if !*self.chart_hidden_mode {
@@ -1284,6 +1290,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the Details field on the Add Tx page
     #[cfg(not(tarpaulin_include))]
     fn check_add_tx_date(&mut self) {
         match self.key.code {
@@ -1314,6 +1321,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the Details field on the Add Tx page
     #[cfg(not(tarpaulin_include))]
     fn check_add_tx_details(&mut self) {
         match self.key.code {
@@ -1328,6 +1336,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the Tx Type field on the Add Tx page
     #[cfg(not(tarpaulin_include))]
     fn check_add_tx_type(&mut self) {
         match self.key.code {
@@ -1360,6 +1369,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the From Method field on the Add Tx page
     #[cfg(not(tarpaulin_include))]
     fn check_add_tx_from(&mut self) {
         match self.key.code {
@@ -1394,6 +1404,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the To Method field on the Add Tx page
     #[cfg(not(tarpaulin_include))]
     fn check_add_tx_to(&mut self) {
         match self.key.code {
@@ -1425,7 +1436,7 @@ impl<'a> InputKeyHandler<'a> {
             _ => {}
         }
     }
-
+    /// Handle key inputs for the Amount field on the Add Tx page
     #[cfg(not(tarpaulin_include))]
     fn check_add_tx_amount(&mut self) {
         match self.key.code {
@@ -1458,6 +1469,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the Tag field on the Add Tx page
     #[cfg(not(tarpaulin_include))]
     fn check_add_tx_tags(&mut self) {
         match self.key.code {
@@ -1471,6 +1483,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the Date field on the Search page
     #[cfg(not(tarpaulin_include))]
     fn check_search_date(&mut self) {
         match self.key.code {
@@ -1501,6 +1514,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the Details field on the Search page
     #[cfg(not(tarpaulin_include))]
     fn check_search_details(&mut self) {
         match self.key.code {
@@ -1515,6 +1529,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the Tx Type field on the Search page
     #[cfg(not(tarpaulin_include))]
     fn check_search_type(&mut self) {
         match self.key.code {
@@ -1545,6 +1560,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the From Method field on the Search page
     #[cfg(not(tarpaulin_include))]
     fn check_search_from(&mut self) {
         match self.key.code {
@@ -1578,6 +1594,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the To Method field on the Search page
     #[cfg(not(tarpaulin_include))]
     fn check_search_to(&mut self) {
         match self.key.code {
@@ -1608,6 +1625,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the amount field on the Search page
     #[cfg(not(tarpaulin_include))]
     fn check_search_amount(&mut self) {
         match self.key.code {
@@ -1638,6 +1656,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Handle key inputs for the Tag field on the Search page
     #[cfg(not(tarpaulin_include))]
     fn check_search_tags(&mut self) {
         match self.key.code {
@@ -1657,6 +1676,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    /// Reload Home page's table data by fetching from the DB
     #[cfg(not(tarpaulin_include))]
     fn reload_home_table(&mut self) {
         *self.all_tx_data =
@@ -1665,6 +1685,7 @@ impl<'a> InputKeyHandler<'a> {
         self.reload_home_balance_data();
     }
 
+    /// Reset summary table data by recreating it from gathered Summary Data
     #[cfg(not(tarpaulin_include))]
     fn reload_summary(&mut self) {
         let summary_table = self.summary_data.get_table_data(
@@ -1677,27 +1698,32 @@ impl<'a> InputKeyHandler<'a> {
         *self.summary_sort = SortingType::ByTags;
     }
 
+    /// Reload summary data by fetching from the DB
     #[cfg(not(tarpaulin_include))]
     fn reload_summary_data(&mut self) {
         *self.summary_data = SummaryData::new(self.conn);
     }
 
+    /// Reload chart data by fetching from the DB
     #[cfg(not(tarpaulin_include))]
     fn reload_chart_data(&mut self) {
         *self.chart_data = ChartData::new(self.conn);
     }
 
+    /// Restart the animation index of the chart
     #[cfg(not(tarpaulin_include))]
-    fn reload_chart(&mut self) {
+    fn reload_chart_index(&mut self) {
         *self.chart_index = Some(0.0);
     }
 
+    /// Reset all currently shown search related data to nothing
     #[cfg(not(tarpaulin_include))]
-    fn reload_search_data(&mut self) {
+    fn reset_search_data(&mut self) {
         *self.search_table = TableData::new(Vec::new());
         *self.search_txs = TransactionData::new_search(Vec::new(), Vec::new());
     }
 
+    /// Force add home page's balance load to start from 0.0
     #[cfg(not(tarpaulin_include))]
     fn reload_home_balance_load(&mut self) {
         // 0 for all methods + 1 more for the total balance column
@@ -1711,6 +1737,7 @@ impl<'a> InputKeyHandler<'a> {
         self.reload_home_balance_data();
     }
 
+    /// Reload activity data by fetching from the DB
     #[cfg(not(tarpaulin_include))]
     fn reload_activity_table(&mut self) {
         *self.activity_data = ActivityData::new(
@@ -1721,6 +1748,7 @@ impl<'a> InputKeyHandler<'a> {
         *self.activity_table = TableData::new(self.activity_data.get_txs());
     }
 
+    /// Move the cursor for text fields to the correct position, if it's misplaced
     #[cfg(not(tarpaulin_include))]
     fn go_correct_index(&mut self) {
         match self.page {
