@@ -103,6 +103,8 @@ pub fn add_tx_ui(
         *load_percentage = 1.0;
     }
 
+    let original_percentage = *load_percentage;
+
     if to_reset {
         *load_percentage = 0.0;
     }
@@ -115,12 +117,18 @@ pub fn add_tx_ui(
         match row_type {
             HomeRow::Balance => {
                 if to_reset {
-                    *last_balance = ongoing_balance.clone();
-                    *ongoing_balance = item[1..].to_owned();
+                    if *ongoing_balance != item[1..] {
+                        *last_balance = ongoing_balance.clone();
+                        *ongoing_balance = item[1..].to_owned();
+                    } else {
+                        *load_percentage = original_percentage;
+                    }
                 }
             }
             HomeRow::Changes => {
-                if to_reset {
+                // If balance changes only then changes part will change.
+                // if to keep on maintain the load percentage, it was already done in the previous loop
+                if to_reset && *ongoing_changes != item[1..] {
                     *last_changes = ongoing_changes.clone();
                     *ongoing_changes = item[1..].to_owned();
                 }
