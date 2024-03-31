@@ -416,6 +416,7 @@ impl<'a> InputKeyHandler<'a> {
             self.add_tx_data.add_tx_status(
                 "Info: Entering Transaction edit mode. Press C to reset.".to_string(),
             );
+            self.reload_add_tx_balance_load();
         }
     }
 
@@ -887,6 +888,7 @@ impl<'a> InputKeyHandler<'a> {
                 );
                 *self.page = CurrentUi::AddTx;
             }
+            self.reload_add_tx_balance_load();
         }
     }
 
