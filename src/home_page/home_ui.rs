@@ -137,9 +137,7 @@ pub fn home_ui(
         *load_percentage = 1.0;
     }
 
-    if to_reset {
-        *load_percentage = 0.0;
-    }
+    let mut discrepancy_exists = false;
 
     // go through all data of the Balance widget and style it as necessary
     let bal_data = balance.iter().map(|item| {
@@ -148,44 +146,85 @@ pub fn home_ui(
         let row_type = HomeRow::get_row(item);
         let mut index = 0;
 
+        // Check all the row types
+        // If `to_rest` is true, it means a key was pressed which may have an impact on the shown data
+        // If it's true, if current data that is being shown and the new data to be shown is the same
+        // update the last_ var data with the current data
+        // Example went from month 5 to 6, last_ var will contain 5'th months data. If going from 6 to 5, then 6'th data
+        // If not the same, that means there were data changes so
+        // Update ongoing data that is to be shown, along with last data that is being shown before the update
         match row_type {
             HomeRow::Balance => {
                 if to_reset {
-                    *last_balance = ongoing_balance.clone();
-                    *ongoing_balance = item[1..].to_owned();
+                    if *ongoing_balance != item[1..] {
+                        *last_balance = ongoing_balance.clone();
+                        *ongoing_balance = item[1..].to_owned();
+                        discrepancy_exists = true;
+                    } else {
+                        *last_balance = ongoing_balance.clone();
+                    }
                 }
             }
             HomeRow::Changes => {
                 if to_reset {
-                    *last_changes = ongoing_changes.clone();
-                    *ongoing_changes = item[1..].to_owned();
+                    if *ongoing_changes != item[1..] {
+                        *last_changes = ongoing_changes.clone();
+                        *ongoing_changes = item[1..].to_owned();
+                        discrepancy_exists = true;
+                    } else {
+                        *last_changes = ongoing_changes.clone();
+                    }
                 }
             }
             HomeRow::Income => {
                 if to_reset {
-                    *last_income = ongoing_income.clone();
-                    *ongoing_income = item[1..].to_owned();
+                    if *ongoing_income != item[1..] {
+                        *last_income = ongoing_income.clone();
+                        *ongoing_income = item[1..].to_owned();
+                        discrepancy_exists = true;
+                    } else {
+                        *last_income = ongoing_income.clone();
+                    }
                 }
             }
             HomeRow::Expense => {
                 if to_reset {
-                    *last_expense = ongoing_expense.clone();
-                    *ongoing_expense = item[1..].to_owned();
+                    if *ongoing_expense != item[1..] {
+                        *last_expense = ongoing_expense.clone();
+                        *ongoing_expense = item[1..].to_owned();
+                        discrepancy_exists = true;
+                    } else {
+                        *last_expense = ongoing_expense.clone();
+                    }
                 }
             }
             HomeRow::DailyIncome => {
                 if to_reset {
-                    *daily_last_income = daily_ongoing_income.clone();
-                    *daily_ongoing_income = item[1..].to_owned();
+                    if *daily_ongoing_income != item[1..] {
+                        *daily_last_income = daily_ongoing_income.clone();
+                        *daily_ongoing_income = item[1..].to_owned();
+                        discrepancy_exists = true;
+                    } else {
+                        *daily_last_income = daily_ongoing_income.clone();
+                    }
                 }
             }
             HomeRow::DailyExpense => {
                 if to_reset {
-                    *daily_last_expense = daily_ongoing_expense.clone();
-                    *daily_ongoing_expense = item[1..].to_owned();
+                    if *daily_ongoing_expense != item[1..] {
+                        *daily_last_expense = daily_ongoing_expense.clone();
+                        *daily_ongoing_expense = item[1..].to_owned();
+                        discrepancy_exists = true;
+                    } else {
+                        *daily_last_expense = daily_ongoing_expense.clone();
+                    }
                 }
             }
             HomeRow::TopRow => {}
+        }
+
+        if to_reset && discrepancy_exists {
+            *load_percentage = 0.0;
         }
 
         let cells = item.iter().map(|c| {
@@ -259,6 +298,12 @@ pub fn home_ui(
                     actual_data - last_data
                 };
 
+                let load_difference = if *load_data > actual_data {
+                    *load_data - actual_data
+                } else {
+                    actual_data - *load_data
+                };
+
                 index += 1;
 
                 // If going from 0 to positive number, we add the load percentage % amount from the actual amount that is to be shown
@@ -274,6 +319,43 @@ pub fn home_ui(
                     match row_type {
                         HomeRow::TopRow => unreachable!(),
                         _ => *load_data = last_data - (difference * *load_percentage),
+                    }
+                } else {
+                    // If we are here it means an interaction happened before the previous load percentage could reach 100%
+                    // This is a fallback option and won't be 100% similar to normal animation
+                    // Instead of keeping on adding/reducing the same amount each frame load by calculating the difference between
+                    // the actual data the last data, we will find the difference by calculating different between the load amount
+                    // or the amount that is being shown in the UI in this frame load and the actual data.
+                    //
+                    // Unlike normal animation, this is non-linear. Example actual data 1000, load data 0.
+                    // First frame load (1000 - 0) * 0.004 = 4. So load data would be 4
+                    // Second frame load (1000 - 4) * 0.008 = 7.968. Load data would be 4 + 7.968 = 11.968
+                    //
+                    // Difference will continue to be higher and higher until a certain point then it will start going down
+                    // Number animation difference will be noticeable compared with normal animation
+                    if load_difference != 0.0 {
+                        match row_type {
+                            HomeRow::TopRow => unreachable!(),
+                            _ => {
+                                if actual_data > *load_data {
+                                    match row_type {
+                                        HomeRow::TopRow => unreachable!(),
+                                        _ => {
+                                            *load_data =
+                                                *load_data + (load_difference * *load_percentage)
+                                        }
+                                    }
+                                } else if *load_data > actual_data {
+                                    match row_type {
+                                        HomeRow::TopRow => unreachable!(),
+                                        _ => {
+                                            *load_data =
+                                                *load_data - (load_difference * *load_percentage)
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
