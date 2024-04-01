@@ -1,5 +1,5 @@
 use crossterm::event::poll;
-use crossterm::event::{self, Event};
+use crossterm::event::{self, Event, KeyEventKind};
 use ratatui::backend::Backend;
 use ratatui::layout::Constraint;
 use ratatui::style::Color;
@@ -361,6 +361,11 @@ pub fn start_app<B: Backend>(
 
         // if not inside one of the duration polling, wait for keypress
         if let Event::Key(key) = event::read().map_err(UiHandlingError::PollingError)? {
+            if key.kind != KeyEventKind::Press {
+                to_reset = false;
+                continue;
+            }
+
             let mut handler = InputKeyHandler::new(
                 key,
                 &mut page,
