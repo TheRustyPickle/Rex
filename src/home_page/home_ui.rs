@@ -157,66 +157,66 @@ pub fn home_ui(
             HomeRow::Balance => {
                 if to_reset {
                     if *ongoing_balance != item[1..] {
-                        *last_balance = ongoing_balance.clone();
-                        *ongoing_balance = item[1..].to_owned();
+                        last_balance.clone_from(ongoing_balance);
+                        item[1..].clone_into(ongoing_balance);
                         discrepancy_exists = true;
                     } else {
-                        *last_balance = ongoing_balance.clone();
+                        last_balance.clone_from(ongoing_balance);
                     }
                 }
             }
             HomeRow::Changes => {
                 if to_reset {
                     if *ongoing_changes != item[1..] {
-                        *last_changes = ongoing_changes.clone();
-                        *ongoing_changes = item[1..].to_owned();
+                        last_changes.clone_from(ongoing_changes);
+                        item[1..].clone_into(ongoing_changes);
                         discrepancy_exists = true;
                     } else {
-                        *last_changes = ongoing_changes.clone();
+                        last_changes.clone_from(ongoing_changes);
                     }
                 }
             }
             HomeRow::Income => {
                 if to_reset {
                     if *ongoing_income != item[1..] {
-                        *last_income = ongoing_income.clone();
-                        *ongoing_income = item[1..].to_owned();
+                        last_income.clone_from(ongoing_income);
+                        item[1..].clone_into(ongoing_income);
                         discrepancy_exists = true;
                     } else {
-                        *last_income = ongoing_income.clone();
+                        last_income.clone_from(ongoing_income);
                     }
                 }
             }
             HomeRow::Expense => {
                 if to_reset {
                     if *ongoing_expense != item[1..] {
-                        *last_expense = ongoing_expense.clone();
-                        *ongoing_expense = item[1..].to_owned();
+                        last_expense.clone_from(ongoing_expense);
+                        item[1..].clone_into(ongoing_expense);
                         discrepancy_exists = true;
                     } else {
-                        *last_expense = ongoing_expense.clone();
+                        last_expense.clone_from(ongoing_expense);
                     }
                 }
             }
             HomeRow::DailyIncome => {
                 if to_reset {
                     if *daily_ongoing_income != item[1..] {
-                        *daily_last_income = daily_ongoing_income.clone();
-                        *daily_ongoing_income = item[1..].to_owned();
+                        daily_last_income.clone_from(daily_ongoing_income);
+                        item[1..].clone_into(daily_ongoing_income);
                         discrepancy_exists = true;
                     } else {
-                        *daily_last_income = daily_ongoing_income.clone();
+                        daily_last_income.clone_from(daily_ongoing_income);
                     }
                 }
             }
             HomeRow::DailyExpense => {
                 if to_reset {
                     if *daily_ongoing_expense != item[1..] {
-                        *daily_last_expense = daily_ongoing_expense.clone();
-                        *daily_ongoing_expense = item[1..].to_owned();
+                        daily_last_expense.clone_from(daily_ongoing_expense);
+                        item[1..].clone_into(daily_ongoing_expense);
                         discrepancy_exists = true;
                     } else {
-                        *daily_last_expense = daily_ongoing_expense.clone();
+                        daily_last_expense.clone_from(daily_ongoing_expense);
                     }
                 }
             }
@@ -341,16 +341,14 @@ pub fn home_ui(
                                     match row_type {
                                         HomeRow::TopRow => unreachable!(),
                                         _ => {
-                                            *load_data =
-                                                *load_data + (load_difference * *load_percentage)
+                                            *load_data += load_difference * *load_percentage
                                         }
                                     }
                                 } else if *load_data > actual_data {
                                     match row_type {
                                         HomeRow::TopRow => unreachable!(),
                                         _ => {
-                                            *load_data =
-                                                *load_data - (load_difference * *load_percentage)
+                                            *load_data -= load_difference * *load_percentage
                                         }
                                     }
                                 }
