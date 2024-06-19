@@ -10,7 +10,10 @@ use std::collections::HashMap;
 
 use crate::chart_page::ChartData;
 use crate::page_handler::{ChartTab, IndexedData, BACKGROUND, BOX, SELECTED};
-use crate::utility::{create_tab, create_tab_activation, get_all_tx_methods, main_block};
+use crate::utility::{
+    create_tab, create_tab_activation, get_all_tx_methods, get_all_tx_methods_cumulative,
+    main_block,
+};
 
 /// Creates the balance chart from the transactions
 #[cfg(not(tarpaulin_include))]
@@ -96,6 +99,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     );
 
     let all_tx_methods = get_all_tx_methods(conn);
+    let all_tx_methods_cumulative = get_all_tx_methods_cumulative(conn);
 
     // a vector containing another vector vec![X, Y] with coordinate of where to render chart points
     let mut datasets: Vec<Vec<(f64, f64)>> = Vec::new();
@@ -103,7 +107,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
 
     // adding default initial value if no data to load
     if all_txs.is_empty() {
-        for _i in &all_tx_methods {
+        for _i in &all_tx_methods_cumulative {
             datasets.push(vec![(0.0, 0.0)]);
             last_balances.push(0.0);
         }
@@ -195,14 +199,22 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
                 // if no tx exists in a date, data from last_balances/previous valid date is used to compensate for it
                 last_balances = Vec::new();
 
-                for method_index in 0..all_tx_methods.len() {
+                let mut cumulative_balance = 0.0;
+
+                for method_index in 0..all_tx_methods_cumulative.len() {
                     // keep track of the highest and the lowest point of the balance
-                    let current_balance = current_balances[method_index].parse::<f64>().unwrap();
+                    let current_balance = if method_index != all_tx_methods.len() {
+                        let balance = current_balances[method_index].parse::<f64>().unwrap();
+                        cumulative_balance += balance;
+                        balance
+                    } else {
+                        cumulative_balance
+                    };
 
                     // We will not consider the highest/lowest balance if the method is currently deactivated on chart
                     // We can't directly skip it because the dataset vector expects something in the index of this method
                     // We will have the data but it just won't be shown on the chart
-                    if chart_activated_methods[&all_tx_methods[method_index]] {
+                    if chart_activated_methods[&all_tx_methods_cumulative[method_index]] {
                         if current_balance > highest_balance {
                             highest_balance = current_balance;
                         } else if current_balance < lowest_balance {
@@ -233,6 +245,29 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
                     }
                 }
 
+                // let target_index = all_tx_methods.len();
+                //
+                // if to_add_again {
+                //     // if to_add_again is true, means in the last loop, the date and the current date was the same
+                //     // as the date is the same, the data needs to be merged thus using the same x y point in the chart.
+                //     // pop the last one added and that to last_balance. If the next date is the same,
+                //     // last_balance will be used to keep on merging the data.
+                //
+                //     let (position, _balance) = datasets[target_index].pop().unwrap();
+                //     let to_push = vec![(position, cumulative_balance)];
+                //     datasets[target_index].extend(to_push);
+                //     last_balances.push(cumulative_balance);
+                // } else {
+                //     let to_push = vec![(current_axis, cumulative_balance)];
+                //
+                //     if datasets.get(target_index).is_some() {
+                //         datasets[target_index].extend(to_push);
+                //     } else {
+                //         datasets.push(to_push);
+                //     }
+                //
+                //     last_balances.push(cumulative_balance);
+                // }
                 if next_date == checking_date {
                     // the axis won't move if the next date is the same.
                     to_add_again = true;
@@ -275,8 +310,8 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     }
     // add a 10% extra value to the highest and the lowest balance
     // so the chart can properly render
-    highest_balance += highest_balance * 10.0 / 100.0;
-    lowest_balance -= lowest_balance * 10.0 / 100.0;
+    highest_balance += highest_balance * 5.0 / 100.0;
+    lowest_balance -= lowest_balance * 5.0 / 100.0;
 
     let diff = (highest_balance - lowest_balance) / 10.0;
 
@@ -306,19 +341,19 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     let mut final_dataset = vec![];
 
     // loop through the data that was added for each tx_method  and turn them into chart data
-    for i in 0..all_tx_methods.len() {
+    for i in 0..all_tx_methods_cumulative.len() {
         // run out of colors = cyan default
         if color_list.is_empty() {
             color_list.push(Color::Cyan);
         }
 
-        if !chart_activated_methods[&all_tx_methods[i]] {
+        if !chart_activated_methods[&all_tx_methods_cumulative[i]] {
             continue;
         }
 
         final_dataset.push(
             Dataset::default()
-                .name(all_tx_methods[i].clone())
+                .name(all_tx_methods_cumulative[i].clone())
                 .marker(Marker::Braille)
                 .graph_type(GraphType::Line)
                 .style(

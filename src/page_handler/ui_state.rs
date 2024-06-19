@@ -5,7 +5,7 @@ use rusqlite::Connection;
 use std::path::PathBuf;
 
 use crate::db::{MODES, MONTHS, YEARS};
-use crate::utility::get_all_tx_methods;
+use crate::utility::{get_all_tx_methods, get_all_tx_methods_cumulative};
 
 /// The struct stores all transaction data for the Transaction widget
 /// and creates an index to keep track of which transactions row is selected
@@ -97,6 +97,13 @@ impl IndexedData {
     pub fn new_tx_methods(conn: &Connection) -> Self {
         IndexedData {
             titles: get_all_tx_methods(conn),
+            index: 0,
+        }
+    }
+
+    pub fn new_tx_methods_cumulative(conn: &Connection) -> Self {
+        IndexedData {
+            titles: get_all_tx_methods_cumulative(conn),
             index: 0,
         }
     }
