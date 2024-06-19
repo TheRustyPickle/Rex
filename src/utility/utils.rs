@@ -48,6 +48,22 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
     data
 }
 
+pub fn get_all_tx_methods_cumulative(conn: &Connection) -> Vec<String> {
+    // returns all transaction methods added to the database
+    let column_names = conn
+        .prepare("SELECT * FROM balance_all")
+        .expect("could not prepare statement");
+
+    let mut data: Vec<String> = column_names
+        .column_names()
+        .iter()
+        .map(ToString::to_string)
+        .collect();
+    data.remove(0);
+    data.push("Cumulative".to_string());
+    data
+}
+
 /// Returns all unique tags from the db
 pub fn get_all_tags(conn: &Connection) -> Vec<String> {
     let mut query = conn
