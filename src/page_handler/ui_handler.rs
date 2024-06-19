@@ -27,7 +27,7 @@ use crate::popup_page::PopupData;
 use crate::search_page::search_ui;
 use crate::summary_page::{summary_ui, SummaryData};
 use crate::tx_handler::TxData;
-use crate::utility::get_all_tx_methods;
+use crate::utility::{get_all_tx_methods, get_all_tx_methods_cumulative};
 
 pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
 pub const TEXT: Color = Color::Rgb(153, 78, 236);
@@ -59,7 +59,7 @@ pub fn start_app<B: Backend>(
     // contains the chart page mode selection list that is indexed
     let mut chart_modes = IndexedData::new_modes();
     // contains the chart page tx method selection list that is indexed
-    let mut chart_tx_methods = IndexedData::new_tx_methods(conn);
+    let mut chart_tx_methods = IndexedData::new_tx_methods_cumulative(conn);
 
     // contains the summary page month list that is indexed
     let mut summary_months = IndexedData::new_monthly();
@@ -186,7 +186,7 @@ pub fn start_app<B: Backend>(
     let mut daily_ongoing_expense = Vec::new();
 
     // Contains whether in the chart whether a tx method is activated or not
-    let mut chart_activated_methods = get_all_tx_methods(conn)
+    let mut chart_activated_methods = get_all_tx_methods_cumulative(conn)
         .into_iter()
         .map(|s| (s, true))
         .collect();
@@ -331,7 +331,7 @@ pub fn start_app<B: Backend>(
             CurrentUi::Initial => {
                 // Initial page will loop indefinitely to animate the text
                 if !poll(Duration::from_millis(40)).map_err(UiHandlingError::PollingError)? {
-                    starter_index = (starter_index + 1) % 28;
+                    starter_index = (starter_index + 1) % 72;
                     continue;
                 }
             }

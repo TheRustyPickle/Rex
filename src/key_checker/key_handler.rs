@@ -14,8 +14,8 @@ use crate::page_handler::{
 use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
 use crate::utility::{
-    add_new_activity, add_new_activity_tx, get_all_tx_methods, get_empty_changes, sort_table_data,
-    switch_tx_index,
+    add_new_activity, add_new_activity_tx, get_all_tx_methods, get_all_tx_methods_cumulative,
+    get_empty_changes, sort_table_data, switch_tx_index,
 };
 
 /// Stores all the data that is required to handle
@@ -1013,7 +1013,7 @@ impl<'a> InputKeyHandler<'a> {
         if !*self.chart_hidden_mode {
             if let ChartTab::TxMethods = self.chart_tab {
                 let selected_index = self.chart_tx_methods.index;
-                let all_tx_methods = get_all_tx_methods(self.conn);
+                let all_tx_methods = get_all_tx_methods_cumulative(self.conn);
 
                 let selected_method = &all_tx_methods[selected_index];
                 let activation_status = self
@@ -1730,12 +1730,12 @@ impl<'a> InputKeyHandler<'a> {
     fn reload_home_balance_load(&mut self) {
         // 0 for all methods + 1 more for the total balance column
         let balance_data = vec![String::from("0.0"); get_all_tx_methods(self.conn).len() + 1];
-        *self.ongoing_balance = balance_data.clone();
+        self.ongoing_balance.clone_from(&balance_data);
         *self.ongoing_changes = vec![String::from("0.0"); balance_data.len()];
-        *self.ongoing_expense = balance_data.clone();
-        *self.ongoing_income = balance_data.clone();
-        *self.daily_ongoing_expense = balance_data.clone();
-        *self.daily_ongoing_income = balance_data.clone();
+        self.ongoing_expense.clone_from(&balance_data.clone()) ;
+        self.ongoing_income.clone_from(&balance_data);
+        self.daily_ongoing_expense.clone_from(&balance_data);
+        self.daily_ongoing_income.clone_from(&balance_data);
         self.reload_home_balance_data();
     }
 
@@ -1963,7 +1963,7 @@ impl<'a> InputKeyHandler<'a> {
     fn reload_add_tx_balance_load(&mut self) {
         // 0 for all methods + 1 more for the total balance column
         let ongoing_data = vec![String::from("0.0"); get_all_tx_methods(self.conn).len() + 1];
-        *self.ongoing_balance = ongoing_data.clone();
+        self.ongoing_balance.clone_from(&ongoing_data);
         *self.ongoing_changes = vec![String::from("0.0"); ongoing_data.len()];
         self.reload_add_tx_balance_data();
     }
