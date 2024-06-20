@@ -340,16 +340,12 @@ pub fn home_ui(
                                 if actual_data > *load_data {
                                     match row_type {
                                         HomeRow::TopRow => unreachable!(),
-                                        _ => {
-                                            *load_data += load_difference * *load_percentage
-                                        }
+                                        _ => *load_data += load_difference * *load_percentage,
                                     }
                                 } else if *load_data > actual_data {
                                     match row_type {
                                         HomeRow::TopRow => unreachable!(),
-                                        _ => {
-                                            *load_data -= load_difference * *load_percentage
-                                        }
+                                        _ => *load_data -= load_difference * *load_percentage,
                                     }
                                 }
                             }

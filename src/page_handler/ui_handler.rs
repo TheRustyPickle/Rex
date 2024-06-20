@@ -331,7 +331,7 @@ pub fn start_app<B: Backend>(
             CurrentUi::Initial => {
                 // Initial page will loop indefinitely to animate the text
                 if !poll(Duration::from_millis(40)).map_err(UiHandlingError::PollingError)? {
-                    starter_index = (starter_index + 1) % 72;
+                    starter_index = (starter_index + 1) % 27;
                     continue;
                 }
             }
