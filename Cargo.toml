@@ -23,14 +23,14 @@ bench = false
 [dependencies]
 crossterm = "0.27.0"
 rusqlite = { version = "0.31.0", features = ["bundled"] }
-chrono = "0.4.37"
-open = "5.1.2"
+chrono = "0.4.38"
+open = "5.1.4"
 atty = "0.2.14"
-reqwest = { version = "0.12.2", features = ["blocking", "json"] }
-serde = { version = "1.0.197", features = ["derive"]}
+reqwest = { version = "0.12.5", features = ["blocking", "json"] }
+serde = { version = "1.0.203", features = ["derive"]}
 dirs = "5.0.1"
 thousands = "0.2.0"
-semver = "1.0.22"
-ratatui = "0.26.1"
-strsim = "0.11.0"
-serde_json = "1.0.115"
+semver = "1.0.23"
+ratatui = "0.26.3"
+strsim = "0.11.1"
+serde_json = "1.0.117"
