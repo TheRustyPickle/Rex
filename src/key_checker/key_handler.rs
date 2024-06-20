@@ -1732,7 +1732,7 @@ impl<'a> InputKeyHandler<'a> {
         let balance_data = vec![String::from("0.0"); get_all_tx_methods(self.conn).len() + 1];
         self.ongoing_balance.clone_from(&balance_data);
         *self.ongoing_changes = vec![String::from("0.0"); balance_data.len()];
-        self.ongoing_expense.clone_from(&balance_data.clone()) ;
+        self.ongoing_expense.clone_from(&balance_data.clone());
         self.ongoing_income.clone_from(&balance_data);
         self.daily_ongoing_expense.clone_from(&balance_data);
         self.daily_ongoing_income.clone_from(&balance_data);

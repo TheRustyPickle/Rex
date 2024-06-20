@@ -1,3 +1,4 @@
+use reqwest::Error;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -12,12 +13,11 @@ struct GithubRelease {
 
 /// Uses Github API to get the latest release version number to check if the current version matches with it.
 #[cfg(not(tarpaulin_include))]
-pub fn check_version() -> Result<Option<Vec<String>>, reqwest::Error> {
+pub fn check_version() -> Result<Option<Vec<String>>, Error> {
     let current_version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
-    let agent = "Rex";
 
     let client = reqwest::blocking::Client::builder()
-        .user_agent(agent)
+        .user_agent("Rex")
         .timeout(Duration::from_secs(2))
         .build()?;
 
