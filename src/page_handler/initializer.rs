@@ -23,8 +23,14 @@ pub fn initialize_app(
     original_db_path: &PathBuf,
     original_dir: &PathBuf,
 ) -> Result<(), Box<dyn Error>> {
-    let new_version_available = check_version()?;
+    let new_version = check_version();
 
+    let new_version_available = if let Ok(version) = new_version {
+        version
+    } else {
+        // Failed to fetch from github api
+        None
+    };
     // If is not terminal, try to start a terminal otherwise create an error.txt file with the error message
     if !atty::is(Stream::Stdout) {
         if let Err(err) = start_terminal(original_dir.to_str().unwrap()) {
