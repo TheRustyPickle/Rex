@@ -14,14 +14,14 @@ fn create_test_db(file_name: &str) -> Connection {
     }
 
     let mut conn = Connection::open(file_name).unwrap();
-    create_db(&vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
     conn
 }
 
 #[test]
 fn check_last_tx_id_1() {
     let file_name = "last_tx_id_1.sqlite";
-    let conn = create_test_db(&file_name);
+    let conn = create_test_db(file_name);
 
     let data = get_last_tx_id(&conn);
     let expected_data: sqlResult<i32> = Err(rusqlite::Error::QueryReturnedNoRows);
@@ -35,7 +35,7 @@ fn check_last_tx_id_1() {
 #[test]
 fn check_last_tx_id_2() {
     let file_name = "last_tx_id_2.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
 
     add_tx(
         "2022-09-19",
@@ -61,7 +61,7 @@ fn check_last_tx_id_2() {
 #[test]
 fn check_getting_all_tx_1() {
     let file_name = "getting_tx_1.sqlite";
-    let conn = create_test_db(&file_name);
+    let conn = create_test_db(file_name);
 
     let data = get_all_txs(&conn, 6, 0);
     let expected_data = (Vec::new(), Vec::new(), Vec::new());
@@ -75,7 +75,7 @@ fn check_getting_all_tx_1() {
 #[test]
 fn check_getting_all_tx_2() {
     let file_name = "getting_tx_2.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
 
     add_tx(
         "2022-07-19",
@@ -264,7 +264,7 @@ fn check_getting_all_tx_2() {
 
 fn check_tx_columns() {
     let file_name = "tx_columns.sqlite";
-    let conn = create_test_db(&file_name);
+    let conn = create_test_db(file_name);
 
     let columns = get_all_tx_columns(&conn);
     let expected_data = vec![

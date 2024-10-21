@@ -21,16 +21,23 @@ test = false
 bench = false
 
 [dependencies]
-crossterm = "0.27.0"
-rusqlite = { version = "0.31.0", features = ["bundled"] }
+crossterm = "0.28.1"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
 chrono = "0.4.38"
-open = "5.1.4"
+open = "5.3.0"
 atty = "0.2.14"
-reqwest = { version = "0.12.5", features = ["blocking", "json"] }
-serde = { version = "1.0.203", features = ["derive"]}
+reqwest = { version = "0.12.8", features = ["blocking", "json"] }
+serde = { version = "1.0.210", features = ["derive"] }
 dirs = "5.0.1"
 thousands = "0.2.0"
 semver = "1.0.23"
-ratatui = "0.26.3"
+ratatui = "0.29.0"
 strsim = "0.11.1"
-serde_json = "1.0.117"
+serde_json = "1.0.132"
+
+[lints.rust]
+unsafe_code = "forbid"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
+
+[lints.clippy]
+too_many_arguments = {level = "allow"}

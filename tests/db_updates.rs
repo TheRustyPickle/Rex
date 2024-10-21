@@ -48,7 +48,7 @@ fn check_tags_migration() {
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
-    assert_eq!(old_columns.contains(&"tags".to_string()), false);
+    assert!(!old_columns.contains(&"tags".to_string()));
     assert_eq!(new_columns, expected_columns);
 }
 
@@ -68,7 +68,8 @@ fn check_balance_migration() {
     )
     .unwrap();
 
-    let query = format!(r#"INSERT INTO balance_all ("test1", "test 2") VALUES ("0.00", "0.00")"#);
+    let query =
+        r#"INSERT INTO balance_all ("test1", "test 2") VALUES ("0.00", "0.00")"#.to_string();
     for _i in 0..49 {
         conn.execute(&query, []).unwrap();
     }
@@ -88,7 +89,7 @@ fn check_balance_migration() {
         })
         .unwrap();
 
-    let old_db_status = check_old_balance_sql(&mut conn);
+    let old_db_status = check_old_balance_sql(&conn);
     let old_last_balance_id = get_last_balance_id(&conn).unwrap();
 
     update_balance_type(&mut conn).unwrap();
@@ -101,20 +102,20 @@ fn check_balance_migration() {
         })
         .unwrap();
 
-    let db_status = check_old_balance_sql(&mut conn);
+    let db_status = check_old_balance_sql(&conn);
     let last_balance_id = get_last_balance_id(&conn).unwrap();
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
-    assert_eq!(old_db_status, true);
+    assert!(old_db_status);
     assert_eq!(old_last_balance_id, 49);
     assert_eq!(
         old_last_balances,
         vec!["200.19".to_string(), "159.19".to_string()]
     );
 
-    assert_eq!(db_status, false);
+    assert!(!db_status);
     assert_eq!(last_balance_id, 193);
     assert_eq!(
         last_balances,

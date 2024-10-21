@@ -20,7 +20,7 @@ impl ActivityDetails {
     ) -> Self {
         ActivityDetails {
             created_on: date,
-            activity_type: ActivityType::from_str(&activity_type),
+            activity_type: ActivityType::from_s(&activity_type),
             description,
             activity_num,
         }

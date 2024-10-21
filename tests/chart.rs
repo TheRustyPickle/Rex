@@ -15,7 +15,7 @@ fn create_test_db(file_name: &str) -> Connection {
     }
 
     let mut conn = Connection::open(file_name).unwrap();
-    create_db(&vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
     conn
 }
 
@@ -60,7 +60,7 @@ fn add_dummy_tx(conn: &mut Connection) {
 #[test]
 fn check_chart_date() {
     let file_name = "chart_data_1.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
     add_dummy_tx(&mut conn);
 
     let chart_data = ChartData::new(&conn);
@@ -122,7 +122,7 @@ fn check_chart_date() {
 #[test]
 fn check_chart_data() {
     let file_name = "chart_data_2.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
     add_dummy_tx(&mut conn);
 
     let chart_data = ChartData::new(&conn);

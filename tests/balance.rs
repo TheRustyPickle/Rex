@@ -15,7 +15,7 @@ fn create_test_db(file_name: &str) -> Connection {
     }
 
     let mut conn = Connection::open(file_name).unwrap();
-    create_db(&vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
     conn
 }
 
@@ -123,7 +123,7 @@ fn check_last_balances_3() {
 #[test]
 fn check_last_month_balance_1() {
     let file_name = "last_month_balance_1.sqlite";
-    let conn = create_test_db(&file_name);
+    let conn = create_test_db(file_name);
     let tx_methods = get_all_tx_methods(&conn);
 
     let data = get_last_time_balance(6, 1, &tx_methods, &conn);
@@ -138,7 +138,7 @@ fn check_last_month_balance_1() {
 #[test]
 fn check_last_balance_id() {
     let file_name = "last_balance_id.sqlite";
-    let conn = create_test_db(&file_name);
+    let conn = create_test_db(file_name);
 
     let data = get_last_balance_id(&conn);
     let expected_data: sqlResult<i32> = Ok(193);
@@ -152,7 +152,7 @@ fn check_last_balance_id() {
 #[test]
 fn check_last_month_balance_2() {
     let file_name = "last_month_balance_2.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
     let tx_methods = get_all_tx_methods(&conn);
 
     add_tx(
@@ -278,7 +278,7 @@ fn check_last_month_balance_2() {
 #[ignore]
 fn check_balance_all_day() {
     let file_name = "check_balance_all_day.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
     let tx_methods = get_all_tx_methods(&conn);
 
     let mut current_date = NaiveDate::parse_from_str("2022-01-01", "%Y-%m-%d").unwrap();
@@ -331,7 +331,7 @@ fn check_balance_all_day() {
 
     let expected_data_1 = vec!["0".to_string(), "0".to_string()];
     let mut expected_data_2 = HashMap::new();
-    for (i, _x) in &data_2 {
+    for i in data_2.keys() {
         expected_data_2.insert(i.to_string(), 0.0);
     }
 

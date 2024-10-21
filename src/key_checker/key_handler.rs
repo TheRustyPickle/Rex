@@ -397,9 +397,9 @@ impl<'a> InputKeyHandler<'a> {
                 );
                 *self.page = CurrentUi::AddTx;
             } else {
-                let splitted_method = target_data[2].split(" to ").collect::<Vec<&str>>();
-                let from_method = splitted_method[0];
-                let to_method = splitted_method[1];
+                let split_method = target_data[2].split(" to ").collect::<Vec<&str>>();
+                let from_method = split_method[0];
+                let to_method = split_method[1];
 
                 *self.add_tx_data = TxData::custom(
                     &target_data[0],
@@ -823,7 +823,9 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn handle_deletion_popup(&mut self) {
         match self.key.code {
-            KeyCode::Left | KeyCode::Right => *self.deletion_status = self.deletion_status.next(),
+            KeyCode::Left | KeyCode::Right => {
+                *self.deletion_status = self.deletion_status.get_next()
+            }
             KeyCode::Enter => match self.deletion_status {
                 DeletionStatus::Yes => match self.page {
                     CurrentUi::Home => {
@@ -845,7 +847,7 @@ impl<'a> InputKeyHandler<'a> {
     /// Cycles through available date types
     #[cfg(not(tarpaulin_include))]
     pub fn change_search_date_type(&mut self) {
-        *self.search_date_type = self.search_date_type.next();
+        *self.search_date_type = self.search_date_type.get_next();
         self.search_data.clear_date();
     }
 
@@ -872,9 +874,9 @@ impl<'a> InputKeyHandler<'a> {
                 );
                 *self.page = CurrentUi::AddTx;
             } else {
-                let splitted_method = target_data[2].split(" to ").collect::<Vec<&str>>();
-                let from_method = splitted_method[0];
-                let to_method = splitted_method[1];
+                let split_method = target_data[2].split(" to ").collect::<Vec<&str>>();
+                let from_method = split_method[0];
+                let to_method = split_method[1];
 
                 *self.add_tx_data = TxData::custom(
                     &target_data[0],
