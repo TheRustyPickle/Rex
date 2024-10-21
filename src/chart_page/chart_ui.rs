@@ -30,7 +30,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     chart_activated_methods: &HashMap<String, bool, S>,
     conn: &Connection,
 ) {
-    let size = f.size();
+    let size = f.area();
     let (all_txs, all_balance) = chart_data.get_data(mode_selection, months.index, years.index);
 
     // divide the terminal into various chunks to draw the interface. This is a vertical chunk
@@ -373,14 +373,20 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
                 .title(Span::styled("", Style::default().bg(BACKGROUND).fg(BOX)))
                 .style(Style::default().bg(BACKGROUND).fg(BOX))
                 .bounds([0.0, current_axis - 1.0])
-                .labels(date_labels.iter().cloned().map(Span::from).collect()),
+                .labels(
+                    date_labels
+                        .iter()
+                        .cloned()
+                        .map(Span::from)
+                        .collect::<Vec<_>>(),
+                ),
         )
         .y_axis(
             Axis::default()
                 .title(Span::styled("", Style::default().bg(BACKGROUND).fg(BOX)))
                 .style(Style::default().bg(BACKGROUND).fg(BOX))
                 .bounds([lowest_balance, highest_balance])
-                .labels(labels.iter().cloned().map(Span::from).collect()),
+                .labels(labels.iter().cloned().map(Span::from).collect::<Vec<_>>()),
         );
 
     match current_page {

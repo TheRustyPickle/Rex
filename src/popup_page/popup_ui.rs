@@ -12,7 +12,7 @@ use crate::utility::create_bolded_text;
 /// Creates a popup on top of a window with the given size, title and text attributes
 #[cfg(not(tarpaulin_include))]
 pub fn create_popup(f: &mut Frame, title: &str, text: &str, position: usize) {
-    let size = f.size();
+    let size = f.area();
     let x_value = 60;
     let y_value = 60;
 
@@ -67,7 +67,7 @@ pub fn create_popup(f: &mut Frame, title: &str, text: &str, position: usize) {
 pub fn create_deletion_popup(f: &mut Frame, deletion_status: &DeletionStatus) {
     let text = "Are you sure you want to delete this transaction?";
     let title = "TX Deletion";
-    let size = f.size();
+    let size = f.area();
 
     let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
     let text = create_bolded_text(text);

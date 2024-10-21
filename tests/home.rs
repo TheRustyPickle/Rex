@@ -14,7 +14,7 @@ fn create_test_db(file_name: &str) -> Connection {
     }
 
     let mut conn = Connection::open(file_name).unwrap();
-    create_db(&vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
     conn
 }
 
@@ -59,17 +59,17 @@ fn add_dummy_tx(conn: &mut Connection) {
 #[test]
 fn test_home_data() {
     let file_name = "home_data_1.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
     add_dummy_tx(&mut conn);
 
-    let tx_data_1 = TransactionData::new(1, 1, &mut conn);
-    let tx_data_2 = TransactionData::new(6, 1, &mut conn);
+    let tx_data_1 = TransactionData::new(1, 1, &conn);
+    let tx_data_2 = TransactionData::new(6, 1, &conn);
 
     let is_tx_empty_1 = tx_data_1.is_tx_empty();
     let is_tx_empty_2 = tx_data_2.is_tx_empty();
 
-    assert_eq!(is_tx_empty_1, true);
-    assert_eq!(is_tx_empty_2, false);
+    assert!(is_tx_empty_1);
+    assert!(!is_tx_empty_2);
 
     let all_tx_1 = tx_data_1.get_txs();
     let all_tx_2 = tx_data_2.get_txs();
@@ -189,9 +189,9 @@ fn test_home_data() {
 
     tx_data_2.del_tx(0, &mut conn).unwrap();
 
-    let tx_data_2 = TransactionData::new(6, 1, &mut conn);
+    let tx_data_2 = TransactionData::new(6, 1, &conn);
 
-    assert_eq!(tx_data_2.is_tx_empty(), false);
+    assert!(!tx_data_2.is_tx_empty());
     assert_eq!(tx_data_2.get_txs().len(), 1);
 
     let txs = get_all_txs(&conn, 6, 1);

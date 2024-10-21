@@ -37,6 +37,12 @@ impl AutoFiller for TxData {}
 
 impl FieldStepper for TxData {}
 
+impl Default for TxData {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TxData {
     /// Creates an instance of the struct however the date field is
     /// edited with the current local date of the device.
