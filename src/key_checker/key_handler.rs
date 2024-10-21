@@ -762,7 +762,10 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn clear_input(&mut self) {
         match self.page {
-            CurrentUi::AddTx => *self.add_tx_data = TxData::new(),
+            CurrentUi::AddTx => {
+                *self.add_tx_data = TxData::new();
+                self.reload_add_tx_balance_data();
+            }
             CurrentUi::Search => {
                 *self.search_data = TxData::new_empty();
                 self.reset_search_data();
@@ -1977,7 +1980,26 @@ impl<'a> InputKeyHandler<'a> {
         balance_data[0].extend(get_all_tx_methods(self.conn));
         balance_data[0].extend(vec!["Total".to_string()]);
 
-        balance_data.push(self.add_tx_data.generate_balance_section(self.conn));
+        let current_table_index = self.table.state.selected();
+
+        let (current_balance, current_changes) = match current_table_index {
+            // pass out the current index to get the necessary balance & changes data
+            Some(a) => (
+                self.all_tx_data.get_balance(a),
+                self.all_tx_data.get_changes(a),
+            ),
+            // if none selected, get empty changes + the absolute final balance
+            None => (
+                self.all_tx_data.get_last_balance(self.conn),
+                get_empty_changes(self.conn),
+            ),
+        };
+
+        balance_data.push(self.add_tx_data.generate_balance_section(
+            self.conn,
+            current_balance,
+            current_changes,
+        ));
         balance_data.push(self.add_tx_data.generate_changes_section(self.conn));
 
         *self.balance_data = balance_data;
