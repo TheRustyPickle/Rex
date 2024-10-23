@@ -397,9 +397,9 @@ impl<'a> InputKeyHandler<'a> {
                 );
                 *self.page = CurrentUi::AddTx;
             } else {
-                let splitted_method = target_data[2].split(" to ").collect::<Vec<&str>>();
-                let from_method = splitted_method[0];
-                let to_method = splitted_method[1];
+                let split_method = target_data[2].split(" to ").collect::<Vec<&str>>();
+                let from_method = split_method[0];
+                let to_method = split_method[1];
 
                 *self.add_tx_data = TxData::custom(
                     &target_data[0],
@@ -762,7 +762,10 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn clear_input(&mut self) {
         match self.page {
-            CurrentUi::AddTx => *self.add_tx_data = TxData::new(),
+            CurrentUi::AddTx => {
+                *self.add_tx_data = TxData::new();
+                self.reload_add_tx_balance_data();
+            }
             CurrentUi::Search => {
                 *self.search_data = TxData::new_empty();
                 self.reset_search_data();
@@ -823,7 +826,9 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn handle_deletion_popup(&mut self) {
         match self.key.code {
-            KeyCode::Left | KeyCode::Right => *self.deletion_status = self.deletion_status.next(),
+            KeyCode::Left | KeyCode::Right => {
+                *self.deletion_status = self.deletion_status.get_next()
+            }
             KeyCode::Enter => match self.deletion_status {
                 DeletionStatus::Yes => match self.page {
                     CurrentUi::Home => {
@@ -845,7 +850,7 @@ impl<'a> InputKeyHandler<'a> {
     /// Cycles through available date types
     #[cfg(not(tarpaulin_include))]
     pub fn change_search_date_type(&mut self) {
-        *self.search_date_type = self.search_date_type.next();
+        *self.search_date_type = self.search_date_type.get_next();
         self.search_data.clear_date();
     }
 
@@ -872,9 +877,9 @@ impl<'a> InputKeyHandler<'a> {
                 );
                 *self.page = CurrentUi::AddTx;
             } else {
-                let splitted_method = target_data[2].split(" to ").collect::<Vec<&str>>();
-                let from_method = splitted_method[0];
-                let to_method = splitted_method[1];
+                let split_method = target_data[2].split(" to ").collect::<Vec<&str>>();
+                let from_method = split_method[0];
+                let to_method = split_method[1];
 
                 *self.add_tx_data = TxData::custom(
                     &target_data[0],
@@ -1975,7 +1980,26 @@ impl<'a> InputKeyHandler<'a> {
         balance_data[0].extend(get_all_tx_methods(self.conn));
         balance_data[0].extend(vec!["Total".to_string()]);
 
-        balance_data.push(self.add_tx_data.generate_balance_section(self.conn));
+        let current_table_index = self.table.state.selected();
+
+        let (current_balance, current_changes) = match current_table_index {
+            // pass out the current index to get the necessary balance & changes data
+            Some(a) => (
+                self.all_tx_data.get_balance(a),
+                self.all_tx_data.get_changes(a),
+            ),
+            // if none selected, get empty changes + the absolute final balance
+            None => (
+                self.all_tx_data.get_last_balance(self.conn),
+                get_empty_changes(self.conn),
+            ),
+        };
+
+        balance_data.push(self.add_tx_data.generate_balance_section(
+            self.conn,
+            current_balance,
+            current_changes,
+        ));
         balance_data.push(self.add_tx_data.generate_changes_section(self.conn));
 
         *self.balance_data = balance_data;

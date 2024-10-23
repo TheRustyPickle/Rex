@@ -15,14 +15,14 @@ fn create_test_db(file_name: &str) -> Connection {
     }
 
     let mut conn = Connection::open(file_name).unwrap();
-    create_db(&vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
     conn
 }
 
 #[test]
 fn check_summary_data_1() {
     let file_name = "summary_data_1.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
 
     add_tx(
         "2022-08-19",
@@ -117,13 +117,13 @@ fn check_summary_data_1() {
         vec![
             vec![
                 "Peak Earning".to_string(),
-                "7-2023".to_string(),
+                "07-2023".to_string(),
                 "200.00".to_string(),
                 "-".to_string(),
             ],
             vec![
                 "Peak Expense".to_string(),
-                "7-2023".to_string(),
+                "07-2023".to_string(),
                 "100.00".to_string(),
                 "-".to_string(),
             ],
@@ -160,7 +160,7 @@ fn check_summary_data_1() {
 #[test]
 fn check_summary_data_2() {
     let file_name = "summary_data_2.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
 
     add_tx(
         "2022-08-19",
@@ -283,13 +283,13 @@ fn check_summary_data_2() {
         vec![
             vec![
                 "Peak Earning".to_string(),
-                "5-2022".to_string(),
+                "05-2022".to_string(),
                 "1000.00".to_string(),
                 "-".to_string(),
             ],
             vec![
                 "Peak Expense".to_string(),
-                "1-2022".to_string(),
+                "01-2022".to_string(),
                 "500.00".to_string(),
                 "-".to_string(),
             ],
@@ -326,7 +326,7 @@ fn check_summary_data_2() {
 #[test]
 fn check_summary_data_3() {
     let file_name = "summary_data_3.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
 
     add_tx(
         "2022-08-19",
@@ -438,13 +438,13 @@ fn check_summary_data_3() {
         vec![
             vec![
                 "Peak Earning".to_string(),
-                "7-2023".to_string(),
+                "07-2023".to_string(),
                 "100.00".to_string(),
                 "-".to_string(),
             ],
             vec![
                 "Peak Expense".to_string(),
-                "8-2022".to_string(),
+                "08-2022".to_string(),
                 "100.00".to_string(),
                 "-".to_string(),
             ],
@@ -481,7 +481,7 @@ fn check_summary_data_3() {
 #[test]
 fn check_summary_sorting() {
     let file_name = "summary_sorting.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
 
     add_tx(
         "2022-08-19",
@@ -531,45 +531,45 @@ fn check_summary_sorting() {
     let sorted_data_3 = sort_table_data(table_data.clone(), &SortingType::ByExpense);
 
     let expected_data_1 = vec![
-        vec!["Bank", "2000.00", "0.00", "80.00", "0.00"]
+        ["Bank", "2000.00", "0.00", "80.00", "0.00"]
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>(),
-        vec!["Car", "0.00", "1000.00", "0.00", "100.00"]
+        ["Car", "0.00", "1000.00", "0.00", "100.00"]
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>(),
-        vec!["Food", "500.00", "0.00", "20.00", "0.00"]
+        ["Food", "500.00", "0.00", "20.00", "0.00"]
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>(),
     ];
 
     let expected_data_2 = vec![
-        vec!["Bank", "2000.00", "0.00", "80.00", "0.00"]
+        ["Bank", "2000.00", "0.00", "80.00", "0.00"]
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>(),
-        vec!["Food", "500.00", "0.00", "20.00", "0.00"]
+        ["Food", "500.00", "0.00", "20.00", "0.00"]
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>(),
-        vec!["Car", "0.00", "1000.00", "0.00", "100.00"]
+        ["Car", "0.00", "1000.00", "0.00", "100.00"]
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>(),
     ];
 
     let expected_data_3 = vec![
-        vec!["Car", "0.00", "1000.00", "0.00", "100.00"]
+        ["Car", "0.00", "1000.00", "0.00", "100.00"]
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>(),
-        vec!["Bank", "2000.00", "0.00", "80.00", "0.00"]
+        ["Bank", "2000.00", "0.00", "80.00", "0.00"]
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>(),
-        vec!["Food", "500.00", "0.00", "20.00", "0.00"]
+        ["Food", "500.00", "0.00", "20.00", "0.00"]
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>(),

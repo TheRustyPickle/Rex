@@ -45,19 +45,19 @@ pub fn add_tx(
     // take 2025 and subtract 2022 = 3, means the year number 3
     // take 05 -> 5 -> 5th month. 5 + (3 * 12) =  the row of this month's balance on balance_all table
     // we are not subtracting 1 from month because balance_all table starts at 1
-    let splitted = date.split('-').collect::<Vec<&str>>();
+    let split_date = date.split('-').collect::<Vec<&str>>();
     let (year, month) = (
-        splitted[0].parse::<i32>().unwrap() - 2022,
-        splitted[1].parse::<i32>().unwrap(),
+        split_date[0].parse::<i32>().unwrap() - 2022,
+        split_date[1].parse::<i32>().unwrap(),
     );
 
     let mut from_method = String::new();
     let mut to_method = String::new();
 
     if tx_type == "Transfer" {
-        let splitted = tx_method.split(" to ").collect::<Vec<&str>>();
-        from_method = splitted[0].to_string();
-        to_method = splitted[1].to_string();
+        let split_method = tx_method.split(" to ").collect::<Vec<&str>>();
+        from_method = split_method[0].to_string();
+        to_method = split_method[1].to_string();
     }
 
     let target_id_num = month + (year * 12);

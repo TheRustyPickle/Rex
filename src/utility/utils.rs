@@ -74,8 +74,8 @@ pub fn get_all_tags(conn: &Connection) -> Vec<String> {
 
     if let Ok(rows) = query.query_map([], |row| {
         let row_data: String = row.get(0).unwrap();
-        let splitted = row_data.split(',');
-        let final_data = splitted
+        let split_tags = row_data.split(',');
+        let final_data = split_tags
             .into_iter()
             .map(|s| s.trim().to_string())
             .collect::<Vec<String>>();
@@ -104,8 +104,8 @@ pub fn get_all_details(conn: &Connection) -> Vec<String> {
 
     if let Ok(rows) = query.query_map([], |row| {
         let row_data: String = row.get(0).unwrap();
-        let splitted = row_data.split(',');
-        let final_data = splitted
+        let split_text = row_data.split(',');
+        let final_data = split_text
             .into_iter()
             .map(|s| s.trim().to_string())
             .collect::<Vec<String>>();
@@ -344,8 +344,8 @@ pub fn create_bolded_text(text: &str) -> Vec<Line> {
     let mut text_data = Vec::new();
 
     for line in text.split('\n') {
-        let splitted = line.split_once(':');
-        if let Some((first_part, rest)) = splitted {
+        let split_text = line.split_once(':');
+        if let Some((first_part, rest)) = split_text {
             let first_data =
                 Span::styled(first_part, Style::default().add_modifier(Modifier::BOLD));
             let rest_data = Span::from(format!(":{rest}"));
@@ -755,9 +755,9 @@ pub fn add_new_activity_tx<T: AsRef<str> + Display>(
     let id_num = &tx_data[6];
 
     let mut string_date = date.to_string();
-    let splitted_date = string_date.split('-').collect::<Vec<&str>>();
+    let split_date = string_date.split('-').collect::<Vec<&str>>();
 
-    if splitted_date[0].len() == 2 {
+    if split_date[0].len() == 2 {
         string_date = reverse_date_format(string_date);
     }
 

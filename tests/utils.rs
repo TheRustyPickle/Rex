@@ -15,7 +15,7 @@ fn create_test_db(file_name: &str) -> Connection {
     }
 
     let mut conn = Connection::open(file_name).unwrap();
-    create_db(&vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
     conn
 }
 
@@ -61,7 +61,7 @@ fn check_unique_tags() {
     .unwrap();
 
     let all_tags = get_all_tags(&conn);
-    let expected_data = vec!["Tag name", "Test tag", "test tag"]
+    let expected_data = ["Tag name", "Test tag", "test tag"]
         .iter()
         .map(|s| s.to_string())
         .collect::<Vec<String>>();
@@ -74,7 +74,7 @@ fn check_unique_tags() {
 
 #[test]
 fn check_restricted_test() {
-    let word_list = vec!["Unknown", "Words", "Testing"]
+    let word_list = ["Unknown", "Words", "Testing"]
         .iter()
         .map(|s| s.to_string())
         .collect::<Vec<String>>();
@@ -82,14 +82,14 @@ fn check_restricted_test() {
     let is_restricted = check_restricted("cancel", None);
     let not_restricted = check_restricted("some word", None);
 
-    assert_eq!(is_restricted, true);
-    assert_eq!(not_restricted, false);
+    assert!(is_restricted);
+    assert!(!not_restricted);
 
     let is_restricted = check_restricted("unknown", Some(&word_list));
     let not_restricted = check_restricted("some word", Some(&word_list));
 
-    assert_eq!(is_restricted, true);
-    assert_eq!(not_restricted, false);
+    assert!(is_restricted);
+    assert!(!not_restricted);
 }
 
 #[test]

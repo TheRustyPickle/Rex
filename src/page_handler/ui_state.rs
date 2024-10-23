@@ -417,7 +417,7 @@ pub enum DeletionStatus {
 
 impl DeletionStatus {
     #[cfg(not(tarpaulin_include))]
-    pub fn next(&mut self) -> Self {
+    pub fn get_next(&mut self) -> Self {
         match self {
             DeletionStatus::Yes => DeletionStatus::No,
             DeletionStatus::No => DeletionStatus::Yes,
@@ -433,7 +433,7 @@ pub enum DateType {
 
 impl DateType {
     #[cfg(not(tarpaulin_include))]
-    pub fn next(&mut self) -> Self {
+    pub fn get_next(&mut self) -> Self {
         match self {
             DateType::Exact => DateType::Monthly,
             DateType::Monthly => DateType::Yearly,
@@ -509,7 +509,7 @@ pub enum ActivityType {
 }
 
 impl ActivityType {
-    pub fn from_str(data: &str) -> Self {
+    pub fn from_s(data: &str) -> Self {
         match data {
             "Add TX" => Self::NewTX,
             "Edit TX" => Self::EditTX(None),

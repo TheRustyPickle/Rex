@@ -495,17 +495,26 @@ impl SummaryData {
 
         if current_monthly_earning > *largest_monthly_earning {
             *largest_monthly_earning = current_monthly_earning;
+            let mut string_month = (month + 1).to_string();
+            if string_month.len() == 1 {
+                string_month = format!("0{string_month}");
+            }
             *peak_earning = (
                 *largest_monthly_earning,
-                format!("{}-{}", month + 1, YEARS[year]),
+                format!("{string_month}-{}", YEARS[year]),
             );
         }
 
         if current_monthly_expense > *largest_monthly_expense {
             *largest_monthly_expense = current_monthly_expense;
+
+            let mut string_month = (month + 1).to_string();
+            if string_month.len() == 1 {
+                string_month = format!("0{string_month}");
+            }
             *peak_expense = (
                 *largest_monthly_expense,
-                format!("{}-{}", month + 1, YEARS[year]),
+                format!("{string_month}-{}", YEARS[year]),
             );
         }
     }

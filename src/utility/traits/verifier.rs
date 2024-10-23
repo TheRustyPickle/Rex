@@ -36,7 +36,7 @@ pub trait DataVerifier {
         // 0 = year
         // 1 = month
         // 2 = day
-        let splitted_date = user_date
+        let split_date = user_date
             .split('-')
             .map(ToString::to_string)
             .collect::<Vec<String>>();
@@ -44,19 +44,19 @@ pub trait DataVerifier {
         // if one part of the date is missing/extra, return unknown date
         match date_type {
             DateType::Exact => {
-                if splitted_date.len() != 3 {
+                if split_date.len() != 3 {
                     *user_date = "2022-01-01".to_string();
                     return VerifyingOutput::NotAccepted(NAType::InvalidDate);
                 }
             }
             DateType::Monthly => {
-                if splitted_date.len() != 2 {
+                if split_date.len() != 2 {
                     *user_date = "2022-01".to_string();
                     return VerifyingOutput::NotAccepted(NAType::InvalidDate);
                 }
             }
             DateType::Yearly => {
-                if splitted_date.len() != 1 {
+                if split_date.len() != 1 {
                     *user_date = "2022".to_string();
                     return VerifyingOutput::NotAccepted(NAType::InvalidDate);
                 }
@@ -66,16 +66,16 @@ pub trait DataVerifier {
         // Year is required for each date type so no need for option
         let (int_year, int_month, int_day): (u16, Option<u16>, Option<u16>) = match date_type {
             DateType::Exact => {
-                let Ok(year) = splitted_date[0].parse() else {
+                let Ok(year) = split_date[0].parse() else {
                     return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date));
                 };
-                let month = match splitted_date[1].parse() {
+                let month = match split_date[1].parse() {
                     Ok(v) => Some(v),
                     Err(_) => {
                         return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date))
                     }
                 };
-                let day = match splitted_date[2].parse() {
+                let day = match split_date[2].parse() {
                     Ok(v) => Some(v),
                     Err(_) => {
                         return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date))
@@ -84,10 +84,10 @@ pub trait DataVerifier {
                 (year, month, day)
             }
             DateType::Monthly => {
-                let Ok(year) = splitted_date[0].parse() else {
+                let Ok(year) = split_date[0].parse() else {
                     return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date));
                 };
-                let month = match splitted_date[1].parse() {
+                let month = match split_date[1].parse() {
                     Ok(v) => Some(v),
                     Err(_) => {
                         return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date))
@@ -96,7 +96,7 @@ pub trait DataVerifier {
                 (year, month, None)
             }
             DateType::Yearly => {
-                let Ok(year) = splitted_date[0].parse() else {
+                let Ok(year) = split_date[0].parse() else {
                     return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date));
                 };
                 (year, None, None)
@@ -105,28 +105,28 @@ pub trait DataVerifier {
 
         // checks if the year part length is 4. If not 4, turn the year to 2022 + the other character entered by the user
         // and return the new date
-        if splitted_date[0].len() != 4 {
-            match splitted_date[0].len().cmp(&4) {
+        if split_date[0].len() != 4 {
+            match split_date[0].len().cmp(&4) {
                 Ordering::Less => match date_type {
                     DateType::Exact => {
-                        *user_date = format!("2022-{}-{}", splitted_date[1], splitted_date[2]);
+                        *user_date = format!("2022-{}-{}", split_date[1], split_date[2]);
                     }
-                    DateType::Monthly => *user_date = format!("2022-{}", splitted_date[1]),
+                    DateType::Monthly => *user_date = format!("2022-{}", split_date[1]),
                     DateType::Yearly => *user_date = "2022".to_string(),
                 },
                 Ordering::Greater => match date_type {
                     DateType::Exact => {
                         *user_date = format!(
                             "{}-{}-{}",
-                            &splitted_date[0][..4],
-                            splitted_date[1],
-                            splitted_date[2]
+                            &split_date[0][..4],
+                            split_date[1],
+                            split_date[2]
                         );
                     }
                     DateType::Monthly => {
-                        *user_date = format!("{}-{}", &splitted_date[0][..4], splitted_date[1]);
+                        *user_date = format!("{}-{}", &split_date[0][..4], split_date[1]);
                     }
-                    DateType::Yearly => *user_date = splitted_date[0][..4].to_string(),
+                    DateType::Yearly => *user_date = split_date[0][..4].to_string(),
                 },
                 Ordering::Equal => {}
             }
@@ -136,15 +136,13 @@ pub trait DataVerifier {
         // and return the new date
         match date_type {
             DateType::Exact => {
-                if splitted_date[1].len() != 2 {
+                if split_date[1].len() != 2 {
                     let unwrapped_month = int_month.unwrap();
                     if unwrapped_month < 10 {
-                        *user_date = format!(
-                            "{}-0{unwrapped_month}-{}",
-                            splitted_date[0], splitted_date[2]
-                        );
+                        *user_date =
+                            format!("{}-0{unwrapped_month}-{}", split_date[0], split_date[2]);
                     } else if unwrapped_month > 12 {
-                        *user_date = format!("{}-12-{}", splitted_date[0], splitted_date[2]);
+                        *user_date = format!("{}-12-{}", split_date[0], split_date[2]);
                     }
 
                     return VerifyingOutput::NotAccepted(NAType::InvalidMonth);
@@ -152,11 +150,11 @@ pub trait DataVerifier {
             }
             DateType::Monthly => {
                 let unwrapped_month = int_month.unwrap();
-                if splitted_date[1].len() != 2 {
+                if split_date[1].len() != 2 {
                     if unwrapped_month < 10 {
-                        *user_date = format!("{}-0{unwrapped_month}", splitted_date[0]);
+                        *user_date = format!("{}-0{unwrapped_month}", split_date[0]);
                     } else if unwrapped_month > 12 {
-                        *user_date = format!("{}-12", splitted_date[0]);
+                        *user_date = format!("{}-12", split_date[0]);
                     }
 
                     return VerifyingOutput::NotAccepted(NAType::InvalidMonth);
@@ -169,12 +167,11 @@ pub trait DataVerifier {
         // and return the new date
         if let DateType::Exact = date_type {
             let unwrapped_day = int_day.unwrap();
-            if splitted_date[2].len() != 2 {
+            if split_date[2].len() != 2 {
                 if unwrapped_day < 10 {
-                    *user_date =
-                        format!("{}-{}-0{unwrapped_day}", splitted_date[0], splitted_date[1]);
+                    *user_date = format!("{}-{}-0{unwrapped_day}", split_date[0], split_date[1]);
                 } else if unwrapped_day > 31 {
-                    *user_date = format!("{}-{}-31", splitted_date[0], splitted_date[1]);
+                    *user_date = format!("{}-{}-31", split_date[0], split_date[1]);
                 }
 
                 return VerifyingOutput::NotAccepted(NAType::InvalidDay);
@@ -186,17 +183,17 @@ pub trait DataVerifier {
             if int_year < 2022 {
                 match date_type {
                     DateType::Exact => {
-                        *user_date = format!("2022-{}-{}", splitted_date[1], splitted_date[2]);
+                        *user_date = format!("2022-{}-{}", split_date[1], split_date[2]);
                     }
-                    DateType::Monthly => *user_date = format!("2022-{}", splitted_date[1]),
+                    DateType::Monthly => *user_date = format!("2022-{}", split_date[1]),
                     DateType::Yearly => *user_date = "2022".to_string(),
                 }
             } else if int_year > 2037 {
                 match date_type {
                     DateType::Exact => {
-                        *user_date = format!("2037-{}-{}", splitted_date[1], splitted_date[2]);
+                        *user_date = format!("2037-{}-{}", split_date[1], split_date[2]);
                     }
-                    DateType::Monthly => *user_date = format!("2037-{}", splitted_date[1]),
+                    DateType::Monthly => *user_date = format!("2037-{}", split_date[1]),
                     DateType::Yearly => *user_date = "2037".to_string(),
                 }
             }
@@ -210,9 +207,9 @@ pub trait DataVerifier {
                 let unwrapped_month = int_month.unwrap();
                 if !(1..=12).contains(&unwrapped_month) {
                     if unwrapped_month < 1 {
-                        *user_date = format!("{}-01-{}", splitted_date[0], splitted_date[2]);
+                        *user_date = format!("{}-01-{}", split_date[0], split_date[2]);
                     } else if unwrapped_month > 12 {
-                        *user_date = format!("{}-12-{}", splitted_date[0], splitted_date[2]);
+                        *user_date = format!("{}-12-{}", split_date[0], split_date[2]);
                     }
 
                     return VerifyingOutput::NotAccepted(NAType::MonthTooBig);
@@ -222,9 +219,9 @@ pub trait DataVerifier {
                 let unwrapped_month = int_month.unwrap();
                 if !(1..=12).contains(&unwrapped_month) {
                     if unwrapped_month < 1 {
-                        *user_date = format!("{}-01", splitted_date[0]);
+                        *user_date = format!("{}-01", split_date[0]);
                     } else if unwrapped_month > 12 {
-                        *user_date = format!("{}-12", splitted_date[0]);
+                        *user_date = format!("{}-12", split_date[0]);
                     }
 
                     return VerifyingOutput::NotAccepted(NAType::MonthTooBig);
@@ -238,9 +235,9 @@ pub trait DataVerifier {
             let unwrapped_day = int_day.unwrap();
             if !(1..=31).contains(&unwrapped_day) {
                 if unwrapped_day < 1 {
-                    *user_date = format!("{}-{}-01", splitted_date[0], splitted_date[1]);
+                    *user_date = format!("{}-{}-01", split_date[0], split_date[1]);
                 } else if unwrapped_day > 31 {
-                    *user_date = format!("{}-{}-31", splitted_date[0], splitted_date[1]);
+                    *user_date = format!("{}-{}-31", split_date[0], split_date[1]);
                 }
 
                 return VerifyingOutput::NotAccepted(NAType::DayTooBig);
@@ -412,12 +409,12 @@ pub trait DataVerifier {
 
         // checks if there is 2 number after the dot else add zero/s
         if user_amount.contains('.') {
-            let splitted = user_amount.split('.').collect::<Vec<&str>>();
+            let split_amount = user_amount.split('.').collect::<Vec<&str>>();
 
-            match splitted[1].len().cmp(&2) {
+            match split_amount[1].len().cmp(&2) {
                 Ordering::Less => *user_amount = format!("{user_amount}0"),
                 Ordering::Greater => {
-                    *user_amount = format!("{}.{}", splitted[0], &splitted[1][..2]);
+                    *user_amount = format!("{}.{}", split_amount[0], &split_amount[1][..2]);
                 }
                 Ordering::Equal => (),
             }
@@ -425,11 +422,11 @@ pub trait DataVerifier {
 
         // we can safely split now as previously we just added a dot + 2 numbers with the amount
         // and create the final value for the amount
-        let splitted_amount = user_amount.split('.').collect::<Vec<&str>>();
+        let split_amount = user_amount.split('.').collect::<Vec<&str>>();
 
         // limit max character to 10
-        if splitted_amount[0].len() > 10 {
-            *user_amount = format!("{}.{}", &splitted_amount[0][..10], splitted_amount[1]);
+        if split_amount[0].len() > 10 {
+            *user_amount = format!("{}.{}", &split_amount[0][..10], split_amount[1]);
         }
 
         VerifyingOutput::Accepted(AType::Amount)
@@ -440,6 +437,7 @@ pub trait DataVerifier {
     /// - The Transaction method exists on the database.
     /// - The Transaction method is empty
     /// - contains any extra spaces
+    ///
     /// if the Transaction is not found, matches each character with the available
     /// Transaction Methods and corrects to the best matching one.
 
@@ -497,13 +495,13 @@ pub trait DataVerifier {
     ///
     /// - All tags inserted is unique and is properly separated by commas
     fn verify_tags(&self, user_tag: &mut String) {
-        let mut splitted = user_tag.split(',').map(str::trim).collect::<Vec<&str>>();
-        splitted.retain(|s| !s.is_empty());
+        let mut split_tags = user_tag.split(',').map(str::trim).collect::<Vec<&str>>();
+        split_tags.retain(|s| !s.is_empty());
 
         let mut seen = HashSet::new();
         let mut unique = Vec::new();
 
-        for item in splitted {
+        for item in split_tags {
             if seen.insert(item) {
                 unique.push(item);
             }
@@ -521,13 +519,13 @@ pub trait DataVerifier {
             return VerifyingOutput::Nothing(AType::Tags);
         }
         let all_tags = get_all_tags(conn);
-        let mut splitted = user_tag.split(',').map(str::trim).collect::<Vec<&str>>();
-        splitted.retain(|s| !s.is_empty());
+        let mut split_tags = user_tag.split(',').map(str::trim).collect::<Vec<&str>>();
+        split_tags.retain(|s| !s.is_empty());
 
         let mut seen = HashSet::new();
         let mut unique = Vec::new();
 
-        for item in splitted {
+        for item in split_tags {
             if seen.insert(item) {
                 unique.push(item);
             }
