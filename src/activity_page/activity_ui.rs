@@ -75,7 +75,7 @@ pub fn activity_ui(
         ]
     };
 
-    let size = f.size();
+    let size = f.area();
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -173,7 +173,7 @@ pub fn activity_ui(
             if table_data.state.selected().is_some() {
                 activity_table_area = activity_table_area
                     .highlight_symbol(">> ")
-                    .highlight_style(Style::default().bg(SELECTED));
+                    .row_highlight_style(Style::default().bg(SELECTED));
             }
         }
     }

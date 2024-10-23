@@ -37,6 +37,12 @@ impl AutoFiller for TxData {}
 
 impl FieldStepper for TxData {}
 
+impl Default for TxData {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TxData {
     /// Creates an instance of the struct however the date field is
     /// edited with the current local date of the device.
@@ -304,12 +310,12 @@ impl TxData {
             TxTab::FromMethod => self.from_method = self.autofill.to_string(),
             TxTab::ToMethod => self.to_method = self.autofill.to_string(),
             TxTab::Tags => {
-                let mut splitted = self.tags.split(',').map(str::trim).collect::<Vec<&str>>();
+                let mut split_tags = self.tags.split(',').map(str::trim).collect::<Vec<&str>>();
 
-                splitted.pop().unwrap();
+                split_tags.pop().unwrap();
 
-                splitted.push(&self.autofill);
-                self.tags = splitted.join(", ");
+                split_tags.push(&self.autofill);
+                self.tags = split_tags.join(", ");
             }
             _ => {}
         }
@@ -877,10 +883,44 @@ impl TxData {
     }
 
     /// Generate Add Transaction page Balance section's balance data based on what fields are filled up
-    pub fn generate_balance_section(&self, conn: &Connection) -> Vec<String> {
+    pub fn generate_balance_section(
+        &self,
+        conn: &Connection,
+        mut current_balance: Vec<String>,
+        mut current_changes: Vec<String>,
+    ) -> Vec<String> {
         let mut balance_data = vec![String::from("Balance")];
 
-        let last_balance_data = get_last_balances(conn);
+        // If editing tx, it means we have data of the balance of the current selected row on the
+        // home page. In this case, instead of showing the absolute final balance, we will show the
+        // balance before the selected tx happened. So if any fields are modified, it will show
+        // what the balance will look like if the new balance is saved
+        let last_balance_data = if self.editing_tx {
+            let mut new_balance = Vec::new();
+            // First index is the text "Balance" and "Changes". Remove them
+            current_balance.remove(0);
+            current_changes.remove(0);
+            for (balance, change) in current_balance.iter().zip(current_changes.iter()) {
+                let income = if change.contains("↑") {
+                    true
+                } else if change.contains("↓") {
+                    false
+                } else {
+                    new_balance.push(balance.to_string());
+                    continue;
+                };
+                let change: f64 = change.replace("↑", "").replace("↓", "").parse().unwrap();
+                let balance: f64 = balance.parse().unwrap();
+                if income {
+                    new_balance.push(format!("{}", balance - change));
+                } else {
+                    new_balance.push(format!("{}", balance + change));
+                }
+            }
+            new_balance
+        } else {
+            get_last_balances(conn)
+        };
 
         if !self.generation_fields_exists() {
             let mut total = 0.0;

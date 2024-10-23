@@ -34,22 +34,22 @@ pub fn summary_ui(
     let mut summary_table_4 = TableData::new(summary_data_4);
     let mut method_table = TableData::new(method_data);
 
-    let size = f.size();
+    let size = f.area();
 
     let tag_header = if let SortingType::ByTags = summary_sort {
-        "Tags▼"
+        "Tags ↓"
     } else {
         "Tags"
     };
 
     let total_income_header = if let SortingType::ByIncome = summary_sort {
-        "Total Income▼"
+        "Total Income ↓"
     } else {
         "Total Income"
     };
 
     let total_expense_header = if let SortingType::ByExpense = summary_sort {
-        "Total Expense▼"
+        "Total Expense ↓"
     } else {
         "Total Expense"
     };
@@ -342,7 +342,7 @@ pub fn summary_ui(
         }
         SummaryTab::Table => {
             table_area = table_area
-                .highlight_style(Style::default().bg(SELECTED))
+                .row_highlight_style(Style::default().bg(SELECTED))
                 .highlight_symbol(">> ");
         }
     }

@@ -53,7 +53,7 @@ pub fn home_ui(
     conn: &Connection,
 ) {
     let all_methods = get_all_tx_methods(conn);
-    let size = f.size();
+    let size = f.area();
 
     // Used to highlight Changes on Balance section of Home Page
     let selected_style_income = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
@@ -408,11 +408,11 @@ pub fn home_ui(
             if let Some(a) = table.state.selected() {
                 table_area = table_area.highlight_symbol(">> ");
                 if table.items[a][4] == "Expense" {
-                    table_area = table_area.highlight_style(selected_style_expense);
+                    table_area = table_area.row_highlight_style(selected_style_expense);
                 } else if table.items[a][4] == "Income" {
-                    table_area = table_area.highlight_style(selected_style_income);
+                    table_area = table_area.row_highlight_style(selected_style_income);
                 } else if table.items[a][4] == "Transfer" {
-                    table_area = table_area.highlight_style(Style::default().bg(SELECTED));
+                    table_area = table_area.row_highlight_style(Style::default().bg(SELECTED));
                 }
             }
         }

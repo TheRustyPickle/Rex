@@ -25,12 +25,7 @@ pub fn initialize_app(
 ) -> Result<(), Box<dyn Error>> {
     let new_version = check_version();
 
-    let new_version_available = if let Ok(version) = new_version {
-        version
-    } else {
-        // Failed to fetch from github api
-        None
-    };
+    let new_version_available = new_version.unwrap_or_default();
     // If is not terminal, try to start a terminal otherwise create an error.txt file with the error message
     if !atty::is(Stream::Stdout) {
         if let Err(err) = start_terminal(original_dir.to_str().unwrap()) {

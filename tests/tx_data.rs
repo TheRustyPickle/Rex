@@ -15,7 +15,7 @@ fn create_test_db(file_name: &str) -> Connection {
     }
 
     let mut conn = Connection::open(file_name).unwrap();
-    create_db(&vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
     conn
 }
 
@@ -70,7 +70,7 @@ fn test_tx_data_1() {
     let expected_data = vec!["", "", "", "", "", "", "", ""];
     assert_eq!(tx_data.get_all_texts(), expected_data);
     assert_eq!(tx_data.get_tx_status(), &Vec::<String>::new());
-    assert_eq!(tx_data.check_all_empty(), true);
+    assert!(tx_data.check_all_empty());
 
     tx_data.add_tx_status("Some status".to_string());
 
@@ -104,7 +104,7 @@ fn test_tx_data_1() {
     assert_eq!(tx_data.get_tx_type(), TxType::IncomeExpense);
     assert_eq!(tx_data.get_tx_method(), "test1".to_string());
     assert!(tx_data.check_all_fields().is_none());
-    assert_eq!(tx_data.check_all_empty(), false);
+    assert!(!tx_data.check_all_empty());
 
     let current_index = tx_data.get_current_index();
 
@@ -225,7 +225,7 @@ fn test_tx_data_1() {
 #[test]
 fn test_tx_data_verifier() {
     let file_name = "tx_data_verifier.sqlite";
-    let conn = create_test_db(&file_name);
+    let conn = create_test_db(file_name);
 
     let mut tx_data = TxData::custom(
         "15-06-2023",
@@ -283,7 +283,7 @@ fn test_tx_data_verifier() {
 #[test]
 fn test_tx_data_stepper() {
     let file_name = "tx_data_stepper.sqlite";
-    let conn = create_test_db(&file_name);
+    let conn = create_test_db(file_name);
 
     let mut tx_data = TxData::custom(
         "15-06-2023",
@@ -334,7 +334,7 @@ fn test_tx_data_stepper() {
 #[test]
 fn tx_data_searching() {
     let file_name = "tx_data_searching_test.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
     let tx_data = TxData::new_empty();
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
@@ -342,7 +342,7 @@ fn tx_data_searching() {
 
     add_dummy_tx(&mut conn);
 
-    assert_eq!(tx_data.check_all_empty(), true);
+    assert!(tx_data.check_all_empty());
 
     let tx_data = TxData::custom("19-07-2023", "", "", "", "", "", "", 0);
 
@@ -356,7 +356,7 @@ fn tx_data_searching() {
 
     let mut tx_data = TxData::new_empty();
 
-    for i in vec!['2', '0', '2', '3'] {
+    for i in ['2', '0', '2', '3'] {
         tx_data.edit_date(Some(i))
     }
 
@@ -435,43 +435,43 @@ fn tx_data_searching() {
 fn tx_data_editing() {
     let mut tx_data = TxData::new_empty();
 
-    for i in vec!['2', '0', '2', '3', '-', '0', '7', '-', '0', '5'] {
+    for i in ['2', '0', '2', '3', '-', '0', '7', '-', '0', '5'] {
         tx_data.edit_date(Some(i))
     }
 
     tx_data.go_current_index(&TxTab::Details);
 
-    for i in vec!['S', 'o', 'm', 'e'] {
+    for i in ['S', 'o', 'm', 'e'] {
         tx_data.edit_details(Some(i))
     }
 
     tx_data.go_current_index(&TxTab::FromMethod);
 
-    for i in vec!['t', 'e', 's', 't', '1'] {
+    for i in ['t', 'e', 's', 't', '1'] {
         tx_data.edit_from_method(Some(i))
     }
 
     tx_data.go_current_index(&TxTab::Amount);
 
-    for i in vec!['2', '0', '2', '3'] {
+    for i in ['2', '0', '2', '3'] {
         tx_data.edit_amount(Some(i))
     }
 
     tx_data.go_current_index(&TxTab::TxType);
 
-    for i in vec!['E'] {
+    for i in ['E'] {
         tx_data.edit_tx_type(Some(i))
     }
 
     tx_data.go_current_index(&TxTab::ToMethod);
 
-    for i in vec!['t', 'e', 's', 't', ' ', '2'] {
+    for i in ['t', 'e', 's', 't', ' ', '2'] {
         tx_data.edit_to_method(Some(i))
     }
 
     tx_data.go_current_index(&TxTab::Tags);
 
-    for i in vec!['T', 'a', 'g'] {
+    for i in ['T', 'a', 'g'] {
         tx_data.edit_tags(Some(i))
     }
 
@@ -493,43 +493,43 @@ fn tx_data_editing() {
 
     tx_data.go_current_index(&TxTab::Date);
 
-    for _ in vec!['2', '0', '2', '3', '-', '0', '7', '-', '0', '5'] {
+    for _ in ['2', '0', '2', '3', '-', '0', '7', '-', '0', '5'] {
         tx_data.edit_date(None)
     }
 
     tx_data.go_current_index(&TxTab::Details);
 
-    for _ in vec!['S', 'o', 'm', 'e'] {
+    for _ in ['S', 'o', 'm', 'e'] {
         tx_data.edit_details(None)
     }
 
     tx_data.go_current_index(&TxTab::FromMethod);
 
-    for _ in vec!['t', 'e', 's', 't', '1'] {
+    for _ in ['t', 'e', 's', 't', '1'] {
         tx_data.edit_from_method(None)
     }
 
     tx_data.go_current_index(&TxTab::Amount);
 
-    for _ in vec!['2', '0', '2', '3'] {
+    for _ in ['2', '0', '2', '3'] {
         tx_data.edit_amount(None)
     }
 
     tx_data.go_current_index(&TxTab::TxType);
 
-    for _ in vec!['E'] {
+    for _ in ['E'] {
         tx_data.edit_tx_type(None)
     }
 
     tx_data.go_current_index(&TxTab::ToMethod);
 
-    for _ in vec!['t', 'e', 's', 't', ' ', '2'] {
+    for _ in ['t', 'e', 's', 't', ' ', '2'] {
         tx_data.edit_to_method(None)
     }
 
     tx_data.go_current_index(&TxTab::Tags);
 
-    for _ in vec!['T', 'a', 'g'] {
+    for _ in ['T', 'a', 'g'] {
         tx_data.edit_tags(None)
     }
 

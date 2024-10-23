@@ -30,6 +30,8 @@ pub fn add_tx_ui(
     load_percentage: &mut f64,
     conn: &Connection,
 ) {
+    use ratatui::layout::Position;
+
     let all_methods = get_all_tx_methods(conn);
     // get the data to insert into the Status widget of this page
 
@@ -40,7 +42,7 @@ pub fn add_tx_ui(
     // The index of the cursor position
     let current_index = add_tx_data.get_current_index();
 
-    let size = f.size();
+    let size = f.area();
 
     let tx_type = add_tx_data.get_tx_type();
 
@@ -354,49 +356,52 @@ pub fn add_tx_ui(
     // We will be adding a cursor based on which tab is selected + the selected index.
     // This was created utilizing the tui-rs example named user_input.rs
     match add_tx_tab {
-        TxTab::Date => f.set_cursor(
-            input_chunk[0].x + current_index as u16 + 1,
-            input_chunk[0].y + 1,
-        ),
-        TxTab::Details => f.set_cursor(chunks[2].x + current_index as u16 + 1, chunks[2].y + 1),
-        TxTab::TxType => f.set_cursor(
-            input_chunk[1].x + current_index as u16 + 1,
-            input_chunk[1].y + 1,
-        ),
-        TxTab::FromMethod => f.set_cursor(
-            input_chunk[2].x + current_index as u16 + 1,
-            input_chunk[2].y + 1,
-        ),
+        TxTab::Date => f.set_cursor_position(Position {
+            x: input_chunk[0].x + current_index as u16 + 1,
+            y: input_chunk[0].y + 1,
+        }),
+        TxTab::Details => f.set_cursor_position(Position {
+            x: chunks[2].x + current_index as u16 + 1,
+            y: chunks[2].y + 1,
+        }),
+        TxTab::TxType => f.set_cursor_position(Position {
+            x: input_chunk[1].x + current_index as u16 + 1,
+            y: input_chunk[1].y + 1,
+        }),
+        TxTab::FromMethod => f.set_cursor_position(Position {
+            x: input_chunk[2].x + current_index as u16 + 1,
+            y: input_chunk[2].y + 1,
+        }),
         _ => {}
     }
 
     match tx_type {
         TxType::IncomeExpense => match add_tx_tab {
-            TxTab::Amount => f.set_cursor(
-                input_chunk[3].x + current_index as u16 + 1,
-                input_chunk[3].y + 1,
-            ),
+            TxTab::Amount => f.set_cursor_position(Position {
+                x: input_chunk[3].x + current_index as u16 + 1,
+                y: input_chunk[3].y + 1,
+            }),
 
-            TxTab::Tags => f.set_cursor(
-                input_chunk[4].x + current_index as u16 + 1,
-                input_chunk[4].y + 1,
-            ),
+            TxTab::Tags => f.set_cursor_position(Position {
+                x: input_chunk[4].x + current_index as u16 + 1,
+                y: input_chunk[4].y + 1,
+            }),
             _ => {}
         },
         TxType::Transfer => match add_tx_tab {
-            TxTab::ToMethod => f.set_cursor(
-                input_chunk[3].x + current_index as u16 + 1,
-                input_chunk[3].y + 1,
-            ),
-            TxTab::Amount => f.set_cursor(
-                input_chunk[4].x + current_index as u16 + 1,
-                input_chunk[4].y + 1,
-            ),
+            TxTab::ToMethod => f.set_cursor_position(Position {
+                x: input_chunk[3].x + current_index as u16 + 1,
+                y: input_chunk[3].y + 1,
+            }),
+            TxTab::Amount => f.set_cursor_position(Position {
+                x: input_chunk[4].x + current_index as u16 + 1,
+                y: input_chunk[4].y + 1,
+            }),
 
-            TxTab::Tags => f.set_cursor(
-                input_chunk[5].x + current_index as u16 + 1,
-                input_chunk[5].y + 1,
-            ),
+            TxTab::Tags => f.set_cursor_position(Position {
+                x: input_chunk[5].x + current_index as u16 + 1,
+                y: input_chunk[5].y + 1,
+            }),
             _ => {}
         },
     }

@@ -13,7 +13,7 @@ fn create_test_db(file_name: &str) -> Connection {
     }
 
     let mut conn = Connection::open(file_name).unwrap();
-    create_db(&vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
     conn
 }
 
@@ -52,7 +52,7 @@ fn check_getting_all_changes() {
 #[test]
 fn check_getting_all_changes_2() {
     let file_name = "getting_changes_2.sqlite";
-    let mut conn = create_test_db(&file_name);
+    let mut conn = create_test_db(file_name);
 
     add_tx(
         "2022-07-19",

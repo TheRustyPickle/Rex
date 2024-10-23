@@ -21,6 +21,8 @@ pub fn search_ui(
     date_type: &DateType,
 ) {
     // get the data to insert into the Status widget of this page
+
+    use ratatui::layout::Position;
     let status_data = search_data.get_tx_status();
     // Contains date, details, from method, to method, amount, tx type, tags.
     // Except to method, rest will be used for the widgets
@@ -31,7 +33,7 @@ pub fn search_ui(
     let selected_style_income = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
     let selected_style_expense = Style::default().fg(RED).add_modifier(Modifier::REVERSED);
 
-    let size = f.size();
+    let size = f.area();
 
     let tx_type = search_data.get_tx_type();
 
@@ -243,49 +245,51 @@ pub fn search_ui(
     // We will be adding a cursor based on which tab is selected + the selected index.
     // This was created utilizing the tui-rs example named user_input.rs
     match search_tab {
-        TxTab::Date => f.set_cursor(
-            input_chunk[0].x + current_index as u16 + 1,
-            input_chunk[0].y + 1,
-        ),
-        TxTab::Details => f.set_cursor(chunks[1].x + current_index as u16 + 1, chunks[1].y + 1),
-        TxTab::TxType => f.set_cursor(
-            input_chunk[1].x + current_index as u16 + 1,
-            input_chunk[1].y + 1,
-        ),
-        TxTab::FromMethod => f.set_cursor(
-            input_chunk[2].x + current_index as u16 + 1,
-            input_chunk[2].y + 1,
-        ),
+        TxTab::Date => f.set_cursor_position(Position {
+            x: input_chunk[0].x + current_index as u16 + 1,
+            y: input_chunk[0].y + 1,
+        }),
+        TxTab::Details => f.set_cursor_position(Position {
+            x: chunks[1].x + current_index as u16 + 1,
+            y: chunks[1].y + 1,
+        }),
+        TxTab::TxType => f.set_cursor_position(Position {
+            x: input_chunk[1].x + current_index as u16 + 1,
+            y: input_chunk[1].y + 1,
+        }),
+        TxTab::FromMethod => f.set_cursor_position(Position {
+            x: input_chunk[2].x + current_index as u16 + 1,
+            y: input_chunk[2].y + 1,
+        }),
         _ => {}
     }
 
     match tx_type {
         TxType::IncomeExpense => match search_tab {
-            TxTab::Amount => f.set_cursor(
-                input_chunk[3].x + current_index as u16 + 1,
-                input_chunk[3].y + 1,
-            ),
+            TxTab::Amount => f.set_cursor_position(Position {
+                x: input_chunk[3].x + current_index as u16 + 1,
+                y: input_chunk[3].y + 1,
+            }),
 
-            TxTab::Tags => f.set_cursor(
-                input_chunk[4].x + current_index as u16 + 1,
-                input_chunk[4].y + 1,
-            ),
+            TxTab::Tags => f.set_cursor_position(Position {
+                x: input_chunk[4].x + current_index as u16 + 1,
+                y: input_chunk[4].y + 1,
+            }),
             _ => {}
         },
         TxType::Transfer => match search_tab {
-            TxTab::ToMethod => f.set_cursor(
-                input_chunk[3].x + current_index as u16 + 1,
-                input_chunk[3].y + 1,
-            ),
-            TxTab::Amount => f.set_cursor(
-                input_chunk[4].x + current_index as u16 + 1,
-                input_chunk[4].y + 1,
-            ),
-
-            TxTab::Tags => f.set_cursor(
-                input_chunk[5].x + current_index as u16 + 1,
-                input_chunk[5].y + 1,
-            ),
+            TxTab::ToMethod => f.set_cursor_position(Position {
+                x: input_chunk[3].x + current_index as u16 + 1,
+                y: input_chunk[3].y + 1,
+            }),
+            TxTab::Amount => f.set_cursor_position(Position {
+                x: input_chunk[4].x + current_index as u16 + 1,
+                y: input_chunk[4].y + 1,
+            }),
+            TxTab::Tags => f.set_cursor_position(Position {
+                x: input_chunk[5].x + current_index as u16 + 1,
+                y: input_chunk[5].y + 1,
+            }),
             _ => {}
         },
     }
@@ -293,11 +297,11 @@ pub fn search_ui(
     if let Some(a) = search_table.state.selected() {
         table_area = table_area.highlight_symbol(">> ");
         if search_table.items[a][4] == "Expense" {
-            table_area = table_area.highlight_style(selected_style_expense);
+            table_area = table_area.row_highlight_style(selected_style_expense);
         } else if search_table.items[a][4] == "Income" {
-            table_area = table_area.highlight_style(selected_style_income);
+            table_area = table_area.row_highlight_style(selected_style_income);
         } else if search_table.items[a][4] == "Transfer" {
-            table_area = table_area.highlight_style(Style::default().bg(SELECTED));
+            table_area = table_area.row_highlight_style(Style::default().bg(SELECTED));
         }
     }
 

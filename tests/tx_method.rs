@@ -12,7 +12,7 @@ fn create_test_db(file_name: &str) -> Connection {
     }
 
     let mut conn = Connection::open(file_name).unwrap();
-    create_db(&vec!["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
+    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
     conn
 }
 
@@ -34,7 +34,7 @@ fn check_getting_tx_methods_2() {
     let mut conn = create_test_db(file_name);
 
     add_new_tx_methods(
-        &vec!["new method 1".to_string(), "testing methods".to_string()],
+        &["new method 1".to_string(), "testing methods".to_string()],
         &mut conn,
     )
     .unwrap();

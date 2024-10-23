@@ -191,9 +191,9 @@ pub fn get_all_txs(
         } else if tx_type == "Income" {
             new_balance_from = last_month_balance[tx_method] + amount;
         } else if tx_type == "Transfer" {
-            let splitted = tx_method.split(" to ").collect::<Vec<&str>>();
-            from_method = splitted[0].to_string();
-            to_method = splitted[1].to_string();
+            let split_method = tx_method.split(" to ").collect::<Vec<&str>>();
+            from_method = split_method[0].to_string();
+            to_method = split_method[1].to_string();
             new_balance_from = last_month_balance[&from_method] - amount;
             new_balance_to = last_month_balance[&to_method] + amount;
         }
@@ -840,11 +840,10 @@ pub fn get_search_data(
         match date_type {
             DateType::Exact => query.push_str(&format!(r#" AND date = "{date}""#)),
             DateType::Monthly => {
-                let splitted_date: Vec<usize> =
-                    date.split('-').map(|s| s.parse().unwrap()).collect();
+                let split_date: Vec<usize> = date.split('-').map(|s| s.parse().unwrap()).collect();
 
-                let month_index = splitted_date[1] - 1;
-                let year_index = splitted_date[0] - 2022;
+                let month_index = split_date[1] - 1;
+                let year_index = split_date[0] - 2022;
 
                 let (date_1, date_2) = get_sql_dates(month_index, year_index, date_type);
 
@@ -977,9 +976,9 @@ pub fn switch_tx_index(
     let tx_type_2 = &tx_2[4];
 
     let tx_data_1 = if tx_type_1 == "Transfer" {
-        let splitted_method = tx_1[2].split(" to ").collect::<Vec<&str>>();
-        let from_method = splitted_method[0];
-        let to_method = splitted_method[1];
+        let split_method = tx_1[2].split(" to ").collect::<Vec<&str>>();
+        let from_method = split_method[0];
+        let to_method = split_method[1];
 
         TxData::custom(
             &tx_1[0],
@@ -998,9 +997,9 @@ pub fn switch_tx_index(
     };
 
     let tx_data_2 = if tx_type_2 == "Transfer" {
-        let splitted_method = tx_2[2].split(" to ").collect::<Vec<&str>>();
-        let from_method = splitted_method[0];
-        let to_method = splitted_method[1];
+        let split_method = tx_2[2].split(" to ").collect::<Vec<&str>>();
+        let from_method = split_method[0];
+        let to_method = split_method[1];
 
         TxData::custom(
             &tx_2[0],

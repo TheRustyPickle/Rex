@@ -10,7 +10,7 @@ use crate::utility::{create_bolded_text, main_block, styled_block};
 /// The function draws the Initial page of the interface.
 #[cfg(not(tarpaulin_include))]
 pub fn initial_ui(f: &mut Frame, start_from: usize) {
-    let size = f.size();
+    let size = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -49,10 +49,10 @@ pub fn initial_ui(f: &mut Frame, start_from: usize) {
 
     // To work with this and add a slight touch of animation, we will split the entire
     // text by \n. Once it is done, we will loop through each line and take a specific amount of chars from each line.
-    let splitted = text.split('\n').collect::<Vec<&str>>();
+    let split_text = text.split('\n').collect::<Vec<&str>>();
     let mut upper_text = String::new();
 
-    for line in splitted {
+    for line in split_text {
         // if the line is 20 chars and the index is 15, take the chars from 15-20 and 0-3 indexes.
         // this var stores how many to take from 0 index
         let mut to_add_from_start = 0;
