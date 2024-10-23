@@ -5,14 +5,14 @@ edition = "2021"
 authors = ["TheRustyPickle <rusty.pickle94@gmail.com>"]
 readme = "README.md"
 description = """
-A TUI for managing Incomes and Expenses
+A TUI app for managing Incomes and Expenses
 """
 homepage = "https://github.com/TheRustyPickle/Rex"
 repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
-keywords = ["tui", "terminal", "tui-app", "ratatui", "terminal-ui"]
+keywords = ["tui", "terminal", "budget", "ratatui", "ledger"]
 categories = ["command-line-utilities"]
-exclude = ["logo.png"]
+exclude = ["logo.png", "tests", ".github", "typos.toml", "codecov.yml"]
 
 [[bin]]
 name = "rex"
@@ -41,3 +41,7 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
 
 [lints.clippy]
 too_many_arguments = {level = "allow"}
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
