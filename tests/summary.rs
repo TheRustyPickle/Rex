@@ -117,13 +117,13 @@ fn check_summary_data_1() {
         vec![
             vec![
                 "Peak Earning".to_string(),
-                "7-2023".to_string(),
+                "07-2023".to_string(),
                 "200.00".to_string(),
                 "-".to_string(),
             ],
             vec![
                 "Peak Expense".to_string(),
-                "7-2023".to_string(),
+                "07-2023".to_string(),
                 "100.00".to_string(),
                 "-".to_string(),
             ],
@@ -283,13 +283,13 @@ fn check_summary_data_2() {
         vec![
             vec![
                 "Peak Earning".to_string(),
-                "5-2022".to_string(),
+                "05-2022".to_string(),
                 "1000.00".to_string(),
                 "-".to_string(),
             ],
             vec![
                 "Peak Expense".to_string(),
-                "1-2022".to_string(),
+                "01-2022".to_string(),
                 "500.00".to_string(),
                 "-".to_string(),
             ],
@@ -438,13 +438,13 @@ fn check_summary_data_3() {
         vec![
             vec![
                 "Peak Earning".to_string(),
-                "7-2023".to_string(),
+                "07-2023".to_string(),
                 "100.00".to_string(),
                 "-".to_string(),
             ],
             vec![
                 "Peak Expense".to_string(),
-                "8-2022".to_string(),
+                "08-2022".to_string(),
                 "100.00".to_string(),
                 "-".to_string(),
             ],
