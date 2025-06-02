@@ -241,9 +241,8 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
                     date_labels.pop().unwrap();
                     date_labels.push(checking_date.to_string());
                     break;
-                } else {
-                    to_loop += -1.0;
                 }
+                to_loop += -1.0;
             }
 
             if checking_date >= final_date + Duration::days(1) {
