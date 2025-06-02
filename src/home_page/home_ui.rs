@@ -44,7 +44,7 @@ pub fn home_ui(
     let lerp_id = "home_tx_count";
     let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64) as i64;
 
-    let table_name = format!("Transactions: {}", lerp_tx_count);
+    let table_name = format!("Transactions: {lerp_tx_count}");
 
     // Transaction widget top row/header to highlight what each data will mean
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type", "Tags"]

@@ -95,7 +95,7 @@ pub fn activity_ui(
     let lerp_id = "home_tx_count";
     let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64) as i64;
 
-    let table_name = format!("Transactions: {}", lerp_tx_count);
+    let table_name = format!("Transactions: {lerp_tx_count}");
 
     let activity_header_cells = ["Created At", "Activity Type", "Description"]
         .iter()
