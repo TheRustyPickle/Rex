@@ -224,6 +224,7 @@ pub fn start_app<B: Backend>(
                         chart_hidden_mode,
                         &mut chart_index,
                         &chart_activated_methods,
+                        &mut lerp_state,
                         conn,
                     ),
 
@@ -237,6 +238,7 @@ pub fn start_app<B: Backend>(
                         &summary_tab,
                         summary_hidden_mode,
                         &summary_sort,
+                        &mut lerp_state,
                         conn,
                     ),
                     CurrentUi::Search => search_ui(
@@ -245,6 +247,7 @@ pub fn start_app<B: Backend>(
                         &search_tab,
                         &mut search_table,
                         &search_date_type,
+                        &mut lerp_state,
                     ),
                     CurrentUi::Activity => activity_ui(
                         f,
@@ -253,6 +256,7 @@ pub fn start_app<B: Backend>(
                         &activity_tab,
                         &activity_data,
                         &mut activity_table,
+                        &mut lerp_state,
                     ),
                 }
                 popup_data.create_popup(
@@ -274,15 +278,12 @@ pub fn start_app<B: Backend>(
                     continue;
                 }
             }
-            CurrentUi::Chart => {
-                // If chart animation has ended, start polling
-                if chart_index.is_some()
-                    && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
-                {
-                    continue;
-                }
-            }
-            CurrentUi::Home | CurrentUi::AddTx => {
+            CurrentUi::Home
+            | CurrentUi::AddTx
+            | CurrentUi::Summary
+            | CurrentUi::Search
+            | CurrentUi::Chart
+            | CurrentUi::Activity => {
                 // If at least 1 lerp is in progress and no key press detected, continue the loop
                 if lerp_state.has_active_lerps()
                     && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
@@ -290,7 +291,6 @@ pub fn start_app<B: Backend>(
                     continue;
                 }
             }
-            _ => {}
         }
 
         // If not inside one of the duration polling, wait for key press

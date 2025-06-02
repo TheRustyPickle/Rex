@@ -40,11 +40,11 @@ pub fn home_ui(
     let selected_style_income = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
     let selected_style_expense = Style::default().fg(RED).add_modifier(Modifier::REVERSED);
 
-    let mut table_name = "Transactions".to_string();
+    let tx_count = table.items.len();
+    let lerp_id = "home_tx_count";
+    let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64) as i64;
 
-    if !table.items.is_empty() {
-        table_name = format!("Transactions: {}", table.items.len());
-    }
+    let table_name = format!("Transactions: {}", lerp_tx_count);
 
     // Transaction widget top row/header to highlight what each data will mean
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
@@ -57,11 +57,19 @@ pub fn home_ui(
         .bottom_margin(0);
 
     // Iter through table data and turn them into rows and columns
-    let rows = table.items.iter().map(|item| {
-        let height = 1;
-        let cells = item.iter().map(|c| Cell::from(c.separate_with_commas()));
+    let rows = table.items.iter().enumerate().map(|(row_index, item)| {
+        let cells = item.iter().enumerate().map(|(index, c)| {
+            let Ok(parsed_num) = c.parse::<f64>() else {
+                return Cell::from(c.separate_with_commas());
+            };
+
+            let lerp_id = format!("home_table:{index}:{row_index}");
+            let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+
+            Cell::from(format!("{new_c:.2}").separate_with_commas())
+        });
         Row::new(cells)
-            .height(height as u16)
+            .height(1)
             .bottom_margin(0)
             .style(Style::default().bg(BACKGROUND).fg(TEXT))
     });

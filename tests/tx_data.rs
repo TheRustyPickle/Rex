@@ -459,9 +459,8 @@ fn tx_data_editing() {
 
     tx_data.go_current_index(&TxTab::TxType);
 
-    for i in ['E'] {
-        tx_data.edit_tx_type(Some(i));
-    }
+    let i = 'E';
+    tx_data.edit_tx_type(Some(i));
 
     tx_data.go_current_index(&TxTab::ToMethod);
 
@@ -517,9 +516,8 @@ fn tx_data_editing() {
 
     tx_data.go_current_index(&TxTab::TxType);
 
-    for _ in ['E'] {
-        tx_data.edit_tx_type(None);
-    }
+    let _ = 'E';
+    tx_data.edit_tx_type(None);
 
     tx_data.go_current_index(&TxTab::ToMethod);
 

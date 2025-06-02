@@ -349,13 +349,13 @@ impl SummaryData {
             let earning_percentage = if method_earning[method] == 0.0 {
                 format!("{:.2}", 0.0)
             } else {
-                format!("{:.2}%", (method_earning[method] / total_income) * 100.0)
+                format!("{:.2}", (method_earning[method] / total_income) * 100.0)
             };
 
             let expense_percentage = if method_expense[method] == 0.0 {
                 format!("{:.2}", 0.0)
             } else {
-                format!("{:.2}%", (method_expense[method] / total_expense) * 100.0)
+                format!("{:.2}", (method_expense[method] / total_expense) * 100.0)
             };
 
             let average_earning = if method_earning[method] == 0.0 {
@@ -587,6 +587,6 @@ impl SummaryData {
         let total = value1 + value2;
         let percentage1 = (value1 / total) * 100.0;
         let percentage2 = (value2 / total) * 100.0;
-        (format!("{percentage1:.2}%",), format!("{percentage2:.2}%",))
+        (format!("{percentage1:.2}",), format!("{percentage2:.2}",))
     }
 }
