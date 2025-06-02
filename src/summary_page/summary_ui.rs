@@ -325,7 +325,7 @@ pub fn summary_ui(
     .style(Style::default().fg(BOX));
 
     match current_page {
-        // previously added a black block to year and month widget if a value is not selected
+        // Previously added a black block to year and month widget if a value is not selected
         // Now we will turn that black block into green if a value is selected
         SummaryTab::Months => {
             month_tab = month_tab

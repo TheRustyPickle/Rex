@@ -33,10 +33,10 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     let size = f.area();
     let (all_txs, all_balance) = chart_data.get_data(mode_selection, months.index, years.index);
 
-    // divide the terminal into various chunks to draw the interface. This is a vertical chunk
+    // Divide the terminal into various chunks to draw the interface. This is a vertical chunk
     let mut main_layout = Layout::default().direction(Direction::Vertical).margin(2);
 
-    // don't create any other chunk if hidden mode is enabled. Create 1 chunk that will be used for the chart itself
+    // Don't create any other chunk if hidden mode is enabled. Create 1 chunk that will be used for the chart itself
     if chart_hidden_mode {
         main_layout = main_layout.constraints([Constraint::Min(0)]);
     } else {
@@ -83,7 +83,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
 
     let chunks = main_layout.split(size);
 
-    // creates border around the entire terminal
+    // Creates border around the entire terminal
     f.render_widget(main_block(), size);
 
     let mut month_tab = create_tab(months, "Months");
@@ -101,11 +101,11 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     let all_tx_methods = get_all_tx_methods(conn);
     let all_tx_methods_cumulative = get_all_tx_methods_cumulative(conn);
 
-    // a vector containing another vector vec![X, Y] with coordinate of where to render chart points
+    // A vector containing another vector vec![X, Y] with coordinate of where to render chart points
     let mut datasets: Vec<Vec<(f64, f64)>> = Vec::new();
     let mut last_balances = Vec::new();
 
-    // adding default initial value if no data to load
+    // Adding default initial value if no data to load
     if all_txs.is_empty() {
         for _i in &all_tx_methods_cumulative {
             datasets.push(vec![(0.0, 0.0)]);
@@ -120,9 +120,9 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
 
     let mut current_axis = 0.0;
 
-    // if there are no transactions, we will create an empty chart
+    // If there are no transactions, we will create an empty chart
     if !all_txs.is_empty() {
-        // contains all dates of the transactions
+        // Contains all dates of the transactions
         let all_dates = chart_data.get_all_dates(mode_selection, months.index, years.index);
 
         let mut checking_date = NaiveDate::parse_from_str(&all_txs[0][0], "%d-%m-%Y").unwrap();
@@ -131,10 +131,10 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
         let final_date =
             NaiveDate::parse_from_str(&all_txs[all_txs.len() - 1][0], "%d-%m-%Y").unwrap();
 
-        // total days = number of loops required to render everything
+        // Total days = number of loops required to render everything
         let total_loop = final_date.signed_duration_since(checking_date).num_days() as f64;
 
-        // When chart ui is selected, start by rendering this amount of day worth of data,
+        // When chart UI is selected, start by rendering this amount of day worth of data,
         // then render_size * 2, 3 and so on until the final day is reached, creating a small animation.
         // Numbers were determined after checking with data filled db and with --release flag
         let render_size = if total_loop > 4000.0 {
@@ -155,7 +155,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
             1.0
         };
 
-        // default value = Some(0). After each loop this value goes down by render_size. Once <=0, turn it into None.
+        // Default value = Some(0). After each loop this value goes down by render_size. Once <=0, turn it into None.
         // When it's None, it won't stop the loop in the middle.
         if let Some(val) = loop_remaining {
             if *val == 0.0 {
@@ -171,7 +171,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
             }
         }
 
-        // total times to loop this time. If None, then render everything
+        // Total times to loop this time. If None, then render everything
         let mut to_loop = loop_remaining.as_mut().map(|val| total_loop - *val);
 
         // labels of the x axis
@@ -188,21 +188,21 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
             if all_dates.contains(&checking_date) {
                 let current_balances = &all_balance[data_num];
 
-                // default next_date in case there is no more next_date
+                // Default next_date in case there is no more next_date
                 let mut next_date = NaiveDate::from_ymd_opt(2040, 1, 1).unwrap();
 
                 if all_txs.len() > data_num + 1 {
                     next_date =
                         NaiveDate::parse_from_str(&all_txs[data_num + 1][0], "%d-%m-%Y").unwrap();
                 }
-                // new valid transactions so the earlier looped balance is not required.
-                // if no tx exists in a date, data from last_balances/previous valid date is used to compensate for it
+                // New valid transactions so the earlier looped balance is not required.
+                // If no tx exists in a date, data from last_balances/previous valid date is used to compensate for it
                 last_balances = Vec::new();
 
                 let mut cumulative_balance = 0.0;
 
                 for method_index in 0..all_tx_methods_cumulative.len() {
-                    // keep track of the highest and the lowest point of the balance
+                    // Keep track of the highest and the lowest point of the balance
                     let current_balance = if method_index != all_tx_methods.len() {
                         let balance = current_balances[method_index].parse::<f64>().unwrap();
                         cumulative_balance += balance;
@@ -211,9 +211,9 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
                         cumulative_balance
                     };
 
-                    // We will not consider the highest/lowest balance if the method is currently deactivated on chart
-                    // We can't directly skip it because the dataset vector expects something in the index of this method
-                    // We will have the data but it just won't be shown on the chart
+                    // We will not consider the highest/lowest balance if the method is currently deactivated on chart.
+                    // We can't directly skip it because the dataset vector expects something in the index of this method.
+                    // We will have the data but it just won't be shown on the chart.
                     if chart_activated_methods[&all_tx_methods_cumulative[method_index]] {
                         if current_balance > highest_balance {
                             highest_balance = current_balance;
@@ -223,9 +223,9 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
                     }
 
                     if to_add_again {
-                        // if to_add_again is true, means in the last loop, the date and the current date was the same
+                        // If to_add_again is true, means in the last loop, the date, and the current date was the same
                         // as the date is the same, the data needs to be merged thus using the same x y point in the chart.
-                        // pop the last one added and that to last_balance. If the next date is the same,
+                        // Pop the last one added and that to last_balance. If the next date is the same,
                         // last_balance will be used to keep on merging the data.
 
                         let (position, _balance) = datasets[method_index].pop().unwrap();
@@ -245,31 +245,8 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
                     }
                 }
 
-                // let target_index = all_tx_methods.len();
-                //
-                // if to_add_again {
-                //     // if to_add_again is true, means in the last loop, the date and the current date was the same
-                //     // as the date is the same, the data needs to be merged thus using the same x y point in the chart.
-                //     // pop the last one added and that to last_balance. If the next date is the same,
-                //     // last_balance will be used to keep on merging the data.
-                //
-                //     let (position, _balance) = datasets[target_index].pop().unwrap();
-                //     let to_push = vec![(position, cumulative_balance)];
-                //     datasets[target_index].extend(to_push);
-                //     last_balances.push(cumulative_balance);
-                // } else {
-                //     let to_push = vec![(current_axis, cumulative_balance)];
-                //
-                //     if datasets.get(target_index).is_some() {
-                //         datasets[target_index].extend(to_push);
-                //     } else {
-                //         datasets.push(to_push);
-                //     }
-                //
-                //     last_balances.push(cumulative_balance);
-                // }
                 if next_date == checking_date {
-                    // the axis won't move if the next date is the same.
+                    // The axis won't move if the next date is the same.
                     to_add_again = true;
                 } else {
                     to_add_again = false;
@@ -277,10 +254,10 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
                     checking_date += Duration::days(1);
                 }
 
-                // successfully checked a transaction, we will check the new index in the next iteration
+                // Successfully checked a transaction, we will check the new index in the next iteration
                 data_num += 1;
             } else {
-                // as the date does not exist in the transaction list, we will use the last used balance and add a point in the chart
+                // As the date does not exist in the transaction list, we will use the last used balance and add a point in the chart
                 for method_index in 0..all_tx_methods.len() {
                     let to_push = vec![(current_axis, last_balances[method_index])];
                     datasets[method_index].extend(to_push);
@@ -291,7 +268,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
 
             if !to_add_again {
                 if let Some(val) = to_loop {
-                    // break the loop if total day amount is reached
+                    // Break the loop if total day amount is reached
                     if val - 1.0 <= 0.0 {
                         date_labels.pop().unwrap();
                         date_labels.push(checking_date.to_string());
@@ -308,7 +285,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     } else {
         *loop_remaining = None;
     }
-    // add a 10% extra value to the highest and the lowest balance
+    // Add a 10% extra value to the highest and the lowest balance
     // so the chart can properly render
     highest_balance += highest_balance * 5.0 / 100.0;
     lowest_balance -= lowest_balance * 5.0 / 100.0;
@@ -317,7 +294,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
 
     let mut to_add = lowest_balance;
 
-    // go through the lowest balance and keep adding the difference until the highest point
+    // Go through the lowest balance and keep adding the difference until the highest point
     let mut labels = vec![lowest_balance.to_string()];
     // 10 labels, so loop 10 times
     for _i in 0..10 {
@@ -340,9 +317,9 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
 
     let mut final_dataset = vec![];
 
-    // loop through the data that was added for each tx_method  and turn them into chart data
+    // Loop through the data that was added for each tx_method and turn them into chart data
     for i in 0..all_tx_methods_cumulative.len() {
-        // run out of colors = cyan default
+        // Run out of colors = cyan default
         if color_list.is_empty() {
             color_list.push(Color::Cyan);
         }

@@ -56,7 +56,7 @@ pub fn home_ui(
         .height(1)
         .bottom_margin(0);
 
-    // iter through table data and turn them into rows and columns
+    // Iter through table data and turn them into rows and columns
     let rows = table.items.iter().map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| Cell::from(c.separate_with_commas()));
@@ -71,7 +71,7 @@ pub fn home_ui(
     // length. The final one was given 0 as minimum value which is the Transaction
     // field to keep it expanding.
 
-    // chunks are used in this format respectively
+    // Chunks are used in this format respectively
     // - The Balance tab
     // - The year tab
     // - The month tab
@@ -181,14 +181,14 @@ pub fn home_ui(
             .style(Style::default().fg(TEXT))
     });
 
-    // use the acquired width data to allocated spaces
+    // Use the acquired width data to the allocated spaces
     // between columns on Balance widget.
     let balance_area = Table::new(bal_data, width_data.to_owned())
         .block(styled_block("Balance"))
         .style(Style::default().fg(BOX));
 
     match current_tab {
-        // previously added a black block to year and month widget if a value is not selected
+        // Previously added a black block to year and month widget if a value is not selected
         // Now we will turn that black block into green if a value is selected
         HomeTab::Months => {
             month_tab = month_tab
@@ -199,7 +199,7 @@ pub fn home_ui(
             year_tab = year_tab
                 .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
         }
-        // changes the color of row based on Expense or Income tx type on Transaction widget.
+        // Changes the color of row based on Expense or Income tx type on Transaction widget.
         HomeTab::Table => {
             if let Some(a) = table.state.selected() {
                 table_area = table_area.highlight_symbol(">> ");
@@ -221,12 +221,12 @@ pub fn home_ui(
         }
     }
 
-    // after all data is in place, render the widgets one by one
+    // After all data is in place, render the widgets one by one
     // the chunks are selected based on the format I want the widgets to render
     f.render_widget(balance_area, chunks[0]);
     f.render_widget(month_tab, chunks[2]);
     f.render_widget(year_tab, chunks[1]);
 
-    // this one is different because the Transaction widget interface works differently
+    // This one is different because the Transaction widget interface works differently
     f.render_stateful_widget(table_area, chunks[3], &mut table.state);
 }

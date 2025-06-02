@@ -27,7 +27,7 @@ use crate::popup_page::PopupData;
 use crate::search_page::search_ui;
 use crate::summary_page::{summary_ui, SummaryData};
 use crate::tx_handler::TxData;
-use crate::utility::{get_all_tx_methods, get_all_tx_methods_cumulative};
+use crate::utility::{get_all_tx_methods, get_all_tx_methods_cumulative, LerpState};
 
 pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
 pub const TEXT: Color = Color::Rgb(153, 78, 236);
@@ -48,33 +48,32 @@ pub fn start_app<B: Backend>(
 ) -> Result<HandlingOutput, UiHandlingError> {
     // Setting up some default values. Let's go through all of them
 
-    // contains the home page month list that is indexed
+    // Contains the homepage month list that is indexed
 
-    use crate::utility::LerpState;
     let mut home_months = IndexedData::new_monthly();
-    // contains the home page year list that is indexed
+    // Contains the homepage year list that is indexed
     let mut home_years = IndexedData::new_yearly();
-    // contains the chart page month list that is indexed
+    // Contains the chart page month list that is indexed
     let mut chart_months = IndexedData::new_monthly();
-    // contains the chart page year list that is indexed
+    // Contains the chart page year list that is indexed
     let mut chart_years = IndexedData::new_yearly();
-    // contains the chart page mode selection list that is indexed
+    // Contains the chart page mode selection list that is indexed
     let mut chart_modes = IndexedData::new_modes();
-    // contains the chart page tx method selection list that is indexed
+    // Contains the chart page tx method selection list that is indexed
     let mut chart_tx_methods = IndexedData::new_tx_methods_cumulative(conn);
 
-    // contains the summary page month list that is indexed
+    // Contains the summary page month list that is indexed
     let mut summary_months = IndexedData::new_monthly();
-    // contains the summary page year list that is indexed
+    // Contains the summary page year list that is indexed
     let mut summary_years = IndexedData::new_yearly();
-    // contains the summary page mode selection list that is indexed
+    // Contains the summary page mode selection list that is indexed
     let mut summary_modes = IndexedData::new_modes();
-    // contains the Activity page month list that is indexed
+    // Contains the Activity page month list that is indexed
     let mut activity_years = IndexedData::new_yearly();
-    // contains the Activity page month list that is indexed
+    // Contains the Activity page month list that is indexed
     let mut activity_months = IndexedData::new_monthly();
 
-    // the selected widget on the Home Page. Default set to the month selection
+    // The selected widget on the HomePage. Default set to the month selection
     let mut home_tab = HomeTab::Months;
 
     // How summary table will be sorted
@@ -89,7 +88,7 @@ pub fn start_app<B: Backend>(
     let mut activity_data = ActivityData::new(activity_months.index, activity_years.index, conn);
 
     let mut search_txs = TransactionData::new_search(Vec::new(), Vec::new());
-    // data for the Home Page's tx table
+    // Data for the HomePage's tx table
     let mut table = TableData::new(all_tx_data.get_txs());
 
     // The page which is currently selected. Default is the initial page
@@ -125,20 +124,20 @@ pub fn start_app<B: Backend>(
     // Holds the popup data that will be/are inserted into the Popup page
     let mut popup_data = PopupData::new();
 
-    // data for the Summary Page's table
+    // Data for the Summary Page's table
     let mut summary_table = TableData::new(summary_data.get_table_data(
         &summary_modes,
         summary_months.index,
         summary_years.index,
     ));
 
-    // data for the Search Page's table
+    // Data for the Search Page's table
     let mut search_table = TableData::new(Vec::new());
 
-    // data for the Activity Page's table
+    // Data for the Activity Page's table
     let mut activity_table = TableData::new(activity_data.get_txs());
 
-    // the initial page REX loading index
+    // The initial page REX loading index
     let mut starter_index = 0;
 
     // At what point the chart is current rendering to
