@@ -1,4 +1,4 @@
-use ratatui::layout::{Alignment, Constraint, Direction, Layout};
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Position};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Cell, Paragraph, Row, Table};
@@ -10,28 +10,19 @@ use crate::home_page::BALANCE_BOLD;
 use crate::outputs::TxType;
 use crate::page_handler::{HomeRow, TxTab, BACKGROUND, BLUE, BOX, GRAY, RED, TEXT};
 use crate::tx_handler::TxData;
-use crate::utility::{get_all_tx_methods, main_block, styled_block};
+use crate::utility::{get_all_tx_methods, main_block, styled_block, LerpState};
 
 /// The function draws the Add Transaction page of the interface.
 #[cfg(not(tarpaulin_include))]
 pub fn add_tx_ui(
     f: &mut Frame,
-    to_reset: bool,
     balance: &mut [Vec<String>],
     add_tx_data: &TxData,
     add_tx_tab: &TxTab,
     width_data: &mut [Constraint],
-    balance_load: &mut [f64],
-    ongoing_balance: &mut Vec<String>,
-    last_balance: &mut Vec<String>,
-    changes_load: &mut [f64],
-    ongoing_changes: &mut Vec<String>,
-    last_changes: &mut Vec<String>,
-    load_percentage: &mut f64,
+    lerp_state: &mut LerpState,
     conn: &Connection,
 ) {
-    use ratatui::layout::Position;
-
     let all_methods = get_all_tx_methods(conn);
     // get the data to insert into the Status widget of this page
 
@@ -98,57 +89,15 @@ pub fn add_tx_ui(
     // creates border around the entire terminal
     f.render_widget(main_block(), size);
 
-    // Entire balance section is copy paste from the Home UI
-    if (*load_percentage + 0.004) <= 1.0 {
-        *load_percentage += 0.004;
-    } else {
-        *load_percentage = 1.0;
-    }
-
-    let original_percentage = *load_percentage;
-
-    if to_reset {
-        *load_percentage = 0.0;
-    }
-
     let bal_data = balance.iter().map(|item| {
         let height = 1;
 
         let row_type = HomeRow::get_row(item);
         let mut index = 0;
-        match row_type {
-            HomeRow::Balance => {
-                if to_reset {
-                    if *ongoing_balance != item[1..] {
-                        last_balance.clone_from(ongoing_balance);
-                        item[1..].clone_into(ongoing_balance);
-                    } else {
-                        *load_percentage = original_percentage;
-                    }
-                }
-            }
-            HomeRow::Changes => {
-                // If balance changes only then changes part will change.
-                // if to keep on maintain the load percentage, it was already done in the previous loop
-                if to_reset && *ongoing_changes != item[1..] {
-                    last_changes.clone_from(ongoing_changes);
-                    item[1..].clone_into(ongoing_changes);
-                }
-            }
-            HomeRow::TopRow => {}
-            _ => unreachable!(),
-        }
 
         let cells = item.iter().map(|c| {
             let c = if row_type != HomeRow::TopRow && !["Balance", "Changes"].contains(&c.as_str())
             {
-                // Get the load data we need to update for this redraw
-                let load_data = match row_type {
-                    HomeRow::Balance => balance_load.get_mut(index).unwrap(),
-                    HomeRow::Changes => changes_load.get_mut(index).unwrap(),
-                    _ => unreachable!(),
-                };
-
                 // Changes row can contain arrow symbols
                 let symbol = if c.contains('↑') || c.contains('↓') {
                     c.chars().next()
@@ -166,60 +115,17 @@ pub fn add_tx_ui(
                     c.parse().unwrap()
                 };
 
-                // The data that is currently being shown, before this redraw happens
-                let last_data: f64 = match row_type {
-                    HomeRow::Balance => last_balance.get(index).unwrap().parse().unwrap(),
-                    HomeRow::Changes => {
-                        let last_change_symbol = last_changes.get(index).unwrap();
-
-                        if last_change_symbol.contains('↑') || last_change_symbol.contains('↓')
-                        {
-                            let last_symbol = last_change_symbol.chars().next().unwrap();
-                            let without_symbol = last_change_symbol.replace(last_symbol, "");
-                            without_symbol.parse().unwrap()
-                        } else {
-                            last_change_symbol.parse().unwrap()
-                        }
-                    }
-                    _ => unreachable!(),
-                };
-
-                // Difference can go both ways, either from 0 to a positive number or to a negative number
-                let difference = if last_data > actual_data {
-                    last_data - actual_data
-                } else {
-                    actual_data - last_data
-                };
-
                 index += 1;
 
-                // If going from 0 to positive number, we add the load percentage % amount from the actual amount that is to be shown
-                // to the load data
-                // If going the other way, we remove load percentage % amount
-                // If neither then they are both equal, nothing to do, loading has finished
-                if actual_data > last_data {
-                    match row_type {
-                        HomeRow::TopRow => unreachable!(),
-                        _ => *load_data = last_data + (difference * *load_percentage),
-                    }
-                } else if last_data > actual_data {
-                    match row_type {
-                        HomeRow::TopRow => unreachable!(),
-                        _ => *load_data = last_data - (difference * *load_percentage),
-                    }
-                }
-
-                // 100% has been reached, show the actual balance to the UI now
-                if *load_percentage == 1.0 {
-                    *load_data = actual_data;
-                }
+                let lerp_id = format!("{row_type}:{index}");
+                let to_show = lerp_state.lerp(&lerp_id, actual_data);
 
                 // re-add the previously removed symbol if is the Changes row
                 // Otherwise separate the number with commas
                 if let Some(sym) = symbol {
-                    format!("{sym}{load_data:.2}",).separate_with_commas()
+                    format!("{sym}{to_show:.2}",).separate_with_commas()
                 } else {
-                    format!("{load_data:.2}").separate_with_commas()
+                    format!("{to_show:.2}").separate_with_commas()
                 }
             } else {
                 c.separate_with_commas()
@@ -247,7 +153,7 @@ pub fn add_tx_ui(
 
     let mut status_text = vec![];
 
-    // iter through the data in reverse mode because we want the latest status text
+    // Iter through the data in reverse mode because we want the latest status text
     // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
         let (initial, rest) = i.split_once(':').unwrap();

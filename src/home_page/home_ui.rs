@@ -8,7 +8,7 @@ use thousands::Separable;
 use crate::page_handler::{
     HomeRow, HomeTab, IndexedData, TableData, BACKGROUND, BLUE, BOX, HEADER, RED, SELECTED, TEXT,
 };
-use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block};
+use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block, LerpState};
 
 pub const BALANCE_BOLD: [&str; 7] = [
     "Balance",
@@ -20,36 +20,17 @@ pub const BALANCE_BOLD: [&str; 7] = [
     "Daily Expense",
 ];
 
-/// The function draws the Home page of the interface.
+/// The function draws the Homepage of the interface.
 #[cfg(not(tarpaulin_include))]
 pub fn home_ui(
     f: &mut Frame,
-    to_reset: bool,
     months: &IndexedData,
     years: &IndexedData,
     table: &mut TableData,
     balance: &mut [Vec<String>],
     current_tab: &HomeTab,
     width_data: &mut [Constraint],
-    balance_load: &mut [f64],
-    ongoing_balance: &mut Vec<String>,
-    last_balance: &mut Vec<String>,
-    changes_load: &mut [f64],
-    ongoing_changes: &mut Vec<String>,
-    last_changes: &mut Vec<String>,
-    income_load: &mut [f64],
-    ongoing_income: &mut Vec<String>,
-    last_income: &mut Vec<String>,
-    expense_load: &mut [f64],
-    ongoing_expense: &mut Vec<String>,
-    last_expense: &mut Vec<String>,
-    daily_income_load: &mut [f64],
-    daily_ongoing_income: &mut Vec<String>,
-    daily_last_income: &mut Vec<String>,
-    daily_expense_load: &mut [f64],
-    daily_ongoing_expense: &mut Vec<String>,
-    daily_last_expense: &mut Vec<String>,
-    load_percentage: &mut f64,
+    lerp_state: &mut LerpState,
     conn: &Connection,
 ) {
     let all_methods = get_all_tx_methods(conn);
@@ -65,7 +46,7 @@ pub fn home_ui(
         table_name = format!("Transactions: {}", table.items.len());
     }
 
-    // Transaction widget's top row/header to highlight what each data will mean
+    // Transaction widget top row/header to highlight what each data will mean
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
@@ -114,7 +95,7 @@ pub fn home_ui(
     let mut year_tab = create_tab(years, "Years");
 
     // set up the table columns and their size
-    // resizing the table headers to match a % of the
+    // resizing the table headers to match an % of the
     // terminal space
 
     let mut table_area = Table::new(
@@ -131,101 +112,13 @@ pub fn home_ui(
     .header(header)
     .block(styled_block(&table_name));
 
-    if (*load_percentage + 0.004) <= 1.0 {
-        *load_percentage += 0.004;
-    } else {
-        *load_percentage = 1.0;
-    }
-
-    let mut discrepancy_exists = false;
-
-    // go through all data of the Balance widget and style it as necessary
+    // Go through all data of the Balance widget and style it as necessary
     let bal_data = balance.iter().map(|item| {
-        let height = 1;
+        let height = 1_u16;
 
         let row_type = HomeRow::get_row(item);
+
         let mut index = 0;
-
-        // Check all the row types
-        // If `to_rest` is true, it means a key was pressed which may have an impact on the shown data
-        // If it's true, if current data that is being shown and the new data to be shown is the same
-        // update the last_ var data with the current data
-        // Example went from month 5 to 6, last_ var will contain 5'th months data. If going from 6 to 5, then 6'th data
-        // If not the same, that means there were data changes so
-        // Update ongoing data that is to be shown, along with last data that is being shown before the update
-        match row_type {
-            HomeRow::Balance => {
-                if to_reset {
-                    if *ongoing_balance != item[1..] {
-                        last_balance.clone_from(ongoing_balance);
-                        item[1..].clone_into(ongoing_balance);
-                        discrepancy_exists = true;
-                    } else {
-                        last_balance.clone_from(ongoing_balance);
-                    }
-                }
-            }
-            HomeRow::Changes => {
-                if to_reset {
-                    if *ongoing_changes != item[1..] {
-                        last_changes.clone_from(ongoing_changes);
-                        item[1..].clone_into(ongoing_changes);
-                        discrepancy_exists = true;
-                    } else {
-                        last_changes.clone_from(ongoing_changes);
-                    }
-                }
-            }
-            HomeRow::Income => {
-                if to_reset {
-                    if *ongoing_income != item[1..] {
-                        last_income.clone_from(ongoing_income);
-                        item[1..].clone_into(ongoing_income);
-                        discrepancy_exists = true;
-                    } else {
-                        last_income.clone_from(ongoing_income);
-                    }
-                }
-            }
-            HomeRow::Expense => {
-                if to_reset {
-                    if *ongoing_expense != item[1..] {
-                        last_expense.clone_from(ongoing_expense);
-                        item[1..].clone_into(ongoing_expense);
-                        discrepancy_exists = true;
-                    } else {
-                        last_expense.clone_from(ongoing_expense);
-                    }
-                }
-            }
-            HomeRow::DailyIncome => {
-                if to_reset {
-                    if *daily_ongoing_income != item[1..] {
-                        daily_last_income.clone_from(daily_ongoing_income);
-                        item[1..].clone_into(daily_ongoing_income);
-                        discrepancy_exists = true;
-                    } else {
-                        daily_last_income.clone_from(daily_ongoing_income);
-                    }
-                }
-            }
-            HomeRow::DailyExpense => {
-                if to_reset {
-                    if *daily_ongoing_expense != item[1..] {
-                        daily_last_expense.clone_from(daily_ongoing_expense);
-                        item[1..].clone_into(daily_ongoing_expense);
-                        discrepancy_exists = true;
-                    } else {
-                        daily_last_expense.clone_from(daily_ongoing_expense);
-                    }
-                }
-            }
-            HomeRow::TopRow => {}
-        }
-
-        if to_reset && discrepancy_exists {
-            *load_percentage = 0.0;
-        }
 
         let cells = item.iter().map(|c| {
             let c = if row_type != HomeRow::TopRow
@@ -239,23 +132,14 @@ pub fn home_ui(
                 ]
                 .contains(&c.as_str())
             {
-                // Get the load data we need to update for this redraw
-                let load_data = match row_type {
-                    HomeRow::Balance => balance_load.get_mut(index).unwrap(),
-                    HomeRow::Changes => changes_load.get_mut(index).unwrap(),
-                    HomeRow::Expense => expense_load.get_mut(index).unwrap(),
-                    HomeRow::Income => income_load.get_mut(index).unwrap(),
-                    HomeRow::DailyIncome => daily_income_load.get_mut(index).unwrap(),
-                    HomeRow::DailyExpense => daily_expense_load.get_mut(index).unwrap(),
-                    HomeRow::TopRow => unreachable!(),
-                };
-
                 // Changes row can contain arrow symbols
                 let symbol = if c.contains('↑') || c.contains('↓') {
                     c.chars().next()
                 } else {
                     None
                 };
+
+                index += 1;
 
                 // If loading was complete then this value is to be shown
                 let actual_data: f64 = if row_type != HomeRow::Changes {
@@ -267,103 +151,15 @@ pub fn home_ui(
                     c.parse().unwrap()
                 };
 
-                // The data that is currently being shown, before this redraw happens
-                let last_data: f64 = match row_type {
-                    HomeRow::Balance => last_balance.get(index).unwrap().parse().unwrap(),
-                    HomeRow::Changes => {
-                        let last_change_symbol = last_changes.get(index).unwrap();
-
-                        if last_change_symbol.contains('↑') || last_change_symbol.contains('↓')
-                        {
-                            let last_symbol = last_change_symbol.chars().next().unwrap();
-                            let without_symbol = last_change_symbol.replace(last_symbol, "");
-                            without_symbol.parse().unwrap()
-                        } else {
-                            last_change_symbol.parse().unwrap()
-                        }
-                    }
-                    HomeRow::Expense => last_expense.get(index).unwrap().parse().unwrap(),
-                    HomeRow::Income => last_income.get(index).unwrap().parse().unwrap(),
-                    HomeRow::DailyIncome => daily_last_income.get(index).unwrap().parse().unwrap(),
-                    HomeRow::DailyExpense => {
-                        daily_last_expense.get(index).unwrap().parse().unwrap()
-                    }
-                    HomeRow::TopRow => unreachable!(),
-                };
-
-                // Difference can go both ways, either from 0 to a positive number or to a negative number
-                let difference = if last_data > actual_data {
-                    last_data - actual_data
-                } else {
-                    actual_data - last_data
-                };
-
-                let load_difference = if *load_data > actual_data {
-                    *load_data - actual_data
-                } else {
-                    actual_data - *load_data
-                };
-
-                index += 1;
-
-                // If going from 0 to positive number, we add the load percentage % amount from the actual amount that is to be shown
-                // to the load data
-                // If going the other way, we remove load percentage % amount
-                // If neither then they are both equal, nothing to do, loading has finished
-                if actual_data > last_data {
-                    match row_type {
-                        HomeRow::TopRow => unreachable!(),
-                        _ => *load_data = last_data + (difference * *load_percentage),
-                    }
-                } else if last_data > actual_data {
-                    match row_type {
-                        HomeRow::TopRow => unreachable!(),
-                        _ => *load_data = last_data - (difference * *load_percentage),
-                    }
-                } else {
-                    // If we are here it means an interaction happened before the previous load percentage could reach 100%
-                    // This is a fallback option and won't be 100% similar to normal animation
-                    // Instead of keeping on adding/reducing the same amount each frame load by calculating the difference between
-                    // the actual data the last data, we will find the difference by calculating different between the load amount
-                    // or the amount that is being shown in the UI in this frame load and the actual data.
-                    //
-                    // Unlike normal animation, this is non-linear. Example actual data 1000, load data 0.
-                    // First frame load (1000 - 0) * 0.004 = 4. So load data would be 4
-                    // Second frame load (1000 - 4) * 0.008 = 7.968. Load data would be 4 + 7.968 = 11.968
-                    //
-                    // Difference will continue to be higher and higher until a certain point then it will start going down
-                    // Number animation difference will be noticeable compared with normal animation
-                    if load_difference != 0.0 {
-                        match row_type {
-                            HomeRow::TopRow => unreachable!(),
-                            _ => {
-                                if actual_data > *load_data {
-                                    match row_type {
-                                        HomeRow::TopRow => unreachable!(),
-                                        _ => *load_data += load_difference * *load_percentage,
-                                    }
-                                } else if *load_data > actual_data {
-                                    match row_type {
-                                        HomeRow::TopRow => unreachable!(),
-                                        _ => *load_data -= load_difference * *load_percentage,
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 100% has been reached, show the actual balance to the UI now
-                if *load_percentage == 1.0 {
-                    *load_data = actual_data;
-                }
+                let lerp_id = format!("{row_type}:{index}");
+                let to_show = lerp_state.lerp(&lerp_id, actual_data);
 
                 // re-add the previously removed symbol if is the Changes row
                 // Otherwise separate the number with commas
                 if let Some(sym) = symbol {
-                    format!("{sym}{load_data:.2}",).separate_with_commas()
+                    format!("{sym}{to_show:.2}",).separate_with_commas()
                 } else {
-                    format!("{load_data:.2}").separate_with_commas()
+                    format!("{to_show:.2}").separate_with_commas()
                 }
             } else {
                 c.separate_with_commas()
@@ -380,7 +176,7 @@ pub fn home_ui(
             }
         });
         Row::new(cells)
-            .height(height as u16)
+            .height(height)
             .bottom_margin(0)
             .style(Style::default().fg(TEXT))
     });

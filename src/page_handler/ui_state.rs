@@ -2,6 +2,7 @@ use chrono::prelude::Local;
 use chrono::Datelike;
 use ratatui::widgets::TableState;
 use rusqlite::Connection;
+use std::fmt::{self, Display, Result};
 use std::path::PathBuf;
 
 use crate::db::{MODES, MONTHS, YEARS};
@@ -64,7 +65,6 @@ impl TableData {
 /// It is used for keeping track of the Months and Years current index.
 ///
 /// titles: `["January", "February",]`
-
 pub struct IndexedData {
     pub titles: Vec<String>,
     pub index: usize,
@@ -451,6 +451,21 @@ pub enum HomeRow {
     DailyIncome,
     DailyExpense,
     TopRow,
+}
+
+impl Display for HomeRow {
+    #[cfg(not(tarpaulin_include))]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
+        match self {
+            HomeRow::Balance => write!(f, "Balance"),
+            HomeRow::Changes => write!(f, "Changes"),
+            HomeRow::Income => write!(f, "Income"),
+            HomeRow::Expense => write!(f, "Expense"),
+            HomeRow::DailyIncome => write!(f, "DailyIncome"),
+            HomeRow::DailyExpense => write!(f, "DailyExpense"),
+            HomeRow::TopRow => write!(f, "TopRow"),
+        }
+    }
 }
 
 impl HomeRow {

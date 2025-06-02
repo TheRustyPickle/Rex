@@ -15,7 +15,7 @@ use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
 use crate::utility::{
     add_new_activity, add_new_activity_tx, get_all_tx_methods, get_all_tx_methods_cumulative,
-    get_empty_changes, sort_table_data, switch_tx_index,
+    get_empty_changes, sort_table_data, switch_tx_index, LerpState,
 };
 
 /// Stores all the data that is required to handle
@@ -61,15 +61,10 @@ pub struct InputKeyHandler<'a> {
     chart_hidden_mode: &'a mut bool,
     summary_hidden_mode: &'a mut bool,
     deletion_status: &'a mut DeletionStatus,
-    ongoing_balance: &'a mut Vec<String>,
-    ongoing_changes: &'a mut Vec<String>,
-    ongoing_income: &'a mut Vec<String>,
-    ongoing_expense: &'a mut Vec<String>,
-    daily_ongoing_income: &'a mut Vec<String>,
-    daily_ongoing_expense: &'a mut Vec<String>,
     chart_activated_methods: &'a mut HashMap<String, bool>,
     popup_scroll_position: &'a mut usize,
     max_popup_scroll: &'a mut usize,
+    lerp_state: &'a mut LerpState,
     conn: &'a mut Connection,
 }
 
@@ -114,15 +109,10 @@ impl<'a> InputKeyHandler<'a> {
         chart_hidden_mode: &'a mut bool,
         summary_hidden_mode: &'a mut bool,
         deletion_status: &'a mut DeletionStatus,
-        ongoing_balance: &'a mut Vec<String>,
-        ongoing_changes: &'a mut Vec<String>,
-        ongoing_income: &'a mut Vec<String>,
-        ongoing_expense: &'a mut Vec<String>,
-        daily_ongoing_income: &'a mut Vec<String>,
-        daily_ongoing_expense: &'a mut Vec<String>,
         chart_activated_methods: &'a mut HashMap<String, bool>,
         popup_scroll_position: &'a mut usize,
         max_popup_scroll: &'a mut usize,
+        lerp_state: &'a mut LerpState,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data
@@ -168,15 +158,10 @@ impl<'a> InputKeyHandler<'a> {
             chart_hidden_mode,
             summary_hidden_mode,
             deletion_status,
-            ongoing_balance,
-            ongoing_changes,
-            ongoing_income,
-            ongoing_expense,
-            daily_ongoing_income,
-            daily_ongoing_expense,
             chart_activated_methods,
             popup_scroll_position,
             max_popup_scroll,
+            lerp_state,
             conn,
         }
     }
@@ -204,7 +189,8 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn go_home(&mut self) {
         *self.page = CurrentUi::Home;
-        self.reload_home_balance_load();
+        self.reload_home_balance_data();
+        self.lerp_state.clear();
     }
 
     /// Moves the interface to Add Tx page
@@ -213,13 +199,15 @@ impl<'a> InputKeyHandler<'a> {
         *self.page = CurrentUi::AddTx;
         self.add_tx_data
             .add_tx_status("Info: Entering Normal Transaction mode.".to_string());
-        self.reload_add_tx_balance_load();
+        self.reload_add_tx_balance_data();
+        self.lerp_state.clear();
     }
 
     /// Moves the interface to Search page
     #[cfg(not(tarpaulin_include))]
     pub fn go_search(&mut self) {
         *self.page = CurrentUi::Search;
+        self.lerp_state.clear();
     }
 
     /// Moves the interface to Summary page
@@ -232,6 +220,7 @@ impl<'a> InputKeyHandler<'a> {
         *self.summary_tab = SummaryTab::ModeSelection;
         *self.summary_hidden_mode = false;
         self.reload_summary();
+        self.lerp_state.clear();
     }
 
     /// Moves the interface to Chart page
@@ -244,11 +233,13 @@ impl<'a> InputKeyHandler<'a> {
         *self.chart_tab = ChartTab::ModeSelection;
         *self.chart_hidden_mode = false;
         self.reload_chart_index();
+        self.lerp_state.clear();
     }
 
     #[cfg(not(tarpaulin_include))]
     pub fn go_activity(&mut self) {
         *self.page = CurrentUi::Activity;
+        self.lerp_state.clear();
     }
 
     /// Turns on help popup
@@ -416,7 +407,7 @@ impl<'a> InputKeyHandler<'a> {
             self.add_tx_data.add_tx_status(
                 "Info: Entering Transaction edit mode. Press C to reset.".to_string(),
             );
-            self.reload_add_tx_balance_load();
+            self.reload_add_tx_balance_data();
         }
     }
 
@@ -893,7 +884,7 @@ impl<'a> InputKeyHandler<'a> {
                 );
                 *self.page = CurrentUi::AddTx;
             }
-            self.reload_add_tx_balance_load();
+            self.reload_add_tx_balance_data();
         }
     }
 
@@ -1730,20 +1721,6 @@ impl<'a> InputKeyHandler<'a> {
         *self.search_txs = TransactionData::new_search(Vec::new(), Vec::new());
     }
 
-    /// Force add home page's balance load to start from 0.0
-    #[cfg(not(tarpaulin_include))]
-    fn reload_home_balance_load(&mut self) {
-        // 0 for all methods + 1 more for the total balance column
-        let balance_data = vec![String::from("0.0"); get_all_tx_methods(self.conn).len() + 1];
-        self.ongoing_balance.clone_from(&balance_data);
-        *self.ongoing_changes = vec![String::from("0.0"); balance_data.len()];
-        self.ongoing_expense.clone_from(&balance_data.clone());
-        self.ongoing_income.clone_from(&balance_data);
-        self.daily_ongoing_expense.clone_from(&balance_data);
-        self.daily_ongoing_income.clone_from(&balance_data);
-        self.reload_home_balance_data();
-    }
-
     /// Reload activity data by fetching from the DB
     #[cfg(not(tarpaulin_include))]
     fn reload_activity_table(&mut self) {
@@ -1961,16 +1938,6 @@ impl<'a> InputKeyHandler<'a> {
         );
 
         *self.balance_data = balance_data;
-    }
-
-    /// Force add tx page's balance load to start from 0.0
-    #[cfg(not(tarpaulin_include))]
-    fn reload_add_tx_balance_load(&mut self) {
-        // 0 for all methods + 1 more for the total balance column
-        let ongoing_data = vec![String::from("0.0"); get_all_tx_methods(self.conn).len() + 1];
-        self.ongoing_balance.clone_from(&ongoing_data);
-        *self.ongoing_changes = vec![String::from("0.0"); ongoing_data.len()];
-        self.reload_add_tx_balance_data();
     }
 
     /// Update add tx page balance section data that is being shown on the UI
