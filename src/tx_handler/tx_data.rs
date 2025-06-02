@@ -46,6 +46,7 @@ impl Default for TxData {
 impl TxData {
     /// Creates an instance of the struct however the date field is
     /// edited with the current local date of the device.
+    #[must_use]
     pub fn new() -> Self {
         let current_date = Local::now().to_string();
         let formatted_current_date = &current_date[0..10];
@@ -65,6 +66,7 @@ impl TxData {
         }
     }
 
+    #[must_use]
     pub fn new_empty() -> Self {
         TxData {
             date: String::new(),
@@ -84,6 +86,7 @@ impl TxData {
 
     /// Used to adding custom pre-defined data inside the widgets of Add Transaction Page.
     /// Currently used on Editing transaction.
+    #[must_use]
     pub fn custom(
         date: &str,
         details: &str,
@@ -121,6 +124,7 @@ impl TxData {
     }
 
     /// Returns all the data saved
+    #[must_use]
     pub fn get_all_texts(&self) -> Vec<&str> {
         vec![
             &self.date,
@@ -134,6 +138,7 @@ impl TxData {
         ]
     }
 
+    #[must_use]
     pub fn get_tx_method(&self) -> String {
         if self.tx_type == "Transfer" {
             format!("{} to {}", self.from_method, self.to_method)
@@ -142,10 +147,12 @@ impl TxData {
         }
     }
 
+    #[must_use]
     pub fn get_tx_status(&self) -> &Vec<String> {
         &self.tx_status
     }
 
+    #[must_use]
     pub fn get_tx_type(&self) -> TxType {
         if let Some(first_letter) = self.tx_type.chars().next() {
             match first_letter.to_ascii_lowercase() {
@@ -447,6 +454,7 @@ impl TxData {
         None
     }
 
+    #[must_use]
     pub fn check_all_empty(&self) -> bool {
         let all_data = [
             &self.date,
@@ -586,6 +594,7 @@ impl TxData {
     }
 
     /// Returns the current index
+    #[must_use]
     pub fn get_current_index(&self) -> usize {
         self.current_index
     }
@@ -945,7 +954,13 @@ impl TxData {
         let to_method = &self.to_method;
         let amount: f64 = self.amount.parse().unwrap();
 
-        if self.tx_type != "Transfer" {
+        if self.tx_type == "Transfer" {
+            let target_from_balance = last_balances.get_mut(from_method).unwrap();
+            *target_from_balance -= amount;
+
+            let target_to_balance = last_balances.get_mut(to_method).unwrap();
+            *target_to_balance += amount;
+        } else {
             match self.tx_type.as_ref() {
                 "Income" => {
                     let target_balance = last_balances.get_mut(from_method).unwrap();
@@ -957,12 +972,6 @@ impl TxData {
                 }
                 _ => unreachable!(),
             }
-        } else {
-            let target_from_balance = last_balances.get_mut(from_method).unwrap();
-            *target_from_balance -= amount;
-
-            let target_to_balance = last_balances.get_mut(to_method).unwrap();
-            *target_to_balance += amount;
         }
 
         let mut total_bal = 0.0;
@@ -989,14 +998,12 @@ impl TxData {
 
         let all_tx_methods = get_all_tx_methods(conn);
 
-        if self.tx_type != "Transfer" {
+        if self.tx_type == "Transfer" {
             for method in all_tx_methods {
                 if &method == from_method {
-                    match self.tx_type.as_ref() {
-                        "Income" => changes_data.push(format!("↑{amount}")),
-                        "Expense" => changes_data.push(format!("↓{amount}")),
-                        _ => unreachable!(),
-                    }
+                    changes_data.push(format!("↓{amount}"));
+                } else if &method == to_method {
+                    changes_data.push(format!("↑{amount}"));
                 } else {
                     changes_data.push("0.00".to_string());
                 }
@@ -1004,9 +1011,11 @@ impl TxData {
         } else {
             for method in all_tx_methods {
                 if &method == from_method {
-                    changes_data.push(format!("↓{amount}"));
-                } else if &method == to_method {
-                    changes_data.push(format!("↑{amount}"));
+                    match self.tx_type.as_ref() {
+                        "Income" => changes_data.push(format!("↑{amount}")),
+                        "Expense" => changes_data.push(format!("↓{amount}")),
+                        _ => unreachable!(),
+                    }
                 } else {
                     changes_data.push("0.00".to_string());
                 }

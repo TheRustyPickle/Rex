@@ -375,19 +375,7 @@ impl<'a> InputKeyHandler<'a> {
 
             // Based on what kind of transaction is selected, passes the tx data to the struct
             // and change the current interface
-            if tx_type != "Transfer" {
-                *self.add_tx_data = TxData::custom(
-                    &target_data[0],
-                    &target_data[1],
-                    &target_data[2],
-                    "",
-                    &target_data[3],
-                    &target_data[4],
-                    &target_data[5],
-                    target_id_num,
-                );
-                *self.page = CurrentUi::AddTx;
-            } else {
+            if tx_type == "Transfer" {
                 let split_method = target_data[2].split(" to ").collect::<Vec<&str>>();
                 let from_method = split_method[0];
                 let to_method = split_method[1];
@@ -399,6 +387,18 @@ impl<'a> InputKeyHandler<'a> {
                     to_method,
                     &target_data[3],
                     "Transfer",
+                    &target_data[5],
+                    target_id_num,
+                );
+                *self.page = CurrentUi::AddTx;
+            } else {
+                *self.add_tx_data = TxData::custom(
+                    &target_data[0],
+                    &target_data[1],
+                    &target_data[2],
+                    "",
+                    &target_data[3],
+                    &target_data[4],
                     &target_data[5],
                     target_id_num,
                 );
@@ -818,7 +818,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_deletion_popup(&mut self) {
         match self.key.code {
             KeyCode::Left | KeyCode::Right => {
-                *self.deletion_status = self.deletion_status.get_next()
+                *self.deletion_status = self.deletion_status.get_next();
             }
             KeyCode::Enter => match self.deletion_status {
                 DeletionStatus::Yes => match self.page {
@@ -855,19 +855,7 @@ impl<'a> InputKeyHandler<'a> {
 
             // Based on what kind of transaction is selected, passes the tx data to the struct
             // and changes the current interface
-            if tx_type != "Transfer" {
-                *self.add_tx_data = TxData::custom(
-                    &target_data[0],
-                    &target_data[1],
-                    &target_data[2],
-                    "",
-                    &target_data[3],
-                    &target_data[4],
-                    &target_data[5],
-                    target_id_num,
-                );
-                *self.page = CurrentUi::AddTx;
-            } else {
+            if tx_type == "Transfer" {
                 let split_method = target_data[2].split(" to ").collect::<Vec<&str>>();
                 let from_method = split_method[0];
                 let to_method = split_method[1];
@@ -879,6 +867,18 @@ impl<'a> InputKeyHandler<'a> {
                     to_method,
                     &target_data[3],
                     "Transfer",
+                    &target_data[5],
+                    target_id_num,
+                );
+                *self.page = CurrentUi::AddTx;
+            } else {
+                *self.add_tx_data = TxData::custom(
+                    &target_data[0],
+                    &target_data[1],
+                    &target_data[2],
+                    "",
+                    &target_data[3],
+                    &target_data[4],
                     &target_data[5],
                     target_id_num,
                 );
@@ -1037,11 +1037,11 @@ impl<'a> InputKeyHandler<'a> {
             *self.popup_scroll_position += 1;
         } else {
             *self.popup_scroll_position = 0;
-        };
+        }
     }
 }
 
-impl<'a> InputKeyHandler<'a> {
+impl InputKeyHandler<'_> {
     /// Handle Arrow Up key press on the Homepage
     #[cfg(not(tarpaulin_include))]
     fn do_home_up(&mut self) {
@@ -1103,7 +1103,7 @@ impl<'a> InputKeyHandler<'a> {
                 } else {
                     *self.home_tab = self.home_tab.change_tab_down();
                     self.table.state.select(Some(0));
-                };
+                }
             }
             HomeTab::Years => *self.home_tab = self.home_tab.change_tab_down(),
         }
@@ -1227,7 +1227,7 @@ impl<'a> InputKeyHandler<'a> {
                             *self.summary_tab = self.summary_tab.change_tab_down_yearly();
                             *self.summary_tab = self.summary_tab.change_tab_down_yearly();
                             self.summary_table.state.select(None);
-                        };
+                        }
                     }
                     _ => *self.summary_tab = self.summary_tab.change_tab_down_yearly(),
                 },

@@ -533,45 +533,45 @@ fn check_summary_sorting() {
     let expected_data_1 = vec![
         ["Bank", "2000.00", "0.00", "80.00", "0.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
         ["Car", "0.00", "1000.00", "0.00", "100.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
         ["Food", "500.00", "0.00", "20.00", "0.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
     ];
 
     let expected_data_2 = vec![
         ["Bank", "2000.00", "0.00", "80.00", "0.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
         ["Food", "500.00", "0.00", "20.00", "0.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
         ["Car", "0.00", "1000.00", "0.00", "100.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
     ];
 
     let expected_data_3 = vec![
         ["Car", "0.00", "1000.00", "0.00", "100.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
         ["Bank", "2000.00", "0.00", "80.00", "0.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
         ["Food", "500.00", "0.00", "20.00", "0.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
     ];
 

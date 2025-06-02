@@ -63,20 +63,20 @@ fn check_unique_tags() {
     let all_tags = get_all_tags(&conn);
     let expected_data = ["Tag name", "Test tag", "test tag"]
         .iter()
-        .map(|s| s.to_string())
+        .map(|s| (*s).to_string())
         .collect::<Vec<String>>();
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
-    assert_eq!(all_tags, expected_data)
+    assert_eq!(all_tags, expected_data);
 }
 
 #[test]
 fn check_restricted_test() {
     let word_list = ["Unknown", "Words", "Testing"]
         .iter()
-        .map(|s| s.to_string())
+        .map(|s| (*s).to_string())
         .collect::<Vec<String>>();
 
     let is_restricted = check_restricted("cancel", None);
@@ -124,7 +124,7 @@ fn test_location_json() {
     create_change_location_file(&current_dir, &current_dir);
 
     let json_exists = is_location_changed(&current_dir);
-    assert_eq!(json_exists, Some(current_dir.to_owned()));
+    assert_eq!(json_exists, Some(current_dir.clone()));
 
     current_dir.pop();
     current_dir.push("location.json");

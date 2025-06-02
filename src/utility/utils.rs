@@ -169,6 +169,7 @@ pub fn get_last_balance_id(conn: &Connection) -> sqlResult<i32> {
 
 /// Returns two dates based on the month and year index. Used for the purpose of searching
 /// tx based on date
+#[must_use]
 pub fn get_sql_dates(month: usize, year: usize, date_type: &DateType) -> (String, String) {
     match date_type {
         DateType::Monthly => {
@@ -321,6 +322,7 @@ pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>>
 
 /// Returns a styled block for UI to use
 #[cfg(not(tarpaulin_include))]
+#[must_use]
 pub fn styled_block(title: &str) -> Block {
     Block::default()
         .borders(Borders::ALL)
@@ -333,6 +335,7 @@ pub fn styled_block(title: &str) -> Block {
 }
 
 #[cfg(not(tarpaulin_include))]
+#[must_use]
 pub fn main_block<'a>() -> Block<'a> {
     Block::default().style(Style::default().bg(BACKGROUND).fg(BOX))
 }
@@ -340,6 +343,7 @@ pub fn main_block<'a>() -> Block<'a> {
 /// Takes a string and makes any word before the first occurrence of : to Bold
 /// Used for rendering
 #[cfg(not(tarpaulin_include))]
+#[must_use]
 pub fn create_bolded_text(text: &str) -> Vec<Line> {
     let mut text_data = Vec::new();
 
@@ -360,6 +364,7 @@ pub fn create_bolded_text(text: &str) -> Vec<Line> {
 
 /// Tabs from some given data for the UI
 #[cfg(not(tarpaulin_include))]
+#[must_use]
 pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
     let titles: Vec<Line> = data
         .titles
@@ -420,6 +425,7 @@ pub fn start_timer<T: std::fmt::Display>(input: T) {
 
 /// Takes a user input and returns the trimmed input as String
 #[cfg(not(tarpaulin_include))]
+#[must_use]
 pub fn take_input() -> String {
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
@@ -440,6 +446,7 @@ pub fn flush_output(stdout: &Stdout) {
 }
 
 /// Checks if the input is a restricted word or inside a given vector
+#[must_use]
 pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
     if let Some(restricted_words) = restricted {
         for restricted_item in restricted_words {
@@ -459,6 +466,7 @@ pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
 }
 
 /// Parse GitHub release information for popup menu
+#[must_use]
 pub fn parse_github_body(body: &str) -> String {
     let body = body.replace("## Updates", "");
     let body = body.replace('*', "•");
@@ -468,6 +476,7 @@ pub fn parse_github_body(body: &str) -> String {
 }
 
 /// Uses Levenshtein algorithm to get the best match of a string in a vec of strings
+#[must_use]
 pub fn get_best_match(data: &str, matching_set: &[String]) -> String {
     let mut best_match = &matching_set[0];
     let mut best_score = -1.0;
@@ -484,6 +493,7 @@ pub fn get_best_match(data: &str, matching_set: &[String]) -> String {
 }
 
 /// Used for sorting summary table data
+#[must_use]
 pub fn sort_table_data(mut data: Vec<Vec<String>>, sort_type: &SortingType) -> Vec<Vec<String>> {
     match sort_type {
         SortingType::ByTags => data.sort(),
@@ -525,6 +535,7 @@ pub fn add_char_to(to_add: Option<char>, current_index: &mut usize, current_data
 }
 
 /// Checks if the string contains any symbol indicating comparison
+#[must_use]
 pub fn check_comparison(input: &str) -> ComparisonType {
     // Need to handle 2 letter ones first otherwise in case of >=
     // it will match with >
@@ -552,6 +563,7 @@ struct BackupPaths {
 }
 
 /// Checks if location.json exists and returns a path if it exists
+#[must_use]
 pub fn is_location_changed(working_dir: &PathBuf) -> Option<PathBuf> {
     let mut json_path = working_dir.to_owned();
     json_path.pop();
@@ -772,6 +784,7 @@ pub fn add_new_activity_tx<T: AsRef<str> + Display>(
 
 /// Switch from YYYY-MM-DD to DD-MM-YYYY or vice versa.
 /// Will return the original value if either empty or does not have 2 dashes in the string
+#[must_use]
 pub fn reverse_date_format(date: String) -> String {
     if date.is_empty() {
         return date;

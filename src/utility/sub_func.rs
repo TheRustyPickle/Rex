@@ -800,7 +800,7 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
         if !terminal_opened {
             return Err(result.unwrap());
         }
-    };
+    }
     Ok(())
 }
 
