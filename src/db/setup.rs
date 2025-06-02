@@ -24,7 +24,7 @@ pub const MODES: [&str; 3] = ["Monthly", "Yearly", "All Time"];
 
 /// Creates the db that is used by this app
 pub fn create_db(tx_methods: &[String], conn: &mut Connection) -> Result<()> {
-    // add a save point to reverse commits if failed
+    // Add a save point to reverse commits if failed
     let sp = conn.savepoint()?;
 
     // tx_all table. Will contain all tx data
@@ -65,7 +65,7 @@ pub fn create_db(tx_methods: &[String], conn: &mut Connection) -> Result<()> {
         [],
     )?;
 
-    // fill up balance_all table with total year * 12 + 1 rows with 0 balance
+    // Fill up balance_all table with total year * 12 + 1 rows with 0 balance
     let zero_values = vec!["0.00"; tx_methods.len()];
 
     let highlighted_tx_methods = tx_methods
@@ -91,10 +91,10 @@ pub fn create_db(tx_methods: &[String], conn: &mut Connection) -> Result<()> {
     Ok(())
 }
 
-/// creates the `balance_all` table of the DB
+/// Creates the `balance_all` table of the DB
 pub fn create_balances_table(tx_methods: &[String], sp: &Savepoint) -> Result<()> {
-    // balance_all table. Will contain tx methods as columns and their balances.
-    // each row represents 1 month.
+    // Balance_all table. Will contain tx methods as columns and their balances.
+    // Each row represents 1 month.
     let tx_methods_str = tx_methods
         .iter()
         .map(|method| format!(r#""{method}" REAL DEFAULT 0.00"#))
@@ -113,9 +113,9 @@ pub fn create_balances_table(tx_methods: &[String], sp: &Savepoint) -> Result<()
     Ok(())
 }
 
-/// create the `changes_all` table of the DB
+/// Create the `changes_all` table of the DB
 pub fn create_changes_table(tx_methods: &[String], sp: &Savepoint) -> Result<()> {
-    // changes_all column. Will contain all balance changes with up and down arrows
+    // Changes_all column. Will contain all balance changes with up and down arrows
     let columns = tx_methods
         .iter()
         .map(|column_name| format!(r#""{column_name}" TEXT DEFAULT 0.00"#))

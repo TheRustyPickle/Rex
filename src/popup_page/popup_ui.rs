@@ -9,7 +9,7 @@ use ratatui::Frame;
 use crate::page_handler::{DeletionStatus, BACKGROUND, BLUE, BOX, HIGHLIGHTED, RED, TEXT};
 use crate::utility::create_bolded_text;
 
-/// Creates a popup on top of a window with the given size, title and text attributes
+/// Creates a popup on top of a window with the given size, title, and text attributes
 #[cfg(not(tarpaulin_include))]
 pub fn create_popup(f: &mut Frame, title: &str, text: &str, position: usize) {
     let size = f.area();
@@ -27,7 +27,7 @@ pub fn create_popup(f: &mut Frame, title: &str, text: &str, position: usize) {
         .borders(Borders::ALL)
         .style(Style::default().bg(BACKGROUND).fg(BOX));
 
-    // returns an area where we can add anything like a normal window.
+    // Returns an area where we can add anything like a normal window.
     let area = centered_rect(x_value, y_value, size);
 
     let new_chunks = Layout::default()
@@ -72,7 +72,7 @@ pub fn create_deletion_popup(f: &mut Frame, deletion_status: &DeletionStatus) {
     let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
     let text = create_bolded_text(text);
 
-    // determines the size of the popup window
+    // Determines the size of the popup window
     let x_value = 40;
     let y_value = 25;
 
@@ -81,7 +81,7 @@ pub fn create_deletion_popup(f: &mut Frame, deletion_status: &DeletionStatus) {
         .borders(Borders::ALL)
         .style(Style::default().bg(BACKGROUND).fg(BOX));
 
-    // returns an area where we can add anything like a normal window.
+    // Returns an area where we can add anything like a normal window.
     let area = centered_rect(x_value, y_value, size);
 
     let new_chunks = Layout::default()

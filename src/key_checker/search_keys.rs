@@ -8,7 +8,7 @@ use crate::page_handler::{PopupState, TxTab};
 #[cfg(not(tarpaulin_include))]
 pub fn search_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
-        // we don't want to move this interface while the popup is on
+        // We don't want to move this interface while the popup is on
         PopupState::Nothing => match handler.search_tab {
             TxTab::Nothing => match handler.key.code {
                 KeyCode::Char('a') => handler.go_add_tx(),

@@ -20,7 +20,7 @@ pub fn search_ui(
     search_table: &mut TableData,
     date_type: &DateType,
 ) {
-    // get the data to insert into the Status widget of this page
+    // Get the data to insert into the Status widget of this page
 
     use ratatui::layout::Position;
     let status_data = search_data.get_tx_status();
@@ -72,7 +72,7 @@ pub fn search_ui(
         .height(1)
         .bottom_margin(0);
 
-    // divide the terminal into 4 parts vertically
+    // Divide the terminal into 4 parts vertically
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -88,7 +88,7 @@ pub fn search_ui(
         ])
         .split(size);
 
-    // based on the tx type divide the first chunk into 5 or 6 parts horizontally
+    // Based on the tx type divide the first chunk into 5 or 6 parts horizontally
     // this chunk contains the input boxes take takes input
     let input_chunk = {
         match tx_type {
@@ -116,7 +116,7 @@ pub fn search_ui(
         }
     };
 
-    // creates border around the entire terminal
+    // Creates border around the entire terminal
     f.render_widget(main_block(), size);
 
     let mut table_area = Table::new(
@@ -135,7 +135,7 @@ pub fn search_ui(
 
     let mut status_text = vec![];
 
-    // iter through the data in reverse mode because we want the latest status text
+    // Iter through the data in reverse mode because we want the latest status text
     // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
         let (initial, rest) = i.split_once(':').unwrap();
@@ -201,7 +201,7 @@ pub fn search_ui(
         _ => {}
     }
 
-    // creates the widgets to ready it for rendering
+    // Creates the widgets to ready it for rendering
     let status_sec = Paragraph::new(status_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Status"))
@@ -311,7 +311,7 @@ pub fn search_ui(
         }
     }
 
-    // render the previously generated data into an interface
+    // Render the previously generated data into an interface
     f.render_widget(details_sec, chunks[1]);
     f.render_widget(status_sec, chunks[2]);
     f.render_widget(date_sec, input_chunk[0]);

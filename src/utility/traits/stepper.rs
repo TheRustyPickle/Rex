@@ -38,13 +38,13 @@ pub trait FieldStepper: DataVerifier {
                     *user_date = current_date.to_string();
                 }
                 DateType::Monthly => {
-                    let splitted_date = user_date
+                    let split_date = user_date
                         .split('-')
                         .map(|s| s.parse().unwrap())
                         .collect::<Vec<u16>>();
 
-                    let mut month = splitted_date[1];
-                    let mut year = splitted_date[0];
+                    let mut month = split_date[1];
+                    let mut year = split_date[0];
 
                     match step_type {
                         StepType::StepUp => {
@@ -193,7 +193,7 @@ pub trait FieldStepper: DataVerifier {
                 match user_type.chars().next().unwrap().to_ascii_lowercase() {
                     'e' => 1,
                     't' => 2,
-                    // 'i' is 0
+                    // 'I' is 0
                     _ => 0,
                 };
 
@@ -226,7 +226,7 @@ pub trait FieldStepper: DataVerifier {
     ) -> Result<(), SteppingError> {
         let all_tags = get_all_tags(conn);
 
-        // if current tag is empty
+        // If current tag is empty
         // select the first possible tag if available
         if user_tag.is_empty() {
             if all_tags.is_empty() {
@@ -236,22 +236,22 @@ pub trait FieldStepper: DataVerifier {
             return Ok(());
         }
 
-        // tags are separated by comma. Collect all the tags
+        // Tags are separated by comma. Collect all the tags
         let mut current_tags = user_tag
             .split(',')
             .map(|s| s.trim().to_string())
             .collect::<Vec<String>>();
 
-        // tag1, tag2, tag3
+        // Tag1, tag2, tag3
         // in this case, only work with tag3, keep the rest as it is
         let last_tag = current_tags.pop().unwrap();
 
-        // check if the working tag exists inside all tag list
+        // Check if the working tag exists inside all tag list
         if !all_tags
             .iter()
             .any(|tag| tag.to_lowercase() == last_tag.to_lowercase())
         {
-            // tag3, tag2,
+            // Tag3, tag2,
             // if kept like this with extra comma, the last_tag would be empty. In this case
             // select the first tag available in the list or just join the first two tag with , + space
             if last_tag.is_empty() {
@@ -262,7 +262,7 @@ pub trait FieldStepper: DataVerifier {
                     *user_tag = current_tags.join(", ");
                 }
             } else {
-                // as the tag didn't match with any existing tags accept the autofill suggestion
+                // As the tag didn't match with any existing tags accept the auto fill suggestion
                 current_tags.push(autofill.to_owned());
 
                 *user_tag = current_tags.join(", ");
@@ -283,8 +283,8 @@ pub trait FieldStepper: DataVerifier {
                     }
                 }
             };
-            // if the tag matches with something, get the index, select the next one.
-            // start from beginning if reached at the end -> Join
+            // If the tag matches with something, get the index, select the next one.
+            // Start from beginning if reached at the end -> Join
             current_tags.push(all_tags[next_index].clone());
             *user_tag = current_tags.join(", ");
         }

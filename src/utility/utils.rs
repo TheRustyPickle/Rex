@@ -32,9 +32,9 @@ const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense
 
 /// Makes a call to the database to find out all the columns in the `balance_all` section
 /// so we can determine the number of TX Methods that has been added.
-/// return example: `["source_1", "source_2", "source_3"]`
+/// Return example: `["source_1", "source_2", "source_3"]`
 pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
-    // returns all transaction methods added to the database
+    // Returns all transaction methods added to the database
     let column_names = conn
         .prepare("SELECT * FROM balance_all")
         .expect("could not prepare statement");
@@ -49,7 +49,7 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
 }
 
 pub fn get_all_tx_methods_cumulative(conn: &Connection) -> Vec<String> {
-    // returns all transaction methods added to the database
+    // Returns all transaction methods added to the database
     let column_names = conn
         .prepare("SELECT * FROM balance_all")
         .expect("could not prepare statement");
@@ -136,9 +136,9 @@ pub fn get_all_tx_columns(conn: &Connection) -> Vec<String> {
         .collect()
 }
 
-/// Returns the a vector with data required to create the Changes row for zero changes in the home page.
+/// Returns the a vector with data required to create the Changes row for zero changes in the homepage.
 pub fn get_empty_changes(conn: &Connection) -> Vec<String> {
-    // function for quick vec with 0 changes for adding in widget
+    // Function for quick vec with 0 changes for adding in widget
     let tx_methods = get_all_tx_methods(conn);
     let mut changes = vec!["Changes".to_string()];
     for _i in tx_methods {
@@ -167,7 +167,7 @@ pub fn get_last_balance_id(conn: &Connection) -> sqlResult<i32> {
     last_id
 }
 
-/// Returns two dates based on the month and year index. used for the purpose of searching
+/// Returns two dates based on the month and year index. Used for the purpose of searching
 /// tx based on date
 pub fn get_sql_dates(month: usize, year: usize, date_type: &DateType) -> (String, String) {
     match date_type {
@@ -194,7 +194,7 @@ pub fn get_sql_dates(month: usize, year: usize, date_type: &DateType) -> (String
 /// Verifies the db version is up to date
 #[cfg(not(tarpaulin_include))]
 pub fn check_old_sql(conn: &mut Connection) {
-    // earlier version of the database didn't had the Tag column
+    // Earlier version of the database didn't had the Tag column
     if !get_all_tx_columns(conn).contains(&"tags".to_string()) {
         println!("Old database detected. Starting migration...");
         let status = add_tags_column(conn);
@@ -208,7 +208,7 @@ pub fn check_old_sql(conn: &mut Connection) {
         }
     }
 
-    // earlier version of the database's balance_all columns were all TEXT type.
+    // Earlier version of the database's balance_all columns were all TEXT type.
     // Convert to REAL type if found
     if check_old_balance_sql(conn) {
         println!("Outdated database detected. Updating...");
@@ -271,7 +271,7 @@ pub fn get_all_table_names(conn: &Connection) -> Vec<String> {
     result
 }
 
-/// Enters raw mode so the Tui can render properly
+/// Enters raw mode so the TUI can render properly
 #[cfg(not(tarpaulin_include))]
 pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
     enable_raw_mode()?;
@@ -319,7 +319,7 @@ pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-/// Returns a styled block for ui to use
+/// Returns a styled block for UI to use
 #[cfg(not(tarpaulin_include))]
 pub fn styled_block(title: &str) -> Block {
     Block::default()
@@ -337,7 +337,7 @@ pub fn main_block<'a>() -> Block<'a> {
     Block::default().style(Style::default().bg(BACKGROUND).fg(BOX))
 }
 
-/// takes a string and makes any word before the first occurrence of : to Bold
+/// Takes a string and makes any word before the first occurrence of : to Bold
 /// Used for rendering
 #[cfg(not(tarpaulin_include))]
 pub fn create_bolded_text(text: &str) -> Vec<Line> {
@@ -458,7 +458,7 @@ pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
     false
 }
 
-/// Parse github release information for popup menu
+/// Parse GitHub release information for popup menu
 pub fn parse_github_body(body: &str) -> String {
     let body = body.replace("## Updates", "");
     let body = body.replace('*', "•");

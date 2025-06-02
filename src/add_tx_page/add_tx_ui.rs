@@ -24,7 +24,7 @@ pub fn add_tx_ui(
     conn: &Connection,
 ) {
     let all_methods = get_all_tx_methods(conn);
-    // get the data to insert into the Status widget of this page
+    // Get the data to insert into the Status widget of this page
 
     let status_data = add_tx_data.get_tx_status();
     // Contains date, details, from method, to method, amount, tx type, tags.
@@ -42,7 +42,7 @@ pub fn add_tx_ui(
         TxType::Transfer => "From Method",
     };
 
-    // divide the terminal into 3 parts vertically
+    // Divide the terminal into 3 parts vertically
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -58,7 +58,7 @@ pub fn add_tx_ui(
         ])
         .split(size);
 
-    // based on the tx type divide the first chunk into 5 or 6 parts horizontally
+    // Based on the tx type divide the first chunk into 5 or 6 parts horizontally
     // this chunk contains the input boxes take takes input
     let input_chunk = {
         match tx_type {
@@ -86,7 +86,7 @@ pub fn add_tx_ui(
         }
     };
 
-    // creates border around the entire terminal
+    // Creates border around the entire terminal
     f.render_widget(main_block(), size);
 
     let bal_data = balance.iter().map(|item| {

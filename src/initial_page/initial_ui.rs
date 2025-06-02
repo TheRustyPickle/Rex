@@ -53,32 +53,32 @@ pub fn initial_ui(f: &mut Frame, start_from: usize) {
     let mut upper_text = String::new();
 
     for line in split_text {
-        // if the line is 20 chars and the index is 15, take the chars from 15-20 and 0-3 indexes.
-        // this var stores how many to take from 0 index
+        // If the line is 20 chars and the index is 15, take the chars from 15-20 and 0-3 indexes.
+        // This var stores how many to take from 0 index
         let mut to_add_from_start = 0;
         // amount of chars per line
         let mut total_to_add = 10;
 
         if start_from + total_to_add > line.len() {
             let extra_index = (start_from + total_to_add) - line.len();
-            // add extra index to take from beginning and remove from the starting point
+            // Add extra index to take from beginning and remove from the starting point
             // if it will go out of bound
             total_to_add -= extra_index;
             to_add_from_start += extra_index;
         }
 
-        // go through each char of the line
+        // Go through each char of the line
         for (index, char) in line.chars().enumerate() {
             if to_add_from_start != 0 {
-                // add chars if we have to take anything from index 0 to something index
+                // Add chars if we have to take anything from index 0 to something index
                 upper_text.push(char);
                 to_add_from_start -= 1;
             } else if total_to_add != 0 && index >= start_from {
-                // if we are at the start point, take the char
+                // If we are at the start point, take the char
                 upper_text.push(char);
                 total_to_add -= 1;
             } else if index != start_from || total_to_add == 0 {
-                // if the 10 char limit is crossed, only add empty space
+                // If the 10 char limit is crossed, only add empty space
                 upper_text.push(' ');
             }
         }
@@ -130,7 +130,7 @@ Enter: Select the first field if nothing is selected
 Enter: Verify, submit a field and continue
 Esc: Stop editing a field";
 
-    // bold a part of the text before rendering
+    // Bold a part of the text before rendering
     let first_text = create_bolded_text(&unmodified_first_help);
     let second_text = create_bolded_text(unmodified_second_help);
     let third_text = create_bolded_text(&unmodified_third_help);

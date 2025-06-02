@@ -274,7 +274,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// Removes popup status
+    /// Removes pop up status
     #[cfg(not(tarpaulin_include))]
     pub fn do_empty_popup(&mut self) {
         *self.popup = PopupState::Nothing;
@@ -352,7 +352,7 @@ impl<'a> InputKeyHandler<'a> {
         match status {
             Ok(()) => {
                 self.go_home_reset();
-                // we just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
+                // We just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
                 *self.home_tab = HomeTab::Months;
                 self.reload_home_table();
                 self.reload_chart_data();
@@ -373,7 +373,7 @@ impl<'a> InputKeyHandler<'a> {
             let target_id_num = self.all_tx_data.get_id_num(a);
             let tx_type = &target_data[4];
 
-            // based on what kind of transaction is selected, passes the tx data to the struct
+            // Based on what kind of transaction is selected, passes the tx data to the struct
             // and change the current interface
             if tx_type != "Transfer" {
                 *self.add_tx_data = TxData::custom(
@@ -422,7 +422,7 @@ impl<'a> InputKeyHandler<'a> {
             let status = self.all_tx_data.del_tx(index, self.conn);
             match status {
                 Ok(()) => {
-                    // transaction deleted so reload the data again
+                    // Transaction deleted so reload the data again
                     self.reload_home_table();
                     self.reload_chart_data();
                     self.reload_summary_data();
@@ -765,7 +765,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// Takes the autofill value and adds it to the relevant field
+    /// Takes the auto fill value and adds it to the relevant field
     #[cfg(not(tarpaulin_include))]
     pub fn do_autofill(&mut self) {
         match self.page {
@@ -813,7 +813,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// Handle keypress when deletion popup is turned on
+    /// Handle key press when deletion popup is turned on
     #[cfg(not(tarpaulin_include))]
     pub fn handle_deletion_popup(&mut self) {
         match self.key.code {
@@ -853,7 +853,7 @@ impl<'a> InputKeyHandler<'a> {
             let target_id_num = self.search_txs.get_id_num(a);
             let tx_type = &target_data[4];
 
-            // based on what kind of transaction is selected, passes the tx data to the struct
+            // Based on what kind of transaction is selected, passes the tx data to the struct
             // and changes the current interface
             if tx_type != "Transfer" {
                 *self.add_tx_data = TxData::custom(
@@ -895,7 +895,7 @@ impl<'a> InputKeyHandler<'a> {
             let status = self.search_txs.del_tx(index, self.conn);
             match status {
                 Ok(()) => {
-                    // transaction deleted so reload the data again
+                    // Transaction deleted so reload the data again
                     self.reload_home_table();
                     self.reload_chart_data();
                     self.reload_summary_data();
@@ -970,7 +970,7 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     #[cfg(not(tarpaulin_include))]
-    /// Opens a popup that shows the details of the selected transaction on the Home page
+    /// Opens a popup that shows the details of the selected transaction on the Homepage
     pub fn show_home_tx_details(&mut self) {
         if let Some(index) = self.table.state.selected() {
             let selected_tx = self.all_tx_data.get_tx(index);
@@ -1042,7 +1042,7 @@ impl<'a> InputKeyHandler<'a> {
 }
 
 impl<'a> InputKeyHandler<'a> {
-    /// Handle Arrow Up key press on the Home page
+    /// Handle Arrow Up key press on the Homepage
     #[cfg(not(tarpaulin_include))]
     fn do_home_up(&mut self) {
         match &self.home_tab {
@@ -1077,7 +1077,7 @@ impl<'a> InputKeyHandler<'a> {
         self.reload_home_balance_data();
     }
 
-    /// Handle Arrow Down key press on the Home page
+    /// Handle Arrow Down key press on the Homepage
     #[cfg(not(tarpaulin_include))]
     fn do_home_down(&mut self) {
         match &self.home_tab {
@@ -1907,19 +1907,19 @@ impl<'a> InputKeyHandler<'a> {
         let current_table_index = self.table.state.selected();
 
         match current_table_index {
-            // pass out the current index to get the necessary balance & changes data
+            // Pass out the current index to get the necessary balance & changes data
             Some(a) => {
                 balance_data.push(self.all_tx_data.get_balance(a));
                 balance_data.push(self.all_tx_data.get_changes(a));
             }
-            // if none selected, get empty changes + the absolute final balance
+            // If none selected, get empty changes + the absolute final balance
             None => {
                 balance_data.push(self.all_tx_data.get_last_balance(self.conn));
                 balance_data.push(get_empty_changes(self.conn));
             }
         }
 
-        // total income, total expense, daily income, daily expense data based on the selected index.
+        // Total income, total expense, daily income, daily expense data based on the selected index.
         balance_data.push(
             self.all_tx_data
                 .get_total_income(current_table_index, self.conn),
@@ -1950,12 +1950,12 @@ impl<'a> InputKeyHandler<'a> {
         let current_table_index = self.table.state.selected();
 
         let (current_balance, current_changes) = match current_table_index {
-            // pass out the current index to get the necessary balance & changes data
+            // Pass out the current index to get the necessary balance & changes data
             Some(a) => (
                 self.all_tx_data.get_balance(a),
                 self.all_tx_data.get_changes(a),
             ),
-            // if none selected, get empty changes + the absolute final balance
+            // If none selected, get empty changes + the absolute final balance
             None => (
                 self.all_tx_data.get_last_balance(self.conn),
                 get_empty_changes(self.conn),

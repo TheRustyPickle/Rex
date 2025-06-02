@@ -111,7 +111,7 @@ impl SummaryData {
                     let tx_type = &tx_data[4];
                     let tx_tags = tx_data[5].split(", ").collect::<Vec<&str>>();
 
-                    // gather data by loop through each tx. If tag exists, add with the value, if not insert it
+                    // Gather data by loop through each tx. If tag exists, add with the value, if not insert it
                     match tx_type.as_str() {
                         "Income" => {
                             for tag in tx_tags {
@@ -145,7 +145,7 @@ impl SummaryData {
                         let tx_type = &tx_data[4];
                         let tx_tags = tx_data[5].split(", ").collect::<Vec<&str>>();
 
-                        // gather data by loop through each tx. If tag exists, add with the value, if not insert it
+                        // Gather data by loop through each tx. If tag exists, add with the value, if not insert it
                         match tx_type.as_str() {
                             "Income" => {
                                 for tag in tx_tags {
@@ -181,7 +181,7 @@ impl SummaryData {
                             let tx_type = &tx_data[4];
                             let tx_tags = tx_data[5].split(", ").collect::<Vec<&str>>();
 
-                            // gather data by loop through each tx. If tag exists, add with the value, if not insert it
+                            // Gather data by loop through each tx. If tag exists, add with the value, if not insert it
                             match tx_type.as_str() {
                                 "Income" => {
                                     for tag in tx_tags {
@@ -215,7 +215,7 @@ impl SummaryData {
     }
 
     /// Returns a vector that will be used to highlight points such as largest transaction,
-    /// biggest income etc
+    /// biggest income etc.
     pub fn get_tx_data(
         &self,
         mode: &IndexedData,
@@ -472,7 +472,7 @@ impl SummaryData {
         month: usize,
         year: usize,
     ) {
-        // gather all data from the given tx data
+        // Gather all data from the given tx data
         let (
             current_total_income,
             current_total_expense,
@@ -533,7 +533,7 @@ impl SummaryData {
             let mut to_push = vec![(*key).to_string(), format!("{:.2}", value)];
             total_income += value;
 
-            // if the same tag already exists on expense, get that value as well
+            // If the same tag already exists on expense, get that value as well
             if expense_tags.contains_key(key) {
                 to_push.push(format!("{:.2}", expense_tags[key]));
                 total_expense += expense_tags[key];
@@ -544,7 +544,7 @@ impl SummaryData {
         }
 
         for (key, value) in expense_tags {
-            // gather data only from the tags that didn't exist on Income tag list
+            // Gather data only from the tags that didn't exist on Income tag list
             if !income_tags.contains_key(key) {
                 to_return.push(vec![
                     (*key).to_string(),
@@ -554,7 +554,7 @@ impl SummaryData {
                 total_expense += value;
             }
         }
-        // we got the income and expense data earlier. Now need to loop again
+        // We got the income and expense data earlier. Now need to loop again
         // to gather the % data
         for x in to_return.iter_mut() {
             let income_percentage = if &x[1] != "0.00" {
