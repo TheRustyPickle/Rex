@@ -307,7 +307,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_update_popup(&mut self) -> Result<(), HandlingOutput> {
         if self.key.code == KeyCode::Enter {
             // If there is a new version, Enter will try to open the default browser with this link
-            open::that("https://github.com/WaffleMixer/Rex/releases/latest")
+            open::that("https://github.com/TheRustyPickle/Rex/releases/latest")
                 .map_err(|_| HandlingOutput::PrintNewUpdate)?;
             *self.popup = PopupState::Nothing;
             Ok(())
@@ -408,6 +408,7 @@ impl<'a> InputKeyHandler<'a> {
                 "Info: Entering Transaction edit mode. Press C to reset.".to_string(),
             );
             self.reload_add_tx_balance_data();
+            self.lerp_state.clear();
         }
     }
 
@@ -523,15 +524,18 @@ impl<'a> InputKeyHandler<'a> {
                     match self.chart_tab {
                         ChartTab::ModeSelection => {
                             self.chart_modes.previous();
+                            self.lerp_state.clear();
                             self.reload_chart_index();
                         }
                         ChartTab::Years => {
                             self.chart_years.previous();
+                            self.lerp_state.clear();
                             self.chart_months.set_index_zero();
                             self.reload_chart_index();
                         }
                         ChartTab::Months => {
                             self.chart_months.previous();
+                            self.lerp_state.clear();
                             self.reload_chart_index();
                         }
                         ChartTab::TxMethods => {
@@ -598,15 +602,18 @@ impl<'a> InputKeyHandler<'a> {
                 if !*self.chart_hidden_mode {
                     match self.chart_tab {
                         ChartTab::ModeSelection => {
+                            self.lerp_state.clear();
                             self.chart_modes.next();
                             self.reload_chart_index();
                         }
                         ChartTab::Years => {
+                            self.lerp_state.clear();
                             self.chart_years.next();
                             self.chart_months.set_index_zero();
                             self.reload_chart_index();
                         }
                         ChartTab::Months => {
+                            self.lerp_state.clear();
                             self.chart_months.next();
                             self.reload_chart_index();
                         }
@@ -1018,6 +1025,7 @@ impl<'a> InputKeyHandler<'a> {
                     .unwrap();
                 *activation_status = !*activation_status;
                 self.reload_chart_index();
+                self.lerp_state.clear();
             }
         }
     }

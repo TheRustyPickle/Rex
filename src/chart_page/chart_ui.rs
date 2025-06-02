@@ -12,7 +12,7 @@ use crate::chart_page::ChartData;
 use crate::page_handler::{ChartTab, IndexedData, BACKGROUND, BOX, SELECTED};
 use crate::utility::{
     create_tab, create_tab_activation, get_all_tx_methods, get_all_tx_methods_cumulative,
-    main_block,
+    main_block, LerpState,
 };
 
 /// Creates the balance chart from the transactions
@@ -28,6 +28,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     chart_hidden_mode: bool,
     loop_remaining: &mut Option<f64>,
     chart_activated_methods: &HashMap<String, bool, S>,
+    lerp_state: &mut LerpState,
     conn: &Connection,
 ) {
     let size = f.area();
@@ -139,42 +140,8 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
         // When chart UI is selected, start by rendering this amount of day worth of data,
         // then render_size * 2, 3 and so on until the final day is reached, creating a small animation.
         // Numbers were determined after checking with data filled db and with --release flag
-        let render_size = if total_loop > 4000.0 {
-            (total_loop * 0.7) / 100.0
-        } else if total_loop > 2000.0 {
-            (total_loop * 0.5) / 100.0
-        } else if total_loop > 1000.0 {
-            (total_loop * 0.4) / 100.0
-        } else if total_loop > 500.0 {
-            (total_loop * 0.3) / 100.0
-        } else if total_loop > 360.0 {
-            (total_loop * 0.4) / 100.0
-        } else if total_loop > 200.0 {
-            (total_loop * 0.2) / 100.0
-        } else if total_loop < 50.0 {
-            (total_loop * 2.0) / 100.0
-        } else {
-            1.0
-        };
-
-        // Default value = Some(0). After each loop this value goes down by render_size. Once <=0, turn it into None.
-        // When it's None, it won't stop the loop in the middle.
-        if let Some(val) = loop_remaining {
-            if *val == 0.0 {
-                if total_loop > render_size {
-                    *loop_remaining = Some(total_loop - render_size);
-                } else {
-                    *loop_remaining = None;
-                }
-            } else if *val - render_size > 0.0 {
-                *loop_remaining = Some(*val - render_size);
-            } else {
-                *loop_remaining = None;
-            }
-        }
-
-        // Total times to loop this time. If None, then render everything
-        let mut to_loop = loop_remaining.as_mut().map(|val| total_loop - *val);
+        let lerp_id = "chart_loop_size";
+        let mut to_loop = lerp_state.lerp(lerp_id, total_loop);
 
         // labels of the x axis
         date_labels.push(checking_date.to_string());
@@ -269,14 +236,13 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
             }
 
             if !to_add_again {
-                if let Some(val) = to_loop {
-                    // Break the loop if total day amount is reached
-                    if val - 1.0 <= 0.0 {
-                        date_labels.pop().unwrap();
-                        date_labels.push(checking_date.to_string());
-                        break;
-                    }
-                    to_loop = Some(val - 1.0);
+                // Break the loop if total day amount is reached
+                if to_loop - 1.0 <= 0.0 {
+                    date_labels.pop().unwrap();
+                    date_labels.push(checking_date.to_string());
+                    break;
+                } else {
+                    to_loop += -1.0;
                 }
             }
 

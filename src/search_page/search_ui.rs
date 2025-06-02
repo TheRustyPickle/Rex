@@ -10,7 +10,7 @@ use crate::page_handler::{
     DateType, TableData, TxTab, BACKGROUND, BLUE, GRAY, HEADER, RED, SELECTED, TEXT,
 };
 use crate::tx_handler::TxData;
-use crate::utility::{main_block, styled_block};
+use crate::utility::{main_block, styled_block, LerpState};
 
 #[cfg(not(tarpaulin_include))]
 pub fn search_ui(
@@ -19,6 +19,7 @@ pub fn search_ui(
     search_tab: &TxTab,
     search_table: &mut TableData,
     date_type: &DateType,
+    lerp_state: &mut LerpState,
 ) {
     // Get the data to insert into the Status widget of this page
 
@@ -37,31 +38,44 @@ pub fn search_ui(
 
     let tx_type = search_data.get_tx_type();
 
-    let rows = search_table.items.iter().map(|item| {
-        let height = 1;
-        let cells = item.iter().map(|c| Cell::from(c.separate_with_commas()));
-        Row::new(cells)
-            .height(height as u16)
-            .bottom_margin(0)
-            .style(Style::default().bg(BACKGROUND).fg(TEXT))
-    });
+    let tx_count = search_table.items.len();
+    let lerp_id = "home_tx_count";
+    let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64) as i64;
+
+    let table_name = format!("Transactions: {}", lerp_tx_count);
+
+    let rows = search_table
+        .items
+        .iter()
+        .enumerate()
+        .map(|(row_index, item)| {
+            let height = 1;
+            let cells = item.iter().enumerate().map(|(index, c)| {
+                let Ok(parsed_num) = c.parse::<f64>() else {
+                    return Cell::from(c.separate_with_commas());
+                };
+
+                let lerp_id = format!("search_table:{index}:{row_index}");
+                let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+
+                Cell::from(format!("{new_c:.2}").separate_with_commas())
+            });
+            Row::new(cells)
+                .height(height as u16)
+                .bottom_margin(0)
+                .style(Style::default().bg(BACKGROUND).fg(TEXT))
+        });
 
     let from_method_name = match tx_type {
         TxType::IncomeExpense => "TX Method",
         TxType::Transfer => "From Method",
     };
 
-    let mut table_name = "Transactions".to_string();
-
     let date_name = match date_type {
         DateType::Exact => "Search by Exact Date",
         DateType::Monthly => "Search by Month",
         DateType::Yearly => "Search by Year",
     };
-
-    if !search_table.items.is_empty() {
-        table_name = format!("Transactions: {}", search_table.items.len());
-    }
 
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
         .iter()
