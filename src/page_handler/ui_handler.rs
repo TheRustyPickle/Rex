@@ -49,6 +49,8 @@ pub fn start_app<B: Backend>(
     // Setting up some default values. Let's go through all of them
 
     // contains the home page month list that is indexed
+
+    use crate::utility::LerpState;
     let mut home_months = IndexedData::new_monthly();
     // contains the home page year list that is indexed
     let mut home_years = IndexedData::new_yearly();
@@ -151,40 +153,6 @@ pub fn start_app<B: Backend>(
     // The initial popup when deleting tx will start on Yes value
     let mut deletion_status: DeletionStatus = DeletionStatus::Yes;
 
-    // The current balance that is being shown on the home tab Balance column. Will change every loop util the actual balance is reached
-    let mut balance_load = vec![0.0; get_all_tx_methods(conn).len() + 1];
-    // The balance shown in the UI before the current actual balance that is being shown in the UI
-    // If went from row 2 to row 3, this will contain the balance or row 2 to calculate the difference
-    // we have to animate/load progressively
-    let mut last_balance = Vec::new();
-    // The actual current balance that is being shown
-    let mut ongoing_balance = Vec::new();
-    // If the difference between the ongoing and last balance is 100, each loop it adds/reduces x.xx% of the difference to the balance
-    // till actual balance is reached. After each loop it gets increased by a little till 1.0 and key polling starts at 1.0, putting the app to sleep
-    // A single var is used to keep track of load % for all values on the home page
-    let mut load_percentage = 0.0;
-
-    // Works similarly to balance load
-    let mut changes_load = balance_load.clone();
-    let mut last_changes = Vec::new();
-    let mut ongoing_changes = Vec::new();
-
-    let mut income_load = balance_load.clone();
-    let mut last_income = Vec::new();
-    let mut ongoing_income = Vec::new();
-
-    let mut expense_load = balance_load.clone();
-    let mut last_expense = Vec::new();
-    let mut ongoing_expense = Vec::new();
-
-    let mut daily_income_load = balance_load.clone();
-    let mut daily_last_income = Vec::new();
-    let mut daily_ongoing_income = Vec::new();
-
-    let mut daily_expense_load = balance_load.clone();
-    let mut daily_last_expense = Vec::new();
-    let mut daily_ongoing_expense = Vec::new();
-
     // Contains whether in the chart whether a tx method is activated or not
     let mut chart_activated_methods = get_all_tx_methods_cumulative(conn)
         .into_iter()
@@ -194,81 +162,53 @@ pub fn start_app<B: Backend>(
     let mut popup_scroll_position = 0;
     let mut max_popup_scroll = 0;
 
-    // Whether to reset home page stuff loading %
-    // Will only turn true on initial run and when a key is pressed
-    let mut to_reset = true;
-
-    // Home and Add Tx Page balance data
+    // Home and Add TX Page balance data
     let mut balance_data = Vec::new();
-    // Home and add tx page balance section's column space
+    // Home and add TX page balance section's column space
     let mut width_data = Vec::new();
     let total_columns = get_all_tx_methods(conn).len() + 2;
     let width_percent = (100 / total_columns) as u16;
 
-    // save the % of space each column should take in the Balance section based on the total
+    // Save the % of space each column should take in the Balance section based on the total
     // transaction methods/columns available
     for _ in 0..total_columns {
         width_data.push(Constraint::Percentage(width_percent));
     }
 
-    // how it work:
+    let mut lerp_state = LerpState::new(1.0);
+
+    // How it work:
     // Default value from above -> Goes to an interface page and render -> Wait for an event key press.
     //
-    // If no keypress is detected in certain position it will start the next iteration -> interface -> Key check
-    // Otherwise it will poll for keypress and locks the position
+    // If no key press is detected in certain position it will start the next iteration -> interface -> Key check
+    // Otherwise it will poll for key press and locks the position
     //
-    // If keypress is detected, send most of the &mut values to InputKeyHandler -> Gets mutated based on key press
+    // If key press is detected, send most of the &mut values to InputKeyHandler -> Gets mutated based on key press
     // -> loop ends -> start from beginning -> Send the new mutated values to the interface -> Keep up
     loop {
-        // passing out relevant data to the ui function
+        // Passing out relevant data to the UI function
         terminal
             .draw(|f| {
                 match page {
                     CurrentUi::Home => home_ui(
                         f,
-                        to_reset,
                         &home_months,
                         &home_years,
                         &mut table,
                         &mut balance_data,
                         &home_tab,
                         &mut width_data,
-                        &mut balance_load,
-                        &mut ongoing_balance,
-                        &mut last_balance,
-                        &mut changes_load,
-                        &mut ongoing_changes,
-                        &mut last_changes,
-                        &mut income_load,
-                        &mut ongoing_income,
-                        &mut last_income,
-                        &mut expense_load,
-                        &mut ongoing_expense,
-                        &mut last_expense,
-                        &mut daily_income_load,
-                        &mut daily_ongoing_income,
-                        &mut daily_last_income,
-                        &mut daily_expense_load,
-                        &mut daily_ongoing_expense,
-                        &mut daily_last_expense,
-                        &mut load_percentage,
+                        &mut lerp_state,
                         conn,
                     ),
 
                     CurrentUi::AddTx => add_tx_ui(
                         f,
-                        to_reset,
                         &mut balance_data,
                         &add_tx_data,
                         &add_tx_tab,
                         &mut width_data,
-                        &mut balance_load,
-                        &mut ongoing_balance,
-                        &mut last_balance,
-                        &mut changes_load,
-                        &mut ongoing_changes,
-                        &mut last_changes,
-                        &mut load_percentage,
+                        &mut lerp_state,
                         conn,
                     ),
 
@@ -344,25 +284,19 @@ pub fn start_app<B: Backend>(
                 }
             }
             CurrentUi::Home | CurrentUi::AddTx => {
-                // If balance loading hasn't ended yet, continue the loop
-                if load_percentage < 1.0
+                // If at least 1 lerp is in progress and no key press detected, continue the loop
+                if lerp_state.has_active_lerps()
                     && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
                 {
-                    to_reset = false;
                     continue;
                 }
-                // Polling has started here. Unless a new key is pressed, it will never proceed further.
-                // So after it's detected, we will reset the loading data on the home page
-                to_reset = true;
             }
-
             _ => {}
         }
 
-        // if not inside one of the duration polling, wait for keypress
+        // If not inside one of the duration polling, wait for key press
         if let Event::Key(key) = event::read().map_err(UiHandlingError::PollingError)? {
             if key.kind != KeyEventKind::Press {
-                to_reset = false;
                 continue;
             }
 
@@ -405,15 +339,10 @@ pub fn start_app<B: Backend>(
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,
                 &mut deletion_status,
-                &mut ongoing_balance,
-                &mut ongoing_changes,
-                &mut ongoing_income,
-                &mut ongoing_expense,
-                &mut daily_ongoing_income,
-                &mut daily_ongoing_expense,
                 &mut chart_activated_methods,
                 &mut popup_scroll_position,
                 &mut max_popup_scroll,
+                &mut lerp_state,
                 conn,
             );
 

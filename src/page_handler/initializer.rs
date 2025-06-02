@@ -41,12 +41,16 @@ pub fn initialize_app(
 
     // If the location was changed/json file found, change the db directory.
     let db_path = if let Some(mut location) = is_location_changed(original_db_path) {
-        set_current_dir(&location).unwrap();
+        let Ok(_) = set_current_dir(&location) else {
+            println!("Failed to set the new path. Exiting program...");
+            std::process::exit(1);
+        };
         location.push("data.sqlite");
         location
     } else {
         original_db_path.clone()
     };
+
     // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
     check_n_create_db(&db_path)?;
 
