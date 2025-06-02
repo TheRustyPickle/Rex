@@ -78,7 +78,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
                 ]);
             }
             _ => {}
-        };
+        }
     }
 
     let chunks = main_layout.split(size);
@@ -121,7 +121,9 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     let mut current_axis = 0.0;
 
     // If there are no transactions, we will create an empty chart
-    if !all_txs.is_empty() {
+    if all_txs.is_empty() {
+        *loop_remaining = None;
+    } else {
         // Contains all dates of the transactions
         let all_dates = chart_data.get_all_dates(mode_selection, months.index, years.index);
 
@@ -203,12 +205,12 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
 
                 for method_index in 0..all_tx_methods_cumulative.len() {
                     // Keep track of the highest and the lowest point of the balance
-                    let current_balance = if method_index != all_tx_methods.len() {
+                    let current_balance = if method_index == all_tx_methods.len() {
+                        cumulative_balance
+                    } else {
                         let balance = current_balances[method_index].parse::<f64>().unwrap();
                         cumulative_balance += balance;
                         balance
-                    } else {
-                        cumulative_balance
                     };
 
                     // We will not consider the highest/lowest balance if the method is currently deactivated on chart.
@@ -282,8 +284,6 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
                 break;
             }
         }
-    } else {
-        *loop_remaining = None;
     }
     // Add a 10% extra value to the highest and the lowest balance
     // so the chart can properly render

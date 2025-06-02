@@ -137,7 +137,7 @@ fn check_chart_data() {
         "Expense",
         "Car",
     ]
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .into_iter()
     .collect();
 
@@ -149,7 +149,7 @@ fn check_chart_data() {
         "Expense",
         "Food",
     ]
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .into_iter()
     .collect();
 
@@ -161,7 +161,7 @@ fn check_chart_data() {
         "Income",
         "Food",
     ]
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .into_iter()
     .collect();
 
@@ -171,11 +171,11 @@ fn check_chart_data() {
     let expected_data_1 = (Vec::new(), Vec::new());
 
     let first_balance = ["-100.00", "-100.00"]
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .into_iter()
         .collect();
     let second_balance = ["100.00", "-100.00"]
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .into_iter()
         .collect();
 
@@ -211,16 +211,16 @@ fn check_chart_data() {
     let chart_dates_2 = chart_data.get_data(&chart_mode, 6, 1);
 
     let first_balance = ["-100.00", "0.00"]
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .into_iter()
         .collect();
     let second_balance = ["-100.00", "-100.00"]
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .into_iter()
         .collect();
 
     let third_balance = ["100.00", "-100.00"]
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .into_iter()
         .collect();
 

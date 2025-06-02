@@ -23,6 +23,7 @@ impl TableData {
     /// Creates the default table state and adds the manual transaction data
     /// that was passed to it as an argument to consider them as a value of an index.
     /// State is the library default.
+    #[must_use]
     pub fn new(data: Vec<Vec<String>>) -> Self {
         TableData {
             state: TableState::default(),
@@ -366,6 +367,7 @@ pub enum ResetType {
 
 impl UserInputType {
     #[cfg(not(tarpaulin_include))]
+    #[must_use]
     pub fn from_string(input: &str) -> Self {
         match input {
             "1" => UserInputType::AddNewTxMethod(Vec::new()),
@@ -456,6 +458,7 @@ impl Display for HomeRow {
 
 impl HomeRow {
     #[cfg(not(tarpaulin_include))]
+    #[must_use]
     pub fn get_row(data: &[String]) -> Self {
         if data[0] == "Balance" {
             HomeRow::Balance
@@ -510,6 +513,7 @@ pub enum ActivityType {
 }
 
 impl ActivityType {
+    #[must_use]
     pub fn from_s(data: &str) -> Self {
         match data {
             "Add TX" => Self::NewTX,
@@ -521,6 +525,7 @@ impl ActivityType {
         }
     }
 
+    #[must_use]
     pub fn to_details(&self) -> String {
         match self {
             Self::NewTX => String::from("A new Transaction was added"),
@@ -541,6 +546,7 @@ impl ActivityType {
         }
     }
 
+    #[must_use]
     pub fn to_str(&self) -> String {
         match self {
             Self::NewTX => String::from("Add TX"),

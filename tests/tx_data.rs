@@ -357,7 +357,7 @@ fn tx_data_searching() {
     let mut tx_data = TxData::new_empty();
 
     for i in ['2', '0', '2', '3'] {
-        tx_data.edit_date(Some(i))
+        tx_data.edit_date(Some(i));
     }
 
     let data = tx_data.get_search_tx(&DateType::Yearly, &conn);
@@ -436,43 +436,43 @@ fn tx_data_editing() {
     let mut tx_data = TxData::new_empty();
 
     for i in ['2', '0', '2', '3', '-', '0', '7', '-', '0', '5'] {
-        tx_data.edit_date(Some(i))
+        tx_data.edit_date(Some(i));
     }
 
     tx_data.go_current_index(&TxTab::Details);
 
     for i in ['S', 'o', 'm', 'e'] {
-        tx_data.edit_details(Some(i))
+        tx_data.edit_details(Some(i));
     }
 
     tx_data.go_current_index(&TxTab::FromMethod);
 
     for i in ['t', 'e', 's', 't', '1'] {
-        tx_data.edit_from_method(Some(i))
+        tx_data.edit_from_method(Some(i));
     }
 
     tx_data.go_current_index(&TxTab::Amount);
 
     for i in ['2', '0', '2', '3'] {
-        tx_data.edit_amount(Some(i))
+        tx_data.edit_amount(Some(i));
     }
 
     tx_data.go_current_index(&TxTab::TxType);
 
     for i in ['E'] {
-        tx_data.edit_tx_type(Some(i))
+        tx_data.edit_tx_type(Some(i));
     }
 
     tx_data.go_current_index(&TxTab::ToMethod);
 
     for i in ['t', 'e', 's', 't', ' ', '2'] {
-        tx_data.edit_to_method(Some(i))
+        tx_data.edit_to_method(Some(i));
     }
 
     tx_data.go_current_index(&TxTab::Tags);
 
     for i in ['T', 'a', 'g'] {
-        tx_data.edit_tags(Some(i))
+        tx_data.edit_tags(Some(i));
     }
 
     let expected_data: Vec<String> = vec![
@@ -494,43 +494,43 @@ fn tx_data_editing() {
     tx_data.go_current_index(&TxTab::Date);
 
     for _ in ['2', '0', '2', '3', '-', '0', '7', '-', '0', '5'] {
-        tx_data.edit_date(None)
+        tx_data.edit_date(None);
     }
 
     tx_data.go_current_index(&TxTab::Details);
 
     for _ in ['S', 'o', 'm', 'e'] {
-        tx_data.edit_details(None)
+        tx_data.edit_details(None);
     }
 
     tx_data.go_current_index(&TxTab::FromMethod);
 
     for _ in ['t', 'e', 's', 't', '1'] {
-        tx_data.edit_from_method(None)
+        tx_data.edit_from_method(None);
     }
 
     tx_data.go_current_index(&TxTab::Amount);
 
     for _ in ['2', '0', '2', '3'] {
-        tx_data.edit_amount(None)
+        tx_data.edit_amount(None);
     }
 
     tx_data.go_current_index(&TxTab::TxType);
 
     for _ in ['E'] {
-        tx_data.edit_tx_type(None)
+        tx_data.edit_tx_type(None);
     }
 
     tx_data.go_current_index(&TxTab::ToMethod);
 
     for _ in ['t', 'e', 's', 't', ' ', '2'] {
-        tx_data.edit_to_method(None)
+        tx_data.edit_to_method(None);
     }
 
     tx_data.go_current_index(&TxTab::Tags);
 
     for _ in ['T', 'a', 'g'] {
-        tx_data.edit_tags(None)
+        tx_data.edit_tags(None);
     }
 
     let expected_data: Vec<String> = vec!["", "", "", "", "", "", "", ""]

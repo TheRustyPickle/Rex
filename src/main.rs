@@ -13,12 +13,12 @@ fn main() {
         working_path.push("Rex");
         // Create folder if non-existing then move the current working directory
         // to the OS data directory
-        let Ok(_) = fs::create_dir_all(&working_path) else {
+        let Ok(()) = fs::create_dir_all(&working_path) else {
             println!("Failed to work with the working path. Exiting program...");
             return;
         };
 
-        let Ok(_) = set_current_dir(&working_path) else {
+        let Ok(()) = set_current_dir(&working_path) else {
             println!("Failed to set the working path. Exiting program...");
             return;
         };

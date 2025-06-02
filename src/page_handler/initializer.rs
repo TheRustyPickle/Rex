@@ -41,7 +41,7 @@ pub fn initialize_app(
 
     // If the location was changed/json file found, change the db directory.
     let db_path = if let Some(mut location) = is_location_changed(original_db_path) {
-        let Ok(_) = set_current_dir(&location) else {
+        let Ok(()) = set_current_dir(&location) else {
             println!("Failed to set the new path. Exiting program...");
             std::process::exit(1);
         };

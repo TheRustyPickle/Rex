@@ -35,6 +35,7 @@ impl TransactionData {
         }
     }
 
+    #[must_use]
     pub fn new_search(all_tx: Vec<Vec<String>>, all_id_num: Vec<String>) -> Self {
         TransactionData {
             all_tx,
@@ -46,16 +47,19 @@ impl TransactionData {
 
     /// Returns all the Transaction data for the given index. Index is of the
     /// Home Table's selected index
+    #[must_use]
     pub fn get_txs(&self) -> Vec<Vec<String>> {
         self.all_tx.clone()
     }
 
+    #[must_use]
     pub fn is_tx_empty(&self) -> bool {
         self.all_tx.is_empty()
     }
 
     /// Returns all the balance data for the given index. Index is of the
     /// Home Table's selected index
+    #[must_use]
     pub fn get_balance(&self, index: usize) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
         let mut total_balance = 0.0;
@@ -85,6 +89,7 @@ impl TransactionData {
 
     /// Returns all the changes data for the given index. Index is of the
     /// Home Table's selected index
+    #[must_use]
     pub fn get_changes(&self, index: usize) -> Vec<String> {
         let mut changes_data = vec!["Changes".to_string()];
         for i in &self.all_changes[index] {
@@ -94,6 +99,7 @@ impl TransactionData {
     }
 
     /// Returns the `id_num` of the tx of the given index
+    #[must_use]
     pub fn get_id_num(&self, index: usize) -> i32 {
         self.all_id_num[index].parse::<i32>().unwrap().to_owned()
     }
@@ -204,6 +210,7 @@ impl TransactionData {
         final_expense
     }
 
+    #[must_use]
     pub fn get_tx(&self, index: usize) -> &Vec<String> {
         &self.all_tx[index]
     }

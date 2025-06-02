@@ -17,6 +17,7 @@ pub struct LerpState {
 }
 
 impl LerpState {
+    #[must_use]
     pub fn new(duration_secs: f64) -> Self {
         Self {
             values: HashMap::new(),
@@ -65,6 +66,7 @@ impl LerpState {
         entry.current
     }
 
+    #[must_use]
     pub fn has_active_lerps(&self) -> bool {
         self.active_lerp_count > 0
     }

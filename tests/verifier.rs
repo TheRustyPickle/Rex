@@ -37,7 +37,7 @@ fn check_sql_dates() {
 fn check_verifier_date() {
     let test_data = Testing {
         data: vec![
-            "".to_string(),
+            String::new(),
             "2022-01-01".to_string(),
             "  2022  -  01  -  01  ".to_string(),
             "2022-01".to_string(),
@@ -54,7 +54,7 @@ fn check_verifier_date() {
             "2022-01-311".to_string(),
         ],
         expected: vec![
-            "".to_string(),
+            String::new(),
             "2022-01-01".to_string(),
             "2022-01-01".to_string(),
             "2022-01-01".to_string(),
@@ -101,7 +101,7 @@ fn check_verifier_date() {
 fn check_verifier_amount() {
     let test_data = Testing {
         data: vec![
-            "".to_string(),
+            String::new(),
             "1".to_string(),
             "1.".to_string(),
             "1.0".to_string(),
@@ -120,7 +120,7 @@ fn check_verifier_amount() {
             "1.0000".to_string(),
         ],
         expected: vec![
-            "".to_string(),
+            String::new(),
             "1.00".to_string(),
             "1.00".to_string(),
             "1.00".to_string(),
@@ -171,14 +171,14 @@ fn check_verifier_amount() {
 fn check_verifier_tx_method() {
     let test_data = Testing {
         data: vec![
-            "".to_string(),
+            String::new(),
             "test 2".to_string(),
             "random".to_string(),
             "  test 2  ".to_string(),
             "te".to_string(),
         ],
         expected: vec![
-            "".to_string(),
+            String::new(),
             "test 2".to_string(),
             "test1".to_string(),
             "test 2".to_string(),
@@ -209,7 +209,7 @@ fn check_verifier_tx_method() {
 fn check_verifier_tx_type() {
     let test_data = Testing {
         data: vec![
-            "".to_string(),
+            String::new(),
             "e".to_string(),
             "i".to_string(),
             "w".to_string(),
@@ -217,10 +217,10 @@ fn check_verifier_tx_type() {
             "  i   ".to_string(),
         ],
         expected: vec![
-            "".to_string(),
+            String::new(),
             "Expense".to_string(),
             "Income".to_string(),
-            "".to_string(),
+            String::new(),
             "Income".to_string(),
             "Income".to_string(),
         ],
@@ -246,7 +246,7 @@ fn check_verifier_tx_type() {
 fn check_verifier_tags() {
     let test_data = Testing {
         data: vec![
-            "".to_string(),
+            String::new(),
             "tag1,".to_string(),
             "tag1,    , , , ".to_string(),
             "tag1,tag2,tag3".to_string(),
@@ -254,7 +254,7 @@ fn check_verifier_tags() {
             "tag1, Tag1, tAg1".to_string(),
         ],
         expected: vec![
-            "".to_string(),
+            String::new(),
             "tag1".to_string(),
             "tag1".to_string(),
             "tag1, tag2, tag3".to_string(),

@@ -135,7 +135,7 @@ pub fn summary_ui(
                     .constraints([Constraint::Percentage(50), Constraint::Percentage(50)]);
             }
             _ => {}
-        };
+        }
     }
 
     let chunks = main_layout.split(size);

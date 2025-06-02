@@ -62,7 +62,7 @@ impl SummaryData {
                 "Income" => {
                     if tx_amount > biggest_earning.0 {
                         biggest_earning = (tx_amount, tx_method.to_string(), tx_date.to_string());
-                    };
+                    }
                     total_income += tx_amount;
                     monthly_earning += tx_amount;
 
@@ -71,7 +71,7 @@ impl SummaryData {
                 "Expense" => {
                     if tx_amount > biggest_expense.0 {
                         biggest_expense = (tx_amount, tx_method.to_string(), tx_date.to_string());
-                    };
+                    }
                     total_expense += tx_amount;
                     monthly_expense += tx_amount;
 
@@ -93,6 +93,7 @@ impl SummaryData {
 
     /// Returns a vector that will be used to creating table in the Summary UI
     /// The vector contains tags and their income and expense data
+    #[must_use]
     pub fn get_table_data(
         &self,
         mode: &IndexedData,
@@ -330,43 +331,43 @@ impl SummaryData {
         let (income_percentage, expense_percentage) =
             self.get_percentages(total_income, total_expense);
 
-        let average_income = if total_income != 0.0 {
-            total_income / total_month_checked
-        } else {
+        let average_income = if total_income == 0.0 {
             0.0
+        } else {
+            total_income / total_month_checked
         };
 
-        let average_expense = if total_income != 0.0 {
-            total_expense / total_month_checked
-        } else {
+        let average_expense = if total_income == 0.0 {
             0.0
+        } else {
+            total_expense / total_month_checked
         };
 
         let mut method_data = Vec::new();
 
         for method in &all_methods {
-            let earning_percentage = if method_earning[method] != 0.0 {
+            let earning_percentage = if method_earning[method] == 0.0 {
+                format!("{:.2}", 0.0)
+            } else {
                 format!("{:.2}%", (method_earning[method] / total_income) * 100.0)
-            } else {
-                format!("{:.2}", 0.0)
             };
 
-            let expense_percentage = if method_expense[method] != 0.0 {
+            let expense_percentage = if method_expense[method] == 0.0 {
+                format!("{:.2}", 0.0)
+            } else {
                 format!("{:.2}%", (method_expense[method] / total_expense) * 100.0)
-            } else {
-                format!("{:.2}", 0.0)
             };
 
-            let average_earning = if method_earning[method] != 0.0 {
+            let average_earning = if method_earning[method] == 0.0 {
+                format!("{:.2}", 0.0)
+            } else {
                 format!("{:.2}", method_earning[method] / total_month_checked)
-            } else {
-                format!("{:.2}", 0.0)
             };
 
-            let average_expense = if method_expense[method] != 0.0 {
-                format!("{:.2}", method_expense[method] / total_month_checked)
-            } else {
+            let average_expense = if method_expense[method] == 0.0 {
                 format!("{:.2}", 0.0)
+            } else {
+                format!("{:.2}", method_expense[method] / total_month_checked)
             };
             method_data.push(vec![
                 method.to_string(),
@@ -556,19 +557,19 @@ impl SummaryData {
         }
         // We got the income and expense data earlier. Now need to loop again
         // to gather the % data
-        for x in to_return.iter_mut() {
-            let income_percentage = if &x[1] != "0.00" {
+        for x in &mut to_return {
+            let income_percentage = if &x[1] == "0.00" {
+                format!("{:.2}", 0.0)
+            } else {
                 let income = &x[1].parse::<f64>().unwrap();
                 format!("{:.2}", ((income / total_income) * 100.0))
-            } else {
-                format!("{:.2}", 0.0)
             };
 
-            let expense_percentage = if &x[2] != "0.00" {
+            let expense_percentage = if &x[2] == "0.00" {
+                format!("{:.2}", 0.0)
+            } else {
                 let expense = &x[2].parse::<f64>().unwrap();
                 format!("{:.2}", ((expense / total_expense) * 100.0))
-            } else {
-                format!("{:.2}", 0.0)
             };
 
             x.push(income_percentage);

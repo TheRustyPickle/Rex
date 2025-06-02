@@ -35,6 +35,7 @@ impl ChartData {
     }
 
     /// Returns all dates of the transactions from the given month and year
+    #[must_use]
     pub fn get_all_dates(&self, mode: &IndexedData, month: usize, year: usize) -> Vec<NaiveDate> {
         let mut to_return = vec![];
 
@@ -71,6 +72,7 @@ impl ChartData {
         to_return
     }
 
+    #[must_use]
     pub fn get_data(
         &self,
         mode: &IndexedData,
