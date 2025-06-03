@@ -6,10 +6,10 @@ use crate::db::{
 };
 use crate::utility::get_all_tx_methods;
 
-/// adds new tx methods as columns on `balance_all` and `changes_all` tables. Gets called after
+/// Adds new tx methods as columns on `balance_all` and `changes_all` tables. Gets called after
 /// successful handling of 'J' from the app
 pub fn add_new_tx_methods(tx_methods: &[String], conn: &mut Connection) -> Result<()> {
-    // add a save point to reverse commits if failed
+    // Add a save point to reverse commits if failed
     let sp = conn.savepoint()?;
 
     for i in tx_methods {
@@ -33,7 +33,7 @@ pub fn add_tags_column(conn: &mut Connection) -> Result<()> {
     Ok(())
 }
 
-/// Migrates existing database's `balance_all` column's data type from TEXT to REAL
+/// Migrates existing database's `balance_all` column's datatype from TEXT to REAL
 pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
     let all_methods = get_all_tx_methods(conn);
 
@@ -44,7 +44,7 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
     let query = "ALTER TABLE balance_all RENAME TO balance_all_old";
     sp.execute(query, [])?;
 
-    // create the new updated balance_all table
+    // Create the new updated balance_all table
     create_balances_table(&all_methods, &sp)?;
 
     let columns = all_methods
@@ -59,7 +59,7 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
         .collect::<Vec<_>>()
         .join(",");
 
-    // insert everything from old table to the new balance_all
+    // Insert everything from old table to the new balance_all
     let query = format!(
         "INSERT INTO balance_all (id_num, {columns}) SELECT id_num, {values} FROM balance_all_old"
     );
@@ -71,7 +71,7 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
         [],
     )?;
 
-    // fill up `balance_all` table with total year * 12 + 1 rows with 0 balance for all columns
+    // Fill up `balance_all` table with total year * 12 + 1 rows with 0 balance for all columns
     let zero_values = vec!["0.00"; all_methods.len()];
 
     let highlighted_tx_methods = all_methods
@@ -86,12 +86,12 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
         zero_values.join(",")
     );
 
-    // the old db had 49 rows. So add 144 more to match total year * 12 + 1 rows
+    // The old db had 49 rows. So add 144 more to match total year * 12 + 1 rows
     for _a in 0..144 {
         sp.execute(&query, [])?;
     }
 
-    // swap the values from 49 row of the old table to the new table at 193
+    // Swap the values from 49 row of the old table to the new table at 193
     let new_values = old_last_balance
         .iter()
         .enumerate()
@@ -115,7 +115,7 @@ pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
     Ok(())
 }
 
-/// return the last balance from the db
+/// Return the last balance from the db
 fn get_last_balance(sp: &Savepoint, all_methods: &Vec<String>) -> Vec<String> {
     let mut query =
         format!("SELECT {all_methods:?} FROM balance_all ORDER BY id_num DESC LIMIT 1",);
@@ -143,7 +143,7 @@ pub fn rename_column(old_name: &str, new_name: &str, conn: &mut Connection) -> R
     sp.execute(&query, [])?;
 
     // Follows 3 cases
-    // 1. old_name == new_name. Replace old name with the new name
+    // 1. Old_name == new_name. Replace old name with the new name
     // 2. If the tx method = old_name to tx_method. Replace the old name part but keep to tx_method
     // 3. If the tx method = tx_method to old_name. Replace the old name part but keep tx_method to
     // last 2 are used for transfer tx
@@ -163,7 +163,7 @@ pub fn rename_column(old_name: &str, new_name: &str, conn: &mut Connection) -> R
     Ok(())
 }
 
-/// repositions tx method positions in the db
+/// Repositions tx method positions in the db
 pub fn reposition_column(tx_methods: &[String], conn: &mut Connection) -> Result<()> {
     let sp = conn.savepoint()?;
 

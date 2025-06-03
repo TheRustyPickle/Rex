@@ -73,12 +73,12 @@ fn check_summary_data_1() {
             vec![
                 "Total Income".to_string(),
                 "200.00".to_string(),
-                "66.67%".to_string(),
+                "66.67".to_string(),
             ],
             vec![
                 "Total Expense".to_string(),
                 "100.00".to_string(),
-                "33.33%".to_string(),
+                "33.33".to_string(),
             ],
             vec!["Net".to_string(), "100.00".to_string(), "-".to_string()],
         ],
@@ -133,7 +133,7 @@ fn check_summary_data_1() {
                 "test1".to_string(),
                 "200.00".to_string(),
                 "0.00".to_string(),
-                "100.00%".to_string(),
+                "100.00".to_string(),
                 "0.00".to_string(),
                 "200.00".to_string(),
                 "0.00".to_string(),
@@ -143,7 +143,7 @@ fn check_summary_data_1() {
                 "0.00".to_string(),
                 "100.00".to_string(),
                 "0.00".to_string(),
-                "100.00%".to_string(),
+                "100.00".to_string(),
                 "0.00".to_string(),
                 "100.00".to_string(),
             ],
@@ -239,12 +239,12 @@ fn check_summary_data_2() {
             vec![
                 "Total Income".to_string(),
                 "1700.00".to_string(),
-                "62.96%".to_string(),
+                "62.96".to_string(),
             ],
             vec![
                 "Total Expense".to_string(),
                 "1000.00".to_string(),
-                "37.04%".to_string(),
+                "37.04".to_string(),
             ],
             vec!["Net".to_string(), "700.00".to_string(), "-".to_string()],
         ],
@@ -299,8 +299,8 @@ fn check_summary_data_2() {
                 "test1".to_string(),
                 "1000.00".to_string(),
                 "1000.00".to_string(),
-                "58.82%".to_string(),
-                "100.00%".to_string(),
+                "58.82".to_string(),
+                "100.00".to_string(),
                 "250.00".to_string(),
                 "250.00".to_string(),
             ],
@@ -308,7 +308,7 @@ fn check_summary_data_2() {
                 "test 2".to_string(),
                 "700.00".to_string(),
                 "0.00".to_string(),
-                "41.18%".to_string(),
+                "41.18".to_string(),
                 "0.00".to_string(),
                 "175.00".to_string(),
                 "0.00".to_string(),
@@ -394,12 +394,12 @@ fn check_summary_data_3() {
             vec![
                 "Total Income".to_string(),
                 "200.00".to_string(),
-                "66.67%".to_string(),
+                "66.67".to_string(),
             ],
             vec![
                 "Total Expense".to_string(),
                 "100.00".to_string(),
-                "33.33%".to_string(),
+                "33.33".to_string(),
             ],
             vec!["Net".to_string(), "100.00".to_string(), "-".to_string()],
         ],
@@ -454,8 +454,8 @@ fn check_summary_data_3() {
                 "test1".to_string(),
                 "100.00".to_string(),
                 "100.00".to_string(),
-                "50.00%".to_string(),
-                "100.00%".to_string(),
+                "50.00".to_string(),
+                "100.00".to_string(),
                 "33.33".to_string(),
                 "33.33".to_string(),
             ],
@@ -463,7 +463,7 @@ fn check_summary_data_3() {
                 "test 2".to_string(),
                 "100.00".to_string(),
                 "0.00".to_string(),
-                "50.00%".to_string(),
+                "50.00".to_string(),
                 "0.00".to_string(),
                 "33.33".to_string(),
                 "0.00".to_string(),
@@ -533,45 +533,45 @@ fn check_summary_sorting() {
     let expected_data_1 = vec![
         ["Bank", "2000.00", "0.00", "80.00", "0.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
         ["Car", "0.00", "1000.00", "0.00", "100.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
         ["Food", "500.00", "0.00", "20.00", "0.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
     ];
 
     let expected_data_2 = vec![
         ["Bank", "2000.00", "0.00", "80.00", "0.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
         ["Food", "500.00", "0.00", "20.00", "0.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
         ["Car", "0.00", "1000.00", "0.00", "100.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
     ];
 
     let expected_data_3 = vec![
         ["Car", "0.00", "1000.00", "0.00", "100.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
         ["Bank", "2000.00", "0.00", "80.00", "0.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
         ["Food", "500.00", "0.00", "20.00", "0.00"]
             .iter()
-            .map(|s| s.to_string())
+            .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),
     ];
 

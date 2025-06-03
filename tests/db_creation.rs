@@ -33,7 +33,7 @@ fn check_db_creation() {
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
-    assert!(db_found)
+    assert!(db_found);
 }
 
 #[test]

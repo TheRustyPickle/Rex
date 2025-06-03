@@ -2,6 +2,7 @@ use chrono::prelude::Local;
 use chrono::Datelike;
 use ratatui::widgets::TableState;
 use rusqlite::Connection;
+use std::fmt::{self, Display, Result};
 use std::path::PathBuf;
 
 use crate::db::{MODES, MONTHS, YEARS};
@@ -21,7 +22,8 @@ pub struct TableData {
 impl TableData {
     /// Creates the default table state and adds the manual transaction data
     /// that was passed to it as an argument to consider them as a value of an index.
-    /// state is the library default.
+    /// State is the library default.
+    #[must_use]
     pub fn new(data: Vec<Vec<String>>) -> Self {
         TableData {
             state: TableState::default(),
@@ -29,7 +31,7 @@ impl TableData {
         }
     }
 
-    /// Adds 1 to the current index. if at the final value, goes to 0
+    /// Adds 1 to the current index. If at the final value, goes to 0
     pub fn next(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
@@ -64,7 +66,6 @@ impl TableData {
 /// It is used for keeping track of the Months and Years current index.
 ///
 /// titles: `["January", "February",]`
-
 pub struct IndexedData {
     pub titles: Vec<String>,
     pub index: usize,
@@ -128,8 +129,8 @@ impl IndexedData {
 }
 
 /// The enum is used to keep track of which tab is currently set at active
-/// or being interacted with in the Home page. There are 3 interact-able widgets
-/// in the home page thus three values. The goal is to keep them cycling through
+/// or being interacted with in the Homepage. There are 3 interact-able widgets
+/// in the homepage thus three values. The goal is to keep them cycling through
 /// all values.
 pub enum HomeTab {
     Years,
@@ -138,8 +139,7 @@ pub enum HomeTab {
 }
 
 impl HomeTab {
-    /// Moves the current selected tab to the upper value. If at the 1st value, the
-    /// the final value is selected.
+    /// Moves the current selected tab to the upper value. If at the 1st value, the final value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up(&mut self) -> Self {
         match &self {
@@ -149,8 +149,7 @@ impl HomeTab {
         }
     }
 
-    /// Moves the current selected tab to the bottom value. If at the last value, the
-    /// the 1st value is selected.
+    /// Moves the current selected tab to the bottom value. If at the last value, the 1st value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down(&mut self) -> Self {
         match &self {
@@ -187,7 +186,7 @@ pub enum CurrentUi {
     Activity,
 }
 
-/// Indicates which popup is currently on and is being shown in the screen
+/// Indicates which pop up is currently on and is being shown in the screen
 pub enum PopupState {
     NewUpdate(Vec<String>),
     HomeHelp,
@@ -210,8 +209,7 @@ pub enum ChartTab {
 }
 
 impl ChartTab {
-    /// Moves the current selected tab to the upper value. If at the 1st value, the
-    /// the final value is selected.
+    /// Moves the current selected tab to the upper value. If at the 1st value, the final value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_monthly(&mut self) -> Self {
         match &self {
@@ -222,8 +220,7 @@ impl ChartTab {
         }
     }
 
-    /// Moves the current selected tab to the bottom value. If at the last value, the
-    /// the 1st value is selected.
+    /// Moves the current selected tab to the bottom value. If at the last value, the 1st value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down_monthly(&mut self) -> Self {
         match &self {
@@ -234,8 +231,7 @@ impl ChartTab {
         }
     }
 
-    /// Moves the current selected tab to the upper value. If at the 1st value, the
-    /// the final value is selected.
+    /// Moves the current selected tab to the upper value. If at the 1st value, the final value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_yearly(&mut self) -> Self {
         match &self {
@@ -246,8 +242,7 @@ impl ChartTab {
         }
     }
 
-    /// Moves the current selected tab to the bottom value. If at the last value, the
-    /// the 1st value is selected.
+    /// Moves the current selected tab to the bottom value. If at the last value, the 1st value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down_yearly(&mut self) -> Self {
         match &self {
@@ -258,8 +253,7 @@ impl ChartTab {
         }
     }
 
-    /// Moves the current selected tab to the upper value. If at the 1st value, the
-    /// the final value is selected.
+    /// Moves the current selected tab to the upper value. If at the 1st value, the final value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_all_time(&mut self) -> Self {
         match &self {
@@ -269,8 +263,7 @@ impl ChartTab {
         }
     }
 
-    /// Moves the current selected tab to the bottom value. If at the last value, the
-    /// the 1st value is selected.
+    /// Moves the current selected tab to the bottom value. If at the last value, the 1st value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down_all_time(&mut self) -> Self {
         match &self {
@@ -289,8 +282,7 @@ pub enum SummaryTab {
 }
 
 impl SummaryTab {
-    /// Moves the current selected tab to the upper value. If at the 1st value, the
-    /// the final value is selected.
+    /// Moves the current selected tab to the upper value. If at the 1st value, the final value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_monthly(&mut self) -> Self {
         match &self {
@@ -301,8 +293,7 @@ impl SummaryTab {
         }
     }
 
-    /// Moves the current selected tab to the bottom value. If at the last value, the
-    /// the 1st value is selected.
+    /// Moves the current selected tab to the bottom value. If at the last value, the 1st value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down_monthly(&mut self) -> Self {
         match &self {
@@ -313,8 +304,7 @@ impl SummaryTab {
         }
     }
 
-    /// Moves the current selected tab to the upper value. If at the 1st value, the
-    /// the final value is selected.
+    /// Moves the current selected tab to the upper value. If at the 1st value, the final value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_yearly(&mut self) -> Self {
         match &self {
@@ -325,8 +315,7 @@ impl SummaryTab {
         }
     }
 
-    /// Moves the current selected tab to the bottom value. If at the last value, the
-    /// the 1st value is selected.
+    /// Moves the current selected tab to the bottom value. If at the last value, the 1st value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down_yearly(&mut self) -> Self {
         match &self {
@@ -337,8 +326,7 @@ impl SummaryTab {
         }
     }
 
-    /// Moves the current selected tab to the upper value. If at the 1st value, the
-    /// the final value is selected.
+    /// Moves the current selected tab to the upper value. If at the 1st value, the final value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_up_all_time(&mut self) -> Self {
         match &self {
@@ -349,8 +337,7 @@ impl SummaryTab {
         }
     }
 
-    /// Moves the current selected tab to the bottom value. If at the last value, the
-    /// the 1st value is selected.
+    /// Moves the current selected tab to the bottom value. If at the last value, the 1st value is selected.
     #[cfg(not(tarpaulin_include))]
     pub fn change_tab_down_all_time(&mut self) -> Self {
         match &self {
@@ -380,6 +367,7 @@ pub enum ResetType {
 
 impl UserInputType {
     #[cfg(not(tarpaulin_include))]
+    #[must_use]
     pub fn from_string(input: &str) -> Self {
         match input {
             "1" => UserInputType::AddNewTxMethod(Vec::new()),
@@ -453,8 +441,24 @@ pub enum HomeRow {
     TopRow,
 }
 
+impl Display for HomeRow {
+    #[cfg(not(tarpaulin_include))]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
+        match self {
+            HomeRow::Balance => write!(f, "Balance"),
+            HomeRow::Changes => write!(f, "Changes"),
+            HomeRow::Income => write!(f, "Income"),
+            HomeRow::Expense => write!(f, "Expense"),
+            HomeRow::DailyIncome => write!(f, "DailyIncome"),
+            HomeRow::DailyExpense => write!(f, "DailyExpense"),
+            HomeRow::TopRow => write!(f, "TopRow"),
+        }
+    }
+}
+
 impl HomeRow {
     #[cfg(not(tarpaulin_include))]
+    #[must_use]
     pub fn get_row(data: &[String]) -> Self {
         if data[0] == "Balance" {
             HomeRow::Balance
@@ -509,6 +513,7 @@ pub enum ActivityType {
 }
 
 impl ActivityType {
+    #[must_use]
     pub fn from_s(data: &str) -> Self {
         match data {
             "Add TX" => Self::NewTX,
@@ -520,6 +525,7 @@ impl ActivityType {
         }
     }
 
+    #[must_use]
     pub fn to_details(&self) -> String {
         match self {
             Self::NewTX => String::from("A new Transaction was added"),
@@ -540,6 +546,7 @@ impl ActivityType {
         }
     }
 
+    #[must_use]
     pub fn to_str(&self) -> String {
         match self {
             Self::NewTX => String::from("Add TX"),

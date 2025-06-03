@@ -9,7 +9,7 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
 
     let tx_methods = get_all_tx_methods(&sp);
 
-    // contains the data of the final row data before the tx gets deleted
+    // Contains the data of the final row data before the tx gets deleted
     let last_balance = get_last_balances(&sp);
     let last_balance_id = get_last_balance_id(&sp)?;
 
@@ -25,12 +25,12 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
 
     // 2025-05-10
     // take 2025 and subtract 2022 = 3, means the year number 3
-    // take 05 -> 5 -> 5th month. 5 + (3 * 12) =  the row of this month's balance on balance_all table
+    // take 05 -> 5 -> 5th month. 5 + (3 * 12) = the row of this month's balance on balance_all table
     // we are not subtracting 1 from month because balance_all table starts at 1
-    let splitted = data[0].split('-').collect::<Vec<&str>>();
+    let split_data = data[0].split('-').collect::<Vec<&str>>();
     let (year, month) = (
-        splitted[0].parse::<i32>().unwrap() - 2022,
-        splitted[1].parse::<i32>().unwrap(),
+        split_data[0].parse::<i32>().unwrap() - 2022,
+        split_data[1].parse::<i32>().unwrap(),
     );
 
     let mut target_id_num = month + (year * 12);
@@ -38,10 +38,10 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
     let mut from_method = "";
     let mut to_method = "";
 
-    // the tx_method of the tx we will delete
+    // The tx_method of the tx we will delete
     let source = &data[1];
 
-    // execute this block to get block tx method if the tx type is a Transfer
+    // Execute this block to get block tx method if the tx type is a Transfer
     if source.contains(" to ") {
         let from_to = data[1].split(" to ").collect::<Vec<&str>>();
 
@@ -52,13 +52,13 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
     let amount = &data[2].parse::<f64>().unwrap();
     let tx_type: &str = &data[3];
 
-    // loop through all rows in the balance_all table from the deletion point and update balance
-    // basically there are 193 rows(at the time of writing) on balance_all table. each row = 1 month. if month 4 had balance of 100,
+    // Loop through all rows in the balance_all table from the deletion point and update balance
+    // basically there are 193 rows(at the time of writing) on balance_all table. Each row = 1 month. If month 4 had balance of 100,
     // month 5 will also have the balance of 100 if no tx was added on month 5.
-    // if the tx deletion happens on row/month 5, that means month 4 balance is correct but from the month from
+    // If the tx deletion happens on row/month 5, that means month 4 balance is correct but from the month from
     // 5 to the final row needs to be deduct that amount.
 
-    // there are 3 steps in deleting a tx
+    // There are 3 steps in deleting a tx
     // Update balance_all table with the amount
     // Delete the tx itself from tx_all table
     // Update balance_all table final balance row data which holds the absolute final amount after all tx
@@ -101,9 +101,9 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
 
         let mut updated_month_balance = vec![];
 
-        // add or subtract based on the tx type to the relevant method
+        // Add or subtract based on the tx type to the relevant method
 
-        // check the month balance as not zero because if it is 0, there was never any transaction
+        // Check the month balance as not zero because if it is 0, there was never any transaction
         // done on that month
         for i in 0..tx_methods.len() {
             if &tx_methods[i] == source && current_month_balance[i] != "0.00" {
@@ -149,7 +149,7 @@ pub fn delete_tx(id_num: i32, conn: &mut Connection) -> sqlResult<()> {
         }
     }
 
-    // we need to update the 193 row with the latest balance.
+    // We need to update the 193 row with the latest balance.
     // Based on the tx_type and method, edit the amount from the 193 row's balance
     // we fetched earlier
     for i in 0..tx_methods.len() {

@@ -8,13 +8,20 @@ fn main() {
         // The path where the application was opened initially
         let original_dir = current_dir().unwrap();
 
-        // OS based path where data will be stored
+        // The OS based path where data will be stored
         let mut working_path = dir;
         working_path.push("Rex");
         // Create folder if non-existing then move the current working directory
         // to the OS data directory
-        fs::create_dir_all(&working_path).unwrap();
-        set_current_dir(&working_path).unwrap();
+        let Ok(()) = fs::create_dir_all(&working_path) else {
+            println!("Failed to work with the working path. Exiting program...");
+            return;
+        };
+
+        let Ok(()) = set_current_dir(&working_path) else {
+            println!("Failed to set the working path. Exiting program...");
+            return;
+        };
 
         working_path.push("data.sqlite");
         if initialize_app(&working_path, &original_dir).is_err() {

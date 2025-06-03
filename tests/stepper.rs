@@ -86,7 +86,7 @@ fn test_stepper_date() {
         "2022-01-01",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
 
     let expected = vec![
@@ -100,7 +100,7 @@ fn test_stepper_date() {
         "2022-01-02",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
 
     let result = vec![
@@ -115,13 +115,13 @@ fn test_stepper_date() {
     ];
 
     let test_data = Testing {
-        data: data.to_owned(),
+        data: data.clone(),
         expected,
         result,
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_date(&mut to_verify, StepType::StepUp, &DateType::Exact);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -139,7 +139,7 @@ fn test_stepper_date() {
         "2022-01-01",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
 
     let result = vec![
@@ -154,13 +154,13 @@ fn test_stepper_date() {
     ];
 
     let test_data = Testing {
-        data: data.to_owned(),
+        data: data.clone(),
         expected,
         result,
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_date(&mut to_verify, StepType::StepDown, &DateType::Exact);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -169,12 +169,12 @@ fn test_stepper_date() {
 
     let data = vec!["", "2022-01", "2022-13", "2040-01", "2037-12"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
     let expected = vec!["2022-01", "2022-02", "2022-12", "2037-01", "2037-12"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
     let result = vec![
@@ -186,13 +186,13 @@ fn test_stepper_date() {
     ];
 
     let test_data = Testing {
-        data: data.to_owned(),
+        data: data.clone(),
         expected,
         result,
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_date(&mut to_verify, StepType::StepUp, &DateType::Monthly);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -201,7 +201,7 @@ fn test_stepper_date() {
 
     let expected = vec!["2022-01", "2022-01", "2022-12", "2037-01", "2037-11"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
     let result = vec![
@@ -213,13 +213,13 @@ fn test_stepper_date() {
     ];
 
     let test_data = Testing {
-        data: data.to_owned(),
+        data: data.clone(),
         expected,
         result,
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_date(&mut to_verify, StepType::StepDown, &DateType::Monthly);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -228,24 +228,24 @@ fn test_stepper_date() {
 
     let data = vec!["", "2022", "2037", "2040"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
     let expected = vec!["2022", "2023", "2037", "2037"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
     let result = vec![Ok(()), Ok(()), Ok(()), Err(SteppingError::InvalidDate)];
 
     let test_data = Testing {
-        data: data.to_owned(),
+        data: data.clone(),
         expected,
         result,
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_date(&mut to_verify, StepType::StepUp, &DateType::Yearly);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -254,19 +254,19 @@ fn test_stepper_date() {
 
     let expected = vec!["2022", "2022", "2036", "2037"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
     let result = vec![Ok(()), Ok(()), Ok(()), Err(SteppingError::InvalidDate)];
 
     let test_data = Testing {
-        data: data.to_owned(),
+        data: data.clone(),
         expected,
         result,
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_date(&mut to_verify, StepType::StepDown, &DateType::Yearly);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -282,7 +282,7 @@ fn test_stepper_tx_method() {
 
     let data = vec!["", "Super", "Super Special Bank", "Cash Cow", "Danger Cash"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
     let expected = vec![
@@ -293,7 +293,7 @@ fn test_stepper_tx_method() {
         "Super Special Bank",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
 
     let result = vec![
@@ -305,13 +305,13 @@ fn test_stepper_tx_method() {
     ];
 
     let test_data = Testing {
-        data: data.to_owned(),
+        data: data.clone(),
         expected,
         result,
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_tx_method(&mut to_verify, StepType::StepUp, &conn);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -326,7 +326,7 @@ fn test_stepper_tx_method() {
         "Cash Cow",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
 
     let result = vec![
@@ -344,7 +344,7 @@ fn test_stepper_tx_method() {
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_tx_method(&mut to_verify, StepType::StepDown, &conn);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -359,24 +359,24 @@ fn test_stepper_tx_method() {
 fn test_stepper_amount() {
     let data = vec!["0", "99999999999.99", "123456", "-123456", ""]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
     let expected = vec!["1.00", "9999999999.99", "123457.00", "123457.00", "1.00"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
     let result = vec![Ok(()), Ok(()), Ok(()), Ok(()), Ok(())];
 
     let test_data = Testing {
-        data: data.to_owned(),
+        data: data.clone(),
         expected,
         result,
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_amount(&mut to_verify, StepType::StepUp);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -385,7 +385,7 @@ fn test_stepper_amount() {
 
     let expected = vec!["0.00", "9999999998.99", "123455.00", "123455.00", "1.00"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
     let result = vec![Ok(()), Ok(()), Ok(()), Ok(()), Ok(())];
@@ -397,7 +397,7 @@ fn test_stepper_amount() {
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_amount(&mut to_verify, StepType::StepDown);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -411,7 +411,7 @@ fn test_stepper_tx_type() {
         "", "e", "E", "t", "T", "i", "I", "v", "Expense", "Income", "Transfer",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
 
     let expected = vec![
@@ -419,7 +419,7 @@ fn test_stepper_tx_type() {
         "Expense", "Income",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
 
     let result = vec![
@@ -437,13 +437,13 @@ fn test_stepper_tx_type() {
     ];
 
     let test_data = Testing {
-        data: data.to_owned(),
+        data: data.clone(),
         expected,
         result,
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_tx_type(&mut to_verify, StepType::StepUp);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -455,7 +455,7 @@ fn test_stepper_tx_type() {
         "Transfer", "Expense",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
 
     let result = vec![
@@ -479,7 +479,7 @@ fn test_stepper_tx_type() {
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_tx_type(&mut to_verify, StepType::StepDown);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -494,11 +494,11 @@ fn test_stepper_tags() {
 
     let data = vec!["Hmm", "", "123"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
     let expected = vec!["", "", ""]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
     let result = vec![
         Err(SteppingError::InvalidTags),
@@ -513,7 +513,7 @@ fn test_stepper_tags() {
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_tags(&mut to_verify, "", StepType::StepUp, &conn);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -524,11 +524,11 @@ fn test_stepper_tags() {
 
     let data = vec!["", "car", "fOoD", "Goods", "Car,", "Car, Food", "Boom"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
     let expected = vec!["Car", "Food", "Goods", "Car", "Car, Car", "Car, Goods", ""]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
     let result = vec![
         Ok(()),
@@ -547,7 +547,7 @@ fn test_stepper_tags() {
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_tags(&mut to_verify, "", StepType::StepUp, &conn);
 
         assert_eq!(to_verify, test_data.expected[i]);
@@ -556,7 +556,7 @@ fn test_stepper_tags() {
 
     let expected = vec!["Car", "Goods", "Car", "Food", "Car, Car", "Car, Car", ""]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
     let result = vec![
         Ok(()),
@@ -575,7 +575,7 @@ fn test_stepper_tags() {
     };
 
     for i in 0..test_data.data.len() {
-        let mut to_verify = test_data.data[i].to_owned();
+        let mut to_verify = test_data.data[i].clone();
         let result = test_data.step_tags(&mut to_verify, "", StepType::StepDown, &conn);
 
         assert_eq!(to_verify, test_data.expected[i]);

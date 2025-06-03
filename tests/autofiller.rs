@@ -81,7 +81,7 @@ fn autofiller_test() {
         "",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
     let expected = vec![
         "Car expense",
@@ -94,7 +94,7 @@ fn autofiller_test() {
         "",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
 
     let test_data = Testing { data, expected };
@@ -116,7 +116,7 @@ fn autofiller_test() {
         "sup", "cash", "CoW", "Cis", "sup", "bank", "CaSh CoW", "Cash Cow", "",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
     let expected = vec![
         "Super Special Bank",
@@ -130,7 +130,7 @@ fn autofiller_test() {
         "",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
 
     let test_data = Testing { data, expected };
@@ -144,11 +144,11 @@ fn autofiller_test() {
         "foo", "goo", "fod", "gid", "rac", "Car", "", "Food,", "Food, Go",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect::<Vec<String>>();
     let expected = vec!["Food", "Goods", "Food", "Goods", "Car", "", "", "", "Goods"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
     let test_data = Testing { data, expected };
