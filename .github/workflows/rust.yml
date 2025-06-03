@@ -33,7 +33,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.9
+        with:
+          version: "v0.10.0"
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2.4.0
       - name: Install tarpaulin
