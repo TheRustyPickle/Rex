@@ -269,9 +269,18 @@ pub fn home_ui(
 
                 // The data that is currently being shown, before this redraw happens
                 let last_data: f64 = match row_type {
-                    HomeRow::Balance => last_balance.get(index).unwrap().parse().unwrap(),
+                    HomeRow::Balance => last_balance
+                        .get(index)
+                        .unwrap_or(&format!("0"))
+                        .parse()
+                        .unwrap(),
                     HomeRow::Changes => {
-                        let last_change_symbol = last_changes.get(index).unwrap();
+                        // let last_change_symbol = last_changes.get(index).unwrap();
+                        let last_change_symbol = if let Some(d) = last_changes.get(index) {
+                            d
+                        } else {
+                            &format!("0")
+                        };
 
                         if last_change_symbol.contains('↑') || last_change_symbol.contains('↓')
                         {
@@ -282,12 +291,26 @@ pub fn home_ui(
                             last_change_symbol.parse().unwrap()
                         }
                     }
-                    HomeRow::Expense => last_expense.get(index).unwrap().parse().unwrap(),
-                    HomeRow::Income => last_income.get(index).unwrap().parse().unwrap(),
-                    HomeRow::DailyIncome => daily_last_income.get(index).unwrap().parse().unwrap(),
-                    HomeRow::DailyExpense => {
-                        daily_last_expense.get(index).unwrap().parse().unwrap()
-                    }
+                    HomeRow::Expense => last_expense
+                        .get(index)
+                        .unwrap_or(&format!("0"))
+                        .parse()
+                        .unwrap(),
+                    HomeRow::Income => last_income
+                        .get(index)
+                        .unwrap_or(&format!("0"))
+                        .parse()
+                        .unwrap(),
+                    HomeRow::DailyIncome => daily_last_income
+                        .get(index)
+                        .unwrap_or(&format!("0"))
+                        .parse()
+                        .unwrap(),
+                    HomeRow::DailyExpense => daily_last_expense
+                        .get(index)
+                        .unwrap_or(&format!("0"))
+                        .parse()
+                        .unwrap(),
                     HomeRow::TopRow => unreachable!(),
                 };
 
