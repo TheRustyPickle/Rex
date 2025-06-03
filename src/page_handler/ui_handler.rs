@@ -140,9 +140,6 @@ pub fn start_app<B: Backend>(
     // The initial page REX loading index
     let mut starter_index = 0;
 
-    // At what point the chart is current rendering to
-    let mut chart_index: Option<f64> = None;
-
     // Whether the chart is in hidden mode
     let mut chart_hidden_mode = false;
 
@@ -222,7 +219,6 @@ pub fn start_app<B: Backend>(
                         &chart_data,
                         &chart_tab,
                         chart_hidden_mode,
-                        &mut chart_index,
                         &chart_activated_methods,
                         &mut lerp_state,
                         conn,
@@ -334,7 +330,6 @@ pub fn start_app<B: Backend>(
                 &mut activity_tab,
                 &mut activity_data,
                 &mut activity_table,
-                &mut chart_index,
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,
                 &mut deletion_status,

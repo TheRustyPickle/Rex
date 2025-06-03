@@ -26,7 +26,6 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     chart_data: &ChartData,
     current_page: &ChartTab,
     chart_hidden_mode: bool,
-    loop_remaining: &mut Option<f64>,
     chart_activated_methods: &HashMap<String, bool, S>,
     lerp_state: &mut LerpState,
     conn: &Connection,
@@ -122,9 +121,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     let mut current_axis = 0.0;
 
     // If there are no transactions, we will create an empty chart
-    if all_txs.is_empty() {
-        *loop_remaining = None;
-    } else {
+    if !all_txs.is_empty() {
         // Contains all dates of the transactions
         let all_dates = chart_data.get_all_dates(mode_selection, months.index, years.index);
 
