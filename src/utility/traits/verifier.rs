@@ -9,21 +9,21 @@ use std::collections::HashSet;
 pub trait DataVerifier {
     /// Checks if:
     ///
-    /// - the inputted year is between 2022 to 2037
-    /// - the inputted month is between 01 to 12
-    /// - the inputted date is between 01 to 31
-    /// - the inputted date is empty
-    /// - contains any extra spaces
-    /// - the date actually exists
-    /// - removes any extra spaces and non-numeric characters
-    /// - ensures proper char length for each part of the date
+    /// - The inputted year is between 2022 to 2037.
+    /// - The inputted month is between 01 to 12.
+    /// - The inputted date is between 01 to 31.
+    /// - The inputted date is empty.
+    /// - Contains any extra spaces.
+    /// - The date actually exists.
+    /// - Removes any extra spaces and non-numeric characters.
+    /// - Ensures proper char length for each part of the date.
     ///
     /// Finally, tries to correct the date if it was not accepted by
     /// adding 0 if the beginning if the length is smaller than necessary
     /// or restores to the smallest or the largest date if date is beyond the
     /// accepted value.
     fn verify_date(&self, user_date: &mut String, date_type: &DateType) -> VerifyingOutput {
-        // cancel other verification if there is no text
+        // Cancel other verification if there is no text
         if user_date.is_empty() {
             return VerifyingOutput::Nothing(AType::Date);
         }
@@ -32,7 +32,7 @@ pub trait DataVerifier {
             .filter(|c| c.is_numeric() || *c == '-')
             .collect();
 
-        // we will be splitting them into 3 parts to verify each part of the date
+        // We will be splitting them into 3 parts to verify each part of the date
         // 0 = year
         // 1 = month
         // 2 = day
@@ -41,7 +41,7 @@ pub trait DataVerifier {
             .map(ToString::to_string)
             .collect::<Vec<String>>();
 
-        // if one part of the date is missing/extra, return unknown date
+        // If one part of the date is missing/extra, return unknown date
         match date_type {
             DateType::Exact => {
                 if split_date.len() != 3 {
@@ -103,7 +103,7 @@ pub trait DataVerifier {
             }
         };
 
-        // checks if the year part length is 4. If not 4, turn the year to 2022 + the other character entered by the user
+        // Checks if the year part length is 4. If not 4, turn the year to 2022 + the other character entered by the user
         // and return the new date
         if split_date[0].len() != 4 {
             match split_date[0].len().cmp(&4) {
@@ -132,7 +132,7 @@ pub trait DataVerifier {
             }
             return VerifyingOutput::NotAccepted(NAType::InvalidYear);
         }
-        // checks if the month part length is 2. If not 2, turn the month to 0 + whatever month was entered + the other character entered by the user
+        // Checks if the month part length is 2. If not 2, turn the month to 0 + whatever month was entered + the other character entered by the user
         // and return the new date
         match date_type {
             DateType::Exact => {
@@ -163,7 +163,7 @@ pub trait DataVerifier {
             DateType::Yearly => {}
         }
 
-        // checks if the day part length is 2. If not 2, turn the day to 0 + whatever day was entered + the other character entered by the user
+        // Checks if the day part length is 2. If not 2, turn the day to 0 + whatever day was entered + the other character entered by the user
         // and return the new date
         if let DateType::Exact = date_type {
             let unwrapped_day = int_day.unwrap();
@@ -178,7 +178,7 @@ pub trait DataVerifier {
             }
         }
 
-        // checks if the year value is between 2022 and 2037
+        // Checks if the year value is between 2022 and 2037
         if !(2022..=2037).contains(&int_year) {
             if int_year < 2022 {
                 match date_type {
@@ -201,7 +201,7 @@ pub trait DataVerifier {
             return VerifyingOutput::NotAccepted(NAType::YearTooBig);
         }
 
-        // checks if the month value is between 1 and 12
+        // Checks if the month value is between 1 and 12
         match date_type {
             DateType::Exact => {
                 let unwrapped_month = int_month.unwrap();
@@ -230,7 +230,7 @@ pub trait DataVerifier {
             DateType::Yearly => {}
         }
 
-        // checks if the day value is between 1 and 31
+        // Checks if the day value is between 1 and 31
         if let DateType::Exact = date_type {
             let unwrapped_day = int_day.unwrap();
             if !(1..=31).contains(&unwrapped_day) {
@@ -265,10 +265,9 @@ pub trait DataVerifier {
     /// - contains any extra spaces
     /// - removes any extra spaces and non-numeric characters
     ///
-    /// if the value is not float, tries to make it float ending with double zero
-
+    /// If the value is not float, tries to make it float ending with double zero
     fn verify_amount(&self, user_amount: &mut String) -> VerifyingOutput {
-        // cancel all verification if the amount is empty
+        // Cancel all verification if the amount is empty
         if user_amount.is_empty() {
             return VerifyingOutput::Nothing(AType::Amount);
         }
@@ -281,40 +280,40 @@ pub trait DataVerifier {
             .collect();
 
         // Already checked if the initial amount is empty.
-        // if it becomes empty after the filtering was done, there no number inside so return error
+        // If it becomes empty after the filtering was done, there no number inside so return error
         if user_amount.is_empty() {
             return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Amount));
         }
 
-        // check if any of the symbols are present
+        // Check if any of the symbols are present
         if calc_symbols.iter().any(|s| user_amount.contains(*s)) {
-            // how it works:
-            // the calc_symbol intentionally starts with * and / so these calculations are done first
-            // start a main loop which will only run for the amount of times any one of them from calc_symbols is present
-            // loop over the symbols and check if the symbol is present in the string
-            // find the index of where the symbol is then take the number values from both side of the symbol
-            // example: 1+5*10. We start with *, we initially, we will work with 5*10
-            // isolate the numbers => do the calculation => replace the part of the string we are working with, with the result which is 50
+            // How it works:
+            // The calc_symbol intentionally starts with * and / so these calculations are done first.
+            // Start a main loop which will only run for the amount of times anyone of them from calc_symbols is present.
+            // Loop over the symbols and check if the symbol is present in the string
+            // find the index of where the symbol is then take the number values from both side of the symbol.
+            // Example: 1+5*10. We start with *, we initially, we will work with 5*10.
+            // Isolate the numbers => do the calculation => replace the part of the string we are working with, with the result which is 50
             // result: 1+50 => break the symbol checking loop and continue the main loop again so we start working with 1+50.
 
-            // get the amount of time the symbols were found in the amount string
+            // Get the amount of time the symbols were found in the amount string
             let count = user_amount
                 .chars()
                 .filter(|c| calc_symbols.contains(c))
                 .count();
 
-            // remove all spaces for easier indexing
+            // Remove all spaces for easier indexing
             let mut working_value = user_amount.to_owned();
 
             for _i in 0..count {
                 for symbol in &calc_symbols {
                     if let Some(location) = working_value.find(*symbol) {
-                        // if a symbol is found, we want to store the values to its side to these variables.
-                        // example: 1+5 first_value = 1 last_value = 5
+                        // If a symbol is found, we want to store the values to its side to these variables.
+                        // Example: 1+5 first_value = 1 last_value = 5
                         let mut first_value = String::new();
                         let mut last_value = String::new();
 
-                        // skip to symbol location + 1 index value and start taking chars from here until the end
+                        // Skip to symbol location + 1 index value and start taking chars from here until the end
                         // of the string or until another cal symbol is encountered
                         for char in working_value.chars().skip(location + 1) {
                             if calc_symbols.contains(&char) {
@@ -323,7 +322,7 @@ pub trait DataVerifier {
                             last_value.push(char);
                         }
 
-                        // do the same thing as before but this time, reverse the string
+                        // Do the same thing as before but this time, reverse the string
                         for char in working_value
                             .chars()
                             .rev()
@@ -334,10 +333,10 @@ pub trait DataVerifier {
                             }
                             first_value.push(char);
                         }
-                        // un-reverse the string
+                        // Un-reverse the string
                         first_value = first_value.chars().rev().collect();
 
-                        // if either of them is empty, the one that is not empty is the value we want to use for using in replacement
+                        // If either of them is empty, the one that is not empty is the value we want to use for using in replacement
                         let final_value = if first_value.is_empty() || last_value.is_empty() {
                             if first_value.is_empty() {
                                 last_value.to_string()
@@ -345,7 +344,7 @@ pub trait DataVerifier {
                                 first_value.to_string()
                             }
                         } else {
-                            // if both value is intact, do the calculation and the result is for replacement
+                            // If both value is intact, do the calculation and the result is for replacement
                             let first_num: f64 = match first_value.parse() {
                                 Ok(v) => v,
                                 Err(_) => {
@@ -373,7 +372,7 @@ pub trait DataVerifier {
                             }
                         };
 
-                        // example: 1+5*10
+                        // Example: 1+5*10
                         // if everything goes alright, first_value is 5, last_value is 10 and the symbol is *
                         // replace 5*10 with the earlier result we got which is 50. Continue with 1+50 in the next loop
                         working_value = working_value
@@ -386,7 +385,7 @@ pub trait DataVerifier {
             *user_amount = working_value;
         }
 
-        // if dot is present but nothing after that, add 2 zero
+        // If dot is present but nothing after that, add 2 zero
         // if no dot, add dot + 2 zero
         if user_amount.contains('.') {
             let state = user_amount.split('.').collect::<Vec<&str>>();
@@ -407,7 +406,7 @@ pub trait DataVerifier {
             return VerifyingOutput::NotAccepted(NAType::AmountBelowZero);
         }
 
-        // checks if there is 2 number after the dot else add zero/s
+        // Checks if there is 2 number after the dot else add zero/s
         if user_amount.contains('.') {
             let split_amount = user_amount.split('.').collect::<Vec<&str>>();
 
@@ -420,7 +419,7 @@ pub trait DataVerifier {
             }
         }
 
-        // we can safely split now as previously we just added a dot + 2 numbers with the amount
+        // We can safely split now as previously we just added a dot + 2 numbers with the amount
         // and create the final value for the amount
         let split_amount = user_amount.split('.').collect::<Vec<&str>>();
 
@@ -438,16 +437,15 @@ pub trait DataVerifier {
     /// - The Transaction method is empty
     /// - contains any extra spaces
     ///
-    /// if the Transaction is not found, matches each character with the available
+    /// If the Transaction is not found, matches each character with the available
     /// Transaction Methods and corrects to the best matching one.
-
     fn verify_tx_method(&self, user_method: &mut String, conn: &Connection) -> VerifyingOutput {
-        // get all currently added tx methods
+        // Get all currently added tx methods
         let all_tx_methods = get_all_tx_methods(conn);
 
         *user_method = user_method.trim().to_string();
 
-        // cancel all verification if the text is empty
+        // Cancel all verification if the text is empty
         if user_method.is_empty() {
             return VerifyingOutput::Nothing(AType::TxMethod);
         }
@@ -467,7 +465,7 @@ pub trait DataVerifier {
 
     /// Checks if:
     ///
-    /// - The transaction method starts with E, I or T
+    /// - The transaction method starts with E, I, or T
     ///
     /// Auto expands E to Expense, I to Income and T to transfer.
     fn verify_tx_type(&self, user_type: &mut String) -> VerifyingOutput {

@@ -17,7 +17,7 @@ use crate::utility::{
     is_location_changed, save_backup_db, start_taking_input, start_terminal, start_timer,
 };
 
-/// Initialize the tui loop
+/// Initialize the TUI loop
 #[cfg(not(tarpaulin_include))]
 pub fn initialize_app(
     original_db_path: &PathBuf,
@@ -41,18 +41,22 @@ pub fn initialize_app(
 
     // If the location was changed/json file found, change the db directory.
     let db_path = if let Some(mut location) = is_location_changed(original_db_path) {
-        set_current_dir(&location).unwrap();
+        let Ok(()) = set_current_dir(&location) else {
+            println!("Failed to set the new path. Exiting program...");
+            std::process::exit(1);
+        };
         location.push("data.sqlite");
         location
     } else {
         original_db_path.clone()
     };
-    // create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
+
+    // Create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
     check_n_create_db(&db_path)?;
 
     let mut conn = Connection::open(&db_path)?;
 
-    // initiates migration if old database is detected.
+    // Initiates migration if old database is detected.
     check_old_sql(&mut conn);
 
     loop {

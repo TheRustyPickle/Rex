@@ -15,7 +15,7 @@ use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
 use crate::utility::{
     add_new_activity, add_new_activity_tx, get_all_tx_methods, get_all_tx_methods_cumulative,
-    get_empty_changes, sort_table_data, switch_tx_index,
+    get_empty_changes, sort_table_data, switch_tx_index, LerpState,
 };
 
 /// Stores all the data that is required to handle
@@ -61,15 +61,10 @@ pub struct InputKeyHandler<'a> {
     chart_hidden_mode: &'a mut bool,
     summary_hidden_mode: &'a mut bool,
     deletion_status: &'a mut DeletionStatus,
-    ongoing_balance: &'a mut Vec<String>,
-    ongoing_changes: &'a mut Vec<String>,
-    ongoing_income: &'a mut Vec<String>,
-    ongoing_expense: &'a mut Vec<String>,
-    daily_ongoing_income: &'a mut Vec<String>,
-    daily_ongoing_expense: &'a mut Vec<String>,
     chart_activated_methods: &'a mut HashMap<String, bool>,
     popup_scroll_position: &'a mut usize,
     max_popup_scroll: &'a mut usize,
+    lerp_state: &'a mut LerpState,
     conn: &'a mut Connection,
 }
 
@@ -114,15 +109,10 @@ impl<'a> InputKeyHandler<'a> {
         chart_hidden_mode: &'a mut bool,
         summary_hidden_mode: &'a mut bool,
         deletion_status: &'a mut DeletionStatus,
-        ongoing_balance: &'a mut Vec<String>,
-        ongoing_changes: &'a mut Vec<String>,
-        ongoing_income: &'a mut Vec<String>,
-        ongoing_expense: &'a mut Vec<String>,
-        daily_ongoing_income: &'a mut Vec<String>,
-        daily_ongoing_expense: &'a mut Vec<String>,
         chart_activated_methods: &'a mut HashMap<String, bool>,
         popup_scroll_position: &'a mut usize,
         max_popup_scroll: &'a mut usize,
+        lerp_state: &'a mut LerpState,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data
@@ -168,15 +158,10 @@ impl<'a> InputKeyHandler<'a> {
             chart_hidden_mode,
             summary_hidden_mode,
             deletion_status,
-            ongoing_balance,
-            ongoing_changes,
-            ongoing_income,
-            ongoing_expense,
-            daily_ongoing_income,
-            daily_ongoing_expense,
             chart_activated_methods,
             popup_scroll_position,
             max_popup_scroll,
+            lerp_state,
             conn,
         }
     }
@@ -204,7 +189,8 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn go_home(&mut self) {
         *self.page = CurrentUi::Home;
-        self.reload_home_balance_load();
+        self.reload_home_balance_data();
+        self.lerp_state.clear();
     }
 
     /// Moves the interface to Add Tx page
@@ -213,13 +199,15 @@ impl<'a> InputKeyHandler<'a> {
         *self.page = CurrentUi::AddTx;
         self.add_tx_data
             .add_tx_status("Info: Entering Normal Transaction mode.".to_string());
-        self.reload_add_tx_balance_load();
+        self.reload_add_tx_balance_data();
+        self.lerp_state.clear();
     }
 
     /// Moves the interface to Search page
     #[cfg(not(tarpaulin_include))]
     pub fn go_search(&mut self) {
         *self.page = CurrentUi::Search;
+        self.lerp_state.clear();
     }
 
     /// Moves the interface to Summary page
@@ -232,6 +220,7 @@ impl<'a> InputKeyHandler<'a> {
         *self.summary_tab = SummaryTab::ModeSelection;
         *self.summary_hidden_mode = false;
         self.reload_summary();
+        self.lerp_state.clear();
     }
 
     /// Moves the interface to Chart page
@@ -244,11 +233,13 @@ impl<'a> InputKeyHandler<'a> {
         *self.chart_tab = ChartTab::ModeSelection;
         *self.chart_hidden_mode = false;
         self.reload_chart_index();
+        self.lerp_state.clear();
     }
 
     #[cfg(not(tarpaulin_include))]
     pub fn go_activity(&mut self) {
         *self.page = CurrentUi::Activity;
+        self.lerp_state.clear();
     }
 
     /// Turns on help popup
@@ -283,7 +274,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// Removes popup status
+    /// Removes pop up status
     #[cfg(not(tarpaulin_include))]
     pub fn do_empty_popup(&mut self) {
         *self.popup = PopupState::Nothing;
@@ -316,7 +307,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn handle_update_popup(&mut self) -> Result<(), HandlingOutput> {
         if self.key.code == KeyCode::Enter {
             // If there is a new version, Enter will try to open the default browser with this link
-            open::that("https://github.com/WaffleMixer/Rex/releases/latest")
+            open::that("https://github.com/TheRustyPickle/Rex/releases/latest")
                 .map_err(|_| HandlingOutput::PrintNewUpdate)?;
             *self.popup = PopupState::Nothing;
             Ok(())
@@ -361,7 +352,7 @@ impl<'a> InputKeyHandler<'a> {
         match status {
             Ok(()) => {
                 self.go_home_reset();
-                // we just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
+                // We just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
                 *self.home_tab = HomeTab::Months;
                 self.reload_home_table();
                 self.reload_chart_data();
@@ -382,21 +373,9 @@ impl<'a> InputKeyHandler<'a> {
             let target_id_num = self.all_tx_data.get_id_num(a);
             let tx_type = &target_data[4];
 
-            // based on what kind of transaction is selected, passes the tx data to the struct
+            // Based on what kind of transaction is selected, passes the tx data to the struct
             // and change the current interface
-            if tx_type != "Transfer" {
-                *self.add_tx_data = TxData::custom(
-                    &target_data[0],
-                    &target_data[1],
-                    &target_data[2],
-                    "",
-                    &target_data[3],
-                    &target_data[4],
-                    &target_data[5],
-                    target_id_num,
-                );
-                *self.page = CurrentUi::AddTx;
-            } else {
+            if tx_type == "Transfer" {
                 let split_method = target_data[2].split(" to ").collect::<Vec<&str>>();
                 let from_method = split_method[0];
                 let to_method = split_method[1];
@@ -412,11 +391,24 @@ impl<'a> InputKeyHandler<'a> {
                     target_id_num,
                 );
                 *self.page = CurrentUi::AddTx;
+            } else {
+                *self.add_tx_data = TxData::custom(
+                    &target_data[0],
+                    &target_data[1],
+                    &target_data[2],
+                    "",
+                    &target_data[3],
+                    &target_data[4],
+                    &target_data[5],
+                    target_id_num,
+                );
+                *self.page = CurrentUi::AddTx;
             }
             self.add_tx_data.add_tx_status(
                 "Info: Entering Transaction edit mode. Press C to reset.".to_string(),
             );
-            self.reload_add_tx_balance_load();
+            self.reload_add_tx_balance_data();
+            self.lerp_state.clear();
         }
     }
 
@@ -431,7 +423,7 @@ impl<'a> InputKeyHandler<'a> {
             let status = self.all_tx_data.del_tx(index, self.conn);
             match status {
                 Ok(()) => {
-                    // transaction deleted so reload the data again
+                    // Transaction deleted so reload the data again
                     self.reload_home_table();
                     self.reload_chart_data();
                     self.reload_summary_data();
@@ -532,15 +524,18 @@ impl<'a> InputKeyHandler<'a> {
                     match self.chart_tab {
                         ChartTab::ModeSelection => {
                             self.chart_modes.previous();
+                            self.lerp_state.clear();
                             self.reload_chart_index();
                         }
                         ChartTab::Years => {
                             self.chart_years.previous();
+                            self.lerp_state.clear();
                             self.chart_months.set_index_zero();
                             self.reload_chart_index();
                         }
                         ChartTab::Months => {
                             self.chart_months.previous();
+                            self.lerp_state.clear();
                             self.reload_chart_index();
                         }
                         ChartTab::TxMethods => {
@@ -607,15 +602,18 @@ impl<'a> InputKeyHandler<'a> {
                 if !*self.chart_hidden_mode {
                     match self.chart_tab {
                         ChartTab::ModeSelection => {
+                            self.lerp_state.clear();
                             self.chart_modes.next();
                             self.reload_chart_index();
                         }
                         ChartTab::Years => {
+                            self.lerp_state.clear();
                             self.chart_years.next();
                             self.chart_months.set_index_zero();
                             self.reload_chart_index();
                         }
                         ChartTab::Months => {
+                            self.lerp_state.clear();
                             self.chart_months.next();
                             self.reload_chart_index();
                         }
@@ -774,7 +772,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// Takes the autofill value and adds it to the relevant field
+    /// Takes the auto fill value and adds it to the relevant field
     #[cfg(not(tarpaulin_include))]
     pub fn do_autofill(&mut self) {
         match self.page {
@@ -822,12 +820,12 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// Handle keypress when deletion popup is turned on
+    /// Handle key press when deletion popup is turned on
     #[cfg(not(tarpaulin_include))]
     pub fn handle_deletion_popup(&mut self) {
         match self.key.code {
             KeyCode::Left | KeyCode::Right => {
-                *self.deletion_status = self.deletion_status.get_next()
+                *self.deletion_status = self.deletion_status.get_next();
             }
             KeyCode::Enter => match self.deletion_status {
                 DeletionStatus::Yes => match self.page {
@@ -862,21 +860,9 @@ impl<'a> InputKeyHandler<'a> {
             let target_id_num = self.search_txs.get_id_num(a);
             let tx_type = &target_data[4];
 
-            // based on what kind of transaction is selected, passes the tx data to the struct
+            // Based on what kind of transaction is selected, passes the tx data to the struct
             // and changes the current interface
-            if tx_type != "Transfer" {
-                *self.add_tx_data = TxData::custom(
-                    &target_data[0],
-                    &target_data[1],
-                    &target_data[2],
-                    "",
-                    &target_data[3],
-                    &target_data[4],
-                    &target_data[5],
-                    target_id_num,
-                );
-                *self.page = CurrentUi::AddTx;
-            } else {
+            if tx_type == "Transfer" {
                 let split_method = target_data[2].split(" to ").collect::<Vec<&str>>();
                 let from_method = split_method[0];
                 let to_method = split_method[1];
@@ -892,8 +878,20 @@ impl<'a> InputKeyHandler<'a> {
                     target_id_num,
                 );
                 *self.page = CurrentUi::AddTx;
+            } else {
+                *self.add_tx_data = TxData::custom(
+                    &target_data[0],
+                    &target_data[1],
+                    &target_data[2],
+                    "",
+                    &target_data[3],
+                    &target_data[4],
+                    &target_data[5],
+                    target_id_num,
+                );
+                *self.page = CurrentUi::AddTx;
             }
-            self.reload_add_tx_balance_load();
+            self.reload_add_tx_balance_data();
         }
     }
 
@@ -904,7 +902,7 @@ impl<'a> InputKeyHandler<'a> {
             let status = self.search_txs.del_tx(index, self.conn);
             match status {
                 Ok(()) => {
-                    // transaction deleted so reload the data again
+                    // Transaction deleted so reload the data again
                     self.reload_home_table();
                     self.reload_chart_data();
                     self.reload_summary_data();
@@ -979,7 +977,7 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     #[cfg(not(tarpaulin_include))]
-    /// Opens a popup that shows the details of the selected transaction on the Home page
+    /// Opens a popup that shows the details of the selected transaction on the Homepage
     pub fn show_home_tx_details(&mut self) {
         if let Some(index) = self.table.state.selected() {
             let selected_tx = self.all_tx_data.get_tx(index);
@@ -1027,6 +1025,7 @@ impl<'a> InputKeyHandler<'a> {
                     .unwrap();
                 *activation_status = !*activation_status;
                 self.reload_chart_index();
+                self.lerp_state.clear();
             }
         }
     }
@@ -1046,12 +1045,12 @@ impl<'a> InputKeyHandler<'a> {
             *self.popup_scroll_position += 1;
         } else {
             *self.popup_scroll_position = 0;
-        };
+        }
     }
 }
 
-impl<'a> InputKeyHandler<'a> {
-    /// Handle Arrow Up key press on the Home page
+impl InputKeyHandler<'_> {
+    /// Handle Arrow Up key press on the Homepage
     #[cfg(not(tarpaulin_include))]
     fn do_home_up(&mut self) {
         match &self.home_tab {
@@ -1086,7 +1085,7 @@ impl<'a> InputKeyHandler<'a> {
         self.reload_home_balance_data();
     }
 
-    /// Handle Arrow Down key press on the Home page
+    /// Handle Arrow Down key press on the Homepage
     #[cfg(not(tarpaulin_include))]
     fn do_home_down(&mut self) {
         match &self.home_tab {
@@ -1112,7 +1111,7 @@ impl<'a> InputKeyHandler<'a> {
                 } else {
                     *self.home_tab = self.home_tab.change_tab_down();
                     self.table.state.select(Some(0));
-                };
+                }
             }
             HomeTab::Years => *self.home_tab = self.home_tab.change_tab_down(),
         }
@@ -1236,7 +1235,7 @@ impl<'a> InputKeyHandler<'a> {
                             *self.summary_tab = self.summary_tab.change_tab_down_yearly();
                             *self.summary_tab = self.summary_tab.change_tab_down_yearly();
                             self.summary_table.state.select(None);
-                        };
+                        }
                     }
                     _ => *self.summary_tab = self.summary_tab.change_tab_down_yearly(),
                 },
@@ -1730,20 +1729,6 @@ impl<'a> InputKeyHandler<'a> {
         *self.search_txs = TransactionData::new_search(Vec::new(), Vec::new());
     }
 
-    /// Force add home page's balance load to start from 0.0
-    #[cfg(not(tarpaulin_include))]
-    fn reload_home_balance_load(&mut self) {
-        // 0 for all methods + 1 more for the total balance column
-        let balance_data = vec![String::from("0.0"); get_all_tx_methods(self.conn).len() + 1];
-        self.ongoing_balance.clone_from(&balance_data);
-        *self.ongoing_changes = vec![String::from("0.0"); balance_data.len()];
-        self.ongoing_expense.clone_from(&balance_data.clone());
-        self.ongoing_income.clone_from(&balance_data);
-        self.daily_ongoing_expense.clone_from(&balance_data);
-        self.daily_ongoing_income.clone_from(&balance_data);
-        self.reload_home_balance_data();
-    }
-
     /// Reload activity data by fetching from the DB
     #[cfg(not(tarpaulin_include))]
     fn reload_activity_table(&mut self) {
@@ -1930,19 +1915,19 @@ impl<'a> InputKeyHandler<'a> {
         let current_table_index = self.table.state.selected();
 
         match current_table_index {
-            // pass out the current index to get the necessary balance & changes data
+            // Pass out the current index to get the necessary balance & changes data
             Some(a) => {
                 balance_data.push(self.all_tx_data.get_balance(a));
                 balance_data.push(self.all_tx_data.get_changes(a));
             }
-            // if none selected, get empty changes + the absolute final balance
+            // If none selected, get empty changes + the absolute final balance
             None => {
                 balance_data.push(self.all_tx_data.get_last_balance(self.conn));
                 balance_data.push(get_empty_changes(self.conn));
             }
         }
 
-        // total income, total expense, daily income, daily expense data based on the selected index.
+        // Total income, total expense, daily income, daily expense data based on the selected index.
         balance_data.push(
             self.all_tx_data
                 .get_total_income(current_table_index, self.conn),
@@ -1963,16 +1948,6 @@ impl<'a> InputKeyHandler<'a> {
         *self.balance_data = balance_data;
     }
 
-    /// Force add tx page's balance load to start from 0.0
-    #[cfg(not(tarpaulin_include))]
-    fn reload_add_tx_balance_load(&mut self) {
-        // 0 for all methods + 1 more for the total balance column
-        let ongoing_data = vec![String::from("0.0"); get_all_tx_methods(self.conn).len() + 1];
-        self.ongoing_balance.clone_from(&ongoing_data);
-        *self.ongoing_changes = vec![String::from("0.0"); ongoing_data.len()];
-        self.reload_add_tx_balance_data();
-    }
-
     /// Update add tx page balance section data that is being shown on the UI
     #[cfg(not(tarpaulin_include))]
     fn reload_add_tx_balance_data(&mut self) {
@@ -1983,12 +1958,12 @@ impl<'a> InputKeyHandler<'a> {
         let current_table_index = self.table.state.selected();
 
         let (current_balance, current_changes) = match current_table_index {
-            // pass out the current index to get the necessary balance & changes data
+            // Pass out the current index to get the necessary balance & changes data
             Some(a) => (
                 self.all_tx_data.get_balance(a),
                 self.all_tx_data.get_changes(a),
             ),
-            // if none selected, get empty changes + the absolute final balance
+            // If none selected, get empty changes + the absolute final balance
             None => (
                 self.all_tx_data.get_last_balance(self.conn),
                 get_empty_changes(self.conn),

@@ -85,7 +85,7 @@ fn test_home_data() {
         "Food",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect();
     let tx_2 = vec![
         "25-07-2023",
@@ -96,7 +96,7 @@ fn test_home_data() {
         "Food",
     ]
     .into_iter()
-    .map(|a| a.to_string())
+    .map(std::string::ToString::to_string)
     .collect();
 
     let expected_data_2: Vec<Vec<String>> = vec![tx_1, tx_2];
@@ -112,21 +112,21 @@ fn test_home_data() {
     // Tx method changes for that 1 tx
     let expected_changes_1: Vec<String> = vec!["Changes", "0.00", "↓100.00"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
     let expected_changes_2: Vec<String> = vec!["Changes", "↑200.00", "0.00"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
     // Balances are that tx was counted + the total balance combining the first two
     let expected_balance_1: Vec<String> = vec!["Balance", "-100.00", "-100.00", "-200.00"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
     let expected_balance_2: Vec<String> = vec!["Balance", "100.00", "-100.00", "0.00"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
     assert_eq!(all_balance_1, expected_balance_1);
@@ -140,7 +140,7 @@ fn test_home_data() {
     // Regardless of the month of the TransactionData, the last balance will be the same
     let expected_data: Vec<_> = vec!["Balance", "100.00", "-100.00", "0.00"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
     assert_eq!(last_balance_1, expected_data);
@@ -159,12 +159,12 @@ fn test_home_data() {
     // No tx available within the selected index so 0 balance
     let expected_data_1: Vec<String> = vec!["Income", "0.00", "0.00", "0.00"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
     let expected_data_2: Vec<String> = vec!["Income", "200.00", "0.00", "200.00"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
     assert_eq!(total_income_1, expected_data_1);
@@ -176,12 +176,12 @@ fn test_home_data() {
     // No tx available within the selected index so 0
     let expected_data_1: Vec<String> = vec!["Expense", "0.00", "0.00", "0.00"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
     let expected_data_2: Vec<String> = vec!["Expense", "0.00", "100.00", "100.00"]
         .into_iter()
-        .map(|a| a.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
     assert_eq!(total_expense_1, expected_data_1);

@@ -7,11 +7,11 @@ use crate::utility::{
 };
 
 /// Adds a transaction to the database with the given info. The flow of this goes like this:
-/// - Add the new transaction to the database
-/// - Calculate the changes that happened to the Tx Method
-/// - Calculate the absolute final balance
-/// - Find the Changes that happened due to the transaction
-/// - Push them to the database
+/// - Add the new transaction to the database.
+/// - Calculate the changes that happened to the Tx Method.
+/// - Calculate the absolute final balance.
+/// - Find the Changes that happened due to the transaction.
+/// - Push them to the database.
 pub fn add_tx(
     date: &str,
     details: &str,
@@ -22,16 +22,17 @@ pub fn add_tx(
     id_num: Option<&str>,
     conn: &mut Connection,
 ) -> sqlResult<()> {
-    // create a connection and a savepoint
+    // Create a connection and a savepoint
     let sp = conn.savepoint()?;
 
-    // the process goes through 4 parts
+    // the process goes through 4 parts:
+    //
     // Add the tx itself in the db
     // calculate the amount to add/subtract from the balance_all table
     // create changes amount and push it to db
     // Update final row balance which holds the balance after all tx
 
-    // if Some(id) means it's a transaction editing
+    // If Some(id) means it's a transaction editing
     // else it's a normal transaction
     if let Some(id) = id_num {
         let query = r#"INSERT INTO tx_all (date, details, "tx_method", amount, tx_type, id_num, tags) VALUES (?, ?, ?, ?, ?, ?, ?)"#;
@@ -43,7 +44,7 @@ pub fn add_tx(
 
     // 2025-05-10
     // take 2025 and subtract 2022 = 3, means the year number 3
-    // take 05 -> 5 -> 5th month. 5 + (3 * 12) =  the row of this month's balance on balance_all table
+    // take 05 -> 5 -> 5th month. 5 + (3 * 12) = the row of this month's balance on balance_all table
     // we are not subtracting 1 from month because balance_all table starts at 1
     let split_date = date.split('-').collect::<Vec<&str>>();
     let (year, month) = (
@@ -70,7 +71,8 @@ pub fn add_tx(
     }
     let last_balance_id = get_last_balance_id(&sp)?;
 
-    // we have to get these following data to push to the database
+    // We have to get these following data to push to the database:
+    //
     // new_balance_data: the working month balance after the transaction
     // new_changes_data: the new changes data to push to the database after this tx
     // last_balance_data: the absolute final balance after all transaction
@@ -119,11 +121,11 @@ pub fn add_tx(
 
     //
     for i in 0..all_tx_methods.len() {
-        // the variable to keep track whether any changes were made to the tx method
+        // The variable to keep track whether any changes were made to the tx method
         let current_last_balance = last_balance[i].parse::<f64>().unwrap();
         let mut current_change = format!("{:.2}", 0.0);
 
-        // add the proper values and changes based on the tx type
+        // Add the proper values and changes based on the tx type
         if tx_type == "Transfer" && all_tx_methods[i] == from_method {
             current_change = format!("↓{:.2}", &int_amount);
 

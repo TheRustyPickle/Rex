@@ -46,6 +46,7 @@ impl Default for TxData {
 impl TxData {
     /// Creates an instance of the struct however the date field is
     /// edited with the current local date of the device.
+    #[must_use]
     pub fn new() -> Self {
         let current_date = Local::now().to_string();
         let formatted_current_date = &current_date[0..10];
@@ -65,6 +66,7 @@ impl TxData {
         }
     }
 
+    #[must_use]
     pub fn new_empty() -> Self {
         TxData {
             date: String::new(),
@@ -84,6 +86,7 @@ impl TxData {
 
     /// Used to adding custom pre-defined data inside the widgets of Add Transaction Page.
     /// Currently used on Editing transaction.
+    #[must_use]
     pub fn custom(
         date: &str,
         details: &str,
@@ -121,6 +124,7 @@ impl TxData {
     }
 
     /// Returns all the data saved
+    #[must_use]
     pub fn get_all_texts(&self) -> Vec<&str> {
         vec![
             &self.date,
@@ -134,6 +138,7 @@ impl TxData {
         ]
     }
 
+    #[must_use]
     pub fn get_tx_method(&self) -> String {
         if self.tx_type == "Transfer" {
             format!("{} to {}", self.from_method, self.to_method)
@@ -142,10 +147,12 @@ impl TxData {
         }
     }
 
+    #[must_use]
     pub fn get_tx_status(&self) -> &Vec<String> {
         &self.tx_status
     }
 
+    #[must_use]
     pub fn get_tx_type(&self) -> TxType {
         if let Some(first_letter) = self.tx_type.chars().next() {
             match first_letter.to_ascii_lowercase() {
@@ -167,7 +174,7 @@ impl TxData {
         add_char_to(to_add, &mut self.current_index, &mut self.details);
     }
 
-    /// Insert or remove from from method field according to the index point
+    /// Insert or remove from method field according to the index point
     pub fn edit_from_method(&mut self, to_add: Option<char>) {
         add_char_to(to_add, &mut self.current_index, &mut self.from_method);
     }
@@ -202,7 +209,7 @@ impl TxData {
 
         if self.editing_tx {
             self.editing_tx = false;
-            // how saving an edited tx works
+            // How saving an edited tx works
             // delete the tx that was being edited from the db using the id_num ->
             // add another tx using the new data but take the earlier id to add to the db
             let deleted_tx = get_tx_id_num(self.id_num, conn);
@@ -440,13 +447,14 @@ impl TxData {
         {
             return Some(CheckingError::EmptyMethod);
         }
-        // empty tags in a tx becomes as unknown
+        // Empty tags in a tx becomes as unknown
         if self.tags.is_empty() {
             self.tags = "Unknown".to_string();
         }
         None
     }
 
+    #[must_use]
     pub fn check_all_empty(&self) -> bool {
         let all_data = [
             &self.date,
@@ -475,7 +483,7 @@ impl TxData {
         if user_amount.contains('b') && !self.from_method.is_empty() {
             let all_methods = get_all_tx_methods(conn);
 
-            // get all the method's final balance, loop through the balances and match the tx method name
+            // Get all the method's final balance, loop through the balances and match the tx method name
             let last_balances = get_last_balances(conn);
 
             for x in 0..all_methods.len() {
@@ -526,7 +534,7 @@ impl TxData {
                         continue;
                     }
 
-                    // if the char is a number, convert to u16 and save it on gathered value
+                    // If the char is a number, convert to u16 and save it on gathered value
                     if let Ok(num_amount) = value.to_string().parse::<u16>() {
                         gathered_value = format!("{num_amount}{gathered_value}");
                     } else {
@@ -586,6 +594,7 @@ impl TxData {
     }
 
     /// Returns the current index
+    #[must_use]
     pub fn get_current_index(&self) -> usize {
         self.current_index
     }
@@ -638,7 +647,7 @@ impl TxData {
         let step_status = self.step_date(&mut user_date, StepType::StepUp, date_type);
         self.date = user_date;
 
-        // reload index to the final point as some data just got added/changed
+        // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Date);
         step_status
     }
@@ -650,7 +659,7 @@ impl TxData {
         let step_status = self.step_date(&mut user_date, StepType::StepDown, date_type);
         self.date = user_date;
 
-        // reload index to the final point as some data just got added/changed
+        // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Date);
         step_status
     }
@@ -662,7 +671,7 @@ impl TxData {
         let step_status = self.step_tx_method(&mut user_method, StepType::StepUp, conn);
         self.from_method = user_method;
 
-        // reload index to the final point as some data just got added/changed
+        // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::FromMethod);
         step_status
     }
@@ -674,7 +683,7 @@ impl TxData {
         let step_status = self.step_tx_method(&mut user_method, StepType::StepDown, conn);
         self.from_method = user_method;
 
-        // reload index to the final point as some data just got added/changed
+        // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::FromMethod);
         step_status
     }
@@ -686,7 +695,7 @@ impl TxData {
         let step_status = self.step_tx_method(&mut user_method, StepType::StepUp, conn);
         self.to_method = user_method;
 
-        // reload index to the final point as some data just got added/changed
+        // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::ToMethod);
         step_status
     }
@@ -698,7 +707,7 @@ impl TxData {
         let step_status = self.step_tx_method(&mut user_method, StepType::StepDown, conn);
         self.to_method = user_method;
 
-        // reload index to the final point as some data just got added/changed
+        // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::ToMethod);
         step_status
     }
@@ -710,7 +719,7 @@ impl TxData {
         let step_status = self.step_tx_type(&mut user_type, StepType::StepUp);
         self.tx_type = user_type;
 
-        // reload index to the final point as some data just got added/changed
+        // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::TxType);
         step_status
     }
@@ -722,7 +731,7 @@ impl TxData {
         let step_status = self.step_tx_type(&mut user_type, StepType::StepDown);
         self.tx_type = user_type;
 
-        // reload index to the final point as some data just got added/changed
+        // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::TxType);
         step_status
     }
@@ -763,7 +772,7 @@ impl TxData {
 
         self.amount = user_amount;
 
-        // reload index to the final point as some data just got added/changed
+        // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Amount);
         step_status
     }
@@ -804,7 +813,7 @@ impl TxData {
 
         self.amount = user_amount;
 
-        // reload index to the final point as some data just got added/changed
+        // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Amount);
         step_status
     }
@@ -816,7 +825,7 @@ impl TxData {
         let status = self.step_tags(&mut user_tag, &self.autofill, StepType::StepUp, conn);
         self.tags = user_tag;
 
-        // reload index to the final point as some data just got added/changed
+        // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Tags);
         status
     }
@@ -828,7 +837,7 @@ impl TxData {
         let status = self.step_tags(&mut user_tag, &self.autofill, StepType::StepDown, conn);
         self.tags = user_tag;
 
-        // reload index to the final point as some data just got added/changed
+        // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::Tags);
         status
     }
@@ -892,7 +901,7 @@ impl TxData {
         let mut balance_data = vec![String::from("Balance")];
 
         // If editing tx, it means we have data of the balance of the current selected row on the
-        // home page. In this case, instead of showing the absolute final balance, we will show the
+        // homepage. In this case, instead of showing the absolute final balance, we will show the
         // balance before the selected tx happened. So if any fields are modified, it will show
         // what the balance will look like if the new balance is saved
         let last_balance_data = if self.editing_tx {
@@ -945,7 +954,13 @@ impl TxData {
         let to_method = &self.to_method;
         let amount: f64 = self.amount.parse().unwrap();
 
-        if self.tx_type != "Transfer" {
+        if self.tx_type == "Transfer" {
+            let target_from_balance = last_balances.get_mut(from_method).unwrap();
+            *target_from_balance -= amount;
+
+            let target_to_balance = last_balances.get_mut(to_method).unwrap();
+            *target_to_balance += amount;
+        } else {
             match self.tx_type.as_ref() {
                 "Income" => {
                     let target_balance = last_balances.get_mut(from_method).unwrap();
@@ -957,12 +972,6 @@ impl TxData {
                 }
                 _ => unreachable!(),
             }
-        } else {
-            let target_from_balance = last_balances.get_mut(from_method).unwrap();
-            *target_from_balance -= amount;
-
-            let target_to_balance = last_balances.get_mut(to_method).unwrap();
-            *target_to_balance += amount;
         }
 
         let mut total_bal = 0.0;
@@ -989,14 +998,12 @@ impl TxData {
 
         let all_tx_methods = get_all_tx_methods(conn);
 
-        if self.tx_type != "Transfer" {
+        if self.tx_type == "Transfer" {
             for method in all_tx_methods {
                 if &method == from_method {
-                    match self.tx_type.as_ref() {
-                        "Income" => changes_data.push(format!("↑{amount}")),
-                        "Expense" => changes_data.push(format!("↓{amount}")),
-                        _ => unreachable!(),
-                    }
+                    changes_data.push(format!("↓{amount}"));
+                } else if &method == to_method {
+                    changes_data.push(format!("↑{amount}"));
                 } else {
                     changes_data.push("0.00".to_string());
                 }
@@ -1004,9 +1011,11 @@ impl TxData {
         } else {
             for method in all_tx_methods {
                 if &method == from_method {
-                    changes_data.push(format!("↓{amount}"));
-                } else if &method == to_method {
-                    changes_data.push(format!("↑{amount}"));
+                    match self.tx_type.as_ref() {
+                        "Income" => changes_data.push(format!("↑{amount}")),
+                        "Expense" => changes_data.push(format!("↓{amount}")),
+                        _ => unreachable!(),
+                    }
                 } else {
                     changes_data.push("0.00".to_string());
                 }

@@ -15,7 +15,7 @@ use crate::utility::{
 };
 
 /// Returns the balance of all methods based on year and month point.
-/// if the balance is empty/0 at the given point for any one of the methods
+/// If the balance is empty/0 at the given point for any one of the methods
 /// it will try to find the balance for that method from one of the earlier points.
 pub fn get_last_time_balance(
     month: usize,
@@ -46,7 +46,8 @@ pub fn get_last_time_balance(
         .collect::<Vec<_>>()
         .join(", ");
 
-    // the process goes like this
+    // the process goes like this:
+    //
     // m1  m2  m3  id
     //  0   0  10   1
     // 10  10   0   2
@@ -63,16 +64,16 @@ pub fn get_last_time_balance(
     let mut rows = stmt.query([target_id_num]).unwrap();
 
     while let Some(row) = rows.next().unwrap() {
-        // all methods checked = no longer necessary to check any more rows
+        // All methods checked = no longer necessary to check any more rows
         if checked_methods.len() == tx_method.len() {
             break;
         }
-        // check each tx_method column in the current row
+        // Check each tx_method column in the current row
         for (i, item) in tx_method.iter().enumerate() {
             if !checked_methods.contains(&item.as_str()) {
                 let balance: f64 = row.get(i).unwrap();
 
-                // we only need non-zero balance
+                // We only need non-zero balance
                 if balance != 0.0 {
                     *final_value.get_mut(item).unwrap() = balance;
                     checked_methods.push(item);
@@ -118,7 +119,7 @@ pub fn get_all_txs(
     month: usize,
     year: usize,
 ) -> (Vec<Vec<String>>, Vec<Vec<String>>, Vec<String>) {
-    // returns all transactions recorded within a given date + balance changes + the relevant id_num
+    // Returns all transactions recorded within a given date + balance changes + the relevant id_num
 
     let all_tx_methods = get_all_tx_methods(conn);
 
@@ -126,7 +127,7 @@ pub fn get_all_txs(
     let mut final_all_balances: Vec<Vec<String>> = Vec::new();
     let mut all_id_num = Vec::new();
 
-    // we will go through the last month balances and add/subtract
+    // We will go through the last month balances and add/subtract
     // current month's transactions to the related tx method. After each tx calculation, add whatever
     // balance for each tx method inside a vec to finally return them
 
@@ -143,7 +144,7 @@ pub fn get_all_txs(
 
     let rows = statement
         .query_map([&datetime_1, &datetime_2], |row| {
-            // collect the row data and put them in a vec
+            // Collect the row data and put them in a vec
             let date = reverse_date_format(row.get(0).unwrap());
             let id_num: i32 = row.get(5).unwrap();
 
@@ -160,7 +161,7 @@ pub fn get_all_txs(
         .unwrap();
 
     for i in rows.flatten() {
-        // data contains all tx data of a transaction
+        // Data contains all tx data of a transaction
         let mut data = i;
         let id_num = &data.pop().unwrap();
         all_id_num.push(id_num.to_string());
@@ -168,7 +169,7 @@ pub fn get_all_txs(
     }
 
     for i in &final_all_txs {
-        // this is where the calculation for the balance happens. We will loop through each tx,
+        // This is where the calculation for the balance happens. We will loop through each tx,
         // look at the tx type, tx method and add/subtract the amount on last month balance which was fetched earlier
 
         // collect data inside variables
@@ -185,7 +186,7 @@ pub fn get_all_txs(
         let mut from_method = String::new();
         let mut to_method = String::new();
 
-        // add or subtract the amount based on the tx type
+        // Add or subtract the amount based on the tx type
         if tx_type == "Expense" {
             new_balance_from = last_month_balance[tx_method] - amount;
         } else if tx_type == "Income" {
@@ -198,7 +199,7 @@ pub fn get_all_txs(
             new_balance_to = last_month_balance[&to_method] + amount;
         }
 
-        // make changes to the balance map based on the tx
+        // Make changes to the balance map based on the tx
         // for transfer TX first block executes
         // new_balance_to != 0 means it's a transfer transaction
         if new_balance_to == 0.0 {
@@ -208,7 +209,7 @@ pub fn get_all_txs(
             *last_month_balance.get_mut(&to_method).unwrap() = new_balance_to;
         }
 
-        // push all the changes gathered to the return variable
+        // Push all the changes gathered to the return variable
         let mut to_push = vec![];
         for i in &all_tx_methods {
             to_push.push(format!("{:.2}", last_month_balance[i]));
@@ -217,7 +218,7 @@ pub fn get_all_txs(
         final_all_balances.push(to_push);
     }
 
-    // pushes the final balance that was calculated just now to the db on the balance_all table
+    // Pushes the final balance that was calculated just now to the db on the balance_all table
     if !final_all_balances.is_empty() {
         let target_id_num = month as i32 + 1 + (year as i32 * 12);
         let final_index = final_all_balances.len() - 1;
@@ -299,7 +300,7 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
 pub fn get_user_tx_methods(add_new_method: bool, conn: Option<&Connection>) -> UserInputType {
     let mut stdout = stdout();
 
-    // this command clears up the terminal. This is added so the terminal doesn't get
+    // This command clears up the terminal. This is added so the terminal doesn't get
     // filled up with previous unnecessary texts.
     clear_terminal(&mut stdout);
 
@@ -308,9 +309,9 @@ pub fn get_user_tx_methods(add_new_method: bool, conn: Option<&Connection>) -> U
 
     let mut method_line = "Currently added Transaction Methods: \n".to_string();
 
-    // if we are adding more tx methods to an existing database, we need to
+    // If we are adding more tx methods to an existing database, we need
     // to get the existing columns to prevent duplicates/error.
-    // This needs to be separated because if it's not not adding new tx methods,
+    // This needs to be separated because if it's not adding new tx methods,
     // getting all tx methods will crash
     if add_new_method {
         current_tx_methods = get_all_tx_methods(conn.unwrap());
@@ -319,7 +320,7 @@ pub fn get_user_tx_methods(add_new_method: bool, conn: Option<&Connection>) -> U
         }
     }
 
-    // we will take input from the user and use the input data to create a new database
+    // We will take input from the user and use the input data to create a new database
     // keep on looping until the methods are approved by sending y.
     'outer_loop: loop {
         let mut verify_input = "Inserted Transaction Methods:\n\n".to_string();
@@ -336,7 +337,7 @@ Example input: Bank, Cash, PayPal.\n\nEnter Transaction Methods: "
         }
         flush_output(&stdout);
 
-        // take user input for transaction methods
+        // Take user input for transaction methods
         let line = take_input();
 
         // cancel operation on cancel input
@@ -401,7 +402,7 @@ Example input: Bank, Cash, PayPal.\n\nEnter Transaction Methods: "
 
         let verify_line = take_input();
 
-        // until the answer is y/cancel continue the loop
+        // Until the answer is y/cancel continue the loop
         if verify_line.to_lowercase().starts_with('y') {
             for i in inputted_methods {
                 db_tx_methods.push(i.to_string());
@@ -445,7 +446,7 @@ Currently added Transaction Methods: \n"
             continue;
         }
 
-        // cancel the process on cancel input
+        // Cancel the process on cancel input
         if user_input.trim().to_lowercase().starts_with("cancel") {
             return UserInputType::CancelledOperation;
         }
@@ -799,7 +800,7 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
         if !terminal_opened {
             return Err(result.unwrap());
         }
-    };
+    }
     Ok(())
 }
 

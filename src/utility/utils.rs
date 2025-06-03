@@ -32,9 +32,9 @@ const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense
 
 /// Makes a call to the database to find out all the columns in the `balance_all` section
 /// so we can determine the number of TX Methods that has been added.
-/// return example: `["source_1", "source_2", "source_3"]`
+/// Return example: `["source_1", "source_2", "source_3"]`
 pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
-    // returns all transaction methods added to the database
+    // Returns all transaction methods added to the database
     let column_names = conn
         .prepare("SELECT * FROM balance_all")
         .expect("could not prepare statement");
@@ -49,7 +49,7 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
 }
 
 pub fn get_all_tx_methods_cumulative(conn: &Connection) -> Vec<String> {
-    // returns all transaction methods added to the database
+    // Returns all transaction methods added to the database
     let column_names = conn
         .prepare("SELECT * FROM balance_all")
         .expect("could not prepare statement");
@@ -136,9 +136,9 @@ pub fn get_all_tx_columns(conn: &Connection) -> Vec<String> {
         .collect()
 }
 
-/// Returns the a vector with data required to create the Changes row for zero changes in the home page.
+/// Returns the a vector with data required to create the Changes row for zero changes in the homepage.
 pub fn get_empty_changes(conn: &Connection) -> Vec<String> {
-    // function for quick vec with 0 changes for adding in widget
+    // Function for quick vec with 0 changes for adding in widget
     let tx_methods = get_all_tx_methods(conn);
     let mut changes = vec!["Changes".to_string()];
     for _i in tx_methods {
@@ -167,8 +167,9 @@ pub fn get_last_balance_id(conn: &Connection) -> sqlResult<i32> {
     last_id
 }
 
-/// Returns two dates based on the month and year index. used for the purpose of searching
+/// Returns two dates based on the month and year index. Used for the purpose of searching
 /// tx based on date
+#[must_use]
 pub fn get_sql_dates(month: usize, year: usize, date_type: &DateType) -> (String, String) {
     match date_type {
         DateType::Monthly => {
@@ -194,7 +195,7 @@ pub fn get_sql_dates(month: usize, year: usize, date_type: &DateType) -> (String
 /// Verifies the db version is up to date
 #[cfg(not(tarpaulin_include))]
 pub fn check_old_sql(conn: &mut Connection) {
-    // earlier version of the database didn't had the Tag column
+    // Earlier version of the database didn't had the Tag column
     if !get_all_tx_columns(conn).contains(&"tags".to_string()) {
         println!("Old database detected. Starting migration...");
         let status = add_tags_column(conn);
@@ -208,7 +209,7 @@ pub fn check_old_sql(conn: &mut Connection) {
         }
     }
 
-    // earlier version of the database's balance_all columns were all TEXT type.
+    // Earlier version of the database's balance_all columns were all TEXT type.
     // Convert to REAL type if found
     if check_old_balance_sql(conn) {
         println!("Outdated database detected. Updating...");
@@ -271,7 +272,7 @@ pub fn get_all_table_names(conn: &Connection) -> Vec<String> {
     result
 }
 
-/// Enters raw mode so the Tui can render properly
+/// Enters raw mode so the TUI can render properly
 #[cfg(not(tarpaulin_include))]
 pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
     enable_raw_mode()?;
@@ -319,8 +320,9 @@ pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>>
     Ok(())
 }
 
-/// Returns a styled block for ui to use
+/// Returns a styled block for UI to use
 #[cfg(not(tarpaulin_include))]
+#[must_use]
 pub fn styled_block(title: &str) -> Block {
     Block::default()
         .borders(Borders::ALL)
@@ -333,13 +335,15 @@ pub fn styled_block(title: &str) -> Block {
 }
 
 #[cfg(not(tarpaulin_include))]
+#[must_use]
 pub fn main_block<'a>() -> Block<'a> {
     Block::default().style(Style::default().bg(BACKGROUND).fg(BOX))
 }
 
-/// takes a string and makes any word before the first occurrence of : to Bold
+/// Takes a string and makes any word before the first occurrence of : to Bold
 /// Used for rendering
 #[cfg(not(tarpaulin_include))]
+#[must_use]
 pub fn create_bolded_text(text: &str) -> Vec<Line> {
     let mut text_data = Vec::new();
 
@@ -360,6 +364,7 @@ pub fn create_bolded_text(text: &str) -> Vec<Line> {
 
 /// Tabs from some given data for the UI
 #[cfg(not(tarpaulin_include))]
+#[must_use]
 pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
     let titles: Vec<Line> = data
         .titles
@@ -420,6 +425,7 @@ pub fn start_timer<T: std::fmt::Display>(input: T) {
 
 /// Takes a user input and returns the trimmed input as String
 #[cfg(not(tarpaulin_include))]
+#[must_use]
 pub fn take_input() -> String {
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
@@ -440,6 +446,7 @@ pub fn flush_output(stdout: &Stdout) {
 }
 
 /// Checks if the input is a restricted word or inside a given vector
+#[must_use]
 pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
     if let Some(restricted_words) = restricted {
         for restricted_item in restricted_words {
@@ -458,7 +465,8 @@ pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
     false
 }
 
-/// Parse github release information for popup menu
+/// Parse GitHub release information for popup menu
+#[must_use]
 pub fn parse_github_body(body: &str) -> String {
     let body = body.replace("## Updates", "");
     let body = body.replace('*', "•");
@@ -468,6 +476,7 @@ pub fn parse_github_body(body: &str) -> String {
 }
 
 /// Uses Levenshtein algorithm to get the best match of a string in a vec of strings
+#[must_use]
 pub fn get_best_match(data: &str, matching_set: &[String]) -> String {
     let mut best_match = &matching_set[0];
     let mut best_score = -1.0;
@@ -484,6 +493,7 @@ pub fn get_best_match(data: &str, matching_set: &[String]) -> String {
 }
 
 /// Used for sorting summary table data
+#[must_use]
 pub fn sort_table_data(mut data: Vec<Vec<String>>, sort_type: &SortingType) -> Vec<Vec<String>> {
     match sort_type {
         SortingType::ByTags => data.sort(),
@@ -525,6 +535,7 @@ pub fn add_char_to(to_add: Option<char>, current_index: &mut usize, current_data
 }
 
 /// Checks if the string contains any symbol indicating comparison
+#[must_use]
 pub fn check_comparison(input: &str) -> ComparisonType {
     // Need to handle 2 letter ones first otherwise in case of >=
     // it will match with >
@@ -552,6 +563,7 @@ struct BackupPaths {
 }
 
 /// Checks if location.json exists and returns a path if it exists
+#[must_use]
 pub fn is_location_changed(working_dir: &PathBuf) -> Option<PathBuf> {
     let mut json_path = working_dir.to_owned();
     json_path.pop();
@@ -772,6 +784,7 @@ pub fn add_new_activity_tx<T: AsRef<str> + Display>(
 
 /// Switch from YYYY-MM-DD to DD-MM-YYYY or vice versa.
 /// Will return the original value if either empty or does not have 2 dashes in the string
+#[must_use]
 pub fn reverse_date_format(date: String) -> String {
     if date.is_empty() {
         return date;

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use crate::tx_handler::delete_tx;
 use crate::utility::{get_all_changes, get_all_tx_methods, get_all_txs, get_last_balances};
 
-/// This struct stores the transaction data, balance, changes and the id num
+/// This struct stores the transaction data, balance, changes, and the id number
 /// Data storing format is:
 ///
 /// `all_tx` : `[[date, details, tx_method, amount, tx_type, tags],]`
@@ -22,7 +22,7 @@ pub struct TransactionData {
 }
 
 impl TransactionData {
-    /// Calls the db to fetch transaction data, transaction changes, balances and id numbers
+    /// Calls the db to fetch transaction data, transaction changes, balances, and id numbers
     /// from the given month and year index
     pub fn new(month: usize, year: usize, conn: &Connection) -> Self {
         let (all_tx, all_balance, all_id_num) = get_all_txs(conn, month, year);
@@ -35,6 +35,7 @@ impl TransactionData {
         }
     }
 
+    #[must_use]
     pub fn new_search(all_tx: Vec<Vec<String>>, all_id_num: Vec<String>) -> Self {
         TransactionData {
             all_tx,
@@ -44,18 +45,21 @@ impl TransactionData {
         }
     }
 
-    /// returns all the Transaction data for the given index. Index is of the
+    /// Returns all the Transaction data for the given index. Index is of the
     /// Home Table's selected index
+    #[must_use]
     pub fn get_txs(&self) -> Vec<Vec<String>> {
         self.all_tx.clone()
     }
 
+    #[must_use]
     pub fn is_tx_empty(&self) -> bool {
         self.all_tx.is_empty()
     }
 
-    /// returns all the balance data for the given index. Index is of the
+    /// Returns all the balance data for the given index. Index is of the
     /// Home Table's selected index
+    #[must_use]
     pub fn get_balance(&self, index: usize) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
         let mut total_balance = 0.0;
@@ -68,7 +72,7 @@ impl TransactionData {
         balance_data
     }
 
-    /// returns the absolute final balance that is found after all transactions were counted for.
+    /// Returns the absolute final balance that is found after all transactions were counted for.
     /// The value is saved in the DB at the final row
     pub fn get_last_balance(&self, conn: &Connection) -> Vec<String> {
         let mut balance_data = vec!["Balance".to_string()];
@@ -83,8 +87,9 @@ impl TransactionData {
         balance_data
     }
 
-    /// returns all the changes data for the given index. Index is of the
+    /// Returns all the changes data for the given index. Index is of the
     /// Home Table's selected index
+    #[must_use]
     pub fn get_changes(&self, index: usize) -> Vec<String> {
         let mut changes_data = vec!["Changes".to_string()];
         for i in &self.all_changes[index] {
@@ -94,17 +99,18 @@ impl TransactionData {
     }
 
     /// Returns the `id_num` of the tx of the given index
+    #[must_use]
     pub fn get_id_num(&self, index: usize) -> i32 {
         self.all_id_num[index].parse::<i32>().unwrap().to_owned()
     }
 
-    /// gets the ID Number of the selected table row and calls the function to delete a transaction from the database
+    /// Gets the ID Number of the selected table row and calls the function to delete a transaction from the database
     pub fn del_tx(&self, index: usize, conn: &mut Connection) -> sqlResult<()> {
         let target_id = self.get_id_num(index);
         delete_tx(target_id, conn)
     }
 
-    /// returns total incomes for the selected month by going through all the tx saved in the struct
+    /// Returns total incomes for the selected month by going through all the tx saved in the struct
     // Computes the total income and returns it as a vector of strings.
     pub fn get_total_income(&self, current_index: Option<usize>, conn: &Connection) -> Vec<String> {
         // Initialize the output vector with the title "Income".
@@ -152,7 +158,7 @@ impl TransactionData {
         final_income
     }
 
-    /// returns total expenses for the selected month by going through all the tx saved in the struct
+    /// Returns total expenses for the selected month by going through all the tx saved in the struct
     // Computes the total expense and returns it as a vector of strings.
     pub fn get_total_expense(
         &self,
@@ -204,6 +210,7 @@ impl TransactionData {
         final_expense
     }
 
+    #[must_use]
     pub fn get_tx(&self, index: usize) -> &Vec<String> {
         &self.all_tx[index]
     }

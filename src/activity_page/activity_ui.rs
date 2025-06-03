@@ -8,7 +8,7 @@ use crate::activity_page::ActivityData;
 use crate::page_handler::{
     ActivityTab, IndexedData, TableData, BACKGROUND, HEADER, SELECTED, TEXT,
 };
-use crate::utility::{create_tab, main_block, styled_block};
+use crate::utility::{create_tab, main_block, styled_block, LerpState};
 
 pub fn activity_ui(
     f: &mut Frame,
@@ -17,6 +17,7 @@ pub fn activity_ui(
     current_tab: &ActivityTab,
     activity_data: &ActivityData,
     table_data: &mut TableData,
+    lerp_state: &mut LerpState,
 ) {
     let activity_txs_data = activity_data.get_activity_txs(table_data.state.selected());
     let mut activity_txs_table = TableData::new(activity_txs_data);
@@ -90,11 +91,11 @@ pub fn activity_ui(
 
     f.render_widget(main_block(), size);
 
-    let mut table_name = "Activities".to_string();
+    let tx_count = table_data.items.len();
+    let lerp_id = "home_tx_count";
+    let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64) as i64;
 
-    if !table_data.items.is_empty() {
-        table_name = format!("Activities: {}", table_data.items.len());
-    }
+    let table_name = format!("Transactions: {lerp_tx_count}");
 
     let activity_header_cells = ["Created At", "Activity Type", "Description"]
         .iter()

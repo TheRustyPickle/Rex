@@ -21,9 +21,9 @@ pub trait AutoFiller {
         let all_tags = get_all_tags(conn);
 
         if !user_input.trim().is_empty() && !all_tags.is_empty() {
-            let splitted = user_input.split(',').map(str::trim).collect::<Vec<&str>>();
+            let split_data = user_input.split(',').map(str::trim).collect::<Vec<&str>>();
 
-            let last_value = splitted.last().unwrap().trim();
+            let last_value = split_data.last().unwrap().trim();
 
             if last_value.is_empty() {
                 return String::new();

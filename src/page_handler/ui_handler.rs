@@ -27,7 +27,7 @@ use crate::popup_page::PopupData;
 use crate::search_page::search_ui;
 use crate::summary_page::{summary_ui, SummaryData};
 use crate::tx_handler::TxData;
-use crate::utility::{get_all_tx_methods, get_all_tx_methods_cumulative};
+use crate::utility::{get_all_tx_methods, get_all_tx_methods_cumulative, LerpState};
 
 pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
 pub const TEXT: Color = Color::Rgb(153, 78, 236);
@@ -48,31 +48,32 @@ pub fn start_app<B: Backend>(
 ) -> Result<HandlingOutput, UiHandlingError> {
     // Setting up some default values. Let's go through all of them
 
-    // contains the home page month list that is indexed
+    // Contains the homepage month list that is indexed
+
     let mut home_months = IndexedData::new_monthly();
-    // contains the home page year list that is indexed
+    // Contains the homepage year list that is indexed
     let mut home_years = IndexedData::new_yearly();
-    // contains the chart page month list that is indexed
+    // Contains the chart page month list that is indexed
     let mut chart_months = IndexedData::new_monthly();
-    // contains the chart page year list that is indexed
+    // Contains the chart page year list that is indexed
     let mut chart_years = IndexedData::new_yearly();
-    // contains the chart page mode selection list that is indexed
+    // Contains the chart page mode selection list that is indexed
     let mut chart_modes = IndexedData::new_modes();
-    // contains the chart page tx method selection list that is indexed
+    // Contains the chart page tx method selection list that is indexed
     let mut chart_tx_methods = IndexedData::new_tx_methods_cumulative(conn);
 
-    // contains the summary page month list that is indexed
+    // Contains the summary page month list that is indexed
     let mut summary_months = IndexedData::new_monthly();
-    // contains the summary page year list that is indexed
+    // Contains the summary page year list that is indexed
     let mut summary_years = IndexedData::new_yearly();
-    // contains the summary page mode selection list that is indexed
+    // Contains the summary page mode selection list that is indexed
     let mut summary_modes = IndexedData::new_modes();
-    // contains the Activity page month list that is indexed
+    // Contains the Activity page month list that is indexed
     let mut activity_years = IndexedData::new_yearly();
-    // contains the Activity page month list that is indexed
+    // Contains the Activity page month list that is indexed
     let mut activity_months = IndexedData::new_monthly();
 
-    // the selected widget on the Home Page. Default set to the month selection
+    // The selected widget on the HomePage. Default set to the month selection
     let mut home_tab = HomeTab::Months;
 
     // How summary table will be sorted
@@ -87,7 +88,7 @@ pub fn start_app<B: Backend>(
     let mut activity_data = ActivityData::new(activity_months.index, activity_years.index, conn);
 
     let mut search_txs = TransactionData::new_search(Vec::new(), Vec::new());
-    // data for the Home Page's tx table
+    // Data for the HomePage's tx table
     let mut table = TableData::new(all_tx_data.get_txs());
 
     // The page which is currently selected. Default is the initial page
@@ -123,20 +124,20 @@ pub fn start_app<B: Backend>(
     // Holds the popup data that will be/are inserted into the Popup page
     let mut popup_data = PopupData::new();
 
-    // data for the Summary Page's table
+    // Data for the Summary Page's table
     let mut summary_table = TableData::new(summary_data.get_table_data(
         &summary_modes,
         summary_months.index,
         summary_years.index,
     ));
 
-    // data for the Search Page's table
+    // Data for the Search Page's table
     let mut search_table = TableData::new(Vec::new());
 
-    // data for the Activity Page's table
+    // Data for the Activity Page's table
     let mut activity_table = TableData::new(activity_data.get_txs());
 
-    // the initial page REX loading index
+    // The initial page REX loading index
     let mut starter_index = 0;
 
     // At what point the chart is current rendering to
@@ -151,40 +152,6 @@ pub fn start_app<B: Backend>(
     // The initial popup when deleting tx will start on Yes value
     let mut deletion_status: DeletionStatus = DeletionStatus::Yes;
 
-    // The current balance that is being shown on the home tab Balance column. Will change every loop util the actual balance is reached
-    let mut balance_load = vec![0.0; get_all_tx_methods(conn).len() + 1];
-    // The balance shown in the UI before the current actual balance that is being shown in the UI
-    // If went from row 2 to row 3, this will contain the balance or row 2 to calculate the difference
-    // we have to animate/load progressively
-    let mut last_balance = Vec::new();
-    // The actual current balance that is being shown
-    let mut ongoing_balance = Vec::new();
-    // If the difference between the ongoing and last balance is 100, each loop it adds/reduces x.xx% of the difference to the balance
-    // till actual balance is reached. After each loop it gets increased by a little till 1.0 and key polling starts at 1.0, putting the app to sleep
-    // A single var is used to keep track of load % for all values on the home page
-    let mut load_percentage = 0.0;
-
-    // Works similarly to balance load
-    let mut changes_load = balance_load.clone();
-    let mut last_changes = Vec::new();
-    let mut ongoing_changes = Vec::new();
-
-    let mut income_load = balance_load.clone();
-    let mut last_income = Vec::new();
-    let mut ongoing_income = Vec::new();
-
-    let mut expense_load = balance_load.clone();
-    let mut last_expense = Vec::new();
-    let mut ongoing_expense = Vec::new();
-
-    let mut daily_income_load = balance_load.clone();
-    let mut daily_last_income = Vec::new();
-    let mut daily_ongoing_income = Vec::new();
-
-    let mut daily_expense_load = balance_load.clone();
-    let mut daily_last_expense = Vec::new();
-    let mut daily_ongoing_expense = Vec::new();
-
     // Contains whether in the chart whether a tx method is activated or not
     let mut chart_activated_methods = get_all_tx_methods_cumulative(conn)
         .into_iter()
@@ -194,81 +161,53 @@ pub fn start_app<B: Backend>(
     let mut popup_scroll_position = 0;
     let mut max_popup_scroll = 0;
 
-    // Whether to reset home page stuff loading %
-    // Will only turn true on initial run and when a key is pressed
-    let mut to_reset = true;
-
-    // Home and Add Tx Page balance data
+    // Home and Add TX Page balance data
     let mut balance_data = Vec::new();
-    // Home and add tx page balance section's column space
+    // Home and add TX page balance section's column space
     let mut width_data = Vec::new();
     let total_columns = get_all_tx_methods(conn).len() + 2;
     let width_percent = (100 / total_columns) as u16;
 
-    // save the % of space each column should take in the Balance section based on the total
+    // Save the % of space each column should take in the Balance section based on the total
     // transaction methods/columns available
     for _ in 0..total_columns {
         width_data.push(Constraint::Percentage(width_percent));
     }
 
-    // how it work:
+    let mut lerp_state = LerpState::new(1.0);
+
+    // How it work:
     // Default value from above -> Goes to an interface page and render -> Wait for an event key press.
     //
-    // If no keypress is detected in certain position it will start the next iteration -> interface -> Key check
-    // Otherwise it will poll for keypress and locks the position
+    // If no key press is detected in certain position it will start the next iteration -> interface -> Key check
+    // Otherwise it will poll for key press and locks the position
     //
-    // If keypress is detected, send most of the &mut values to InputKeyHandler -> Gets mutated based on key press
+    // If key press is detected, send most of the &mut values to InputKeyHandler -> Gets mutated based on key press
     // -> loop ends -> start from beginning -> Send the new mutated values to the interface -> Keep up
     loop {
-        // passing out relevant data to the ui function
+        // Passing out relevant data to the UI function
         terminal
             .draw(|f| {
                 match page {
                     CurrentUi::Home => home_ui(
                         f,
-                        to_reset,
                         &home_months,
                         &home_years,
                         &mut table,
                         &mut balance_data,
                         &home_tab,
                         &mut width_data,
-                        &mut balance_load,
-                        &mut ongoing_balance,
-                        &mut last_balance,
-                        &mut changes_load,
-                        &mut ongoing_changes,
-                        &mut last_changes,
-                        &mut income_load,
-                        &mut ongoing_income,
-                        &mut last_income,
-                        &mut expense_load,
-                        &mut ongoing_expense,
-                        &mut last_expense,
-                        &mut daily_income_load,
-                        &mut daily_ongoing_income,
-                        &mut daily_last_income,
-                        &mut daily_expense_load,
-                        &mut daily_ongoing_expense,
-                        &mut daily_last_expense,
-                        &mut load_percentage,
+                        &mut lerp_state,
                         conn,
                     ),
 
                     CurrentUi::AddTx => add_tx_ui(
                         f,
-                        to_reset,
                         &mut balance_data,
                         &add_tx_data,
                         &add_tx_tab,
                         &mut width_data,
-                        &mut balance_load,
-                        &mut ongoing_balance,
-                        &mut last_balance,
-                        &mut changes_load,
-                        &mut ongoing_changes,
-                        &mut last_changes,
-                        &mut load_percentage,
+                        &mut lerp_state,
                         conn,
                     ),
 
@@ -285,6 +224,7 @@ pub fn start_app<B: Backend>(
                         chart_hidden_mode,
                         &mut chart_index,
                         &chart_activated_methods,
+                        &mut lerp_state,
                         conn,
                     ),
 
@@ -298,6 +238,7 @@ pub fn start_app<B: Backend>(
                         &summary_tab,
                         summary_hidden_mode,
                         &summary_sort,
+                        &mut lerp_state,
                         conn,
                     ),
                     CurrentUi::Search => search_ui(
@@ -306,6 +247,7 @@ pub fn start_app<B: Backend>(
                         &search_tab,
                         &mut search_table,
                         &search_date_type,
+                        &mut lerp_state,
                     ),
                     CurrentUi::Activity => activity_ui(
                         f,
@@ -314,6 +256,7 @@ pub fn start_app<B: Backend>(
                         &activity_tab,
                         &activity_data,
                         &mut activity_table,
+                        &mut lerp_state,
                     ),
                 }
                 popup_data.create_popup(
@@ -335,34 +278,24 @@ pub fn start_app<B: Backend>(
                     continue;
                 }
             }
-            CurrentUi::Chart => {
-                // If chart animation has ended, start polling
-                if chart_index.is_some()
+            CurrentUi::Home
+            | CurrentUi::AddTx
+            | CurrentUi::Summary
+            | CurrentUi::Search
+            | CurrentUi::Chart
+            | CurrentUi::Activity => {
+                // If at least 1 lerp is in progress and no key press detected, continue the loop
+                if lerp_state.has_active_lerps()
                     && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
                 {
                     continue;
                 }
             }
-            CurrentUi::Home | CurrentUi::AddTx => {
-                // If balance loading hasn't ended yet, continue the loop
-                if load_percentage < 1.0
-                    && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
-                {
-                    to_reset = false;
-                    continue;
-                }
-                // Polling has started here. Unless a new key is pressed, it will never proceed further.
-                // So after it's detected, we will reset the loading data on the home page
-                to_reset = true;
-            }
-
-            _ => {}
         }
 
-        // if not inside one of the duration polling, wait for keypress
+        // If not inside one of the duration polling, wait for key press
         if let Event::Key(key) = event::read().map_err(UiHandlingError::PollingError)? {
             if key.kind != KeyEventKind::Press {
-                to_reset = false;
                 continue;
             }
 
@@ -405,15 +338,10 @@ pub fn start_app<B: Backend>(
                 &mut chart_hidden_mode,
                 &mut summary_hidden_mode,
                 &mut deletion_status,
-                &mut ongoing_balance,
-                &mut ongoing_changes,
-                &mut ongoing_income,
-                &mut ongoing_expense,
-                &mut daily_ongoing_income,
-                &mut daily_ongoing_expense,
                 &mut chart_activated_methods,
                 &mut popup_scroll_position,
                 &mut max_popup_scroll,
+                &mut lerp_state,
                 conn,
             );
 
