@@ -57,7 +57,6 @@ pub struct InputKeyHandler<'a> {
     activity_data: &'a mut ActivityData,
     activity_table: &'a mut TableData,
     total_tags: usize,
-    chart_index: &'a mut Option<f64>,
     chart_hidden_mode: &'a mut bool,
     summary_hidden_mode: &'a mut bool,
     deletion_status: &'a mut DeletionStatus,
@@ -105,7 +104,6 @@ impl<'a> InputKeyHandler<'a> {
         activity_tab: &'a mut ActivityTab,
         activity_data: &'a mut ActivityData,
         activity_table: &'a mut TableData,
-        chart_index: &'a mut Option<f64>,
         chart_hidden_mode: &'a mut bool,
         summary_hidden_mode: &'a mut bool,
         deletion_status: &'a mut DeletionStatus,
@@ -154,7 +152,6 @@ impl<'a> InputKeyHandler<'a> {
             activity_data,
             activity_table,
             total_tags,
-            chart_index,
             chart_hidden_mode,
             summary_hidden_mode,
             deletion_status,
@@ -232,7 +229,6 @@ impl<'a> InputKeyHandler<'a> {
         self.chart_months.set_index_zero();
         *self.chart_tab = ChartTab::ModeSelection;
         *self.chart_hidden_mode = false;
-        self.reload_chart_index();
         self.lerp_state.clear();
     }
 
@@ -525,18 +521,15 @@ impl<'a> InputKeyHandler<'a> {
                         ChartTab::ModeSelection => {
                             self.chart_modes.previous();
                             self.lerp_state.clear();
-                            self.reload_chart_index();
                         }
                         ChartTab::Years => {
                             self.chart_years.previous();
                             self.lerp_state.clear();
                             self.chart_months.set_index_zero();
-                            self.reload_chart_index();
                         }
                         ChartTab::Months => {
                             self.chart_months.previous();
                             self.lerp_state.clear();
-                            self.reload_chart_index();
                         }
                         ChartTab::TxMethods => {
                             self.chart_tx_methods.previous();
@@ -604,18 +597,15 @@ impl<'a> InputKeyHandler<'a> {
                         ChartTab::ModeSelection => {
                             self.lerp_state.clear();
                             self.chart_modes.next();
-                            self.reload_chart_index();
                         }
                         ChartTab::Years => {
                             self.lerp_state.clear();
                             self.chart_years.next();
                             self.chart_months.set_index_zero();
-                            self.reload_chart_index();
                         }
                         ChartTab::Months => {
                             self.lerp_state.clear();
                             self.chart_months.next();
-                            self.reload_chart_index();
                         }
                         ChartTab::TxMethods => {
                             self.chart_tx_methods.next();
@@ -1024,7 +1014,6 @@ impl<'a> InputKeyHandler<'a> {
                     .get_mut(selected_method)
                     .unwrap();
                 *activation_status = !*activation_status;
-                self.reload_chart_index();
                 self.lerp_state.clear();
             }
         }
@@ -1714,12 +1703,6 @@ impl InputKeyHandler<'_> {
     #[cfg(not(tarpaulin_include))]
     fn reload_chart_data(&mut self) {
         *self.chart_data = ChartData::new(self.conn);
-    }
-
-    /// Restart the animation index of the chart
-    #[cfg(not(tarpaulin_include))]
-    fn reload_chart_index(&mut self) {
-        *self.chart_index = Some(0.0);
     }
 
     /// Reset all currently shown search related data to nothing
