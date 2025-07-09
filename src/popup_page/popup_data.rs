@@ -83,11 +83,11 @@ Enter: Redirect to the new version",
         self.set_title("Help");
         format!(
             "This page is for adding new transactions. Following are the supported keys here. \
-On Transfer transaction there will be one additional field pushing Tags to the key 7. 
+On Transfer transaction there will be one additional field pushing Tags to the key 7.
 
 1: Date         Example: 2022-05-12, YYYY-MM-DD
 2: TX details   Example: For Grocery, Salary
-5: TX Type      Example: Income/Expense/I/E
+5: TX Type      Example: Income/Expense/Transfer/I/E/T
 3: TX Method    Example: Cash, Bank, Card
 4: Amount       Example: 1000, 100+50, b - 100
 6: Tags         Example: Food, Car. Add a Comma for a new tag
@@ -100,7 +100,7 @@ Tab: Accept Autocompletion. Pressing again will remove the autocompleted value
 Arrow Up/Down: Steps value up/down by 1 when available
 Arrow Left/Right: Move cursor on input fields
 
-C: Clear all fields
+C: Clear all fields/Reset all changes, including discarding a tx if was being edited
 b: On amount field 'b' gets replaced with the current balance of Tx Method field
 k: On amount field 'k' is considered as 1000 or a thousand
 m: On amount field 'm' is considered as 1,000,000 or a million
@@ -215,7 +215,7 @@ Swapping transaction location will only work if they are on the same date.
 
 1: Date         Example: 2022-05-12, YYYY-MM-DD
 2: TX details   Example: For Grocery, Salary
-5: TX Type      Example: Income/Expense/I/E
+5: TX Type      Example: Income/Expense/Transfer/I/E/T
 3: TX Method    Example: Cash, Bank, Card
 4: Amount       Example: 1000, 100+50, b - 100
 6: Tags         Example: Food, Car. Add a Comma for a new tag
