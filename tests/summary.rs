@@ -1,23 +1,13 @@
 extern crate rex_tui;
-use rex_tui::db::*;
 use rex_tui::page_handler::{IndexedData, SortingType};
 use rex_tui::summary_page::SummaryData;
 use rex_tui::tx_handler::add_tx;
 use rex_tui::utility::sort_table_data;
-use rusqlite::Connection;
 use std::fs;
 
-fn create_test_db(file_name: &str) -> Connection {
-    if let Ok(metadata) = fs::metadata(file_name) {
-        if metadata.is_file() {
-            fs::remove_file(file_name).expect("Failed to delete existing file");
-        }
-    }
+mod common;
 
-    let mut conn = Connection::open(file_name).unwrap();
-    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
-    conn
-}
+use crate::common::create_test_db;
 
 #[test]
 fn check_summary_data_1() {
@@ -27,7 +17,7 @@ fn check_summary_data_1() {
     add_tx(
         "2022-08-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Expense",
         "Car",
@@ -39,7 +29,7 @@ fn check_summary_data_1() {
     add_tx(
         "2023-07-19",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "100.00",
         "Expense",
         "Food",
@@ -51,7 +41,7 @@ fn check_summary_data_1() {
     add_tx(
         "2023-07-25",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "200.00",
         "Income",
         "Food",
@@ -99,13 +89,13 @@ fn check_summary_data_1() {
                 "Largest Income".to_string(),
                 "25-07-2023".to_string(),
                 "200.00".to_string(),
-                "test1".to_string(),
+                "Super Special Bank".to_string(),
             ],
             vec![
                 "Largest Expense".to_string(),
                 "19-07-2023".to_string(),
                 "100.00".to_string(),
-                "test 2".to_string(),
+                "Cash Cow".to_string(),
             ],
             vec![
                 "Months Checked".to_string(),
@@ -130,7 +120,7 @@ fn check_summary_data_1() {
         ],
         vec![
             vec![
-                "test1".to_string(),
+                "Super Special Bank".to_string(),
                 "200.00".to_string(),
                 "0.00".to_string(),
                 "100.00".to_string(),
@@ -139,7 +129,7 @@ fn check_summary_data_1() {
                 "0.00".to_string(),
             ],
             vec![
-                "test 2".to_string(),
+                "Cash Cow".to_string(),
                 "0.00".to_string(),
                 "100.00".to_string(),
                 "0.00".to_string(),
@@ -165,7 +155,7 @@ fn check_summary_data_2() {
     add_tx(
         "2022-08-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "500.00",
         "Expense",
         "Car",
@@ -177,7 +167,7 @@ fn check_summary_data_2() {
     add_tx(
         "2022-01-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "500.00",
         "Expense",
         "Car",
@@ -189,7 +179,7 @@ fn check_summary_data_2() {
     add_tx(
         "2022-07-19",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "700.00",
         "Income",
         "Food",
@@ -201,7 +191,7 @@ fn check_summary_data_2() {
     add_tx(
         "2022-05-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "1000.00",
         "Income",
         "Food",
@@ -265,13 +255,13 @@ fn check_summary_data_2() {
                 "Largest Income".to_string(),
                 "19-05-2022".to_string(),
                 "1000.00".to_string(),
-                "test1".to_string(),
+                "Super Special Bank".to_string(),
             ],
             vec![
                 "Largest Expense".to_string(),
                 "19-01-2022".to_string(),
                 "500.00".to_string(),
-                "test1".to_string(),
+                "Super Special Bank".to_string(),
             ],
             vec![
                 "Months Checked".to_string(),
@@ -296,7 +286,7 @@ fn check_summary_data_2() {
         ],
         vec![
             vec![
-                "test1".to_string(),
+                "Super Special Bank".to_string(),
                 "1000.00".to_string(),
                 "1000.00".to_string(),
                 "58.82".to_string(),
@@ -305,7 +295,7 @@ fn check_summary_data_2() {
                 "250.00".to_string(),
             ],
             vec![
-                "test 2".to_string(),
+                "Cash Cow".to_string(),
                 "700.00".to_string(),
                 "0.00".to_string(),
                 "41.18".to_string(),
@@ -331,7 +321,7 @@ fn check_summary_data_3() {
     add_tx(
         "2022-08-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Expense",
         "Car",
@@ -343,7 +333,7 @@ fn check_summary_data_3() {
     add_tx(
         "2023-07-19",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "100.00",
         "Income",
         "Food",
@@ -355,7 +345,7 @@ fn check_summary_data_3() {
     add_tx(
         "2024-07-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Income",
         "Food",
@@ -420,13 +410,13 @@ fn check_summary_data_3() {
                 "Largest Income".to_string(),
                 "19-07-2023".to_string(),
                 "100.00".to_string(),
-                "test 2".to_string(),
+                "Cash Cow".to_string(),
             ],
             vec![
                 "Largest Expense".to_string(),
                 "19-08-2022".to_string(),
                 "100.00".to_string(),
-                "test1".to_string(),
+                "Super Special Bank".to_string(),
             ],
             vec![
                 "Months Checked".to_string(),
@@ -451,7 +441,7 @@ fn check_summary_data_3() {
         ],
         vec![
             vec![
-                "test1".to_string(),
+                "Super Special Bank".to_string(),
                 "100.00".to_string(),
                 "100.00".to_string(),
                 "50.00".to_string(),
@@ -460,7 +450,7 @@ fn check_summary_data_3() {
                 "33.33".to_string(),
             ],
             vec![
-                "test 2".to_string(),
+                "Cash Cow".to_string(),
                 "100.00".to_string(),
                 "0.00".to_string(),
                 "50.00".to_string(),
@@ -486,7 +476,7 @@ fn check_summary_sorting() {
     add_tx(
         "2022-08-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "1000.00",
         "Expense",
         "Car",
@@ -498,7 +488,7 @@ fn check_summary_sorting() {
     add_tx(
         "2023-07-19",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "500.00",
         "Income",
         "Food",
@@ -510,7 +500,7 @@ fn check_summary_sorting() {
     add_tx(
         "2024-07-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "2000.00",
         "Income",
         "Bank",

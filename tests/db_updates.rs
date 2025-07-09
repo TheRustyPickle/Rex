@@ -61,26 +61,28 @@ fn check_balance_migration() {
     conn.execute(
         r#"CREATE TABLE balance_all (
         id_num INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        test1 TEXT DEFAULT 0.00,
-        "test 2" TEXT DEFAULT 0.00
+        "Super Special Bank" TEXT DEFAULT 0.00,
+        "Cash Cow" TEXT DEFAULT 0.00
     );"#,
         [],
     )
     .unwrap();
 
     let query =
-        r#"INSERT INTO balance_all ("test1", "test 2") VALUES ("0.00", "0.00")"#.to_string();
+        r#"INSERT INTO balance_all ("Super Special Bank", "Cash Cow") VALUES ("0.00", "0.00")"#
+            .to_string();
     for _i in 0..49 {
         conn.execute(&query, []).unwrap();
     }
 
     conn.execute(
-        r#"UPDATE balance_all SET "test1" = 200.19, "test 2" = 159.19 WHERE id_num = 49"#,
+        r#"UPDATE balance_all SET "Super Special Bank" = 200.19, "Cash Cow" = 159.19 WHERE id_num = 49"#,
         [],
     )
     .unwrap();
 
-    let query = r#"SELECT "test1", "test 2" FROM balance_all ORDER BY id_num DESC LIMIT 1"#;
+    let query =
+        r#"SELECT "Super Special Bank", "Cash Cow" FROM balance_all ORDER BY id_num DESC LIMIT 1"#;
 
     let old_last_balances = conn
         .query_row(query, [], |row| {

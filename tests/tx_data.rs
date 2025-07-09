@@ -1,29 +1,20 @@
 extern crate rex_tui;
 use chrono::prelude::Local;
-use rex_tui::db::create_db;
 use rex_tui::outputs::{AType, CheckingError, NAType, TxType, VerifyingOutput};
 use rex_tui::page_handler::{DateType, TxTab};
 use rex_tui::tx_handler::{add_tx, TxData};
 use rusqlite::Connection;
 use std::fs;
 
-fn create_test_db(file_name: &str) -> Connection {
-    if let Ok(metadata) = fs::metadata(file_name) {
-        if metadata.is_file() {
-            fs::remove_file(file_name).expect("Failed to delete existing file");
-        }
-    }
+mod common;
 
-    let mut conn = Connection::open(file_name).unwrap();
-    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
-    conn
-}
+use crate::common::create_test_db;
 
 fn add_dummy_tx(conn: &mut Connection) {
     add_tx(
         "2022-08-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Expense",
         "Car",
@@ -35,7 +26,7 @@ fn add_dummy_tx(conn: &mut Connection) {
     add_tx(
         "2023-07-19",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "100.00",
         "Expense",
         "Food",
@@ -47,7 +38,7 @@ fn add_dummy_tx(conn: &mut Connection) {
     add_tx(
         "2023-07-25",
         "Testing transaction",
-        "test1 to test 2",
+        "Super Special Bank to Cash Cow",
         "200.00",
         "Transfer",
         "Food",
@@ -79,8 +70,8 @@ fn test_tx_data_1() {
     let tx_data = TxData::custom(
         "2024-06-15",
         "details",
-        "test1",
-        "test 2",
+        "Super Special Bank",
+        "Cash Cow",
         "100",
         "Transfer",
         "tags",
@@ -88,12 +79,15 @@ fn test_tx_data_1() {
     );
 
     assert_eq!(tx_data.get_tx_type(), TxType::Transfer);
-    assert_eq!(tx_data.get_tx_method(), "test1 to test 2".to_string());
+    assert_eq!(
+        tx_data.get_tx_method(),
+        "Super Special Bank to Cash Cow".to_string()
+    );
 
     let mut tx_data = TxData::custom(
         "2023-07-19",
         "details",
-        "test1",
+        "Super Special Bank",
         "",
         "100",
         "Expense",
@@ -102,7 +96,7 @@ fn test_tx_data_1() {
     );
 
     assert_eq!(tx_data.get_tx_type(), TxType::IncomeExpense);
-    assert_eq!(tx_data.get_tx_method(), "test1".to_string());
+    assert_eq!(tx_data.get_tx_method(), "Super Special Bank".to_string());
     assert!(tx_data.check_all_fields().is_none());
     assert!(!tx_data.check_all_empty());
 
@@ -128,7 +122,16 @@ fn test_tx_data_1() {
 
     assert_eq!(tx_data.get_current_index(), 10);
 
-    let mut tx_data = TxData::custom("", "details", "test1", "", "100", "Expense", "tags", 0);
+    let mut tx_data = TxData::custom(
+        "",
+        "details",
+        "Super Special Bank",
+        "",
+        "100",
+        "Expense",
+        "tags",
+        0,
+    );
     assert_eq!(
         tx_data.check_all_fields().unwrap(),
         CheckingError::EmptyDate
@@ -137,8 +140,8 @@ fn test_tx_data_1() {
     let mut tx_data = TxData::custom(
         "2023-07-19",
         "details",
-        "test1",
-        "test1",
+        "Super Special Bank",
+        "Super Special Bank",
         "100",
         "Transfer",
         "tags",
@@ -153,7 +156,7 @@ fn test_tx_data_1() {
         "2023-07-19",
         "details",
         "",
-        "test1",
+        "Super Special Bank",
         "100",
         "Expense",
         "tags",
@@ -167,8 +170,8 @@ fn test_tx_data_1() {
     let mut tx_data = TxData::custom(
         "2023-07-19",
         "details",
-        "test1",
-        "test1",
+        "Super Special Bank",
+        "Super Special Bank",
         "",
         "Expense",
         "tags",
@@ -182,8 +185,8 @@ fn test_tx_data_1() {
     let mut tx_data = TxData::custom(
         "2023-07-19",
         "details",
-        "test1",
-        "test1",
+        "Super Special Bank",
+        "Super Special Bank",
         "100",
         "",
         "tags",
@@ -197,7 +200,7 @@ fn test_tx_data_1() {
     let mut tx_data = TxData::custom(
         "2023-07-19",
         "details",
-        "test1",
+        "Super Special Bank",
         "",
         "100",
         "Transfer",
@@ -212,8 +215,8 @@ fn test_tx_data_1() {
     let mut tx_data = TxData::custom(
         "2023-07-19",
         "details",
-        "test1",
-        "test 2",
+        "Super Special Bank",
+        "Cash Cow",
         "100",
         "Transfer",
         "",
@@ -230,7 +233,7 @@ fn test_tx_data_verifier() {
     let mut tx_data = TxData::custom(
         "15-06-2023",
         "details",
-        "test1",
+        "Super Special Bank",
         "Nope",
         "b+100",
         "Transfer",
@@ -264,7 +267,7 @@ fn test_tx_data_verifier() {
     let mut tx_data = TxData::custom(
         "15-06-2023",
         "details",
-        "test1",
+        "Super Special Bank",
         "Nope",
         "b+100",
         "Transfer",
@@ -288,7 +291,7 @@ fn test_tx_data_stepper() {
     let mut tx_data = TxData::custom(
         "15-06-2023",
         "details",
-        "test1",
+        "Super Special Bank",
         "Nope",
         "b+100",
         "Transfer",
@@ -368,12 +371,21 @@ fn tx_data_searching() {
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 3);
 
-    let tx_data = TxData::custom("", "", "test1", "", "", "", "", 0);
+    let tx_data = TxData::custom("", "", "Super Special Bank", "", "", "", "", 0);
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 1);
 
-    let tx_data = TxData::custom("", "", "test1", "test 2", "", "Transfer", "", 0);
+    let tx_data = TxData::custom(
+        "",
+        "",
+        "Super Special Bank",
+        "Cash Cow",
+        "",
+        "Transfer",
+        "",
+        0,
+    );
 
     let data = tx_data.get_search_tx(&DateType::Exact, &conn);
     assert_eq!(data.0.len(), 1);
@@ -416,7 +428,7 @@ fn tx_data_searching() {
     let tx_data = TxData::custom(
         "19-07-2023",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "",
         "100.00",
         "Expense",
@@ -447,7 +459,9 @@ fn tx_data_editing() {
 
     tx_data.go_current_index(&TxTab::FromMethod);
 
-    for i in ['t', 'e', 's', 't', '1'] {
+    for i in [
+        'S', 'u', 'p', 'e', 'r', ' ', 'S', 'p', 'e', 'c', 'i', 'a', 'l', ' ', 'B', 'a', 'n', 'k',
+    ] {
         tx_data.edit_from_method(Some(i));
     }
 
@@ -464,7 +478,7 @@ fn tx_data_editing() {
 
     tx_data.go_current_index(&TxTab::ToMethod);
 
-    for i in ['t', 'e', 's', 't', ' ', '2'] {
+    for i in ['C', 'a', 's', 'h', ' ', 'C', 'o', 'w'] {
         tx_data.edit_to_method(Some(i));
     }
 
@@ -477,8 +491,8 @@ fn tx_data_editing() {
     let expected_data: Vec<String> = vec![
         "2023-07-05",
         "Some",
-        "test1",
-        "test 2",
+        "Super Special Bank",
+        "Cash Cow",
         "2023",
         "E",
         "Tag",
@@ -504,7 +518,9 @@ fn tx_data_editing() {
 
     tx_data.go_current_index(&TxTab::FromMethod);
 
-    for _ in ['t', 'e', 's', 't', '1'] {
+    for _ in [
+        'S', 'u', 'p', 'e', 'r', ' ', 'S', 'p', 'e', 'c', 'i', 'a', 'l', ' ', 'B', 'a', 'n', 'k',
+    ] {
         tx_data.edit_from_method(None);
     }
 
@@ -521,7 +537,7 @@ fn tx_data_editing() {
 
     tx_data.go_current_index(&TxTab::ToMethod);
 
-    for _ in ['t', 'e', 's', 't', ' ', '2'] {
+    for _ in ['C', 'a', 's', 'h', ' ', 'C', 'o', 'w'] {
         tx_data.edit_to_method(None);
     }
 
