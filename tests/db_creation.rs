@@ -1,21 +1,12 @@
 extern crate rex_tui;
-use rex_tui::db::{add_new_tx_methods, create_db, rename_column, reposition_column};
+use rex_tui::db::{add_new_tx_methods, rename_column, reposition_column};
 use rex_tui::tx_handler::add_tx;
 use rex_tui::utility::{get_all_tx_methods, get_last_balances};
-use rusqlite::Connection;
 use std::fs;
 
-fn create_test_db(file_name: &str) -> Connection {
-    if let Ok(metadata) = fs::metadata(file_name) {
-        if metadata.is_file() {
-            fs::remove_file(file_name).expect("Failed to delete existing file");
-        }
-    }
+mod common;
 
-    let mut conn = Connection::open(file_name).unwrap();
-    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
-    conn
-}
+use crate::common::create_test_db;
 
 #[test]
 fn check_db_creation() {
@@ -45,8 +36,8 @@ fn check_adding_new_tx_method() {
 
     let tx_methods = get_all_tx_methods(&conn);
     let expected_tx_methods = vec![
-        "test1".to_string(),
-        "test 2".to_string(),
+        "Super Special Bank".to_string(),
+        "Cash Cow".to_string(),
         "test3".to_string(),
         "test 4".to_string(),
     ];
@@ -62,9 +53,9 @@ fn check_renaming_columns() {
     let file_name = "test_db_3.sqlite";
     let mut conn = create_test_db(file_name);
 
-    let status = rename_column("test 2", "testing", &mut conn);
+    let status = rename_column("Cash Cow", "testing", &mut conn);
     let tx_methods = get_all_tx_methods(&conn);
-    let expected_tx_methods = vec!["test1".to_string(), "testing".to_string()];
+    let expected_tx_methods = vec!["Super Special Bank".to_string(), "testing".to_string()];
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
@@ -81,7 +72,7 @@ fn check_repositioning_columns() {
     add_tx(
         "2022-07-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "159.00",
         "Income",
         "Unknown",
@@ -92,9 +83,12 @@ fn check_repositioning_columns() {
 
     let old_last_balances = get_last_balances(&conn);
 
-    let status = reposition_column(&["test 2".to_string(), "test1".to_string()], &mut conn);
+    let status = reposition_column(
+        &["Cash Cow".to_string(), "Super Special Bank".to_string()],
+        &mut conn,
+    );
     let tx_methods = get_all_tx_methods(&conn);
-    let expected_tx_methods = vec!["test 2".to_string(), "test1".to_string()];
+    let expected_tx_methods = vec!["Cash Cow".to_string(), "Super Special Bank".to_string()];
 
     let last_balances = get_last_balances(&conn);
 

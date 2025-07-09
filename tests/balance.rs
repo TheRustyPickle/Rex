@@ -1,23 +1,14 @@
 extern crate rex_tui;
 use chrono::{naive::NaiveDate, Duration};
-use rex_tui::db::create_db;
 use rex_tui::tx_handler::*;
 use rex_tui::utility::*;
-use rusqlite::{Connection, Result as sqlResult};
+use rusqlite::Result as sqlResult;
 use std::collections::HashMap;
 use std::fs;
 
-fn create_test_db(file_name: &str) -> Connection {
-    if let Ok(metadata) = fs::metadata(file_name) {
-        if metadata.is_file() {
-            fs::remove_file(file_name).expect("Failed to delete existing file");
-        }
-    }
+mod common;
 
-    let mut conn = Connection::open(file_name).unwrap();
-    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
-    conn
-}
+use crate::common::create_test_db;
 
 #[test]
 fn check_last_balances_1() {
@@ -40,7 +31,7 @@ fn check_last_balances_2() {
     add_tx(
         "2022-07-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "159.00",
         "Expense",
         "Unknown",
@@ -52,7 +43,7 @@ fn check_last_balances_2() {
     add_tx(
         "2022-07-19",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "159.19",
         "Income",
         "Unknown",
@@ -84,7 +75,7 @@ fn check_last_balances_3() {
     add_tx(
         "2022-07-19",
         "Testing transaction",
-        "test1 to test 2",
+        "Super Special Bank to Cash Cow",
         "159.00",
         "Transfer",
         "Unknown",
@@ -96,7 +87,7 @@ fn check_last_balances_3() {
     add_tx(
         "2022-07-19",
         "Testing transaction",
-        "test 2 to test1",
+        "Cash Cow to Super Special Bank",
         "159.00",
         "Transfer",
         "Unknown",
@@ -127,7 +118,10 @@ fn check_last_month_balance_1() {
     let tx_methods = get_all_tx_methods(&conn);
 
     let data = get_last_time_balance(6, 1, &tx_methods, &conn);
-    let expected_data = HashMap::from([("test1".to_string(), 0.0), ("test 2".to_string(), 0.0)]);
+    let expected_data = HashMap::from([
+        ("Super Special Bank".to_string(), 0.0),
+        ("Cash Cow".to_string(), 0.0),
+    ]);
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
@@ -158,7 +152,7 @@ fn check_last_month_balance_2() {
     add_tx(
         "2022-07-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Income",
         "Unknown",
@@ -170,7 +164,7 @@ fn check_last_month_balance_2() {
     add_tx(
         "2022-07-19",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "100.00",
         "Income",
         "Unknown",
@@ -182,7 +176,7 @@ fn check_last_month_balance_2() {
     add_tx(
         "2022-08-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Income",
         "Unknown",
@@ -194,7 +188,7 @@ fn check_last_month_balance_2() {
     add_tx(
         "2022-09-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Income",
         "Unknown",
@@ -206,7 +200,7 @@ fn check_last_month_balance_2() {
     add_tx(
         "2022-10-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Income",
         "Unknown",
@@ -216,20 +210,24 @@ fn check_last_month_balance_2() {
     .unwrap();
 
     let data_1 = get_last_time_balance(8, 0, &tx_methods, &conn);
-    let expected_data_1 =
-        HashMap::from([("test 2".to_string(), 100.0), ("test1".to_string(), 200.0)]);
+    let expected_data_1 = HashMap::from([
+        ("Cash Cow".to_string(), 100.0),
+        ("Super Special Bank".to_string(), 200.0),
+    ]);
 
     delete_tx(1, &mut conn).unwrap();
     delete_tx(2, &mut conn).unwrap();
 
     let data_2 = get_last_time_balance(10, 3, &tx_methods, &conn);
-    let expected_data_2 =
-        HashMap::from([("test 2".to_string(), 0.0), ("test1".to_string(), 300.0)]);
+    let expected_data_2 = HashMap::from([
+        ("Cash Cow".to_string(), 0.0),
+        ("Super Special Bank".to_string(), 300.0),
+    ]);
 
     add_tx(
         "2028-08-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Income",
         "Unknown",
@@ -241,7 +239,7 @@ fn check_last_month_balance_2() {
     add_tx(
         "2025-09-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Income",
         "Unknown",
@@ -253,7 +251,7 @@ fn check_last_month_balance_2() {
     add_tx(
         "2025-10-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Income",
         "Unknown",
@@ -263,8 +261,10 @@ fn check_last_month_balance_2() {
     .unwrap();
 
     let data_3 = get_last_time_balance(10, 4, &tx_methods, &conn);
-    let expected_data_3 =
-        HashMap::from([("test 2".to_string(), 0.0), ("test1".to_string(), 500.0)]);
+    let expected_data_3 = HashMap::from([
+        ("Cash Cow".to_string(), 0.0),
+        ("Super Special Bank".to_string(), 500.0),
+    ]);
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
@@ -289,7 +289,7 @@ fn check_balance_all_day() {
 
     let details = "Test Transaction";
     let amount = "1.0";
-    let tx_method = "test1";
+    let tx_method = "Super Special Bank";
     let tx_type = "Income";
 
     loop {

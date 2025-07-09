@@ -1,11 +1,13 @@
 extern crate rex_tui;
-use rex_tui::db::create_db;
 use rex_tui::outputs::{AType, NAType, VerifyingOutput};
 use rex_tui::page_handler::DateType;
 use rex_tui::utility::traits::DataVerifier;
 use rex_tui::utility::*;
-use rusqlite::Connection;
 use std::fs;
+
+mod common;
+
+use crate::common::create_test_db;
 
 struct Testing {
     data: Vec<String>,
@@ -13,18 +15,6 @@ struct Testing {
     result: Vec<VerifyingOutput>,
 }
 impl DataVerifier for Testing {}
-
-fn create_test_db(file_name: &str) -> Connection {
-    if let Ok(metadata) = fs::metadata(file_name) {
-        if metadata.is_file() {
-            fs::remove_file(file_name).expect("Failed to delete existing file");
-        }
-    }
-
-    let mut conn = Connection::open(file_name).unwrap();
-    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
-    conn
-}
 
 #[test]
 fn check_sql_dates() {
@@ -172,17 +162,17 @@ fn check_verifier_tx_method() {
     let test_data = Testing {
         data: vec![
             String::new(),
-            "test 2".to_string(),
+            "Cash Cow".to_string(),
             "random".to_string(),
-            "  test 2  ".to_string(),
+            "  Cash Cow  ".to_string(),
             "te".to_string(),
         ],
         expected: vec![
             String::new(),
-            "test 2".to_string(),
-            "test1".to_string(),
-            "test 2".to_string(),
-            "test1".to_string(),
+            "Cash Cow".to_string(),
+            "Cash Cow".to_string(),
+            "Cash Cow".to_string(),
+            "Super Special Bank".to_string(),
         ],
         result: vec![
             VerifyingOutput::Nothing(AType::TxMethod),
