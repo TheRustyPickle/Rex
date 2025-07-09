@@ -1,4 +1,4 @@
-use ratatui::layout::{Alignment, Constraint, Direction, Layout};
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Position};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Cell, Paragraph, Row, Table};
@@ -23,7 +23,6 @@ pub fn search_ui(
 ) {
     // Get the data to insert into the Status widget of this page
 
-    use ratatui::layout::Position;
     let status_data = search_data.get_tx_status();
     // Contains date, details, from method, to method, amount, tx type, tags.
     // Except to method, rest will be used for the widgets
