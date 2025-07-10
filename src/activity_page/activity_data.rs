@@ -6,8 +6,8 @@ use crate::utility::get_all_activities;
 
 pub struct ActivityDetails {
     created_on: String,
-    activity_type: ActivityType,
-    description: String,
+    pub activity_type: ActivityType,
+    pub description: String,
     activity_num: i32,
 }
 
@@ -40,13 +40,13 @@ impl ActivityDetails {
 }
 
 pub struct ActivityTx {
-    date: String,
-    details: String,
-    tx_method: String,
-    amount: String,
-    tx_type: String,
-    tags: String,
-    id_num: String,
+    pub date: String,
+    pub details: String,
+    pub tx_method: String,
+    pub amount: String,
+    pub tx_type: String,
+    pub tags: String,
+    pub id_num: String,
     activity_num: i32,
     insertion_id: i32,
 }
