@@ -26,6 +26,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     chart_data: &ChartData,
     current_page: &ChartTab,
     chart_hidden_mode: bool,
+    chart_hidden_legends: bool,
     chart_activated_methods: &HashMap<String, bool, S>,
     lerp_state: &mut LerpState,
     conn: &Connection,
@@ -290,18 +291,21 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
             continue;
         }
 
-        final_dataset.push(
-            Dataset::default()
-                .name(all_tx_methods_cumulative[i].clone())
-                .marker(Marker::Braille)
-                .graph_type(GraphType::Line)
-                .style(
-                    Style::default()
-                        .fg(color_list.pop().unwrap())
-                        .bg(BACKGROUND),
-                )
-                .data(&datasets[i]),
-        );
+        let mut dataset = Dataset::default()
+            .marker(Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(
+                Style::default()
+                    .fg(color_list.pop().unwrap())
+                    .bg(BACKGROUND),
+            )
+            .data(&datasets[i]);
+
+        if !chart_hidden_legends {
+            dataset = dataset.name(all_tx_methods_cumulative[i].clone());
+        }
+
+        final_dataset.push(dataset);
     }
 
     let chart = Chart::new(final_dataset)
