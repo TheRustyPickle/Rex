@@ -4,6 +4,7 @@ use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
 use crate::page_handler::PopupState;
 
+#[cfg(not(tarpaulin_include))]
 pub fn activity_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
         PopupState::Nothing => match handler.key.code {

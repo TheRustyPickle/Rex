@@ -95,6 +95,7 @@ impl IndexedData {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub fn new_tx_methods(conn: &Connection) -> Self {
         IndexedData {
             titles: get_all_tx_methods(conn),
@@ -102,6 +103,7 @@ impl IndexedData {
         }
     }
 
+    #[cfg(not(tarpaulin_include))]
     pub fn new_tx_methods_cumulative(conn: &Connection) -> Self {
         IndexedData {
             titles: get_all_tx_methods_cumulative(conn),

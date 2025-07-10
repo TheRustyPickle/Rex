@@ -128,6 +128,7 @@ pub struct ActivityData {
 }
 
 impl ActivityData {
+    #[cfg(not(tarpaulin_include))]
     pub fn new(month: usize, year: usize, conn: &Connection) -> Self {
         let (activities, activity_txs) = get_all_activities(month, year, conn);
 
