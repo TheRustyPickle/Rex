@@ -58,6 +58,7 @@ pub struct InputKeyHandler<'a> {
     activity_table: &'a mut TableData,
     total_tags: usize,
     chart_hidden_mode: &'a mut bool,
+    chart_hidden_legends: &'a mut bool,
     summary_hidden_mode: &'a mut bool,
     deletion_status: &'a mut DeletionStatus,
     chart_activated_methods: &'a mut HashMap<String, bool>,
@@ -105,6 +106,7 @@ impl<'a> InputKeyHandler<'a> {
         activity_data: &'a mut ActivityData,
         activity_table: &'a mut TableData,
         chart_hidden_mode: &'a mut bool,
+        chart_hidden_legends: &'a mut bool,
         summary_hidden_mode: &'a mut bool,
         deletion_status: &'a mut DeletionStatus,
         chart_activated_methods: &'a mut HashMap<String, bool>,
@@ -153,6 +155,7 @@ impl<'a> InputKeyHandler<'a> {
             activity_table,
             total_tags,
             chart_hidden_mode,
+            chart_hidden_legends,
             summary_hidden_mode,
             deletion_status,
             chart_activated_methods,
@@ -277,10 +280,16 @@ impl<'a> InputKeyHandler<'a> {
         self.reload_popup_scroll_position();
     }
 
-    /// Hides chart top widgets
+    /// Hides/shows chart top widgets
     #[cfg(not(tarpaulin_include))]
     pub fn do_chart_hidden_mode(&mut self) {
         *self.chart_hidden_mode = !*self.chart_hidden_mode;
+    }
+
+    /// Hides/shows chart legends
+    #[cfg(not(tarpaulin_include))]
+    pub fn do_chart_lgeneds(&mut self) {
+        *self.chart_hidden_legends = !*self.chart_hidden_legends;
     }
 
     /// Hides summary top widgets
