@@ -143,6 +143,9 @@ pub fn start_app<B: Backend>(
     // Whether the chart is in hidden mode
     let mut chart_hidden_mode = false;
 
+    // Whether the chart has hidden legends
+    let mut chart_hidden_legends = false;
+
     // Whether the summary is in hidden mode
     let mut summary_hidden_mode = false;
 
@@ -219,6 +222,7 @@ pub fn start_app<B: Backend>(
                         &chart_data,
                         &chart_tab,
                         chart_hidden_mode,
+                        chart_hidden_legends,
                         &chart_activated_methods,
                         &mut lerp_state,
                         conn,
@@ -331,6 +335,7 @@ pub fn start_app<B: Backend>(
                 &mut activity_data,
                 &mut activity_table,
                 &mut chart_hidden_mode,
+                &mut chart_hidden_legends,
                 &mut summary_hidden_mode,
                 &mut deletion_status,
                 &mut chart_activated_methods,

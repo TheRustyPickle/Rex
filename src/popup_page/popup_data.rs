@@ -129,7 +129,8 @@ Example amount: 100 + b, b + b, 5 * b, 1.2k + 1m
         
 Following are the supported keys here
 
-R: Hides the top widgets for full chart view
+r (Lower case): Shows/Hides the top widgets for full chart view
+R (Upper case): Shows/Hides the chart legends
 Space: Enable/Disable tx method from the chart
 
 Arrow Up/Down: Cycle widgets
