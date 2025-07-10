@@ -15,6 +15,7 @@ pub fn chart_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Char('f') => handler.go_home(),
             KeyCode::Char('h') => handler.do_help_popup(),
             KeyCode::Char('r') => handler.do_chart_hidden_mode(),
+            KeyCode::Char('R') => handler.do_chart_lgeneds(),
             KeyCode::Char('w') => handler.go_search(),
             KeyCode::Char('y') => handler.go_activity(),
             KeyCode::Right => handler.handle_right_arrow(),
