@@ -595,3 +595,51 @@ fn tx_data_suffix() {
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 }
+
+#[test]
+fn tx_data_generation() {
+    let file_name = "tx_data_generation.sqlite";
+    let conn = create_test_db(file_name);
+
+    let mut tx_data = TxData::new_empty();
+
+    let balance_data: Vec<String> = vec!["Balance", "0.00", "0.00", "0.00"]
+        .into_iter()
+        .map(std::string::ToString::to_string)
+        .collect();
+
+    let change_data: Vec<String> = vec!["Changes", "0.00", "0.00", "0.00"]
+        .into_iter()
+        .map(std::string::ToString::to_string)
+        .collect();
+
+    let given = tx_data.generate_balance_section(&conn, balance_data.clone(), change_data.clone());
+
+    let expected = vec!["Balance", "0", "0", "0"]
+        .into_iter()
+        .map(std::string::ToString::to_string)
+        .collect::<Vec<String>>();
+
+    assert_eq!(given, expected);
+
+    let balance_data: Vec<String> = vec!["Balance", "0.00", "0.00", "0.00"]
+        .into_iter()
+        .map(std::string::ToString::to_string)
+        .collect();
+
+    tx_data.amount = "100.00".to_string();
+    tx_data.tx_type = "Expense".to_string();
+    tx_data.from_method = "Super Special Bank".to_string();
+
+    let given = tx_data.generate_balance_section(&conn, balance_data.clone(), change_data);
+
+    let expected = vec!["Balance", "-100", "0", "-100"]
+        .into_iter()
+        .map(std::string::ToString::to_string)
+        .collect::<Vec<String>>();
+
+    assert_eq!(given, expected);
+
+    conn.close().unwrap();
+    fs::remove_file(file_name).unwrap();
+}
