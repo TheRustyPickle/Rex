@@ -1,22 +1,13 @@
 extern crate rex_tui;
-use rex_tui::db::create_db;
 use rex_tui::tx_handler::add_tx;
 use rex_tui::tx_handler::delete_tx;
 use rex_tui::utility::{get_all_tx_columns, get_all_txs, get_last_tx_id};
-use rusqlite::{Connection, Result as sqlResult};
+use rusqlite::Result as sqlResult;
 use std::fs;
 
-fn create_test_db(file_name: &str) -> Connection {
-    if let Ok(metadata) = fs::metadata(file_name) {
-        if metadata.is_file() {
-            fs::remove_file(file_name).expect("Failed to delete existing file");
-        }
-    }
+mod common;
 
-    let mut conn = Connection::open(file_name).unwrap();
-    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
-    conn
-}
+use crate::common::create_test_db;
 
 #[test]
 fn check_last_tx_id_1() {
@@ -40,7 +31,7 @@ fn check_last_tx_id_2() {
     add_tx(
         "2022-09-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Income",
         "Unknown",
@@ -77,10 +68,11 @@ fn check_getting_all_tx_2() {
     let file_name = "getting_tx_2.sqlite";
     let mut conn = create_test_db(file_name);
 
+    println!("Starting");
     add_tx(
         "2022-07-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Expense",
         "Unknown",
@@ -92,7 +84,7 @@ fn check_getting_all_tx_2() {
     add_tx(
         "2022-07-19",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "100.00",
         "Expense",
         "Unknown",
@@ -104,7 +96,7 @@ fn check_getting_all_tx_2() {
     add_tx(
         "2022-05-15",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "100.00",
         "Expense",
         "Unknown",
@@ -116,7 +108,7 @@ fn check_getting_all_tx_2() {
     add_tx(
         "2022-05-20",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "100.00",
         "Income",
         "Unknown",
@@ -128,7 +120,7 @@ fn check_getting_all_tx_2() {
     add_tx(
         "2022-05-25",
         "Testing transfer",
-        "test 2 to test1",
+        "Cash Cow to Super Special Bank",
         "100.00",
         "Transfer",
         "Unknown",
@@ -136,6 +128,8 @@ fn check_getting_all_tx_2() {
         &mut conn,
     )
     .unwrap();
+
+    println!("Done with 1");
 
     let data = get_all_txs(&conn, 6, 0);
     let data_2 = get_all_txs(&conn, 4, 0);
@@ -145,7 +139,7 @@ fn check_getting_all_tx_2() {
             vec![
                 "19-07-2022".to_string(),
                 "Testing transaction".to_string(),
-                "test1".to_string(),
+                "Super Special Bank".to_string(),
                 "100.00".to_string(),
                 "Expense".to_string(),
                 "Unknown".to_string(),
@@ -153,7 +147,7 @@ fn check_getting_all_tx_2() {
             vec![
                 "19-07-2022".to_string(),
                 "Testing transaction".to_string(),
-                "test 2".to_string(),
+                "Cash Cow".to_string(),
                 "100.00".to_string(),
                 "Expense".to_string(),
                 "Unknown".to_string(),
@@ -171,7 +165,7 @@ fn check_getting_all_tx_2() {
             vec![
                 "15-05-2022".to_string(),
                 "Testing transaction".to_string(),
-                "test 2".to_string(),
+                "Cash Cow".to_string(),
                 "100.00".to_string(),
                 "Expense".to_string(),
                 "Unknown".to_string(),
@@ -179,7 +173,7 @@ fn check_getting_all_tx_2() {
             vec![
                 "20-05-2022".to_string(),
                 "Testing transaction".to_string(),
-                "test 2".to_string(),
+                "Cash Cow".to_string(),
                 "100.00".to_string(),
                 "Income".to_string(),
                 "Unknown".to_string(),
@@ -187,7 +181,7 @@ fn check_getting_all_tx_2() {
             vec![
                 "25-05-2022".to_string(),
                 "Testing transfer".to_string(),
-                "test 2 to test1".to_string(),
+                "Cash Cow to Super Special Bank".to_string(),
                 "100.00".to_string(),
                 "Transfer".to_string(),
                 "Unknown".to_string(),
@@ -206,7 +200,7 @@ fn check_getting_all_tx_2() {
     add_tx(
         "2022-05-25",
         "Testing transfer",
-        "test 2 to test1",
+        "Cash Cow to Super Special Bank",
         "500.00",
         "Transfer",
         "Unknown",
@@ -222,7 +216,7 @@ fn check_getting_all_tx_2() {
             vec![
                 "15-05-2022".to_string(),
                 "Testing transaction".to_string(),
-                "test 2".to_string(),
+                "Cash Cow".to_string(),
                 "100.00".to_string(),
                 "Expense".to_string(),
                 "Unknown".to_string(),
@@ -230,7 +224,7 @@ fn check_getting_all_tx_2() {
             vec![
                 "20-05-2022".to_string(),
                 "Testing transaction".to_string(),
-                "test 2".to_string(),
+                "Cash Cow".to_string(),
                 "100.00".to_string(),
                 "Income".to_string(),
                 "Unknown".to_string(),
@@ -238,7 +232,7 @@ fn check_getting_all_tx_2() {
             vec![
                 "25-05-2022".to_string(),
                 "Testing transfer".to_string(),
-                "test 2 to test1".to_string(),
+                "Cash Cow to Super Special Bank".to_string(),
                 "500.00".to_string(),
                 "Transfer".to_string(),
                 "Unknown".to_string(),
@@ -256,12 +250,14 @@ fn check_getting_all_tx_2() {
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(data, expected_data);
+    println!("Completed 1");
     assert_eq!(data_2, expected_data_2);
+    println!("Completed 2");
     assert_eq!(data_3, expected_data_3);
+    println!("Completed 3");
 }
 
 #[test]
-
 fn check_tx_columns() {
     let file_name = "tx_columns.sqlite";
     let conn = create_test_db(file_name);

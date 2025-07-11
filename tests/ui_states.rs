@@ -9,7 +9,7 @@ fn test_table_data() {
         vec![
             "15-05-2022".to_string(),
             "Testing transaction".to_string(),
-            "test 2".to_string(),
+            "Cash Cow".to_string(),
             "100.00".to_string(),
             "Expense".to_string(),
             "Unknown".to_string(),
@@ -17,7 +17,7 @@ fn test_table_data() {
         vec![
             "20-05-2022".to_string(),
             "Testing transaction".to_string(),
-            "test 2".to_string(),
+            "Cash Cow".to_string(),
             "100.00".to_string(),
             "Income".to_string(),
             "Unknown".to_string(),
@@ -25,7 +25,7 @@ fn test_table_data() {
         vec![
             "25-05-2022".to_string(),
             "Testing transfer".to_string(),
-            "test 2 to test1".to_string(),
+            "Cash Cow to Super Special Bank".to_string(),
             "100.00".to_string(),
             "Transfer".to_string(),
             "Unknown".to_string(),

@@ -1,28 +1,19 @@
 extern crate rex_tui;
-use rex_tui::db::*;
 use rex_tui::home_page::TransactionData;
 use rex_tui::tx_handler::add_tx;
 use rex_tui::utility::get_all_txs;
 use rusqlite::Connection;
 use std::fs;
 
-fn create_test_db(file_name: &str) -> Connection {
-    if let Ok(metadata) = fs::metadata(file_name) {
-        if metadata.is_file() {
-            fs::remove_file(file_name).expect("Failed to delete existing file");
-        }
-    }
+mod common;
 
-    let mut conn = Connection::open(file_name).unwrap();
-    create_db(&["test1".to_string(), "test 2".to_string()], &mut conn).unwrap();
-    conn
-}
+use crate::common::create_test_db;
 
 fn add_dummy_tx(conn: &mut Connection) {
     add_tx(
         "2022-08-19",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "100.00",
         "Expense",
         "Car",
@@ -34,7 +25,7 @@ fn add_dummy_tx(conn: &mut Connection) {
     add_tx(
         "2023-07-19",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "100.00",
         "Expense",
         "Food",
@@ -46,7 +37,7 @@ fn add_dummy_tx(conn: &mut Connection) {
     add_tx(
         "2023-07-25",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "200.00",
         "Income",
         "Food",
@@ -79,7 +70,7 @@ fn test_home_data() {
     let tx_1 = vec![
         "19-07-2023",
         "Testing transaction",
-        "test 2",
+        "Cash Cow",
         "100.00",
         "Expense",
         "Food",
@@ -90,7 +81,7 @@ fn test_home_data() {
     let tx_2 = vec![
         "25-07-2023",
         "Testing transaction",
-        "test1",
+        "Super Special Bank",
         "200.00",
         "Income",
         "Food",
@@ -198,6 +189,70 @@ fn test_home_data() {
     let tx_data = TransactionData::new_search(txs.0, txs.2);
 
     assert_eq!(tx_data.get_txs().len(), 1);
+
+    add_tx(
+        "2023-07-19",
+        "Testing transaction",
+        "Cash Cow",
+        "100.00",
+        "Expense",
+        "Food",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2023-07-19",
+        "Another transaction",
+        "Super Special Bank",
+        "100.00",
+        "Expense",
+        "Food",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2023-07-25",
+        "Another transaction",
+        "Cash Cow",
+        "200.00",
+        "Income",
+        "Food",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    let tx_data = TransactionData::new(6, 1, &conn);
+
+    let daily_expense = tx_data.get_daily_expense(Some(1), &conn);
+    let daily_income = tx_data.get_daily_income(Some(3), &conn);
+
+    assert_eq!(daily_expense[0], "Daily Expense");
+    assert_eq!(daily_expense[1], "100.00");
+    assert_eq!(daily_expense[2], "100.00");
+    assert_eq!(daily_expense[3], "200.00");
+
+    assert_eq!(daily_income[0], "Daily Income");
+    assert_eq!(daily_income[1], "200.00");
+    assert_eq!(daily_income[2], "200.00");
+    assert_eq!(daily_income[3], "400.00");
+
+    let daily_expense = tx_data.get_daily_expense(None, &conn);
+    let daily_income = tx_data.get_daily_income(None, &conn);
+
+    assert_eq!(daily_expense[0], "Daily Expense");
+    assert_eq!(daily_expense[1], "0.00");
+    assert_eq!(daily_expense[2], "0.00");
+    assert_eq!(daily_expense[3], "0.00");
+
+    assert_eq!(daily_income[0], "Daily Income");
+    assert_eq!(daily_income[1], "0.00");
+    assert_eq!(daily_income[2], "0.00");
+    assert_eq!(daily_income[3], "0.00");
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();

@@ -1,31 +1,19 @@
 extern crate rex_tui;
-use rex_tui::db::create_db;
+use rex_tui::page_handler::TxTab;
 use rex_tui::tx_handler::*;
 use rex_tui::utility::traits::AutoFiller;
 use rusqlite::Connection;
 use std::fs;
+
+use crate::common::create_test_db;
+
+mod common;
 
 struct Testing {
     data: Vec<String>,
     expected: Vec<String>,
 }
 impl AutoFiller for Testing {}
-
-fn create_test_db(file_name: &str) -> Connection {
-    if let Ok(metadata) = fs::metadata(file_name) {
-        if metadata.is_file() {
-            fs::remove_file(file_name).expect("Failed to delete existing file");
-        }
-    }
-
-    let mut conn = Connection::open(file_name).unwrap();
-    create_db(
-        &["Super Special Bank".to_string(), "Cash Cow".to_string()],
-        &mut conn,
-    )
-    .unwrap();
-    conn
-}
 
 fn add_dummy_tx(conn: &mut Connection) {
     add_tx(
@@ -157,6 +145,43 @@ fn autofiller_test() {
         let result = test_data.autofill_tags(&test_data.data[i], &conn);
         assert_eq!(result, test_data.expected[i]);
     }
+
+    conn.close().unwrap();
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn tx_data_autofiller() {
+    let file_name = "autofiller_test_2.sqlite";
+    let mut conn = create_test_db(file_name);
+    add_dummy_tx(&mut conn);
+
+    let mut tx_data = TxData::custom("", "Food", "Super", "Cash", "", "", "Car, fo", 1);
+
+    tx_data.check_autofill(&TxTab::Details, &conn);
+    assert_eq!(tx_data.autofill, "Food cost");
+    tx_data.accept_autofill(&TxTab::Details);
+    assert_eq!(tx_data.details, "Food cost");
+
+    tx_data.check_autofill(&TxTab::FromMethod, &conn);
+    assert_eq!(tx_data.autofill, "Super Special Bank");
+    tx_data.accept_autofill(&TxTab::FromMethod);
+    assert_eq!(tx_data.from_method, "Super Special Bank");
+
+    tx_data.check_autofill(&TxTab::ToMethod, &conn);
+    assert_eq!(tx_data.autofill, "Cash Cow");
+    tx_data.accept_autofill(&TxTab::ToMethod);
+    assert_eq!(tx_data.to_method, "Cash Cow");
+
+    tx_data.check_autofill(&TxTab::Tags, &conn);
+    assert_eq!(tx_data.autofill, "Food");
+    tx_data.accept_autofill(&TxTab::Tags);
+    assert_eq!(tx_data.tags, "Car, Food");
+
+    tx_data.check_autofill(&TxTab::Amount, &conn);
+    assert_eq!(tx_data.autofill, "");
+    tx_data.accept_autofill(&TxTab::Details);
+    assert_eq!(tx_data.amount, "");
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
