@@ -76,6 +76,61 @@ fn add_dummy_tx(conn: &mut Connection) {
 
     switch_tx_index(1, 2, &all_texts, &all_texts_2, conn);
 
+    let mut tx_data = TxData {
+        date: "2022-08-19".to_string(),
+        details: "Transfer".to_string(),
+        from_method: "Super Special Bank".to_string(),
+        to_method: String::from("Cash Cow"),
+        amount: "100.00".to_string(),
+        tx_type: "Transfer".to_string(),
+        tags: "Car".to_string(),
+        editing_tx: false,
+        autofill: String::new(),
+        id_num: 0,
+        current_index: 0,
+        tx_status: Vec::new(),
+    };
+
+    tx_data.add_tx(conn).unwrap();
+
+    let mut tx_data_2 = TxData {
+        date: "2022-08-19".to_string(),
+        details: "Transfer".to_string(),
+        from_method: "Cash Cow".to_string(),
+        to_method: String::from("Super Special Bank"),
+        amount: "500.00".to_string(),
+        tx_type: "Transfer".to_string(),
+        tags: "House".to_string(),
+        editing_tx: false,
+        autofill: String::new(),
+        id_num: 0,
+        current_index: 0,
+        tx_status: Vec::new(),
+    };
+
+    tx_data_2.add_tx(conn).unwrap();
+
+    let all_texts: Vec<String> = vec![
+        tx_data.date.clone(),
+        tx_data.details.clone(),
+        format!("{} to {}", tx_data.from_method, tx_data.to_method),
+        tx_data.amount.clone(),
+        tx_data.tx_type.clone(),
+        tx_data.tags.clone(),
+        "1".to_string(),
+    ];
+
+    let all_texts_2: Vec<String> = vec![
+        tx_data_2.date.clone(),
+        tx_data_2.details.clone(),
+        format!("{} to {}", tx_data_2.from_method, tx_data_2.to_method),
+        tx_data_2.amount.clone(),
+        tx_data_2.tx_type.clone(),
+        tx_data_2.tags.clone(),
+    ];
+
+    switch_tx_index(3, 4, &all_texts, &all_texts_2, conn);
+
     get_search_data("", "Selling", "", "", "", "", "", &DateType::Exact, conn);
     get_search_data(
         "",
@@ -114,8 +169,8 @@ fn activity_test() {
 
     let activities = get_all_activities(month_index, year_index, &conn);
 
-    assert_eq!(activities.0.len(), 7);
-    assert_eq!(activities.1.len(), 7);
+    assert_eq!(activities.0.len(), 10);
+    assert_eq!(activities.1.len(), 10);
 
     for details in activities.0 {
         match details.activity_type {
@@ -129,18 +184,26 @@ fn activity_test() {
                 let tx = &activity_txs[0];
 
                 let expected_date = "19-08-2022".to_string();
-                let expected_details = ["Car expense".to_string(), "House expense".to_string()];
-                let expected_from_method =
-                    ["Super Special Bank".to_string(), "Cash Cow".to_string()];
+                let expected_details = [
+                    "Car expense".to_string(),
+                    "House expense".to_string(),
+                    "Transfer".to_string(),
+                ];
+                let expected_from_method = [
+                    "Super Special Bank".to_string(),
+                    "Cash Cow".to_string(),
+                    "Super Special Bank to Cash Cow".to_string(),
+                    "Cash Cow to Super Special Bank".to_string(),
+                ];
                 let expected_amount = ["100.00".to_string(), "500.00".to_string()];
-                let expected_tx_type = "Expense".to_string();
+                let expected_tx_type = ["Expense".to_string(), "Transfer".to_string()];
                 let expected_tags = ["Car".to_string(), "House".to_string()];
 
                 assert_eq!(tx.date, expected_date);
                 assert!(expected_details.contains(&tx.details));
                 assert!(expected_from_method.contains(&tx.tx_method));
                 assert!(expected_amount.contains(&tx.amount));
-                assert_eq!(tx.tx_type, expected_tx_type);
+                assert!(expected_tx_type.contains(&tx.tx_type));
                 assert!(expected_tags.contains(&tx.tags));
             }
             ActivityType::EditTX(_) => {
@@ -154,8 +217,11 @@ fn activity_test() {
                 );
 
                 let expected_date = "19-08-2022".to_string();
-                let expected_details =
-                    ["Car expense".to_string(), "Edited Car expense".to_string()];
+                let expected_details = [
+                    "Car expense".to_string(),
+                    "Edited Car expense".to_string(),
+                    "Transfer".to_string(),
+                ];
                 let expected_from_method = "Super Special Bank".to_string();
                 let expected_amount = "100.00".to_string();
                 let expected_tx_type = "Expense".to_string();
@@ -168,10 +234,20 @@ fn activity_test() {
                     } else {
                         assert_eq!(tx.details, expected_details[1]);
                     }
-                    assert_eq!(tx.tx_method, expected_from_method);
                     assert_eq!(tx.amount, expected_amount);
-                    assert_eq!(tx.tx_type, expected_tx_type);
                     assert_eq!(tx.tags, expected_tags);
+
+                    if tx.tx_type == "Expense" {
+                        assert_eq!(tx.tx_method, expected_from_method);
+                        assert_eq!(tx.tx_type, expected_tx_type);
+                    } else {
+                        let expected_method = [
+                            "Super Special Bank to Cash Cow".to_string(),
+                            "Cash Cow to Super Special Bank".to_string(),
+                        ];
+                        assert_eq!(tx.tx_type, "Transfer");
+                        assert!(expected_method.contains(&tx.tx_method));
+                    }
                 });
             }
             ActivityType::DeleteTX(_) => {
@@ -188,10 +264,10 @@ fn activity_test() {
                 let tx = &activity_txs[0];
 
                 let expected_date = "19-08-2022".to_string();
-                let expected_details = "Edited Car expense".to_string();
-                let expected_from_method = "Super Special Bank".to_string();
+                let expected_details = "Transfer".to_string();
+                let expected_from_method = "Super Special Bank to Cash Cow".to_string();
                 let expected_amount = "100.00".to_string();
-                let expected_tx_type = "Expense".to_string();
+                let expected_tx_type = "Transfer".to_string();
                 let expected_tags = "Car".to_string();
 
                 assert_eq!(tx.date, expected_date);
@@ -207,40 +283,77 @@ fn activity_test() {
 
                 assert_eq!(activity_txs.len(), 2);
 
-                assert_eq!(
-                    details.description,
-                    ActivityType::IDNumSwap(Some(1), Some(2)).to_details()
-                );
+                if activity_num < 5 {
+                    assert_eq!(
+                        details.description,
+                        ActivityType::IDNumSwap(Some(1), Some(2)).to_details()
+                    );
 
-                let expected_date = "19-08-2022".to_string();
-                let expected_details = "Edited Car expense".to_string();
-                let expected_from_method = "Super Special Bank".to_string();
-                let expected_amount = "100.00".to_string();
-                let expected_tx_type = "Expense".to_string();
-                let expected_tags = "Car".to_string();
+                    let expected_date = "19-08-2022".to_string();
+                    let expected_amount = "100.00".to_string();
+                    let expected_tags = "Car".to_string();
+                    let expected_details = "Edited Car expense".to_string();
+                    let expected_from_method = "Super Special Bank".to_string();
+                    let expected_tx_type = "Expense".to_string();
 
-                assert_eq!(activity_txs[0].date, expected_date);
-                assert_eq!(activity_txs[0].details, expected_details);
-                assert_eq!(activity_txs[0].tx_method, expected_from_method);
-                assert_eq!(activity_txs[0].amount, expected_amount);
-                assert_eq!(activity_txs[0].tx_type, expected_tx_type);
-                assert_eq!(activity_txs[0].tags, expected_tags);
-                assert_eq!(activity_txs[0].id_num, "2".to_string());
+                    assert_eq!(activity_txs[0].date, expected_date);
+                    assert_eq!(activity_txs[0].details, expected_details);
+                    assert_eq!(activity_txs[0].tx_method, expected_from_method);
+                    assert_eq!(activity_txs[0].amount, expected_amount);
+                    assert_eq!(activity_txs[0].tx_type, expected_tx_type);
+                    assert_eq!(activity_txs[0].tags, expected_tags);
+                    assert_eq!(activity_txs[0].id_num, "2".to_string());
 
-                let expected_date = "19-08-2022".to_string();
-                let expected_details = "House expense".to_string();
-                let expected_from_method = "Cash Cow".to_string();
-                let expected_amount = "500.00".to_string();
-                let expected_tx_type = "Expense".to_string();
-                let expected_tags = "House".to_string();
+                    let expected_date = "19-08-2022".to_string();
+                    let expected_details = "House expense".to_string();
+                    let expected_from_method = "Cash Cow".to_string();
+                    let expected_amount = "500.00".to_string();
+                    let expected_tx_type = "Expense".to_string();
+                    let expected_tags = "House".to_string();
 
-                assert_eq!(activity_txs[1].date, expected_date);
-                assert_eq!(activity_txs[1].details, expected_details);
-                assert_eq!(activity_txs[1].tx_method, expected_from_method);
-                assert_eq!(activity_txs[1].amount, expected_amount);
-                assert_eq!(activity_txs[1].tx_type, expected_tx_type);
-                assert_eq!(activity_txs[1].tags, expected_tags);
-                assert_eq!(activity_txs[1].id_num, "1".to_string());
+                    assert_eq!(activity_txs[1].date, expected_date);
+                    assert_eq!(activity_txs[1].details, expected_details);
+                    assert_eq!(activity_txs[1].tx_method, expected_from_method);
+                    assert_eq!(activity_txs[1].amount, expected_amount);
+                    assert_eq!(activity_txs[1].tx_type, expected_tx_type);
+                    assert_eq!(activity_txs[1].tags, expected_tags);
+                    assert_eq!(activity_txs[1].id_num, "1".to_string());
+                } else {
+                    assert_eq!(
+                        details.description,
+                        ActivityType::IDNumSwap(Some(3), Some(4)).to_details()
+                    );
+
+                    let expected_date = "19-08-2022".to_string();
+                    let expected_amount = "100.00".to_string();
+                    let expected_tags = "Car".to_string();
+                    let expected_details = "Transfer".to_string();
+                    let expected_from_method = "Super Special Bank to Cash Cow".to_string();
+                    let expected_tx_type = "Transfer".to_string();
+
+                    assert_eq!(activity_txs[0].date, expected_date);
+                    assert_eq!(activity_txs[0].details, expected_details);
+                    assert_eq!(activity_txs[0].tx_method, expected_from_method);
+                    assert_eq!(activity_txs[0].amount, expected_amount);
+                    assert_eq!(activity_txs[0].tx_type, expected_tx_type);
+                    assert_eq!(activity_txs[0].tags, expected_tags);
+                    assert_eq!(activity_txs[0].id_num, "4".to_string());
+
+                    let expected_date = "19-08-2022".to_string();
+                    let expected_details = "Transfer".to_string();
+                    let expected_from_method = "Cash Cow to Super Special Bank".to_string();
+                    let expected_amount = "500.00".to_string();
+                    let expected_tx_type = "Transfer".to_string();
+                    let expected_tags = "House".to_string();
+
+                    assert_eq!(activity_txs[1].date, expected_date);
+                    assert_eq!(activity_txs[1].details, expected_details);
+                    assert_eq!(activity_txs[1].tx_method, expected_from_method);
+                    assert_eq!(activity_txs[1].amount, expected_amount);
+                    assert_eq!(activity_txs[1].tx_type, expected_tx_type);
+                    assert_eq!(activity_txs[1].tags, expected_tags);
+                    assert_eq!(activity_txs[1].id_num, "3".to_string());
+                }
             }
             ActivityType::SearchTX(_) => {
                 let activity_num = details.activity_num();

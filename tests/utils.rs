@@ -120,3 +120,35 @@ fn test_location_json() {
     current_dir.push("location.json");
     fs::remove_file(current_dir).unwrap();
 }
+
+#[test]
+fn misc_tests() {
+    let file_name = "misc_check.sqlite";
+    let conn = create_test_db(file_name);
+
+    let mut all_tx_methods = get_all_tx_methods(&conn);
+    let all_tx_methods_cumulative = get_all_tx_methods_cumulative(&conn);
+
+    all_tx_methods.push("Cumulative".to_string());
+
+    assert_eq!(all_tx_methods, all_tx_methods_cumulative);
+
+    let table_names = get_all_table_names(&conn);
+
+    let expected_tables = [
+        "tx_all",
+        "sqlite_sequence",
+        "balance_all",
+        "changes_all",
+        "activities",
+        "activity_txs",
+    ]
+    .iter()
+    .map(|s| (*s).to_string())
+    .collect::<Vec<String>>();
+
+    assert_eq!(table_names, expected_tables);
+
+    conn.close().unwrap();
+    fs::remove_file(file_name).unwrap();
+}
