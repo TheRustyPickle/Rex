@@ -38,6 +38,7 @@ impl AutoFiller for TxData {}
 impl FieldStepper for TxData {}
 
 impl Default for TxData {
+    #[cfg(not(tarpaulin_include))]
     fn default() -> Self {
         Self::new()
     }
