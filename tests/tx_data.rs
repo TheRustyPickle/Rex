@@ -614,13 +614,20 @@ fn tx_data_generation() {
         .collect();
 
     let given = tx_data.generate_balance_section(&conn, balance_data.clone(), change_data.clone());
+    let given_changes = tx_data.generate_changes_section(&conn);
 
     let expected = vec!["Balance", "0", "0", "0"]
         .into_iter()
         .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
+    let expected_changes = vec!["Changes", "0.00", "0.00"]
+        .into_iter()
+        .map(std::string::ToString::to_string)
+        .collect::<Vec<String>>();
+
     assert_eq!(given, expected);
+    assert_eq!(given_changes, expected_changes);
 
     let balance_data: Vec<String> = vec!["Balance", "0.00", "0.00", "0.00"]
         .into_iter()
@@ -632,13 +639,31 @@ fn tx_data_generation() {
     tx_data.from_method = "Super Special Bank".to_string();
 
     let given = tx_data.generate_balance_section(&conn, balance_data.clone(), change_data);
+    let given_changes = tx_data.generate_changes_section(&conn);
 
     let expected = vec!["Balance", "-100", "0", "-100"]
         .into_iter()
         .map(std::string::ToString::to_string)
         .collect::<Vec<String>>();
 
+    let expected_changes = vec!["Changes", "↓100", "0.00"]
+        .into_iter()
+        .map(std::string::ToString::to_string)
+        .collect::<Vec<String>>();
+
     assert_eq!(given, expected);
+    assert_eq!(given_changes, expected_changes);
+
+    tx_data.tx_type = "Income".to_string();
+
+    let given_changes = tx_data.generate_changes_section(&conn);
+
+    let expected_changes = vec!["Changes", "↑100", "0.00"]
+        .into_iter()
+        .map(std::string::ToString::to_string)
+        .collect::<Vec<String>>();
+
+    assert_eq!(given_changes, expected_changes);
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
