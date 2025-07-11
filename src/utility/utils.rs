@@ -614,6 +614,7 @@ pub fn create_backup_location_file(original_db_path: &PathBuf, backup_paths: Vec
 }
 
 /// Copies the latest DB to the backup location specified in `backend_paths.json`
+#[cfg(not(tarpaulin_include))]
 pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
     let mut json_path = original_db_path.to_owned();
     json_path.pop();
@@ -648,6 +649,7 @@ pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
 }
 
 /// Deletes `backup_paths.json` which contains all locations where backup DB is located.
+#[cfg(not(tarpaulin_include))]
 pub fn delete_backup_db(original_db_path: &PathBuf) -> ioResult<()> {
     let mut json_path = original_db_path.to_owned();
     json_path.pop();
@@ -662,6 +664,7 @@ pub fn delete_backup_db(original_db_path: &PathBuf) -> ioResult<()> {
 }
 
 /// Deletes `locations.json` file which stores alternative location information of the DB.
+#[cfg(not(tarpaulin_include))]
 pub fn delete_location_change(original_db_path: &PathBuf) -> ioResult<()> {
     let mut json_path = original_db_path.to_owned();
     json_path.pop();
