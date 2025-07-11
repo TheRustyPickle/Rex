@@ -261,6 +261,7 @@ Example amount : <1000, >=10000
         )
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_activity_help_text(&mut self) -> String {
         self.set_title("Help");
         format!(
@@ -285,6 +286,7 @@ Arrow Left/Right: Move value of the widget
         )
     }
 
+    #[cfg(not(tarpaulin_include))]
     fn get_transaction_details_text(&mut self, details: String) -> String {
         self.set_title("Transaction Details");
         details

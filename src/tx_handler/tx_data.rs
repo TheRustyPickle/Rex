@@ -17,18 +17,18 @@ use crate::utility::{
 
 /// Contains all data for a Transaction to work
 pub struct TxData {
-    date: String,
-    details: String,
-    from_method: String,
-    to_method: String,
-    amount: String,
-    tx_type: String,
-    tags: String,
-    tx_status: Vec<String>,
-    editing_tx: bool,
-    id_num: i32,
-    current_index: usize,
-    autofill: String,
+    pub date: String,
+    pub details: String,
+    pub from_method: String,
+    pub to_method: String,
+    pub amount: String,
+    pub tx_type: String,
+    pub tags: String,
+    pub tx_status: Vec<String>,
+    pub editing_tx: bool,
+    pub id_num: i32,
+    pub current_index: usize,
+    pub autofill: String,
 }
 
 impl DataVerifier for TxData {}
@@ -38,6 +38,7 @@ impl AutoFiller for TxData {}
 impl FieldStepper for TxData {}
 
 impl Default for TxData {
+    #[cfg(not(tarpaulin_include))]
     fn default() -> Self {
         Self::new()
     }
