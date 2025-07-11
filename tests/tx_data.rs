@@ -554,3 +554,44 @@ fn tx_data_editing() {
 
     assert_eq!(tx_data.get_all_texts(), expected_data);
 }
+
+#[test]
+fn tx_data_suffix() {
+    let file_name = "tx_data_suffix.sqlite";
+    let conn = create_test_db(file_name);
+
+    let mut tx_data = TxData::new_empty();
+
+    tx_data.amount = String::from("1k");
+    tx_data.check_amount(false, &conn);
+
+    assert_eq!(tx_data.amount, String::from("1000.00"));
+
+    tx_data.amount = String::from("1m");
+    tx_data.check_amount(false, &conn);
+
+    assert_eq!(tx_data.amount, String::from("1000000.00"));
+
+    tx_data.amount = String::from("1km");
+    tx_data.check_amount(false, &conn);
+
+    assert_eq!(tx_data.amount, String::from("1000000000.00"));
+
+    tx_data.amount = String::from("1k1");
+    tx_data.check_amount(false, &conn);
+
+    assert_eq!(tx_data.amount, String::from("11.00"));
+
+    tx_data.amount = String::from("5m12");
+    tx_data.check_amount(false, &conn);
+
+    assert_eq!(tx_data.amount, String::from("512.00"));
+
+    tx_data.amount = String::from("100 + 5k");
+    tx_data.check_amount(false, &conn);
+
+    assert_eq!(tx_data.amount, String::from("5100.00"));
+
+    conn.close().unwrap();
+    fs::remove_file(file_name).unwrap();
+}

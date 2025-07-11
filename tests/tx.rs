@@ -258,7 +258,6 @@ fn check_getting_all_tx_2() {
 }
 
 #[test]
-
 fn check_tx_columns() {
     let file_name = "tx_columns.sqlite";
     let conn = create_test_db(file_name);

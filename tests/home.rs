@@ -190,6 +190,70 @@ fn test_home_data() {
 
     assert_eq!(tx_data.get_txs().len(), 1);
 
+    add_tx(
+        "2023-07-19",
+        "Testing transaction",
+        "Cash Cow",
+        "100.00",
+        "Expense",
+        "Food",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2023-07-19",
+        "Another transaction",
+        "Super Special Bank",
+        "100.00",
+        "Expense",
+        "Food",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    add_tx(
+        "2023-07-25",
+        "Another transaction",
+        "Cash Cow",
+        "200.00",
+        "Income",
+        "Food",
+        None,
+        &mut conn,
+    )
+    .unwrap();
+
+    let tx_data = TransactionData::new(6, 1, &conn);
+
+    let daily_expense = tx_data.get_daily_expense(Some(1), &conn);
+    let daily_income = tx_data.get_daily_income(Some(3), &conn);
+
+    assert_eq!(daily_expense[0], "Daily Expense");
+    assert_eq!(daily_expense[1], "100.00");
+    assert_eq!(daily_expense[2], "100.00");
+    assert_eq!(daily_expense[3], "200.00");
+
+    assert_eq!(daily_income[0], "Daily Income");
+    assert_eq!(daily_income[1], "200.00");
+    assert_eq!(daily_income[2], "200.00");
+    assert_eq!(daily_income[3], "400.00");
+
+    let daily_expense = tx_data.get_daily_expense(None, &conn);
+    let daily_income = tx_data.get_daily_income(None, &conn);
+
+    assert_eq!(daily_expense[0], "Daily Expense");
+    assert_eq!(daily_expense[1], "0.00");
+    assert_eq!(daily_expense[2], "0.00");
+    assert_eq!(daily_expense[3], "0.00");
+
+    assert_eq!(daily_income[0], "Daily Income");
+    assert_eq!(daily_income[1], "0.00");
+    assert_eq!(daily_income[2], "0.00");
+    assert_eq!(daily_income[3], "0.00");
+
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 }
