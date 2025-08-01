@@ -1,12 +1,12 @@
+use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Span, Text};
 use ratatui::widgets::{
     Block, Borders, Clear, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, Wrap,
 };
-use ratatui::Frame;
 
-use crate::page_handler::{DeletionStatus, BACKGROUND, BLUE, BOX, HIGHLIGHTED, RED, TEXT};
+use crate::page_handler::{BACKGROUND, BLUE, BOX, DeletionStatus, HIGHLIGHTED, RED, TEXT};
 use crate::utility::create_bolded_text;
 
 /// Creates a popup on top of a window with the given size, title, and text attributes

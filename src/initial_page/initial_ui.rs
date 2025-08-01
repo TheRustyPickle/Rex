@@ -1,7 +1,7 @@
+use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Paragraph, Wrap};
-use ratatui::Frame;
 
 use crate::page_handler::{BACKGROUND, RED, TEXT};
 use crate::popup_page::{A, F, H, Q, R, V, W, Y, Z};

@@ -1,14 +1,14 @@
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Cell, Row, Table};
-use ratatui::Frame;
 use thousands::Separable;
 
 use crate::activity_page::ActivityData;
 use crate::page_handler::{
-    ActivityTab, IndexedData, TableData, BACKGROUND, HEADER, SELECTED, TEXT,
+    ActivityTab, BACKGROUND, HEADER, IndexedData, SELECTED, TEXT, TableData,
 };
-use crate::utility::{create_tab, main_block, styled_block, LerpState};
+use crate::utility::{LerpState, create_tab, main_block, styled_block};
 
 #[cfg(not(tarpaulin_include))]
 pub fn activity_ui(

@@ -1,5 +1,5 @@
-use chrono::prelude::Local;
 use chrono::Datelike;
+use chrono::prelude::Local;
 use ratatui::widgets::TableState;
 use rusqlite::Connection;
 use std::fmt::{self, Display, Result};

@@ -1,16 +1,16 @@
+use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Position};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Cell, Paragraph, Row, Table};
-use ratatui::Frame;
 use rusqlite::Connection;
 use thousands::Separable;
 
 use crate::home_page::BALANCE_BOLD;
 use crate::outputs::TxType;
-use crate::page_handler::{HomeRow, TxTab, BACKGROUND, BLUE, BOX, GRAY, RED, TEXT};
+use crate::page_handler::{BACKGROUND, BLUE, BOX, GRAY, HomeRow, RED, TEXT, TxTab};
 use crate::tx_handler::TxData;
-use crate::utility::{get_all_tx_methods, main_block, styled_block, LerpState};
+use crate::utility::{LerpState, get_all_tx_methods, main_block, styled_block};
 
 /// The function draws the Add Transaction page of the interface.
 #[cfg(not(tarpaulin_include))]

@@ -14,8 +14,14 @@ impl Display for TerminalExecutionError {
     #[cfg(not(tarpaulin_include))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
         match self {
-            TerminalExecutionError::NotFound(output) => write!(f, "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{output:?}", ),
-            TerminalExecutionError::ExecutionFailed(error) => write!(f, "Error while processing commands. Use a terminal/console to run the app. Output: {error}", ),
+            TerminalExecutionError::NotFound(output) => write!(
+                f,
+                "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{output:?}",
+            ),
+            TerminalExecutionError::ExecutionFailed(error) => write!(
+                f,
+                "Error while processing commands. Use a terminal/console to run the app. Output: {error}",
+            ),
         }
     }
 }

@@ -1,18 +1,18 @@
-use chrono::{naive::NaiveDate, Duration};
+use chrono::{Duration, naive::NaiveDate};
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::symbols::Marker;
 use ratatui::text::Span;
 use ratatui::widgets::{Axis, Block, Chart, Dataset, GraphType};
-use ratatui::Frame;
 use rusqlite::Connection;
 use std::collections::HashMap;
 
 use crate::chart_page::ChartData;
-use crate::page_handler::{ChartTab, IndexedData, BACKGROUND, BOX, SELECTED};
+use crate::page_handler::{BACKGROUND, BOX, ChartTab, IndexedData, SELECTED};
 use crate::utility::{
-    create_tab, create_tab_activation, get_all_tx_methods, get_all_tx_methods_cumulative,
-    main_block, LerpState,
+    LerpState, create_tab, create_tab_activation, get_all_tx_methods,
+    get_all_tx_methods_cumulative, main_block,
 };
 
 /// Creates the balance chart from the transactions
@@ -235,7 +235,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
 
             if !to_add_again {
                 // Break the loop if total day amount is reached
-                if to_loop - 1.0 <= 0.0 {
+                if to_loop <= 0.0 {
                     date_labels.pop().unwrap();
                     date_labels.push(checking_date.to_string());
                     break;
