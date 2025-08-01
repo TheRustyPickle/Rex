@@ -235,7 +235,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
 
             if !to_add_again {
                 // Break the loop if total day amount is reached
-                if to_loop - 1.0 <= 0.0 {
+                if to_loop <= 0.0 {
                     date_labels.pop().unwrap();
                     date_labels.push(checking_date.to_string());
                     break;
