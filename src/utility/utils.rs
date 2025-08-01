@@ -1,30 +1,30 @@
 use chrono::{Local, Months, NaiveDate};
 use crossterm::execute;
 use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen,
+    Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
 };
+use ratatui::Terminal;
 use ratatui::backend::CrosstermBackend;
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Tabs};
-use ratatui::Terminal;
 use rusqlite::{Connection, Result as sqlResult};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::Display;
 use std::fs::{self, File};
-use std::io::{stdout, Read, Result as ioResult, Stdout, Write};
+use std::io::{Read, Result as ioResult, Stdout, Write, stdout};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use std::{process, thread};
 use strsim::normalized_levenshtein;
 
-use crate::db::{add_tags_column, create_db, migrate_to_activities, update_balance_type, YEARS};
+use crate::db::{YEARS, add_tags_column, create_db, migrate_to_activities, update_balance_type};
 use crate::outputs::ComparisonType;
 use crate::page_handler::{
-    ActivityType, DateType, IndexedData, SortingType, UserInputType, BACKGROUND, BOX, HIGHLIGHTED,
-    RED, TEXT,
+    ActivityType, BACKGROUND, BOX, DateType, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT,
+    UserInputType,
 };
 use crate::utility::get_user_tx_methods;
 

@@ -1,7 +1,7 @@
 [package]
 name = "rex-tui"
-version = "0.1.19"
-edition = "2021"
+version = "0.1.20"
+edition = "2024"
 authors = ["TheRustyPickle <rusty.pickle94@gmail.com>"]
 readme = "README.md"
 description = """
@@ -22,18 +22,18 @@ bench = false
 
 [dependencies]
 crossterm = "0.29.0"
-rusqlite = { version = "0.36.0", features = ["bundled"] }
+rusqlite = { version = "0.37.0", features = ["bundled"] }
 chrono = "0.4.41"
 open = "5.3.2"
 atty = "0.2.14"
-reqwest = { version = "0.12.19", features = ["blocking", "json"] }
+reqwest = { version = "0.12.22", features = ["blocking", "json"] }
 serde = { version = "1.0.219", features = ["derive"] }
 dirs = "6.0.0"
 thousands = "0.2.0"
 semver = "1.0.26"
 ratatui = "0.29.0"
 strsim = "0.11.1"
-serde_json = "1.0.140"
+serde_json = "1.0.142"
 
 [lints.rust]
 unsafe_code = "forbid"

@@ -8,7 +8,7 @@ use std::process::Command;
 use crate::activity_page::{ActivityDetails, ActivityTx};
 use crate::outputs::{ComparisonType, TerminalExecutionError};
 use crate::page_handler::{ActivityType, DateType, ResetType, UserInputType};
-use crate::tx_handler::{delete_tx, TxData};
+use crate::tx_handler::{TxData, delete_tx};
 use crate::utility::{
     add_new_activity, add_new_activity_tx, check_comparison, check_restricted, clear_terminal,
     flush_output, get_all_tx_methods, get_sql_dates, reverse_date_format, take_input,

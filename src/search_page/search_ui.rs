@@ -1,16 +1,16 @@
+use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Position};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Cell, Paragraph, Row, Table};
-use ratatui::Frame;
 use thousands::Separable;
 
 use crate::outputs::TxType;
 use crate::page_handler::{
-    DateType, TableData, TxTab, BACKGROUND, BLUE, GRAY, HEADER, RED, SELECTED, TEXT,
+    BACKGROUND, BLUE, DateType, GRAY, HEADER, RED, SELECTED, TEXT, TableData, TxTab,
 };
 use crate::tx_handler::TxData;
-use crate::utility::{main_block, styled_block, LerpState};
+use crate::utility::{LerpState, main_block, styled_block};
 
 #[cfg(not(tarpaulin_include))]
 pub fn search_ui(

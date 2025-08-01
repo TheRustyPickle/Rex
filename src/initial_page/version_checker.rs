@@ -18,6 +18,7 @@ pub fn check_version() -> Result<Option<Vec<String>>, Error> {
 
     let client = reqwest::blocking::Client::builder()
         .user_agent("Rex")
+        .connect_timeout(Duration::from_secs(1))
         .timeout(Duration::from_secs(2))
         .build()?;
 

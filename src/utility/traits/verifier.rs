@@ -72,13 +72,13 @@ pub trait DataVerifier {
                 let month = match split_date[1].parse() {
                     Ok(v) => Some(v),
                     Err(_) => {
-                        return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date))
+                        return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date));
                     }
                 };
                 let day = match split_date[2].parse() {
                     Ok(v) => Some(v),
                     Err(_) => {
-                        return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date))
+                        return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date));
                     }
                 };
                 (year, month, day)
@@ -90,7 +90,7 @@ pub trait DataVerifier {
                 let month = match split_date[1].parse() {
                     Ok(v) => Some(v),
                     Err(_) => {
-                        return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date))
+                        return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date));
                     }
                 };
                 (year, month, None)
@@ -350,7 +350,7 @@ pub trait DataVerifier {
                                 Err(_) => {
                                     return VerifyingOutput::NotAccepted(NAType::ParsingError(
                                         AType::Amount,
-                                    ))
+                                    ));
                                 }
                             };
 
@@ -359,7 +359,7 @@ pub trait DataVerifier {
                                 Err(_) => {
                                     return VerifyingOutput::NotAccepted(NAType::ParsingError(
                                         AType::Amount,
-                                    ))
+                                    ));
                                 }
                             };
 

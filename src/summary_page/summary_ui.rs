@@ -1,15 +1,15 @@
+use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Cell, Row, Table};
-use ratatui::Frame;
 use rusqlite::Connection;
 use thousands::Separable;
 
 use crate::page_handler::{
-    IndexedData, SortingType, SummaryTab, TableData, BACKGROUND, BOX, HEADER, SELECTED, TEXT,
+    BACKGROUND, BOX, HEADER, IndexedData, SELECTED, SortingType, SummaryTab, TEXT, TableData,
 };
 use crate::summary_page::SummaryData;
-use crate::utility::{create_tab, get_all_tx_methods, main_block, styled_block, LerpState};
+use crate::utility::{LerpState, create_tab, get_all_tx_methods, main_block, styled_block};
 
 /// The function draws the Summary page of the interface.
 #[cfg(not(tarpaulin_include))]
