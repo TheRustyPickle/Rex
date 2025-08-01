@@ -1,5 +1,5 @@
 extern crate rex_tui;
-use chrono::{naive::NaiveDate, Duration};
+use chrono::{Duration, naive::NaiveDate};
 use rex_tui::tx_handler::*;
 use rex_tui::utility::*;
 use rusqlite::Result as sqlResult;

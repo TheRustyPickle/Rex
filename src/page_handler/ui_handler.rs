@@ -1,22 +1,22 @@
 use crossterm::event::poll;
 use crossterm::event::{self, Event, KeyEventKind};
+use ratatui::Terminal;
 use ratatui::backend::Backend;
 use ratatui::layout::Constraint;
 use ratatui::style::Color;
-use ratatui::Terminal;
 use rusqlite::Connection;
 use std::time::Duration;
 
-use crate::activity_page::activity_ui;
 use crate::activity_page::ActivityData;
+use crate::activity_page::activity_ui;
 use crate::add_tx_page::add_tx_ui;
-use crate::chart_page::{chart_ui, ChartData};
-use crate::home_page::home_ui;
+use crate::chart_page::{ChartData, chart_ui};
 use crate::home_page::TransactionData;
+use crate::home_page::home_ui;
 use crate::initial_page::initial_ui;
 use crate::key_checker::{
-    activity_keys, add_tx_keys, chart_keys, home_keys, initial_keys, search_keys, summary_keys,
-    InputKeyHandler,
+    InputKeyHandler, activity_keys, add_tx_keys, chart_keys, home_keys, initial_keys, search_keys,
+    summary_keys,
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
@@ -25,9 +25,9 @@ use crate::page_handler::{
 };
 use crate::popup_page::PopupData;
 use crate::search_page::search_ui;
-use crate::summary_page::{summary_ui, SummaryData};
+use crate::summary_page::{SummaryData, summary_ui};
 use crate::tx_handler::TxData;
-use crate::utility::{get_all_tx_methods, get_all_tx_methods_cumulative, LerpState};
+use crate::utility::{LerpState, get_all_tx_methods, get_all_tx_methods_cumulative};
 
 pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
 pub const TEXT: Color = Color::Rgb(153, 78, 236);
