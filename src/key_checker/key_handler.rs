@@ -14,8 +14,8 @@ use crate::page_handler::{
 use crate::summary_page::SummaryData;
 use crate::tx_handler::TxData;
 use crate::utility::{
-    add_new_activity, add_new_activity_tx, get_all_tx_methods, get_all_tx_methods_cumulative,
-    get_empty_changes, sort_table_data, switch_tx_index, LerpState,
+    LerpState, add_new_activity, add_new_activity_tx, get_all_tx_methods,
+    get_all_tx_methods_cumulative, get_empty_changes, sort_table_data, switch_tx_index,
 };
 
 /// Stores all the data that is required to handle

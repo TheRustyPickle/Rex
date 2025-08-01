@@ -2,7 +2,7 @@ extern crate rex_tui;
 use chrono::prelude::Local;
 use rex_tui::outputs::{AType, CheckingError, NAType, TxType, VerifyingOutput};
 use rex_tui::page_handler::{DateType, TxTab};
-use rex_tui::tx_handler::{add_tx, TxData};
+use rex_tui::tx_handler::{TxData, add_tx};
 use rusqlite::Connection;
 use std::fs;
 
