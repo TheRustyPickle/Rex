@@ -27,8 +27,8 @@ pub fn initialize_app(
 
     let new_version_available = new_version.unwrap_or_default();
     // If is not terminal, try to start a terminal otherwise create an error.txt file with the error message
-    if !atty::is(Stream::Stdout) {
-        if let Err(err) = start_terminal(original_dir.to_str().unwrap()) {
+    if !atty::is(Stream::Stdout)
+        && let Err(err) = start_terminal(original_dir.to_str().unwrap()) {
             let mut error_location = PathBuf::from(&original_dir);
             error_location.push("Error.txt");
 
@@ -37,7 +37,6 @@ pub fn initialize_app(
             open.write_all(to_write.as_bytes())?;
             process::exit(1);
         }
-    }
 
     // If the location was changed/json file found, change the db directory.
     let db_path = if let Some(mut location) = is_location_changed(original_db_path) {
