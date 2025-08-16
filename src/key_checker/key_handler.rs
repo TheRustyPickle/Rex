@@ -808,15 +808,14 @@ impl<'a> InputKeyHandler<'a> {
     /// go to search page and search for it
     #[cfg(not(tarpaulin_include))]
     pub fn search_tag(&mut self) {
-        if let SummaryTab::Table = self.summary_tab {
-            if let Some(index) = self.summary_table.state.selected() {
+        if let SummaryTab::Table = self.summary_tab
+            && let Some(index) = self.summary_table.state.selected() {
                 let tag_name = &self.summary_table.items[index][0];
                 let search_param = TxData::custom("", "", "", "", "", "", tag_name, 0);
                 *self.search_data = search_param;
                 self.go_search();
                 self.search_tx();
             }
-        }
     }
 
     /// Handle key press when deletion popup is turned on
@@ -1012,8 +1011,8 @@ impl<'a> InputKeyHandler<'a> {
 
     #[cfg(not(tarpaulin_include))]
     pub fn switch_chart_tx_method_activation(&mut self) {
-        if !*self.chart_hidden_mode {
-            if let ChartTab::TxMethods = self.chart_tab {
+        if !*self.chart_hidden_mode
+            && let ChartTab::TxMethods = self.chart_tab {
                 let selected_index = self.chart_tx_methods.index;
                 let all_tx_methods = get_all_tx_methods_cumulative(self.conn);
 
@@ -1025,7 +1024,6 @@ impl<'a> InputKeyHandler<'a> {
                 *activation_status = !*activation_status;
                 self.lerp_state.clear();
             }
-        }
     }
 
     #[cfg(not(tarpaulin_include))]
