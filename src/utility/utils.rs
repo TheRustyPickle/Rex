@@ -334,7 +334,7 @@ pub fn styled_block(title: &str) -> Block<'_> {
         ))
 }
 
-pub fn styled_block_no_top(title: &str) -> Block<'_> {
+#[must_use] pub fn styled_block_no_top(title: &str) -> Block<'_> {
     Block::default()
         .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
         .border_type(BorderType::Rounded)
@@ -345,7 +345,7 @@ pub fn styled_block_no_top(title: &str) -> Block<'_> {
         ))
 }
 
-pub fn styled_block_no_bottom(title: &str) -> Block<'_> {
+#[must_use] pub fn styled_block_no_bottom(title: &str) -> Block<'_> {
     Block::default()
         .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
         .border_type(BorderType::Rounded)
