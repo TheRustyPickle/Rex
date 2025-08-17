@@ -398,7 +398,7 @@ impl SummaryData {
                 } else if earning_increased_percentage < 0.0 {
                     to_push.push(format!("↓{:.2}", earning_increased_percentage.abs()));
                 } else {
-                    to_push.push(format!("↑{:.2}", earning_increased_percentage));
+                    to_push.push(format!("↑{earning_increased_percentage:.2}"));
                 }
 
                 let expense_increased_percentage =
@@ -409,7 +409,7 @@ impl SummaryData {
                 } else if expense_increased_percentage < 0.0 {
                     to_push.push(format!("↓{:.2}", expense_increased_percentage.abs()));
                 } else {
-                    to_push.push(format!("↑{:.2}", expense_increased_percentage));
+                    to_push.push(format!("↑{expense_increased_percentage:.2}"));
                 }
             }
             method_data.push(to_push);
@@ -424,8 +424,8 @@ impl SummaryData {
         ]];
 
         if mode.index != 0 {
-            summary_data_1[0].push(format!("{:.2}", average_income));
-            summary_data_1[0].push(format!("{:.2}", average_expense));
+            summary_data_1[0].push(format!("{average_income:.2}"));
+            summary_data_1[0].push(format!("{average_expense:.2}"));
         }
 
         let summary_data_2 = vec![

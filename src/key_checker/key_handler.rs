@@ -864,7 +864,7 @@ impl<'a> InputKeyHandler<'a> {
                 } else if earning_increased_percentage < 0.0 {
                     to_push.push(format!("↓{:.2}", earning_increased_percentage.abs()));
                 } else {
-                    to_push.push(format!("↑{:.2}", earning_increased_percentage));
+                    to_push.push(format!("↑{earning_increased_percentage:.2}"));
                 }
 
                 let expense_increased_percentage =
@@ -875,7 +875,7 @@ impl<'a> InputKeyHandler<'a> {
                 } else if expense_increased_percentage < 0.0 {
                     to_push.push(format!("↓{:.2}", expense_increased_percentage.abs()));
                 } else {
-                    to_push.push(format!("↑{:.2}", expense_increased_percentage));
+                    to_push.push(format!("↑{expense_increased_percentage:.2}"));
                 }
             } else {
                 to_push.push("∞".to_string());
@@ -1840,7 +1840,7 @@ impl InputKeyHandler<'_> {
                 } else if earning_increased_percentage < 0.0 {
                     to_push.push(format!("↓{:.2}", earning_increased_percentage.abs()));
                 } else {
-                    to_push.push(format!("↑{:.2}", earning_increased_percentage));
+                    to_push.push(format!("↑{earning_increased_percentage:.2}"));
                 }
 
                 let expense_increased_percentage =
@@ -1851,7 +1851,7 @@ impl InputKeyHandler<'_> {
                 } else if expense_increased_percentage < 0.0 {
                     to_push.push(format!("↓{:.2}", expense_increased_percentage.abs()));
                 } else {
-                    to_push.push(format!("↑{:.2}", expense_increased_percentage));
+                    to_push.push(format!("↑{expense_increased_percentage:.2}"));
                 }
             } else {
                 to_push.push("∞".to_string());
