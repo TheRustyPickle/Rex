@@ -1,5 +1,6 @@
-use crate::utility::{get_all_details, get_all_tags, get_all_tx_methods, get_best_match};
 use rusqlite::Connection;
+
+use crate::utility::{get_all_details, get_all_tags, get_all_tx_methods, get_best_match};
 
 pub trait AutoFiller {
     fn autofill_tx_method(&self, user_input: &str, conn: &Connection) -> String {

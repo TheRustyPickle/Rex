@@ -319,9 +319,10 @@ pub fn search_ui(
     }
 
     if let Some(index) = search_table.state.selected()
-        && index > 10 {
-            *search_table.state.offset_mut() = index - 10;
-        }
+        && index > 10
+    {
+        *search_table.state.offset_mut() = index - 10;
+    }
 
     // Render the previously generated data into an interface
     f.render_widget(details_sec, chunks[1]);

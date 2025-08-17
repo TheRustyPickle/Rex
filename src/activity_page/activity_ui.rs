@@ -181,9 +181,10 @@ pub fn activity_ui(
     }
 
     if let Some(index) = table_data.state.selected()
-        && index > 10 {
-            *table_data.state.offset_mut() = index - 10;
-        }
+        && index > 10
+    {
+        *table_data.state.offset_mut() = index - 10;
+    }
 
     f.render_widget(year_tab, chunks[0]);
     f.render_widget(month_tab, chunks[1]);
