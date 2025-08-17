@@ -222,8 +222,9 @@ impl SummaryData {
         mode: &IndexedData,
         month: usize,
         year: usize,
+        comparison: Option<MyVec>,
         conn: &Connection,
-    ) -> (MyVec, MyVec, MyVec, MyVec, MyVec) {
+    ) -> (MyVec, MyVec, MyVec, MyVec) {
         let all_methods = get_all_tx_methods(conn);
         let mut total_income: f64 = 0.0;
         let mut total_expense: f64 = 0.0;
@@ -345,7 +346,7 @@ impl SummaryData {
 
         let mut method_data = Vec::new();
 
-        for method in &all_methods {
+        for (index, method) in all_methods.iter().enumerate() {
             let earning_percentage = if method_earning[method] == 0.0 {
                 format!("{:.2}", 0.0)
             } else {
@@ -369,49 +370,71 @@ impl SummaryData {
             } else {
                 format!("{:.2}", method_expense[method] / total_month_checked)
             };
-            method_data.push(vec![
+            let mut to_push = vec![
                 method.to_string(),
                 format!("{:.2}", method_earning[method]),
                 format!("{:.2}", method_expense[method]),
                 earning_percentage,
                 expense_percentage,
-                average_earning,
-                average_expense,
-            ]);
+            ];
+
+            if mode.index != 0 {
+                to_push.push(average_earning);
+                to_push.push(average_expense);
+            }
+
+            if let Some(comparison) = comparison.as_ref() {
+                let last_earning = comparison[index][1].parse::<f64>().unwrap();
+                let last_expense = comparison[index][2].parse::<f64>().unwrap();
+
+                let current_earning = method_earning[method];
+                let current_expense = method_expense[method];
+
+                if last_earning > current_earning {
+                    let earning_decreased_percentage =
+                        ((last_earning - current_earning) / last_earning) * 100.0;
+
+                    to_push.push(format!("↓{:.2}", earning_decreased_percentage));
+                } else if current_earning > last_earning {
+                    let earning_increased_percentage =
+                        ((current_earning - last_earning) / current_earning) * 100.0;
+
+                    to_push.push(format!("↑{:.2}", earning_increased_percentage));
+                } else {
+                    to_push.push(format!("{:.2}", 0.0));
+                }
+
+                if last_expense > current_expense {
+                    let expense_decreased_percentage =
+                        ((last_expense - current_expense) / last_expense) * 100.0;
+
+                    to_push.push(format!("↓{:.2}", expense_decreased_percentage));
+                } else if current_expense > last_expense {
+                    let expense_increased_percentage =
+                        ((current_expense - last_expense) / current_expense) * 100.0;
+
+                    to_push.push(format!("↑{:.2}", expense_increased_percentage));
+                } else {
+                    to_push.push(format!("{:.2}", 0.0));
+                }
+            }
+            method_data.push(to_push);
         }
 
-        let summary_data_1 = vec![
-            vec![
-                String::from("Total Income"),
-                format!("{:.2}", total_income),
-                income_percentage,
-            ],
-            vec![
-                String::from("Total Expense"),
-                format!("{:.2}", total_expense),
-                expense_percentage,
-            ],
-            vec![
-                String::from("Net"),
-                format!("{:.2}", total_income - total_expense),
-                String::from("-"),
-            ],
-        ];
+        let mut summary_data_1 = vec![vec![
+            String::from("Net"),
+            format!("{:.2}", total_income),
+            format!("{:.2}", total_expense),
+            income_percentage,
+            expense_percentage,
+        ]];
+
+        if mode.index != 0 {
+            summary_data_1[0].push(format!("{:.2}", average_income));
+            summary_data_1[0].push(format!("{:.2}", average_expense));
+        }
 
         let summary_data_2 = vec![
-            vec![
-                String::from("Average Income"),
-                format!("{:.2}", average_income),
-                String::from("-"),
-            ],
-            vec![
-                String::from("Average Expense"),
-                format!("{:.2}", average_expense),
-                String::from("-"),
-            ],
-        ];
-
-        let summary_data_3 = vec![
             vec![
                 String::from("Largest Income"),
                 biggest_earning.2,
@@ -424,36 +447,22 @@ impl SummaryData {
                 format!("{:.2}", biggest_expense.0),
                 biggest_expense.1,
             ],
-            vec![
-                String::from("Months Checked"),
-                total_month_checked.to_string(),
-                String::from("-"),
-                String::from("-"),
-            ],
         ];
 
-        let summary_data_4 = vec![
+        let summary_data_3 = vec![
             vec![
                 String::from("Peak Earning"),
                 peak_earning.1,
                 format!("{:.2}", peak_earning.0),
-                String::from("-"),
             ],
             vec![
                 String::from("Peak Expense"),
                 peak_expense.1,
                 format!("{:.2}", peak_expense.0),
-                String::from("-"),
             ],
         ];
 
-        (
-            summary_data_1,
-            summary_data_2,
-            summary_data_3,
-            summary_data_4,
-            method_data,
-        )
+        (summary_data_1, summary_data_2, summary_data_3, method_data)
     }
 
     /// Updates values based on the gathered data
