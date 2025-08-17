@@ -323,9 +323,33 @@ pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>>
 /// Returns a styled block for UI to use
 #[cfg(not(tarpaulin_include))]
 #[must_use]
-pub fn styled_block(title: &str) -> Block {
+pub fn styled_block(title: &str) -> Block<'_> {
     Block::default()
         .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
+        .style(Style::default().bg(BACKGROUND).fg(BOX))
+        .title(Span::styled(
+            title,
+            Style::default().add_modifier(Modifier::BOLD),
+        ))
+}
+
+#[must_use]
+pub fn styled_block_no_top(title: &str) -> Block<'_> {
+    Block::default()
+        .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
+        .border_type(BorderType::Rounded)
+        .style(Style::default().bg(BACKGROUND).fg(BOX))
+        .title(Span::styled(
+            title,
+            Style::default().add_modifier(Modifier::BOLD),
+        ))
+}
+
+#[must_use]
+pub fn styled_block_no_bottom(title: &str) -> Block<'_> {
+    Block::default()
+        .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
         .border_type(BorderType::Rounded)
         .style(Style::default().bg(BACKGROUND).fg(BOX))
         .title(Span::styled(
@@ -344,7 +368,7 @@ pub fn main_block<'a>() -> Block<'a> {
 /// Used for rendering
 #[cfg(not(tarpaulin_include))]
 #[must_use]
-pub fn create_bolded_text(text: &str) -> Vec<Line> {
+pub fn create_bolded_text(text: &str) -> Vec<Line<'_>> {
     let mut text_data = Vec::new();
 
     for line in text.split('\n') {

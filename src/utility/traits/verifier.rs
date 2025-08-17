@@ -1,10 +1,11 @@
-use crate::outputs::{AType, NAType, VerifyingOutput};
-use crate::page_handler::DateType;
-use crate::utility::{get_all_tags, get_all_tx_methods, get_best_match};
 use chrono::naive::NaiveDate;
 use rusqlite::Connection;
 use std::cmp::Ordering;
 use std::collections::HashSet;
+
+use crate::outputs::{AType, NAType, VerifyingOutput};
+use crate::page_handler::DateType;
+use crate::utility::{get_all_tags, get_all_tx_methods, get_best_match};
 
 pub trait DataVerifier {
     /// Checks if:

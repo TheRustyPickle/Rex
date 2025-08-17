@@ -318,10 +318,10 @@ pub fn search_ui(
         }
     }
 
-    if let Some(index) = search_table.state.selected() {
-        if index > 10 {
-            *search_table.state.offset_mut() = index - 10;
-        }
+    if let Some(index) = search_table.state.selected()
+        && index > 10
+    {
+        *search_table.state.offset_mut() = index - 10;
     }
 
     // Render the previously generated data into an interface

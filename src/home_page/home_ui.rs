@@ -223,10 +223,10 @@ pub fn home_ui(
     }
 
     // Always keep some items rendered on the upper side of the table
-    if let Some(index) = table.state.selected() {
-        if index > 10 {
-            *table.state.offset_mut() = index - 10;
-        }
+    if let Some(index) = table.state.selected()
+        && index > 10
+    {
+        *table.state.offset_mut() = index - 10;
     }
 
     // After all data is in place, render the widgets one by one
