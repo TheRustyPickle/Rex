@@ -222,7 +222,7 @@ impl SummaryData {
         mode: &IndexedData,
         month: usize,
         year: usize,
-        comparison: Option<MyVec>,
+        comparison: &Option<MyVec>,
         conn: &Connection,
     ) -> (MyVec, MyVec, MyVec, MyVec) {
         let all_methods = get_all_tx_methods(conn);
@@ -390,32 +390,26 @@ impl SummaryData {
                 let current_earning = method_earning[method];
                 let current_expense = method_expense[method];
 
-                if last_earning > current_earning {
-                    let earning_decreased_percentage =
-                        ((last_earning - current_earning) / last_earning) * 100.0;
+                let earning_increased_percentage =
+                    ((current_earning - last_earning) / last_earning) * 100.0;
 
-                    to_push.push(format!("↓{:.2}", earning_decreased_percentage));
-                } else if current_earning > last_earning {
-                    let earning_increased_percentage =
-                        ((current_earning - last_earning) / current_earning) * 100.0;
-
-                    to_push.push(format!("↑{:.2}", earning_increased_percentage));
+                if last_earning == 0.0 {
+                    to_push.push("∞".to_string());
+                } else if earning_increased_percentage < 0.0 {
+                    to_push.push(format!("↓{:.2}", earning_increased_percentage.abs()));
                 } else {
-                    to_push.push(format!("{:.2}", 0.0));
+                    to_push.push(format!("↑{:.2}", earning_increased_percentage));
                 }
 
-                if last_expense > current_expense {
-                    let expense_decreased_percentage =
-                        ((last_expense - current_expense) / last_expense) * 100.0;
+                let expense_increased_percentage =
+                    ((current_expense - last_expense) / last_expense) * 100.0;
 
-                    to_push.push(format!("↓{:.2}", expense_decreased_percentage));
-                } else if current_expense > last_expense {
-                    let expense_increased_percentage =
-                        ((current_expense - last_expense) / current_expense) * 100.0;
-
-                    to_push.push(format!("↑{:.2}", expense_increased_percentage));
+                if last_expense == 0.0 {
+                    to_push.push("∞".to_string());
+                } else if expense_increased_percentage < 0.0 {
+                    to_push.push(format!("↓{:.2}", expense_increased_percentage.abs()));
                 } else {
-                    to_push.push(format!("{:.2}", 0.0));
+                    to_push.push(format!("↑{:.2}", expense_increased_percentage));
                 }
             }
             method_data.push(to_push);

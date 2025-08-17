@@ -5,7 +5,6 @@ use ratatui::widgets::{Cell, Row, Table};
 use rusqlite::Connection;
 use thousands::Separable;
 
-use crate::db::MONTHS;
 use crate::page_handler::{
     BACKGROUND, BOX, HEADER, IndexedData, SELECTED, SortingType, SummaryTab, TEXT, TableData,
 };
@@ -28,43 +27,9 @@ pub fn summary_ui(
     summary_hidden_mode: bool,
     summary_sort: &SortingType,
     lerp_state: &mut LerpState,
+    previous_data: &Option<Vec<Vec<String>>>,
     conn: &Connection,
 ) {
-    let previous_indexes = match mode_selection.index {
-        0 => {
-            if months.index > 0 {
-                Some((months.index - 1, years.index))
-            } else if months.index == 0 && years.index > 0 {
-                Some((years.index - 1, MONTHS.len() - 1))
-            } else {
-                None
-            }
-        }
-        1 => {
-            if years.index > 0 {
-                Some((months.index, years.index - 1))
-            } else {
-                None
-            }
-        }
-        _ => None,
-    };
-
-    let mut previous_data = None;
-    let mut previous_tags_data = None;
-
-    if let Some((prev_month, prev_year)) = previous_indexes
-        && !table_data.items.is_empty()
-    {
-        let (_, _, _, method_data) =
-            summary_data.get_tx_data(mode_selection, prev_month, prev_year, None, conn);
-
-        previous_data = Some(method_data);
-
-        previous_tags_data =
-            Some(summary_data.get_table_data(mode_selection, prev_month, prev_year));
-    }
-
     let (summary_data_1, summary_data_2, summary_data_3, method_data) = summary_data.get_tx_data(
         mode_selection,
         months.index,
@@ -93,15 +58,25 @@ pub fn summary_ui(
         "Total Expense"
     };
 
-    let header_cells = [
+    let mut table_headers = vec![
         tag_header,
         total_income_header,
         total_expense_header,
         "Income %",
         "Expense %",
-    ]
-    .into_iter()
-    .map(|h| Cell::from(h).style(Style::default().fg(BACKGROUND)));
+    ];
+
+    if mode_selection.index == 0 {
+        table_headers.push("MoM Income %");
+        table_headers.push("MoM Expense %");
+    } else if mode_selection.index == 1 {
+        table_headers.push("YoY Income %");
+        table_headers.push("YoY Expense %");
+    }
+
+    let header_cells = table_headers
+        .into_iter()
+        .map(|h| Cell::from(h).style(Style::default().fg(BACKGROUND)));
 
     let mut method_headers = vec![
         "Method",
@@ -120,8 +95,8 @@ pub fn summary_ui(
         method_headers.push("MoM Income %");
         method_headers.push("MoM Expense %");
     } else if mode_selection.index == 1 {
-        method_headers.push("YoY Income");
-        method_headers.push("YoY Expense");
+        method_headers.push("YoY Income %");
+        method_headers.push("YoY Expense %");
     }
 
     let method_header_cells = method_headers
@@ -217,6 +192,26 @@ pub fn summary_ui(
         .map(|(row_index, item)| {
             let cells = item.iter().enumerate().map(|(index, c)| {
                 let Ok(parsed_num) = c.parse::<f64>() else {
+                    if c == "∞" {
+                        let lerp_id = format!("summary_table_main:{index}:{row_index}");
+                        lerp_state.lerp(&lerp_id, 0.0);
+                    }
+
+                    let symbol = if c.contains('↑') || c.contains('↓') {
+                        c.chars().next()
+                    } else {
+                        None
+                    };
+
+                    if let Some(sym) = symbol {
+                        let c = c.replace(sym, "");
+                        if let Ok(parsed_num) = c.parse::<f64>() {
+                            let lerp_id = format!("summary_table_main:{index}:{row_index}");
+                            let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+
+                            return Cell::from(format!("{sym}{new_c:.2}").separate_with_commas());
+                        }
+                    }
                     return Cell::from(c.separate_with_commas());
                 };
 
@@ -231,19 +226,30 @@ pub fn summary_ui(
                 .style(Style::default().fg(TEXT))
         });
 
-    let mut table_area = Table::new(
-        rows,
-        [
+    let table_width = if mode_selection.index == 2 {
+        vec![
             Constraint::Percentage(20),
             Constraint::Percentage(20),
             Constraint::Percentage(20),
             Constraint::Percentage(20),
             Constraint::Percentage(20),
-        ],
-    )
-    .header(header)
-    .block(styled_block("Tags"))
-    .style(Style::default().fg(BOX));
+        ]
+    } else {
+        vec![
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(15),
+        ]
+    };
+
+    let mut table_area = Table::new(rows, table_width)
+        .header(header)
+        .block(styled_block("Tags"))
+        .style(Style::default().fg(BOX));
 
     let summary_rows_2 = summary_data_2.iter().enumerate().map(|(row_index, item)| {
         let cells = item.iter().enumerate().map(|(index, c)| {
@@ -338,11 +344,16 @@ pub fn summary_ui(
                 if let Some(sym) = symbol {
                     let c = c.replace(sym, "");
                     if let Ok(parsed_num) = c.parse::<f64>() {
-                        let lerp_id = format!("summary_rows_1:{index}:{row_index}");
+                        let lerp_id = format!("method_table:{index}:{row_index}");
                         let new_c = lerp_state.lerp(&lerp_id, parsed_num);
 
                         return Cell::from(format!("{sym}{new_c:.2}").separate_with_commas());
                     }
+                }
+
+                if c == "∞" {
+                    let lerp_id = format!("method_table:{index}:{row_index}");
+                    lerp_state.lerp(&lerp_id, 0.0);
                 }
                 Cell::from(c.separate_with_commas())
             };
@@ -360,35 +371,35 @@ pub fn summary_ui(
 
     let method_widths = if mode_selection.index == 2 {
         vec![
+            Constraint::Percentage(10),
             Constraint::Percentage(14),
             Constraint::Percentage(14),
             Constraint::Percentage(14),
             Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
+            Constraint::Percentage(16),
+            Constraint::Percentage(16),
         ]
     } else if mode_selection.index == 1 {
         vec![
             Constraint::Percentage(10),
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
+            Constraint::Percentage(12),
+            Constraint::Percentage(12),
             Constraint::Percentage(10),
             Constraint::Percentage(10),
             Constraint::Percentage(12),
             Constraint::Percentage(12),
-            Constraint::Percentage(8),
-            Constraint::Percentage(8),
+            Constraint::Percentage(10),
+            Constraint::Percentage(10),
         ]
     } else {
         vec![
+            Constraint::Percentage(10),
             Constraint::Percentage(14),
             Constraint::Percentage(14),
             Constraint::Percentage(14),
             Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(15),
+            Constraint::Percentage(16),
+            Constraint::Percentage(16),
         ]
     };
 
@@ -399,7 +410,6 @@ pub fn summary_ui(
 
     let net_row = summary_data_1.iter().enumerate().map(|(row_index, item)| {
         let cells = item.iter().enumerate().map(|(index, c)| {
-            log::info!("{c}");
             let mut cell = if let Ok(parsed_num) = c.parse::<f64>() {
                 let lerp_id = format!("summary_rows_1:{index}:{row_index}");
                 let new_c = lerp_state.lerp(&lerp_id, parsed_num);
