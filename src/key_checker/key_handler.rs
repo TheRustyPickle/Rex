@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use crate::activity_page::ActivityData;
 use crate::chart_page::ChartData;
+use crate::db::MONTHS;
 use crate::home_page::TransactionData;
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
@@ -65,6 +66,7 @@ pub struct InputKeyHandler<'a> {
     popup_scroll_position: &'a mut usize,
     max_popup_scroll: &'a mut usize,
     lerp_state: &'a mut LerpState,
+    last_summary_data: &'a mut Option<Vec<Vec<String>>>,
     conn: &'a mut Connection,
 }
 
@@ -113,6 +115,7 @@ impl<'a> InputKeyHandler<'a> {
         popup_scroll_position: &'a mut usize,
         max_popup_scroll: &'a mut usize,
         lerp_state: &'a mut LerpState,
+        last_summary_data: &'a mut Option<Vec<Vec<String>>>,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data
@@ -162,6 +165,7 @@ impl<'a> InputKeyHandler<'a> {
             popup_scroll_position,
             max_popup_scroll,
             lerp_state,
+            last_summary_data,
             conn,
         }
     }
@@ -798,10 +802,89 @@ impl<'a> InputKeyHandler<'a> {
     pub fn change_summary_sort(&mut self) {
         *self.summary_sort = self.summary_sort.next_type();
         let summary_data = self.summary_table.items.clone();
-        let sorted_data = sort_table_data(summary_data, self.summary_sort);
+        let mut sorted_data = sort_table_data(summary_data, self.summary_sort);
         let selection_status = self.summary_table.state.selected();
-        *self.summary_table = TableData::new(sorted_data);
         self.summary_table.state.select(selection_status);
+
+        let mut summary_tags_map = HashMap::new();
+
+        let previous_indexes = match self.summary_modes.index {
+            0 => {
+                if self.summary_months.index > 0 {
+                    Some((self.summary_months.index - 1, self.summary_years.index))
+                } else if self.summary_months.index == 0 && self.summary_years.index > 0 {
+                    Some((self.summary_years.index - 1, MONTHS.len() - 1))
+                } else {
+                    None
+                }
+            }
+            1 => {
+                if self.summary_years.index > 0 {
+                    Some((self.summary_months.index, self.summary_years.index - 1))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+
+        if let Some((month, year)) = previous_indexes {
+            let (_, _, _, method_data) =
+                self.summary_data
+                    .get_tx_data(self.summary_modes, month, year, &None, self.conn);
+
+            *self.last_summary_data = Some(method_data);
+
+            let tag_data = self
+                .summary_data
+                .get_table_data(self.summary_modes, month, year);
+
+            for tag in tag_data {
+                let tag_name = tag[0].clone();
+                let tag_income = tag[1].parse::<f64>().unwrap();
+                let tag_expense = tag[2].parse::<f64>().unwrap();
+
+                summary_tags_map.insert(tag_name, (tag_income, tag_expense));
+            }
+        }
+
+        for data in &mut sorted_data {
+            let tag_name = &data[0];
+            let mut to_push = Vec::new();
+
+            if let Some((last_earning, last_expense)) = summary_tags_map.get(tag_name) {
+                let current_earning = data[1].parse::<f64>().unwrap();
+                let current_expense = data[2].parse::<f64>().unwrap();
+
+                let earning_increased_percentage =
+                    ((current_earning - last_earning) / last_earning) * 100.0;
+
+                if last_earning == &0.0 {
+                    to_push.push("∞".to_string());
+                } else if earning_increased_percentage < 0.0 {
+                    to_push.push(format!("↓{:.2}", earning_increased_percentage.abs()));
+                } else {
+                    to_push.push(format!("↑{:.2}", earning_increased_percentage));
+                }
+
+                let expense_increased_percentage =
+                    ((current_expense - last_expense) / last_expense) * 100.0;
+
+                if last_expense == &0.0 {
+                    to_push.push("∞".to_string());
+                } else if expense_increased_percentage < 0.0 {
+                    to_push.push(format!("↓{:.2}", expense_increased_percentage.abs()));
+                } else {
+                    to_push.push(format!("↑{:.2}", expense_increased_percentage));
+                }
+            } else {
+                to_push.push("∞".to_string());
+                to_push.push("∞".to_string());
+            }
+            data.extend(to_push);
+        }
+
+        *self.summary_table = TableData::new(sorted_data);
     }
 
     /// If Enter is pressed on Summary page while a tag is selected
@@ -809,13 +892,14 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn search_tag(&mut self) {
         if let SummaryTab::Table = self.summary_tab
-            && let Some(index) = self.summary_table.state.selected() {
-                let tag_name = &self.summary_table.items[index][0];
-                let search_param = TxData::custom("", "", "", "", "", "", tag_name, 0);
-                *self.search_data = search_param;
-                self.go_search();
-                self.search_tx();
-            }
+            && let Some(index) = self.summary_table.state.selected()
+        {
+            let tag_name = &self.summary_table.items[index][0];
+            let search_param = TxData::custom("", "", "", "", "", "", tag_name, 0);
+            *self.search_data = search_param;
+            self.go_search();
+            self.search_tx();
+        }
     }
 
     /// Handle key press when deletion popup is turned on
@@ -1012,18 +1096,19 @@ impl<'a> InputKeyHandler<'a> {
     #[cfg(not(tarpaulin_include))]
     pub fn switch_chart_tx_method_activation(&mut self) {
         if !*self.chart_hidden_mode
-            && let ChartTab::TxMethods = self.chart_tab {
-                let selected_index = self.chart_tx_methods.index;
-                let all_tx_methods = get_all_tx_methods_cumulative(self.conn);
+            && let ChartTab::TxMethods = self.chart_tab
+        {
+            let selected_index = self.chart_tx_methods.index;
+            let all_tx_methods = get_all_tx_methods_cumulative(self.conn);
 
-                let selected_method = &all_tx_methods[selected_index];
-                let activation_status = self
-                    .chart_activated_methods
-                    .get_mut(selected_method)
-                    .unwrap();
-                *activation_status = !*activation_status;
-                self.lerp_state.clear();
-            }
+            let selected_method = &all_tx_methods[selected_index];
+            let activation_status = self
+                .chart_activated_methods
+                .get_mut(selected_method)
+                .unwrap();
+            *activation_status = !*activation_status;
+            self.lerp_state.clear();
+        }
     }
 
     #[cfg(not(tarpaulin_include))]
@@ -1690,14 +1775,92 @@ impl InputKeyHandler<'_> {
     /// Reset summary table data by recreating it from gathered Summary Data
     #[cfg(not(tarpaulin_include))]
     fn reload_summary(&mut self) {
-        let summary_table = self.summary_data.get_table_data(
+        let mut summary_table = self.summary_data.get_table_data(
             self.summary_modes,
             self.summary_months.index,
             self.summary_years.index,
         );
         self.total_tags = summary_table.len();
-        *self.summary_table = TableData::new(summary_table);
         *self.summary_sort = SortingType::ByTags;
+        let mut summary_tags_map = HashMap::new();
+
+        let previous_indexes = match self.summary_modes.index {
+            0 => {
+                if self.summary_months.index > 0 {
+                    Some((self.summary_months.index - 1, self.summary_years.index))
+                } else if self.summary_months.index == 0 && self.summary_years.index > 0 {
+                    Some((self.summary_years.index - 1, MONTHS.len() - 1))
+                } else {
+                    None
+                }
+            }
+            1 => {
+                if self.summary_years.index > 0 {
+                    Some((self.summary_months.index, self.summary_years.index - 1))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+
+        if let Some((month, year)) = previous_indexes {
+            let (_, _, _, method_data) =
+                self.summary_data
+                    .get_tx_data(self.summary_modes, month, year, &None, self.conn);
+
+            *self.last_summary_data = Some(method_data);
+
+            let tag_data = self
+                .summary_data
+                .get_table_data(self.summary_modes, month, year);
+
+            for tag in tag_data {
+                let tag_name = tag[0].clone();
+                let tag_income = tag[1].parse::<f64>().unwrap();
+                let tag_expense = tag[2].parse::<f64>().unwrap();
+
+                summary_tags_map.insert(tag_name, (tag_income, tag_expense));
+            }
+        }
+
+        for data in &mut summary_table {
+            let tag_name = &data[0];
+            let mut to_push = Vec::new();
+
+            if let Some((last_earning, last_expense)) = summary_tags_map.get(tag_name) {
+                let current_earning = data[1].parse::<f64>().unwrap();
+                let current_expense = data[2].parse::<f64>().unwrap();
+
+                let earning_increased_percentage =
+                    ((current_earning - last_earning) / last_earning) * 100.0;
+
+                if last_earning == &0.0 {
+                    to_push.push("∞".to_string());
+                } else if earning_increased_percentage < 0.0 {
+                    to_push.push(format!("↓{:.2}", earning_increased_percentage.abs()));
+                } else {
+                    to_push.push(format!("↑{:.2}", earning_increased_percentage));
+                }
+
+                let expense_increased_percentage =
+                    ((current_expense - last_expense) / last_expense) * 100.0;
+
+                if last_expense == &0.0 {
+                    to_push.push("∞".to_string());
+                } else if expense_increased_percentage < 0.0 {
+                    to_push.push(format!("↓{:.2}", expense_increased_percentage.abs()));
+                } else {
+                    to_push.push(format!("↑{:.2}", expense_increased_percentage));
+                }
+            } else {
+                to_push.push("∞".to_string());
+                to_push.push("∞".to_string());
+            }
+            data.extend(to_push);
+        }
+
+        *self.summary_table = TableData::new(summary_table);
     }
 
     /// Reload summary data by fetching from the DB
