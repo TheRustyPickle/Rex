@@ -54,36 +54,18 @@ fn check_summary_data_1() {
 
     let my_summary = SummaryData::new(&conn);
     let my_summary_text = my_summary.get_table_data(&summary_modes, 6, 1);
-    let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 6, 1, &conn);
+    let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 6, 1, &None, &conn);
 
     let expected_data_1 = vec![vec!["Food", "200.00", "100.00", "100.00", "100.00"]];
 
     let expected_data_2 = (
-        vec![
-            vec![
-                "Total Income".to_string(),
-                "200.00".to_string(),
-                "66.67".to_string(),
-            ],
-            vec![
-                "Total Expense".to_string(),
-                "100.00".to_string(),
-                "33.33".to_string(),
-            ],
-            vec!["Net".to_string(), "100.00".to_string(), "-".to_string()],
-        ],
-        vec![
-            vec![
-                "Average Income".to_string(),
-                "200.00".to_string(),
-                "-".to_string(),
-            ],
-            vec![
-                "Average Expense".to_string(),
-                "100.00".to_string(),
-                "-".to_string(),
-            ],
-        ],
+        vec![vec![
+            "Net".to_string(),
+            "200.00".to_string(),
+            "100.00".to_string(),
+            "66.67".to_string(),
+            "33.33".to_string(),
+        ]],
         vec![
             vec![
                 "Largest Income".to_string(),
@@ -97,25 +79,17 @@ fn check_summary_data_1() {
                 "100.00".to_string(),
                 "Cash Cow".to_string(),
             ],
-            vec![
-                "Months Checked".to_string(),
-                "1".to_string(),
-                "-".to_string(),
-                "-".to_string(),
-            ],
         ],
         vec![
             vec![
                 "Peak Earning".to_string(),
                 "07-2023".to_string(),
                 "200.00".to_string(),
-                "-".to_string(),
             ],
             vec![
                 "Peak Expense".to_string(),
                 "07-2023".to_string(),
                 "100.00".to_string(),
-                "-".to_string(),
             ],
         ],
         vec![
@@ -125,13 +99,9 @@ fn check_summary_data_1() {
                 "0.00".to_string(),
                 "100.00".to_string(),
                 "0.00".to_string(),
-                "200.00".to_string(),
-                "0.00".to_string(),
             ],
             vec![
                 "Cash Cow".to_string(),
-                "0.00".to_string(),
-                "100.00".to_string(),
                 "0.00".to_string(),
                 "100.00".to_string(),
                 "0.00".to_string(),
@@ -205,7 +175,7 @@ fn check_summary_data_2() {
 
     let my_summary = SummaryData::new(&conn);
     let my_summary_text = my_summary.get_table_data(&summary_modes, 0, 0);
-    let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 0, 0, &conn);
+    let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 0, 0, &None, &conn);
 
     let expected_data_1 = vec![
         vec![
@@ -225,31 +195,15 @@ fn check_summary_data_2() {
     ];
 
     let expected_data_2 = (
-        vec![
-            vec![
-                "Total Income".to_string(),
-                "1700.00".to_string(),
-                "62.96".to_string(),
-            ],
-            vec![
-                "Total Expense".to_string(),
-                "1000.00".to_string(),
-                "37.04".to_string(),
-            ],
-            vec!["Net".to_string(), "700.00".to_string(), "-".to_string()],
-        ],
-        vec![
-            vec![
-                "Average Income".to_string(),
-                "425.00".to_string(),
-                "-".to_string(),
-            ],
-            vec![
-                "Average Expense".to_string(),
-                "250.00".to_string(),
-                "-".to_string(),
-            ],
-        ],
+        vec![vec![
+            "Net".to_string(),
+            "1700.00".to_string(),
+            "1000.00".to_string(),
+            "62.96".to_string(),
+            "37.04".to_string(),
+            "425.00".to_string(),
+            "250.00".to_string(),
+        ]],
         vec![
             vec![
                 "Largest Income".to_string(),
@@ -263,25 +217,17 @@ fn check_summary_data_2() {
                 "500.00".to_string(),
                 "Super Special Bank".to_string(),
             ],
-            vec![
-                "Months Checked".to_string(),
-                "4".to_string(),
-                "-".to_string(),
-                "-".to_string(),
-            ],
         ],
         vec![
             vec![
                 "Peak Earning".to_string(),
                 "05-2022".to_string(),
                 "1000.00".to_string(),
-                "-".to_string(),
             ],
             vec![
                 "Peak Expense".to_string(),
                 "01-2022".to_string(),
                 "500.00".to_string(),
-                "-".to_string(),
             ],
         ],
         vec![
@@ -360,7 +306,7 @@ fn check_summary_data_3() {
 
     let my_summary = SummaryData::new(&conn);
     let my_summary_text = my_summary.get_table_data(&summary_modes, 0, 1);
-    let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 0, 1, &conn);
+    let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 0, 1, &None, &conn);
 
     let expected_data_1 = vec![
         vec![
@@ -380,31 +326,15 @@ fn check_summary_data_3() {
     ];
 
     let expected_data_2 = (
-        vec![
-            vec![
-                "Total Income".to_string(),
-                "200.00".to_string(),
-                "66.67".to_string(),
-            ],
-            vec![
-                "Total Expense".to_string(),
-                "100.00".to_string(),
-                "33.33".to_string(),
-            ],
-            vec!["Net".to_string(), "100.00".to_string(), "-".to_string()],
-        ],
-        vec![
-            vec![
-                "Average Income".to_string(),
-                "66.67".to_string(),
-                "-".to_string(),
-            ],
-            vec![
-                "Average Expense".to_string(),
-                "33.33".to_string(),
-                "-".to_string(),
-            ],
-        ],
+        vec![vec![
+            "Net".to_string(),
+            "200.00".to_string(),
+            "100.00".to_string(),
+            "66.67".to_string(),
+            "33.33".to_string(),
+            "66.67".to_string(),
+            "33.33".to_string(),
+        ]],
         vec![
             vec![
                 "Largest Income".to_string(),
@@ -418,25 +348,17 @@ fn check_summary_data_3() {
                 "100.00".to_string(),
                 "Super Special Bank".to_string(),
             ],
-            vec![
-                "Months Checked".to_string(),
-                "3".to_string(),
-                "-".to_string(),
-                "-".to_string(),
-            ],
         ],
         vec![
             vec![
                 "Peak Earning".to_string(),
                 "07-2023".to_string(),
                 "100.00".to_string(),
-                "-".to_string(),
             ],
             vec![
                 "Peak Expense".to_string(),
                 "08-2022".to_string(),
                 "100.00".to_string(),
-                "-".to_string(),
             ],
         ],
         vec![

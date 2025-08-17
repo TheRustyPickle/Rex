@@ -2,11 +2,12 @@ use rex_tui::db::create_db;
 use rusqlite::Connection;
 use std::fs;
 
+#[must_use]
 pub fn create_test_db(file_name: &str) -> Connection {
-    if let Ok(metadata) = fs::metadata(file_name) {
-        if metadata.is_file() {
-            fs::remove_file(file_name).expect("Failed to delete existing file");
-        }
+    if let Ok(metadata) = fs::metadata(file_name)
+        && metadata.is_file()
+    {
+        fs::remove_file(file_name).expect("Failed to delete existing file");
     }
 
     let mut conn = Connection::open(file_name).unwrap();

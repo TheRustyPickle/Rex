@@ -131,6 +131,8 @@ pub fn start_app<B: Backend>(
         summary_years.index,
     ));
 
+    let mut last_summary_data = None;
+
     // Data for the Search Page's table
     let mut search_table = TableData::new(Vec::new());
 
@@ -239,6 +241,7 @@ pub fn start_app<B: Backend>(
                         summary_hidden_mode,
                         &summary_sort,
                         &mut lerp_state,
+                        &last_summary_data,
                         conn,
                     ),
                     CurrentUi::Search => search_ui(
@@ -342,6 +345,7 @@ pub fn start_app<B: Backend>(
                 &mut popup_scroll_position,
                 &mut max_popup_scroll,
                 &mut lerp_state,
+                &mut last_summary_data,
                 conn,
             );
 
