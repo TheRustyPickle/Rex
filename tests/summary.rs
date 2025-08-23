@@ -55,9 +55,18 @@ fn check_summary_data_1() {
     let summary_modes = IndexedData::new_modes();
 
     let my_summary = SummaryData::new(&conn);
+    let (old_net, _, _, old_methods) =
+        my_summary.get_tx_data(&summary_modes, 5, 1, &None, &None, &conn);
+
     let my_summary_text = my_summary.get_table_data(&summary_modes, 6, 1);
-    let (net, largest, peak, methods) =
-        my_summary.get_tx_data(&summary_modes, 6, 1, &None, &None, &conn);
+    let (net, largest, peak, methods) = my_summary.get_tx_data(
+        &summary_modes,
+        6,
+        1,
+        &Some(old_methods),
+        &Some(old_net),
+        &conn,
+    );
 
     let expected_data_1 = vec![vec!["Food", "200.00", "100.00", "100.00", "100.00"]];
 
@@ -68,8 +77,8 @@ fn check_summary_data_1() {
         None,
         66.66666666666666,
         33.33333333333333,
-        None,
-        None,
+        Some("∞".to_string()),
+        Some("∞".to_string()),
     );
     let expected_largest_1 = SummaryLargest::new(
         LargestType::Earning,
@@ -97,8 +106,8 @@ fn check_summary_data_1() {
             0.0,
             None,
             None,
-            None,
-            None,
+            Some("∞".to_string()),
+            Some("∞".to_string()),
         ),
         SummaryMethods::new(
             "Cash Cow".to_string(),
@@ -108,8 +117,8 @@ fn check_summary_data_1() {
             100.0,
             None,
             None,
-            None,
-            None,
+            Some("∞".to_string()),
+            Some("∞".to_string()),
         ),
     ];
 
@@ -129,7 +138,7 @@ fn check_summary_data_2() {
     let mut conn = create_test_db(file_name);
 
     add_tx(
-        "2022-08-19",
+        "2023-08-19",
         "Testing transaction",
         "Super Special Bank",
         "500.00",
@@ -141,7 +150,7 @@ fn check_summary_data_2() {
     .unwrap();
 
     add_tx(
-        "2022-01-19",
+        "2023-01-19",
         "Testing transaction",
         "Super Special Bank",
         "500.00",
@@ -153,7 +162,7 @@ fn check_summary_data_2() {
     .unwrap();
 
     add_tx(
-        "2022-07-19",
+        "2023-07-19",
         "Testing transaction",
         "Cash Cow",
         "700.00",
@@ -180,59 +189,67 @@ fn check_summary_data_2() {
     summary_modes.next();
 
     let my_summary = SummaryData::new(&conn);
-    let my_summary_text = my_summary.get_table_data(&summary_modes, 0, 0);
-    let (net, largest, peak, methods) =
+    let (old_net, _, _, old_methods) =
         my_summary.get_tx_data(&summary_modes, 0, 0, &None, &None, &conn);
+    let my_summary_text = my_summary.get_table_data(&summary_modes, 0, 1);
+    let (net, largest, peak, methods) = my_summary.get_tx_data(
+        &summary_modes,
+        0,
+        1,
+        &Some(old_methods),
+        &Some(old_net),
+        &conn,
+    );
 
     let expected_net = SummaryNet::new(
-        1700.0,
+        700.0,
         1000.0,
-        Some(425.0),
-        Some(250.0),
-        62.96296296296296,
-        37.03703703703704,
-        None,
-        None,
+        Some(233.33333333333334),
+        Some(333.3333333333333),
+        41.17647058823529,
+        58.82352941176471,
+        Some("↓30.00".to_string()),
+        Some("∞".to_string()),
     );
     let expected_largest_1 = SummaryLargest::new(
         LargestType::Earning,
-        "Super Special Bank".to_string(),
-        1000.0,
-        "19-05-2022".to_string(),
+        "Cash Cow".to_string(),
+        700.0,
+        "19-07-2023".to_string(),
     );
 
     let expected_largest_2 = SummaryLargest::new(
         LargestType::Expense,
         "Super Special Bank".to_string(),
         500.0,
-        "19-01-2022".to_string(),
+        "19-01-2023".to_string(),
     );
 
-    let expected_peak_1 = SummaryPeak::new(PeakType::Earning, 1000.0, "05-2022".to_string());
-    let expected_peak_2 = SummaryPeak::new(PeakType::Expense, 500.0, "01-2022".to_string());
+    let expected_peak_1 = SummaryPeak::new(PeakType::Earning, 700.0, "07-2023".to_string());
+    let expected_peak_2 = SummaryPeak::new(PeakType::Expense, 500.0, "01-2023".to_string());
 
     let expected_methods = vec![
         SummaryMethods::new(
             "Super Special Bank".to_string(),
+            0.0,
             1000.0,
-            1000.0,
-            58.82352941176471,
+            0.0,
             100.0,
-            Some(250.0),
-            Some(250.0),
-            None,
-            None,
+            Some(0.0),
+            Some(333.3333333333333),
+            Some("↓100.00".to_string()),
+            Some("∞".to_string()),
         ),
         SummaryMethods::new(
             "Cash Cow".to_string(),
             700.0,
             0.0,
-            41.17647058823529,
+            100.0,
             0.0,
-            Some(175.0),
+            Some(233.33333333333334),
             Some(0.0),
-            None,
-            None,
+            Some("∞".to_string()),
+            Some("∞".to_string()),
         ),
     ];
     let expected_data_1 = vec![
@@ -245,7 +262,7 @@ fn check_summary_data_2() {
         ],
         vec![
             "Food".to_string(),
-            "1700.00".to_string(),
+            "700.00".to_string(),
             "0.00".to_string(),
             "100.00".to_string(),
             "0.00".to_string(),
