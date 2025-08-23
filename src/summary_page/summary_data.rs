@@ -1,11 +1,12 @@
+use crate::db::{MONTHS, YEARS};
+use crate::page_handler::IndexedData;
+use crate::summary_page::{
+    LargestType, PeakType, SummaryLargest, SummaryMethods, SummaryNet, SummaryPeak,
+};
+use crate::utility::{get_all_tx_methods, get_all_txs};
 use rusqlite::Connection;
 use std::collections::HashMap;
 
-use crate::db::{MONTHS, YEARS};
-use crate::page_handler::IndexedData;
-use crate::utility::{get_all_tx_methods, get_all_txs};
-
-type MyVec = Vec<Vec<String>>;
 type MyTuple = (
     f64,
     f64,
@@ -22,6 +23,8 @@ pub struct SummaryData {
 }
 
 impl SummaryData {
+    // TODO: instead of going through months/years, do a single query
+
     /// Goes through all transactions to collect data for the summary
     pub fn new(conn: &Connection) -> Self {
         let mut all_txs = HashMap::new();
@@ -215,16 +218,21 @@ impl SummaryData {
         table_data
     }
 
-    /// Returns a vector that will be used to highlight points such as largest transaction,
-    /// biggest income etc.
+    /// Returns necessary data for the Summary UI
     pub fn get_tx_data(
         &self,
         mode: &IndexedData,
         month: usize,
         year: usize,
-        comparison: &Option<MyVec>,
+        last_summary_methods: &Option<Vec<SummaryMethods>>,
+        last_summary_net: &Option<SummaryNet>,
         conn: &Connection,
-    ) -> (MyVec, MyVec, MyVec, MyVec) {
+    ) -> (
+        SummaryNet,
+        Vec<SummaryLargest>,
+        Vec<SummaryPeak>,
+        Vec<SummaryMethods>,
+    ) {
         let all_methods = get_all_tx_methods(conn);
         let mut total_income: f64 = 0.0;
         let mut total_expense: f64 = 0.0;
@@ -236,7 +244,7 @@ impl SummaryData {
         let mut largest_monthly_earning = 0.0;
         let mut largest_monthly_expense = 0.0;
 
-        // (Amount, Method, date)
+        // (Amount, date)
         let mut peak_earning = (0.0, String::from("-"));
         let mut peak_expense = (0.0, String::from("-"));
         let mut total_month_checked = 0.0;
@@ -332,60 +340,56 @@ impl SummaryData {
         let (income_percentage, expense_percentage) =
             self.get_percentages(total_income, total_expense);
 
-        let average_income = if total_income == 0.0 {
-            0.0
+        let mut average_income = if total_income == 0.0 {
+            Some(0.0)
         } else {
-            total_income / total_month_checked
+            Some(total_income / total_month_checked)
         };
 
-        let average_expense = if total_income == 0.0 {
-            0.0
+        let mut average_expense = if total_income == 0.0 {
+            Some(0.0)
         } else {
-            total_expense / total_month_checked
+            Some(total_expense / total_month_checked)
         };
 
         let mut method_data = Vec::new();
 
         for (index, method) in all_methods.iter().enumerate() {
             let earning_percentage = if method_earning[method] == 0.0 {
-                format!("{:.2}", 0.0)
+                0.0
             } else {
-                format!("{:.2}", (method_earning[method] / total_income) * 100.0)
+                (method_earning[method] / total_income) * 100.0
             };
 
             let expense_percentage = if method_expense[method] == 0.0 {
-                format!("{:.2}", 0.0)
+                0.0
             } else {
-                format!("{:.2}", (method_expense[method] / total_expense) * 100.0)
+                (method_expense[method] / total_expense) * 100.0
             };
 
-            let average_earning = if method_earning[method] == 0.0 {
-                format!("{:.2}", 0.0)
+            let mut average_earning = if method_earning[method] == 0.0 {
+                Some(0.0)
             } else {
-                format!("{:.2}", method_earning[method] / total_month_checked)
+                Some(method_earning[method] / total_month_checked)
             };
 
-            let average_expense = if method_expense[method] == 0.0 {
-                format!("{:.2}", 0.0)
+            let mut average_expense = if method_expense[method] == 0.0 {
+                Some(0.0)
             } else {
-                format!("{:.2}", method_expense[method] / total_month_checked)
+                Some(method_expense[method] / total_month_checked)
             };
-            let mut to_push = vec![
-                method.to_string(),
-                format!("{:.2}", method_earning[method]),
-                format!("{:.2}", method_expense[method]),
-                earning_percentage,
-                expense_percentage,
-            ];
 
-            if mode.index != 0 {
-                to_push.push(average_earning);
-                to_push.push(average_expense);
+            let mut mom_yoy_earning = None;
+            let mut mom_yoy_expense = None;
+
+            if mode.index == 0 {
+                average_earning = None;
+                average_expense = None;
             }
 
-            if let Some(comparison) = comparison.as_ref() {
-                let last_earning = comparison[index][1].parse::<f64>().unwrap();
-                let last_expense = comparison[index][2].parse::<f64>().unwrap();
+            if let Some(comparison) = last_summary_methods.as_ref() {
+                let last_earning = comparison[index].total_earning;
+                let last_expense = comparison[index].total_expense;
 
                 let current_earning = method_earning[method];
                 let current_expense = method_expense[method];
@@ -394,69 +398,107 @@ impl SummaryData {
                     ((current_earning - last_earning) / last_earning) * 100.0;
 
                 if last_earning == 0.0 {
-                    to_push.push("∞".to_string());
+                    mom_yoy_earning = Some("∞".to_string());
                 } else if earning_increased_percentage < 0.0 {
-                    to_push.push(format!("↓{:.2}", earning_increased_percentage.abs()));
+                    mom_yoy_earning = Some(format!("↓{:.2}", earning_increased_percentage.abs()));
                 } else {
-                    to_push.push(format!("↑{earning_increased_percentage:.2}"));
+                    mom_yoy_earning = Some(format!("↑{earning_increased_percentage:.2}"));
                 }
 
                 let expense_increased_percentage =
                     ((current_expense - last_expense) / last_expense) * 100.0;
 
                 if last_expense == 0.0 {
-                    to_push.push("∞".to_string());
+                    mom_yoy_expense = Some("∞".to_string());
                 } else if expense_increased_percentage < 0.0 {
-                    to_push.push(format!("↓{:.2}", expense_increased_percentage.abs()));
+                    mom_yoy_expense = Some(format!("↓{:.2}", expense_increased_percentage.abs()));
                 } else {
-                    to_push.push(format!("↑{expense_increased_percentage:.2}"));
+                    mom_yoy_expense = Some(format!("↑{expense_increased_percentage:.2}"));
                 }
             }
-            method_data.push(to_push);
+
+            let method_summary = SummaryMethods::new(
+                method.to_string(),
+                method_earning[method],
+                method_expense[method],
+                earning_percentage,
+                expense_percentage,
+                average_earning,
+                average_expense,
+                mom_yoy_earning,
+                mom_yoy_expense,
+            );
+
+            method_data.push(method_summary);
         }
 
-        let mut summary_data_1 = vec![vec![
-            String::from("Net"),
-            format!("{:.2}", total_income),
-            format!("{:.2}", total_expense),
+        if mode.index == 0 {
+            average_income = None;
+            average_expense = None;
+        }
+
+        let mut net_mom_yoy_earning = None;
+        let mut net_mom_yoy_expense = None;
+
+        if let Some(comparison) = last_summary_net.as_ref() {
+            let last_earning = comparison.total_income;
+            let last_expense = comparison.total_expense;
+
+            let earning_increased_percentage =
+                ((total_income - last_earning) / last_earning) * 100.0;
+
+            if last_earning == 0.0 {
+                net_mom_yoy_earning = Some("∞".to_string());
+            } else if earning_increased_percentage < 0.0 {
+                net_mom_yoy_earning = Some(format!("↓{:.2}", earning_increased_percentage.abs()));
+            } else {
+                net_mom_yoy_earning = Some(format!("↑{earning_increased_percentage:.2}"));
+            }
+
+            let expense_increased_percentage =
+                ((total_expense - last_expense) / last_expense) * 100.0;
+
+            if last_expense == 0.0 {
+                net_mom_yoy_expense = Some("∞".to_string());
+            } else if expense_increased_percentage < 0.0 {
+                net_mom_yoy_expense = Some(format!("↓{:.2}", expense_increased_percentage.abs()));
+            } else {
+                net_mom_yoy_expense = Some(format!("↑{expense_increased_percentage:.2}"));
+            }
+        }
+
+        let summary_net = SummaryNet::new(
+            total_income,
+            total_expense,
+            average_income,
+            average_expense,
             income_percentage,
             expense_percentage,
-        ]];
+            net_mom_yoy_earning,
+            net_mom_yoy_expense,
+        );
 
-        if mode.index != 0 {
-            summary_data_1[0].push(format!("{average_income:.2}"));
-            summary_data_1[0].push(format!("{average_expense:.2}"));
-        }
-
-        let summary_data_2 = vec![
-            vec![
-                String::from("Largest Income"),
-                biggest_earning.2,
-                format!("{:.2}", biggest_earning.0),
+        let summary_largest = vec![
+            SummaryLargest::new(
+                LargestType::Earning,
                 biggest_earning.1,
-            ],
-            vec![
-                String::from("Largest Expense"),
-                biggest_expense.2,
-                format!("{:.2}", biggest_expense.0),
+                biggest_earning.0,
+                biggest_earning.2,
+            ),
+            SummaryLargest::new(
+                LargestType::Expense,
                 biggest_expense.1,
-            ],
+                biggest_expense.0,
+                biggest_expense.2,
+            ),
         ];
 
-        let summary_data_3 = vec![
-            vec![
-                String::from("Peak Earning"),
-                peak_earning.1,
-                format!("{:.2}", peak_earning.0),
-            ],
-            vec![
-                String::from("Peak Expense"),
-                peak_expense.1,
-                format!("{:.2}", peak_expense.0),
-            ],
+        let summary_peak = vec![
+            SummaryPeak::new(PeakType::Earning, peak_earning.0, peak_earning.1),
+            SummaryPeak::new(PeakType::Expense, peak_expense.0, peak_expense.1),
         ];
 
-        (summary_data_1, summary_data_2, summary_data_3, method_data)
+        (summary_net, summary_largest, summary_peak, method_data)
     }
 
     /// Updates values based on the gathered data
@@ -583,13 +625,13 @@ impl SummaryData {
     }
 
     /// Takes 2 numbers and returns how much % are each of them
-    fn get_percentages(&self, value1: f64, value2: f64) -> (String, String) {
+    fn get_percentages(&self, value1: f64, value2: f64) -> (f64, f64) {
         if value1 == 0.0 && value2 == 0.0 {
-            return (String::from("0.00"), String::from("0.00"));
+            return (0.0, 0.0);
         }
         let total = value1 + value2;
         let percentage1 = (value1 / total) * 100.0;
         let percentage2 = (value2 / total) * 100.0;
-        (format!("{percentage1:.2}",), format!("{percentage2:.2}",))
+        (percentage1, percentage2)
     }
 }
