@@ -5,7 +5,6 @@ use crate::outputs::HandlingOutput;
 use crate::page_handler::PopupState;
 
 /// Tracks the keys of the Homepage and calls relevant function based on it
-#[cfg(not(tarpaulin_include))]
 pub fn home_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
     match handler.popup {
         PopupState::Nothing => match handler.key.code {

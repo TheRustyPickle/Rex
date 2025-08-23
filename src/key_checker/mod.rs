@@ -1,10 +1,18 @@
+#[cfg(not(tarpaulin_include))]
 mod activity_keys;
+#[cfg(not(tarpaulin_include))]
 mod add_tx_keys;
+#[cfg(not(tarpaulin_include))]
 mod chart_keys;
+#[cfg(not(tarpaulin_include))]
 mod home_keys;
+#[cfg(not(tarpaulin_include))]
 mod initial_keys;
+#[cfg(not(tarpaulin_include))]
 mod key_handler;
+#[cfg(not(tarpaulin_include))]
 mod search_keys;
+#[cfg(not(tarpaulin_include))]
 mod summary_keys;
 
 pub use activity_keys::activity_keys;
