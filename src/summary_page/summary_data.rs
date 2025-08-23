@@ -7,7 +7,6 @@ use crate::utility::{get_all_tx_methods, get_all_txs};
 use rusqlite::Connection;
 use std::collections::HashMap;
 
-type MyVec = Vec<Vec<String>>;
 type MyTuple = (
     f64,
     f64,
@@ -24,6 +23,8 @@ pub struct SummaryData {
 }
 
 impl SummaryData {
+    // TODO: instead of going through months/years, do a single query
+
     /// Goes through all transactions to collect data for the summary
     pub fn new(conn: &Connection) -> Self {
         let mut all_txs = HashMap::new();
@@ -217,14 +218,14 @@ impl SummaryData {
         table_data
     }
 
-    /// Returns a vector that will be used to highlight points such as largest transaction,
-    /// biggest income etc.
+    /// Returns necessary data for the Summary UI
     pub fn get_tx_data(
         &self,
         mode: &IndexedData,
         month: usize,
         year: usize,
-        comparison: &Option<MyVec>,
+        last_summary_methods: &Option<Vec<SummaryMethods>>,
+        last_summary_net: &Option<SummaryNet>,
         conn: &Connection,
     ) -> (
         SummaryNet,
@@ -381,14 +382,14 @@ impl SummaryData {
             let mut mom_yoy_earning = None;
             let mut mom_yoy_expense = None;
 
-            if mode.index != 0 {
+            if mode.index == 0 {
                 average_earning = None;
                 average_expense = None;
             }
 
-            if let Some(comparison) = comparison.as_ref() {
-                let last_earning = comparison[index][1].parse::<f64>().unwrap();
-                let last_expense = comparison[index][2].parse::<f64>().unwrap();
+            if let Some(comparison) = last_summary_methods.as_ref() {
+                let last_earning = comparison[index].total_earning;
+                let last_expense = comparison[index].total_expense;
 
                 let current_earning = method_earning[method];
                 let current_expense = method_expense[method];
@@ -431,9 +432,39 @@ impl SummaryData {
             method_data.push(method_summary);
         }
 
-        if mode.index != 0 {
+        if mode.index == 0 {
             average_income = None;
             average_expense = None;
+        }
+
+        let mut net_mom_yoy_earning = None;
+        let mut net_mom_yoy_expense = None;
+
+        if let Some(comparison) = last_summary_net.as_ref() {
+            let last_earning = comparison.total_income;
+            let last_expense = comparison.total_expense;
+
+            let earning_increased_percentage =
+                ((total_income - last_earning) / last_earning) * 100.0;
+
+            if last_earning == 0.0 {
+                net_mom_yoy_earning = Some("∞".to_string());
+            } else if earning_increased_percentage < 0.0 {
+                net_mom_yoy_earning = Some(format!("↓{:.2}", earning_increased_percentage.abs()));
+            } else {
+                net_mom_yoy_earning = Some(format!("↑{earning_increased_percentage:.2}"));
+            }
+
+            let expense_increased_percentage =
+                ((total_expense - last_expense) / last_expense) * 100.0;
+
+            if last_expense == 0.0 {
+                net_mom_yoy_expense = Some("∞".to_string());
+            } else if expense_increased_percentage < 0.0 {
+                net_mom_yoy_expense = Some(format!("↓{:.2}", expense_increased_percentage.abs()));
+            } else {
+                net_mom_yoy_expense = Some(format!("↑{expense_increased_percentage:.2}"));
+            }
         }
 
         let summary_net = SummaryNet::new(
@@ -443,6 +474,8 @@ impl SummaryData {
             average_expense,
             income_percentage,
             expense_percentage,
+            net_mom_yoy_earning,
+            net_mom_yoy_expense,
         );
 
         let summary_largest = vec![
