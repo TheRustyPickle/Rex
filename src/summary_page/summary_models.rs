@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct SummaryNet {
     pub total_income: f64,
     pub total_expense: f64,
@@ -70,11 +70,13 @@ impl SummaryNet {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub enum LargestType {
     Earning,
     Expense,
 }
 
+#[derive(PartialEq, Debug)]
 pub enum PeakType {
     Earning,
     Expense,
@@ -98,6 +100,7 @@ impl fmt::Display for PeakType {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub struct SummaryLargest {
     largest_type: LargestType,
     method: String,
@@ -125,6 +128,7 @@ impl SummaryLargest {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub struct SummaryPeak {
     peak_type: PeakType,
     amount: f64,
@@ -149,7 +153,7 @@ impl SummaryPeak {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct SummaryMethods {
     method: String,
     pub total_earning: f64,

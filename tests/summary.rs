@@ -1,6 +1,8 @@
 extern crate rex_tui;
 use rex_tui::page_handler::{IndexedData, SortingType};
-use rex_tui::summary_page::SummaryData;
+use rex_tui::summary_page::{
+    LargestType, PeakType, SummaryData, SummaryLargest, SummaryMethods, SummaryNet, SummaryPeak,
+};
 use rex_tui::tx_handler::add_tx;
 use rex_tui::utility::sort_table_data;
 use std::fs;
@@ -54,67 +56,71 @@ fn check_summary_data_1() {
 
     let my_summary = SummaryData::new(&conn);
     let my_summary_text = my_summary.get_table_data(&summary_modes, 6, 1);
-    let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 6, 1, &None, &conn);
+    let (net, largest, peak, methods) =
+        my_summary.get_tx_data(&summary_modes, 6, 1, &None, &None, &conn);
 
     let expected_data_1 = vec![vec!["Food", "200.00", "100.00", "100.00", "100.00"]];
 
-    let expected_data_2 = (
-        vec![vec![
-            "Net".to_string(),
-            "200.00".to_string(),
-            "100.00".to_string(),
-            "66.67".to_string(),
-            "33.33".to_string(),
-        ]],
-        vec![
-            vec![
-                "Largest Income".to_string(),
-                "25-07-2023".to_string(),
-                "200.00".to_string(),
-                "Super Special Bank".to_string(),
-            ],
-            vec![
-                "Largest Expense".to_string(),
-                "19-07-2023".to_string(),
-                "100.00".to_string(),
-                "Cash Cow".to_string(),
-            ],
-        ],
-        vec![
-            vec![
-                "Peak Earning".to_string(),
-                "07-2023".to_string(),
-                "200.00".to_string(),
-            ],
-            vec![
-                "Peak Expense".to_string(),
-                "07-2023".to_string(),
-                "100.00".to_string(),
-            ],
-        ],
-        vec![
-            vec![
-                "Super Special Bank".to_string(),
-                "200.00".to_string(),
-                "0.00".to_string(),
-                "100.00".to_string(),
-                "0.00".to_string(),
-            ],
-            vec![
-                "Cash Cow".to_string(),
-                "0.00".to_string(),
-                "100.00".to_string(),
-                "0.00".to_string(),
-                "100.00".to_string(),
-            ],
-        ],
+    let expected_net = SummaryNet::new(
+        200.0,
+        100.0,
+        None,
+        None,
+        66.66666666666666,
+        33.33333333333333,
+        None,
+        None,
     );
+    let expected_largest_1 = SummaryLargest::new(
+        LargestType::Earning,
+        "Super Special Bank".to_string(),
+        200.0,
+        "25-07-2023".to_string(),
+    );
+
+    let expected_largest_2 = SummaryLargest::new(
+        LargestType::Expense,
+        "Cash Cow".to_string(),
+        100.0,
+        "19-07-2023".to_string(),
+    );
+
+    let expected_peak_1 = SummaryPeak::new(PeakType::Earning, 200.0, "07-2023".to_string());
+    let expected_peak_2 = SummaryPeak::new(PeakType::Expense, 100.0, "07-2023".to_string());
+
+    let expected_methods = vec![
+        SummaryMethods::new(
+            "Super Special Bank".to_string(),
+            200.0,
+            0.0,
+            100.0,
+            0.0,
+            None,
+            None,
+            None,
+            None,
+        ),
+        SummaryMethods::new(
+            "Cash Cow".to_string(),
+            0.0,
+            100.0,
+            0.0,
+            100.0,
+            None,
+            None,
+            None,
+            None,
+        ),
+    ];
 
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(my_summary_text, expected_data_1);
-    assert_eq!(my_summary_text_2, expected_data_2);
+    assert_eq!(net, expected_net);
+    assert_eq!(peak, vec![expected_peak_1, expected_peak_2]);
+    assert_eq!(largest, vec![expected_largest_1, expected_largest_2]);
+    assert_eq!(methods, expected_methods);
 }
 
 #[test]
@@ -175,8 +181,60 @@ fn check_summary_data_2() {
 
     let my_summary = SummaryData::new(&conn);
     let my_summary_text = my_summary.get_table_data(&summary_modes, 0, 0);
-    let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 0, 0, &None, &conn);
+    let (net, largest, peak, methods) =
+        my_summary.get_tx_data(&summary_modes, 0, 0, &None, &None, &conn);
 
+    let expected_net = SummaryNet::new(
+        1700.0,
+        1000.0,
+        Some(425.0),
+        Some(250.0),
+        62.96296296296296,
+        37.03703703703704,
+        None,
+        None,
+    );
+    let expected_largest_1 = SummaryLargest::new(
+        LargestType::Earning,
+        "Super Special Bank".to_string(),
+        1000.0,
+        "19-05-2022".to_string(),
+    );
+
+    let expected_largest_2 = SummaryLargest::new(
+        LargestType::Expense,
+        "Super Special Bank".to_string(),
+        500.0,
+        "19-01-2022".to_string(),
+    );
+
+    let expected_peak_1 = SummaryPeak::new(PeakType::Earning, 1000.0, "05-2022".to_string());
+    let expected_peak_2 = SummaryPeak::new(PeakType::Expense, 500.0, "01-2022".to_string());
+
+    let expected_methods = vec![
+        SummaryMethods::new(
+            "Super Special Bank".to_string(),
+            1000.0,
+            1000.0,
+            58.82352941176471,
+            100.0,
+            Some(250.0),
+            Some(250.0),
+            None,
+            None,
+        ),
+        SummaryMethods::new(
+            "Cash Cow".to_string(),
+            700.0,
+            0.0,
+            41.17647058823529,
+            0.0,
+            Some(175.0),
+            Some(0.0),
+            None,
+            None,
+        ),
+    ];
     let expected_data_1 = vec![
         vec![
             "Car".to_string(),
@@ -194,69 +252,14 @@ fn check_summary_data_2() {
         ],
     ];
 
-    let expected_data_2 = (
-        vec![vec![
-            "Net".to_string(),
-            "1700.00".to_string(),
-            "1000.00".to_string(),
-            "62.96".to_string(),
-            "37.04".to_string(),
-            "425.00".to_string(),
-            "250.00".to_string(),
-        ]],
-        vec![
-            vec![
-                "Largest Income".to_string(),
-                "19-05-2022".to_string(),
-                "1000.00".to_string(),
-                "Super Special Bank".to_string(),
-            ],
-            vec![
-                "Largest Expense".to_string(),
-                "19-01-2022".to_string(),
-                "500.00".to_string(),
-                "Super Special Bank".to_string(),
-            ],
-        ],
-        vec![
-            vec![
-                "Peak Earning".to_string(),
-                "05-2022".to_string(),
-                "1000.00".to_string(),
-            ],
-            vec![
-                "Peak Expense".to_string(),
-                "01-2022".to_string(),
-                "500.00".to_string(),
-            ],
-        ],
-        vec![
-            vec![
-                "Super Special Bank".to_string(),
-                "1000.00".to_string(),
-                "1000.00".to_string(),
-                "58.82".to_string(),
-                "100.00".to_string(),
-                "250.00".to_string(),
-                "250.00".to_string(),
-            ],
-            vec![
-                "Cash Cow".to_string(),
-                "700.00".to_string(),
-                "0.00".to_string(),
-                "41.18".to_string(),
-                "0.00".to_string(),
-                "175.00".to_string(),
-                "0.00".to_string(),
-            ],
-        ],
-    );
-
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(my_summary_text, expected_data_1);
-    assert_eq!(my_summary_text_2, expected_data_2);
+    assert_eq!(net, expected_net);
+    assert_eq!(peak, vec![expected_peak_1, expected_peak_2]);
+    assert_eq!(largest, vec![expected_largest_1, expected_largest_2]);
+    assert_eq!(methods, expected_methods);
 }
 
 #[test]
@@ -306,8 +309,60 @@ fn check_summary_data_3() {
 
     let my_summary = SummaryData::new(&conn);
     let my_summary_text = my_summary.get_table_data(&summary_modes, 0, 1);
-    let my_summary_text_2 = my_summary.get_tx_data(&summary_modes, 0, 1, &None, &conn);
+    let (net, largest, peak, methods) =
+        my_summary.get_tx_data(&summary_modes, 0, 1, &None, &None, &conn);
 
+    let expected_net = SummaryNet::new(
+        200.0,
+        100.0,
+        Some(66.66666666666667),
+        Some(33.333333333333336),
+        66.66666666666666,
+        33.33333333333333,
+        None,
+        None,
+    );
+    let expected_largest_1 = SummaryLargest::new(
+        LargestType::Earning,
+        "Cash Cow".to_string(),
+        100.0,
+        "19-07-2023".to_string(),
+    );
+
+    let expected_largest_2 = SummaryLargest::new(
+        LargestType::Expense,
+        "Super Special Bank".to_string(),
+        100.0,
+        "19-08-2022".to_string(),
+    );
+
+    let expected_peak_1 = SummaryPeak::new(PeakType::Earning, 100.0, "07-2023".to_string());
+    let expected_peak_2 = SummaryPeak::new(PeakType::Expense, 100.0, "08-2022".to_string());
+
+    let expected_methods = vec![
+        SummaryMethods::new(
+            "Super Special Bank".to_string(),
+            100.0,
+            100.0,
+            50.0,
+            100.0,
+            Some(33.333333333333336),
+            Some(33.333333333333336),
+            None,
+            None,
+        ),
+        SummaryMethods::new(
+            "Cash Cow".to_string(),
+            100.0,
+            0.0,
+            50.00,
+            0.0,
+            Some(33.333333333333336),
+            Some(0.0),
+            None,
+            None,
+        ),
+    ];
     let expected_data_1 = vec![
         vec![
             "Car".to_string(),
@@ -325,69 +380,14 @@ fn check_summary_data_3() {
         ],
     ];
 
-    let expected_data_2 = (
-        vec![vec![
-            "Net".to_string(),
-            "200.00".to_string(),
-            "100.00".to_string(),
-            "66.67".to_string(),
-            "33.33".to_string(),
-            "66.67".to_string(),
-            "33.33".to_string(),
-        ]],
-        vec![
-            vec![
-                "Largest Income".to_string(),
-                "19-07-2023".to_string(),
-                "100.00".to_string(),
-                "Cash Cow".to_string(),
-            ],
-            vec![
-                "Largest Expense".to_string(),
-                "19-08-2022".to_string(),
-                "100.00".to_string(),
-                "Super Special Bank".to_string(),
-            ],
-        ],
-        vec![
-            vec![
-                "Peak Earning".to_string(),
-                "07-2023".to_string(),
-                "100.00".to_string(),
-            ],
-            vec![
-                "Peak Expense".to_string(),
-                "08-2022".to_string(),
-                "100.00".to_string(),
-            ],
-        ],
-        vec![
-            vec![
-                "Super Special Bank".to_string(),
-                "100.00".to_string(),
-                "100.00".to_string(),
-                "50.00".to_string(),
-                "100.00".to_string(),
-                "33.33".to_string(),
-                "33.33".to_string(),
-            ],
-            vec![
-                "Cash Cow".to_string(),
-                "100.00".to_string(),
-                "0.00".to_string(),
-                "50.00".to_string(),
-                "0.00".to_string(),
-                "33.33".to_string(),
-                "0.00".to_string(),
-            ],
-        ],
-    );
-
     conn.close().unwrap();
     fs::remove_file(file_name).unwrap();
 
     assert_eq!(my_summary_text, expected_data_1);
-    assert_eq!(my_summary_text_2, expected_data_2);
+    assert_eq!(net, expected_net);
+    assert_eq!(peak, vec![expected_peak_1, expected_peak_2]);
+    assert_eq!(largest, vec![expected_largest_1, expected_largest_2]);
+    assert_eq!(methods, expected_methods);
 }
 
 #[test]
