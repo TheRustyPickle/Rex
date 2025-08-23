@@ -12,7 +12,7 @@ use crate::page_handler::{
     ActivityTab, ActivityType, ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData,
     PopupState, SortingType, SummaryTab, TableData, TxTab,
 };
-use crate::summary_page::SummaryData;
+use crate::summary_page::{SummaryData, SummaryMethods, SummaryNet};
 use crate::tx_handler::TxData;
 use crate::utility::{
     LerpState, add_new_activity, add_new_activity_tx, get_all_tx_methods,
@@ -20,7 +20,7 @@ use crate::utility::{
 };
 
 /// Stores all the data that is required to handle
-/// every single possible key press event from the
+/// every single possible keypress event from the
 /// entire app
 pub struct InputKeyHandler<'a> {
     pub key: KeyEvent,
@@ -66,7 +66,8 @@ pub struct InputKeyHandler<'a> {
     popup_scroll_position: &'a mut usize,
     max_popup_scroll: &'a mut usize,
     lerp_state: &'a mut LerpState,
-    last_summary_data: &'a mut Option<Vec<Vec<String>>>,
+    last_summary_methods: &'a mut Option<Vec<SummaryMethods>>,
+    last_summary_net: &'a mut Option<SummaryNet>,
     conn: &'a mut Connection,
 }
 
@@ -115,7 +116,8 @@ impl<'a> InputKeyHandler<'a> {
         popup_scroll_position: &'a mut usize,
         max_popup_scroll: &'a mut usize,
         lerp_state: &'a mut LerpState,
-        last_summary_data: &'a mut Option<Vec<Vec<String>>>,
+        last_summary_methods: &'a mut Option<Vec<SummaryMethods>>,
+        last_summary_net: &'a mut Option<SummaryNet>,
         conn: &'a mut Connection,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data
@@ -165,7 +167,8 @@ impl<'a> InputKeyHandler<'a> {
             popup_scroll_position,
             max_popup_scroll,
             lerp_state,
-            last_summary_data,
+            last_summary_methods,
+            last_summary_net,
             conn,
         }
     }
@@ -813,7 +816,7 @@ impl<'a> InputKeyHandler<'a> {
                 if self.summary_months.index > 0 {
                     Some((self.summary_months.index - 1, self.summary_years.index))
                 } else if self.summary_months.index == 0 && self.summary_years.index > 0 {
-                    Some((self.summary_years.index - 1, MONTHS.len() - 1))
+                    Some((MONTHS.len() - 1, self.summary_years.index - 1))
                 } else {
                     None
                 }
@@ -829,11 +832,17 @@ impl<'a> InputKeyHandler<'a> {
         };
 
         if let Some((month, year)) = previous_indexes {
-            let (_, _, _, method_data) =
-                self.summary_data
-                    .get_tx_data(self.summary_modes, month, year, &None, self.conn);
+            let (net_data, _, _, method_data) = self.summary_data.get_tx_data(
+                self.summary_modes,
+                month,
+                year,
+                &None,
+                &None,
+                self.conn,
+            );
 
-            *self.last_summary_data = Some(method_data);
+            *self.last_summary_methods = Some(method_data);
+            *self.last_summary_net = Some(net_data);
 
             let tag_data = self
                 .summary_data
@@ -1789,7 +1798,7 @@ impl InputKeyHandler<'_> {
                 if self.summary_months.index > 0 {
                     Some((self.summary_months.index - 1, self.summary_years.index))
                 } else if self.summary_months.index == 0 && self.summary_years.index > 0 {
-                    Some((self.summary_years.index - 1, MONTHS.len() - 1))
+                    Some((MONTHS.len() - 1, self.summary_years.index - 1))
                 } else {
                     None
                 }
@@ -1805,11 +1814,17 @@ impl InputKeyHandler<'_> {
         };
 
         if let Some((month, year)) = previous_indexes {
-            let (_, _, _, method_data) =
-                self.summary_data
-                    .get_tx_data(self.summary_modes, month, year, &None, self.conn);
+            let (net_data, _, _, method_data) = self.summary_data.get_tx_data(
+                self.summary_modes,
+                month,
+                year,
+                &None,
+                &None,
+                self.conn,
+            );
 
-            *self.last_summary_data = Some(method_data);
+            *self.last_summary_methods = Some(method_data);
+            *self.last_summary_net = Some(net_data);
 
             let tag_data = self
                 .summary_data

@@ -1,12 +1,15 @@
 use std::fmt;
 
+#[derive(Debug)]
 pub struct SummaryNet {
-    total_income: f64,
-    total_expense: f64,
+    pub total_income: f64,
+    pub total_expense: f64,
     average_income: Option<f64>,
     average_expense: Option<f64>,
     income_percentage: f64,
     expense_percentage: f64,
+    mom_yoy_earning: Option<String>,
+    mom_yoy_expense: Option<String>,
 }
 
 impl SummaryNet {
@@ -17,6 +20,8 @@ impl SummaryNet {
         average_expense: Option<f64>,
         income_percentage: f64,
         expense_percentage: f64,
+        mom_yoy_earning: Option<String>,
+        mom_yoy_expense: Option<String>,
     ) -> Self {
         Self {
             total_income,
@@ -25,11 +30,13 @@ impl SummaryNet {
             average_expense,
             income_percentage,
             expense_percentage,
+            mom_yoy_earning,
+            mom_yoy_expense,
         }
     }
 
     pub fn array(self) -> Vec<Vec<String>> {
-        if let Some(average_income) = self.average_income
+        let mut to_return = if let Some(average_income) = self.average_income
             && let Some(average_expense) = self.average_expense
         {
             vec![vec![
@@ -49,7 +56,17 @@ impl SummaryNet {
                 format!("{:.2}", self.income_percentage),
                 format!("{:.2}", self.expense_percentage),
             ]]
+        };
+
+        if let Some(mom_yoy_earning) = self.mom_yoy_earning {
+            to_return[0].push(mom_yoy_earning);
         }
+
+        if let Some(mom_yoy_expense) = self.mom_yoy_expense {
+            to_return[0].push(mom_yoy_expense);
+        }
+
+        to_return
     }
 }
 
@@ -98,13 +115,13 @@ impl SummaryLargest {
         }
     }
 
-    pub fn array(self) -> Vec<Vec<String>> {
-        vec![vec![
+    pub fn array(self) -> Vec<String> {
+        vec![
             self.largest_type.to_string(),
             self.date,
             format!("{:.2}", self.amount),
             self.method,
-        ]]
+        ]
     }
 }
 
@@ -123,19 +140,20 @@ impl SummaryPeak {
         }
     }
 
-    pub fn array(self) -> Vec<Vec<String>> {
-        vec![vec![
+    pub fn array(self) -> Vec<String> {
+        vec![
             self.peak_type.to_string(),
             self.date,
             format!("{:.2}", self.amount),
-        ]]
+        ]
     }
 }
 
+#[derive(Debug)]
 pub struct SummaryMethods {
     method: String,
-    total_earning: f64,
-    total_expense: f64,
+    pub total_earning: f64,
+    pub total_expense: f64,
     percentage_earning: f64,
     percentage_expense: f64,
     average_earning: Option<f64>,
@@ -169,11 +187,11 @@ impl SummaryMethods {
         }
     }
 
-    pub fn array(self) -> Vec<Vec<String>> {
-        if let Some(average_income) = self.average_earning
+    pub fn array(self) -> Vec<String> {
+        let mut to_return = if let Some(average_income) = self.average_earning
             && let Some(average_expense) = self.average_expense
         {
-            let mut to_use = vec![
+            vec![
                 self.method,
                 format!("{:.2}", self.total_earning),
                 format!("{:.2}", self.total_expense),
@@ -181,24 +199,24 @@ impl SummaryMethods {
                 format!("{:.2}", average_expense),
                 format!("{:.2}", self.percentage_earning),
                 format!("{:.2}", self.percentage_expense),
-            ];
-
-            if let Some(mom_yoy_earning) = self.mom_yoy_earning {
-                to_use.push(mom_yoy_earning);
-            }
-            if let Some(mom_yoy_expense) = self.mom_yoy_expense {
-                to_use.push(mom_yoy_expense);
-            }
-
-            vec![to_use]
+            ]
         } else {
-            vec![vec![
+            vec![
                 self.method,
                 format!("{:.2}", self.total_earning),
                 format!("{:.2}", self.total_expense),
                 format!("{:.2}", self.percentage_earning),
                 format!("{:.2}", self.percentage_expense),
-            ]]
+            ]
+        };
+
+        if let Some(mom_yoy_earning) = self.mom_yoy_earning {
+            to_return.push(mom_yoy_earning);
         }
+        if let Some(mom_yoy_expense) = self.mom_yoy_expense {
+            to_return.push(mom_yoy_expense);
+        }
+
+        to_return
     }
 }
