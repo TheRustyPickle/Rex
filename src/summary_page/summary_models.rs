@@ -13,7 +13,8 @@ pub struct SummaryNet {
 }
 
 impl SummaryNet {
-    #[must_use] pub fn new(
+    #[must_use]
+    pub fn new(
         total_income: f64,
         total_expense: f64,
         average_income: Option<f64>,
@@ -35,7 +36,8 @@ impl SummaryNet {
         }
     }
 
-    #[must_use] pub fn array(self) -> Vec<Vec<String>> {
+    #[must_use]
+    pub fn array(self) -> Vec<Vec<String>> {
         let mut to_return = if let Some(average_income) = self.average_income
             && let Some(average_expense) = self.average_expense
         {
@@ -109,7 +111,8 @@ pub struct SummaryLargest {
 }
 
 impl SummaryLargest {
-    #[must_use] pub fn new(largest_type: LargestType, method: String, amount: f64, date: String) -> Self {
+    #[must_use]
+    pub fn new(largest_type: LargestType, method: String, amount: f64, date: String) -> Self {
         Self {
             largest_type,
             method,
@@ -118,7 +121,8 @@ impl SummaryLargest {
         }
     }
 
-    #[must_use] pub fn array(self) -> Vec<String> {
+    #[must_use]
+    pub fn array(self) -> Vec<String> {
         vec![
             self.largest_type.to_string(),
             self.date,
@@ -136,7 +140,8 @@ pub struct SummaryPeak {
 }
 
 impl SummaryPeak {
-    #[must_use] pub fn new(peak_type: PeakType, amount: f64, date: String) -> Self {
+    #[must_use]
+    pub fn new(peak_type: PeakType, amount: f64, date: String) -> Self {
         Self {
             peak_type,
             amount,
@@ -144,7 +149,8 @@ impl SummaryPeak {
         }
     }
 
-    #[must_use] pub fn array(self) -> Vec<String> {
+    #[must_use]
+    pub fn array(self) -> Vec<String> {
         vec![
             self.peak_type.to_string(),
             self.date,
@@ -167,7 +173,8 @@ pub struct SummaryMethods {
 }
 
 impl SummaryMethods {
-    #[must_use] pub fn new(
+    #[must_use]
+    pub fn new(
         method: String,
         total_earning: f64,
         total_expense: f64,
@@ -191,7 +198,8 @@ impl SummaryMethods {
         }
     }
 
-    #[must_use] pub fn array(self) -> Vec<String> {
+    #[must_use]
+    pub fn array(self) -> Vec<String> {
         let mut to_return = if let Some(average_income) = self.average_earning
             && let Some(average_expense) = self.average_expense
         {
