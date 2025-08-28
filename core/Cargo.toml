@@ -1,0 +1,9 @@
+[package]
+name = "core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+db.workspace = true
+chrono.workspace = true
+anyhow = "1.0.99"
