@@ -180,6 +180,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "db",
+ "diesel",
 ]
 
 [[package]]
@@ -1383,6 +1384,7 @@ version = "0.1.21"
 dependencies = [
  "atty",
  "chrono",
+ "core",
  "crossterm 0.29.0",
  "dirs",
  "open",

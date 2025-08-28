@@ -1,4 +1,3 @@
-#![recursion_limit = "2048"]
 pub mod models;
 mod schema;
 
@@ -27,11 +26,7 @@ impl DbConn {
             tx_methods: HashMap::new(),
         };
 
-        let tags = Tag::get_all(&mut to_return)
-            .unwrap()
-            .into_iter()
-            .map(|t| (t.id, t))
-            .collect();
+        to_return.reload_methods();
 
         let tx_methods = TxMethod::get_all(&mut to_return)
             .unwrap()
@@ -39,10 +34,30 @@ impl DbConn {
             .map(|t| (t.id, t))
             .collect();
 
-        to_return.tags = tags;
         to_return.tx_methods = tx_methods;
 
         to_return
+    }
+
+    pub fn reload_methods(&mut self) {
+        let tx_methods = TxMethod::get_all(self)
+            .unwrap()
+            .into_iter()
+            .map(|t| (t.id, t))
+            .collect();
+
+        self.tx_methods = tx_methods;
+    }
+
+    pub fn get_method_id(&self, name: &str) -> Option<i32> {
+        self.tx_methods
+            .values()
+            .find(|m| m.name == name)
+            .map(|m| m.id)
+    }
+
+    pub fn get_tag_id(&self, name: &str) -> Option<i32> {
+        self.tags.values().find(|m| m.name == name).map(|m| m.id)
     }
 }
 

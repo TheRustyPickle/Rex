@@ -10,6 +10,29 @@ pub struct Tag {
     pub name: String,
 }
 
+#[derive(Insertable)]
+#[diesel(table_name = tags)]
+pub struct NewTag<'a> {
+    pub name: &'a str,
+}
+
+impl<'a> NewTag<'a> {
+    pub fn new(name: &'a str) -> Self {
+        NewTag { name }
+    }
+
+    pub fn insert(self, conn: &mut SqliteConnection) -> Result<Tag, Error> {
+        use crate::schema::tags::dsl::{name, tags};
+
+        diesel::insert_into(tags)
+            .values(self)
+            .on_conflict(name)
+            .do_nothing()
+            .returning(Tag::as_returning())
+            .get_result(conn)
+    }
+}
+
 impl Tag {
     pub fn get_all(db_conn: &mut DbConn) -> Result<Vec<Tag>, Error> {
         use crate::schema::tags::dsl::tags;
