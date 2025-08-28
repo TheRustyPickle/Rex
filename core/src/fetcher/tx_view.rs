@@ -55,13 +55,15 @@ pub fn get_txs(month: usize, year: usize, db_conn: &mut DbConn) -> Result<TxView
 
     let mut to_insert_balance = Vec::new();
 
-    for mut balance in current_balance {
-        let method_id = balance.method_id;
-        let last_balance = *last_balance.get(&method_id).unwrap();
+    if let Some(current_balance) = current_balance {
+        for mut balance in current_balance {
+            let method_id = balance.method_id;
+            let last_balance = *last_balance.get(&method_id).unwrap();
 
-        if balance.balance != last_balance {
-            balance.balance = last_balance;
-            to_insert_balance.push(balance);
+            if balance.balance != last_balance {
+                balance.balance = last_balance;
+                to_insert_balance.push(balance);
+            }
         }
     }
 

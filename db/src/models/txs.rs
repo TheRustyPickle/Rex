@@ -1,4 +1,5 @@
 use chrono::{Datelike, Days, Months, NaiveDate};
+use diesel::dsl::Returning;
 use diesel::prelude::*;
 use diesel::result::Error;
 use std::collections::HashMap;
@@ -21,9 +22,9 @@ pub enum FetchNature {
     Yearly,
 }
 
-impl From<String> for TxType {
-    fn from(s: String) -> Self {
-        match s.as_str() {
+impl From<&str> for TxType {
+    fn from(s: &str) -> Self {
+        match s {
             "income" => TxType::Income,
             "expense" => TxType::Expense,
             "transfer" => TxType::Transfer,
@@ -56,7 +57,7 @@ pub struct FullTx {
 
 #[derive(Clone, Queryable, Selectable)]
 pub struct Tx {
-    id: i32,
+    pub id: i32,
     date: NaiveDate,
     details: Option<String>,
     from_method: i32,
@@ -68,14 +69,45 @@ pub struct Tx {
 
 #[derive(Debug, Clone, Insertable)]
 #[diesel(table_name = txs)]
-pub struct NewTx {
+pub struct NewTx<'a> {
     date: NaiveDate,
-    details: Option<String>,
+    details: Option<&'a str>,
     from_method: i32,
     to_method: Option<i32>,
     amount: i64,
-    tx_type: String,
+    tx_type: &'a str,
     activity_id: Option<i32>,
+}
+
+impl<'a> NewTx<'a> {
+    pub fn new(
+        date: NaiveDate,
+        details: Option<&'a str>,
+        from_method: i32,
+        to_method: Option<i32>,
+        amount: i64,
+        tx_type: &'a str,
+        activity_id: Option<i32>,
+    ) -> Self {
+        NewTx {
+            date,
+            details,
+            from_method,
+            to_method,
+            amount,
+            tx_type,
+            activity_id,
+        }
+    }
+
+    pub fn insert(self, conn: &mut SqliteConnection) -> Result<Tx, Error> {
+        use crate::schema::txs::dsl::txs;
+
+        diesel::insert_into(txs)
+            .values(self)
+            .returning(Tx::as_returning())
+            .get_result(conn)
+    }
 }
 
 impl FullTx {
@@ -145,7 +177,7 @@ impl FullTx {
                     .to_method
                     .map(|method_id| db_conn.tx_methods.get(&method_id).unwrap().clone()),
                 amount: tx.amount,
-                tx_type: tx.tx_type.into(),
+                tx_type: tx.tx_type.as_str().into(),
                 activity_id: tx.activity_id,
                 tags,
             };

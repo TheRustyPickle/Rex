@@ -17,13 +17,19 @@ pub struct Balance {
 }
 
 impl Balance {
-    pub fn new(method_id: i32, year: i32, month: i32, balance: i64) -> Self {
-        Self {
+    pub fn new(
+        method_id: i32,
+        year: i32,
+        month: i32,
+        balance: i64,
+        is_final_balance: bool,
+    ) -> Self {
+        Balance {
             method_id,
             year,
             month,
             balance,
-            is_final_balance: false,
+            is_final_balance,
         }
     }
 
@@ -38,7 +44,27 @@ impl Balance {
             .execute(&mut db_conn.conn)
     }
 
-    pub fn get_balance(date: NaiveDate, db_conn: &mut DbConn) -> Result<Vec<Self>, Error> {
+    pub fn insert_conn(self, conn: &mut SqliteConnection) -> Result<usize, Error> {
+        use crate::schema::balances::dsl::*;
+
+        diesel::insert_into(balances)
+            .values(self)
+            .on_conflict((method_id, year, month))
+            .do_update()
+            .set(balance.eq(excluded(balance)))
+            .execute(conn)
+    }
+
+    pub fn insert_batch_final_balance(
+        txs: Vec<Balance>,
+        conn: &mut SqliteConnection,
+    ) -> Result<usize, Error> {
+        use crate::schema::balances::dsl::*;
+
+        diesel::insert_into(balances).values(txs).execute(conn)
+    }
+
+    pub fn get_balance(date: NaiveDate, db_conn: &mut DbConn) -> Result<Option<Vec<Self>>, Error> {
         use crate::schema::balances::dsl::{balances, method_id, month, year};
 
         let date_year = date.year();
@@ -52,6 +78,7 @@ impl Balance {
             .filter(method_id.eq_any(tx_method_ids))
             .select(Self::as_select())
             .load(&mut db_conn.conn)
+            .optional()
     }
 
     pub fn get_last_balance(

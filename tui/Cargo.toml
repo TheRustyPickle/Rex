@@ -21,6 +21,7 @@ test = false
 bench = false
 
 [dependencies]
+core.workspace = true
 crossterm = "0.29.0"
 rusqlite = { version = "0.37.0", features = ["bundled"] }
 chrono = "0.4.41"
