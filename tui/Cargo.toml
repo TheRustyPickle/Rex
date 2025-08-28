@@ -1,0 +1,42 @@
+[package]
+name = "rex-tui"
+version = "0.1.21"
+edition = "2024"
+authors = ["TheRustyPickle <rusty.pickle94@gmail.com>"]
+readme = "README.md"
+description = """
+A TUI app for managing Incomes and Expenses
+"""
+homepage = "https://github.com/TheRustyPickle/Rex"
+repository = "https://github.com/TheRustyPickle/Rex"
+license = "MIT"
+keywords = ["tui", "terminal", "budget", "ratatui", "ledger"]
+categories = ["command-line-utilities"]
+exclude = ["logo.png", "tests", ".github", "typos.toml", "codecov.yml"]
+
+[[bin]]
+name = "rex"
+path = "src/main.rs"
+test = false
+bench = false
+
+[dependencies]
+crossterm = "0.29.0"
+rusqlite = { version = "0.37.0", features = ["bundled"] }
+chrono = "0.4.41"
+open = "5.3.2"
+atty = "0.2.14"
+reqwest = { version = "0.12.22", features = ["blocking", "json"] }
+serde = { version = "1.0.219", features = ["derive"] }
+dirs = "6.0.0"
+thousands = "0.2.0"
+semver = "1.0.26"
+ratatui = "0.29.0"
+strsim = "0.11.1"
+serde_json = "1.0.142"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
+
+[lints.clippy]
+too_many_arguments = { level = "allow" }
