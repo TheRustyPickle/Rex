@@ -1,7 +1,7 @@
 use anyhow::{Context, Error, Result};
 use chrono::{Datelike, Months, NaiveDate};
 use db::models::{Balance, NewTag, NewTx, TxTag, TxType};
-use db::{Cache, ConnCache, DbConn, MutDbConn};
+use db::{ConnCache, DbConn, MutDbConn};
 use diesel::sql_types::Text;
 use diesel::{prelude::*, sql_query};
 use std::io::Write;
@@ -38,6 +38,8 @@ pub fn start_migration(
     let mut end_date = None;
 
     conn.transaction::<_, Error, _>(|conn| {
+        let mut mut_db_conn = MutDbConn::new(conn, cache);
+
         let mut count = 0;
         let stdout = std::io::stdout();
         let mut handle = stdout.lock();
@@ -73,17 +75,14 @@ pub fn start_migration(
                 &row[3],
                 &row[4],
                 &row[5],
-                cache,
-                conn,
+                &mut mut_db_conn,
             )
             .unwrap();
 
             count += 1;
-            write!(handle, "\rProcessed rows: {count}").unwrap();
+            write!(handle, "\rTransaction migrated: {count}").unwrap();
             handle.flush().unwrap();
         }
-
-        println!("\nDone! Total rows processed: {count}");
 
         Ok(())
     })?;
@@ -129,8 +128,7 @@ fn migrate_tx(
     amount: &str,
     tx_type: &str,
     tags: &str,
-    cache: &Cache,
-    conn: &mut SqliteConnection,
+    db_conn: &mut impl ConnCache,
 ) -> Result<()> {
     let date = date.parse::<NaiveDate>()?;
 
@@ -142,11 +140,11 @@ fn migrate_tx(
 
     let amount = (amount.parse::<f64>()? * 100.0).round() as i64;
 
-    let from_method = cache.get_method_id(from_method).unwrap();
+    let from_method = db_conn.cache().get_method_id(from_method).unwrap();
     let to_method = if to_method.is_empty() {
         None
     } else {
-        Some(cache.get_method_id(to_method).unwrap())
+        Some(db_conn.cache().get_method_id(to_method).unwrap())
     };
 
     let mut tag_list = Vec::new();
@@ -166,10 +164,8 @@ fn migrate_tx(
 
     let new_tx = NewTx::new(date, details, from_method, to_method, amount, tx_type, None);
 
-    let mut mut_db_conn = MutDbConn::new(conn, cache);
-
     // Would be a bug if the current balance is not gotten
-    let current_balance = Balance::get_balance(date, &mut mut_db_conn)?;
+    let current_balance = Balance::get_balance(date, db_conn)?;
 
     let mut balance_to_update = Vec::new();
 
@@ -200,35 +196,26 @@ fn migrate_tx(
     }
 
     // TODO: Add activity txs later
-    conn.transaction::<_, Error, _>(|conn| {
-        let mut mut_db_conn = MutDbConn::new(conn, cache);
 
-        let added_tx = new_tx
-            .insert(&mut mut_db_conn)
-            .context("Failed on new tx")?;
+    let added_tx = new_tx.insert(db_conn).context("Failed on new tx")?;
 
-        let mut tx_tags = Vec::new();
+    let mut tx_tags = Vec::new();
 
-        for tag in tag_list {
-            let tag_data = NewTag::new(&tag)
-                .insert(&mut mut_db_conn)
-                .context("Failed on new tag")?;
+    for tag in tag_list {
+        let tag_data = NewTag::new(&tag)
+            .insert(db_conn)
+            .context("Failed on new tag")?;
 
-            let tx_tag = TxTag::new(added_tx.id, tag_data.id);
+        let tx_tag = TxTag::new(added_tx.id, tag_data.id);
 
-            tx_tags.push(tx_tag);
-        }
+        tx_tags.push(tx_tag);
+    }
 
-        TxTag::insert_batch(tx_tags, &mut mut_db_conn).context("Failed on tx tags")?;
+    TxTag::insert_batch(tx_tags, db_conn).context("Failed on tx tags")?;
 
-        for balance in balance_to_update {
-            balance
-                .insert_conn(&mut mut_db_conn)
-                .context("Failed on balance")?;
-        }
-
-        Ok(())
-    })?;
+    for balance in balance_to_update {
+        balance.insert_conn(db_conn).context("Failed on balance")?;
+    }
 
     Ok(())
 }
