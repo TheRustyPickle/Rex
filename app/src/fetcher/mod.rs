@@ -1,5 +1,5 @@
 mod tx_view;
-mod txs;
+mod add;
 
 pub use tx_view::*;
-pub use txs::*;
+pub use add::*;

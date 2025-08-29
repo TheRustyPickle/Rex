@@ -20,7 +20,7 @@ use std::time::Duration;
 use std::{process, thread};
 use strsim::normalized_levenshtein;
 
-use crate::db::{YEARS, add_tags_column, create_db, migrate_to_activities, update_balance_type};
+use crate::db::{YEARS, create_db, migrate_to_new_schema};
 use crate::outputs::ComparisonType;
 use crate::page_handler::{
     ActivityType, BACKGROUND, BOX, DateType, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT,
@@ -190,56 +190,6 @@ pub fn get_sql_dates(month: usize, year: usize, date_type: &DateType) -> (String
         }
         DateType::Exact => (String::new(), String::new()),
     }
-}
-
-/// Verifies the db version is up to date
-#[cfg(not(tarpaulin_include))]
-pub fn check_old_sql(conn: &mut Connection) {
-    // Earlier version of the database didn't had the Tag column
-    use crate::db::migrate_to_new_schema;
-
-    if !get_all_tx_columns(conn).contains(&"tags".to_string()) {
-        println!("Old database detected. Starting migration...");
-        let status = add_tags_column(conn);
-        match status {
-            Ok(()) => start_timer("Database migration successfully complete."),
-            Err(e) => {
-                println!("Database migration failed. Try again. Error: {e}");
-                println!("Commits reversed. Exiting...");
-                process::exit(1);
-            }
-        }
-    }
-
-    // Earlier version of the database's balance_all columns were all TEXT type.
-    // Convert to REAL type if found
-    if check_old_balance_sql(conn) {
-        println!("Outdated database detected. Updating...");
-        let status = update_balance_type(conn);
-        match status {
-            Ok(()) => start_timer("Database updating successfully complete."),
-            Err(e) => {
-                println!("Database updating failed. Try again. Error: {e}");
-                println!("Commits reversed. Exiting...");
-                process::exit(1);
-            }
-        }
-    }
-
-    if !get_all_table_names(conn).contains(&"activities".to_string()) {
-        println!("Outdated database detected. Updating...");
-        let status = migrate_to_activities(conn);
-        match status {
-            Ok(()) => start_timer("Database updating successfully complete."),
-            Err(e) => {
-                println!("Database updating failed. Try again. Error: {e}");
-                println!("Commits reversed. Exiting...");
-                process::exit(1);
-            }
-        }
-    }
-
-    migrate_to_new_schema(conn);
 }
 
 /// Checks if the `balance_all` table is outdated

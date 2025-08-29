@@ -59,10 +59,10 @@ pub struct Tx {
     pub id: i32,
     date: NaiveDate,
     details: Option<String>,
-    from_method: i32,
-    to_method: Option<i32>,
-    amount: i64,
-    tx_type: String,
+    pub from_method: i32,
+    pub to_method: Option<i32>,
+    pub amount: i64,
+    pub tx_type: String,
     activity_id: Option<i32>,
 }
 
@@ -115,29 +115,7 @@ impl FullTx {
         nature: FetchNature,
         db_conn: &mut impl ConnCache,
     ) -> Result<Vec<Self>, Error> {
-        use crate::schema::txs::dsl::{date, txs};
-
-        let (start_date, end_date) = match nature {
-            FetchNature::Monthly => {
-                let start_date = NaiveDate::from_ymd_opt(d.year(), d.month(), 1).unwrap();
-
-                let end_date = start_date + Months::new(1) - Days::new(1);
-                (start_date, end_date)
-            }
-            FetchNature::Yearly => {
-                let start_date = NaiveDate::from_ymd_opt(d.year(), 1, 1).unwrap();
-
-                let end_date = start_date + Months::new(12) - Days::new(1);
-                (start_date, end_date)
-            }
-        };
-
-        let all_txs: Vec<Tx> = txs
-            .filter(date.ge(start_date))
-            .filter(date.le(end_date))
-            .order(date.desc())
-            .select(Tx::as_select())
-            .load(db_conn.conn())?;
+        let all_txs = Tx::get_txs(d, nature, db_conn)?;
 
         FullTx::convert_to_full_tx(all_txs, db_conn)
     }
@@ -254,7 +232,7 @@ impl FullTx {
         }
 
         vec![
-            self.date.to_string(),
+            self.date.format("%d-%m-%Y").to_string(),
             self.details.clone().unwrap_or_default(),
             method,
             format!("{:.2}", self.amount as f64 / 100.0),
@@ -265,5 +243,36 @@ impl FullTx {
                 .collect::<Vec<String>>()
                 .join(", "),
         ]
+    }
+}
+
+impl Tx {
+    pub fn get_txs(
+        d: NaiveDate,
+        nature: FetchNature,
+        db_conn: &mut impl ConnCache,
+    ) -> Result<Vec<Self>, Error> {
+        use crate::schema::txs::dsl::{date, id, txs};
+
+        let (start_date, end_date) = match nature {
+            FetchNature::Monthly => {
+                let start_date = NaiveDate::from_ymd_opt(d.year(), d.month(), 1).unwrap();
+
+                let end_date = start_date + Months::new(1) - Days::new(1);
+                (start_date, end_date)
+            }
+            FetchNature::Yearly => {
+                let start_date = NaiveDate::from_ymd_opt(d.year(), 1, 1).unwrap();
+
+                let end_date = start_date + Months::new(12) - Days::new(1);
+                (start_date, end_date)
+            }
+        };
+
+        txs.filter(date.ge(start_date))
+            .filter(date.le(end_date))
+            .order((date.asc(), id.asc()))
+            .select(Tx::as_select())
+            .load(db_conn.conn())
     }
 }

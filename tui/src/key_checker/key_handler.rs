@@ -1,3 +1,5 @@
+use app::conn::DbConn;
+use app::fetcher::{TxViewGroup, get_txs_index};
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::collections::HashMap;
@@ -36,6 +38,8 @@ pub struct InputKeyHandler<'a> {
     chart_data: &'a mut ChartData,
     summary_data: &'a mut SummaryData,
     table: &'a mut TableData,
+    home_table: &'a mut TableData,
+    home_txs: &'a mut TxViewGroup,
     summary_table: &'a mut TableData,
     home_months: &'a mut IndexedData,
     home_years: &'a mut IndexedData,
@@ -69,6 +73,7 @@ pub struct InputKeyHandler<'a> {
     last_summary_methods: &'a mut Option<Vec<SummaryMethods>>,
     last_summary_net: &'a mut Option<SummaryNet>,
     conn: &'a mut Connection,
+    migrated_conn: &'a mut DbConn,
 }
 
 impl<'a> InputKeyHandler<'a> {
@@ -86,6 +91,8 @@ impl<'a> InputKeyHandler<'a> {
         chart_data: &'a mut ChartData,
         summary_data: &'a mut SummaryData,
         table: &'a mut TableData,
+        home_table: &'a mut TableData,
+        home_txs: &'a mut TxViewGroup,
         summary_table: &'a mut TableData,
         home_months: &'a mut IndexedData,
         home_years: &'a mut IndexedData,
@@ -118,6 +125,7 @@ impl<'a> InputKeyHandler<'a> {
         last_summary_methods: &'a mut Option<Vec<SummaryMethods>>,
         last_summary_net: &'a mut Option<SummaryNet>,
         conn: &'a mut Connection,
+        migrated_conn: &'a mut DbConn,
     ) -> InputKeyHandler<'a> {
         let total_tags = summary_data
             .get_table_data(summary_modes, summary_months.index, summary_years.index)
@@ -136,6 +144,8 @@ impl<'a> InputKeyHandler<'a> {
             chart_data,
             summary_data,
             table,
+            home_table,
+            home_txs,
             summary_table,
             home_months,
             home_years,
@@ -169,6 +179,7 @@ impl<'a> InputKeyHandler<'a> {
             last_summary_methods,
             last_summary_net,
             conn,
+            migrated_conn,
         }
     }
 
@@ -193,7 +204,6 @@ impl<'a> InputKeyHandler<'a> {
     /// Moves the interface to Home page
     pub fn go_home(&mut self) {
         *self.page = CurrentUi::Home;
-        self.reload_home_balance_data();
         self.lerp_state.clear();
     }
 
@@ -1028,7 +1038,7 @@ impl<'a> InputKeyHandler<'a> {
 
     /// Opens a popup that shows the details of the selected transaction on the Homepage
     pub fn show_home_tx_details(&mut self) {
-        if let Some(index) = self.table.state.selected() {
+        if let Some(index) = self.home_table.state.selected() {
             let selected_tx = self.all_tx_data.get_tx(index);
             let tx_details = &selected_tx[1];
 
@@ -1104,11 +1114,11 @@ impl InputKeyHandler<'_> {
                 // else just select the upper index of the table
                 if self.all_tx_data.is_tx_empty() {
                     *self.home_tab = self.home_tab.change_tab_up();
-                } else if self.table.state.selected() == Some(0) {
+                } else if self.home_table.state.selected() == Some(0) {
                     *self.home_tab = HomeTab::Months;
-                    self.table.state.select(None);
+                    self.home_table.state.select(None);
                 } else if !self.all_tx_data.is_tx_empty() {
-                    self.table.previous();
+                    self.home_table.previous();
                 }
             }
             HomeTab::Years => {
@@ -1119,13 +1129,14 @@ impl InputKeyHandler<'_> {
                 } else {
                     // Move to the selected value on table widget
                     // to the last row if pressed up on Year section
-                    self.table.state.select(Some(self.table.items.len() - 1));
+                    self.home_table
+                        .state
+                        .select(Some(self.home_table.items.len() - 1));
                     *self.home_tab = self.home_tab.change_tab_up();
                 }
             }
             HomeTab::Months => *self.home_tab = self.home_tab.change_tab_up(),
         }
-        self.reload_home_balance_data();
     }
 
     /// Handle Arrow Down key press on the Homepage
@@ -1138,11 +1149,12 @@ impl InputKeyHandler<'_> {
                 // else just select the next index of the table
                 if self.all_tx_data.is_tx_empty() {
                     *self.home_tab = self.home_tab.change_tab_down();
-                } else if self.table.state.selected() == Some(self.table.items.len() - 1) {
+                } else if self.home_table.state.selected() == Some(self.home_table.items.len() - 1)
+                {
                     *self.home_tab = HomeTab::Years;
-                    self.table.state.select(None);
+                    self.home_table.state.select(None);
                 } else if !self.all_tx_data.is_tx_empty() {
-                    self.table.next();
+                    self.home_table.next();
                 }
             }
             HomeTab::Months => {
@@ -1152,12 +1164,11 @@ impl InputKeyHandler<'_> {
                     *self.home_tab = self.home_tab.change_tab_up();
                 } else {
                     *self.home_tab = self.home_tab.change_tab_down();
-                    self.table.state.select(Some(0));
+                    self.home_table.state.select(Some(0));
                 }
             }
             HomeTab::Years => *self.home_tab = self.home_tab.change_tab_down(),
         }
-        self.reload_home_balance_data();
     }
 
     /// Handle Arrow Up key press on the Summary page
@@ -1710,8 +1721,13 @@ impl InputKeyHandler<'_> {
     fn reload_home_table(&mut self) {
         *self.all_tx_data =
             TransactionData::new(self.home_months.index, self.home_years.index, self.conn);
-        *self.table = TableData::new(self.all_tx_data.get_txs());
-        self.reload_home_balance_data();
+        *self.home_txs = get_txs_index(
+            self.home_months.index,
+            self.home_years.index,
+            self.migrated_conn,
+        )
+        .unwrap();
+        *self.home_table = TableData::new(self.home_txs.tx_array());
     }
 
     /// Reset summary table data by recreating it from gathered Summary Data
@@ -1992,55 +2008,13 @@ impl InputKeyHandler<'_> {
         *self.max_popup_scroll = 0;
     }
 
-    /// Update add home page balance section data that is being shown on the UI
-    fn reload_home_balance_data(&mut self) {
-        let mut balance_data = vec![vec![String::new()]];
-        balance_data[0].extend(get_all_tx_methods(self.conn));
-        balance_data[0].extend(vec!["Total".to_string()]);
-
-        let current_table_index = self.table.state.selected();
-
-        match current_table_index {
-            // Pass out the current index to get the necessary balance & changes data
-            Some(a) => {
-                balance_data.push(self.all_tx_data.get_balance(a));
-                balance_data.push(self.all_tx_data.get_changes(a));
-            }
-            // If none selected, get empty changes + the absolute final balance
-            None => {
-                balance_data.push(self.all_tx_data.get_last_balance(self.conn));
-                balance_data.push(get_empty_changes(self.conn));
-            }
-        }
-
-        // Total income, total expense, daily income, daily expense data based on the selected index.
-        balance_data.push(
-            self.all_tx_data
-                .get_total_income(current_table_index, self.conn),
-        );
-        balance_data.push(
-            self.all_tx_data
-                .get_total_expense(current_table_index, self.conn),
-        );
-        balance_data.push(
-            self.all_tx_data
-                .get_daily_income(current_table_index, self.conn),
-        );
-        balance_data.push(
-            self.all_tx_data
-                .get_daily_expense(current_table_index, self.conn),
-        );
-
-        *self.balance_data = balance_data;
-    }
-
     /// Update add tx page balance section data that is being shown on the UI
     fn reload_add_tx_balance_data(&mut self) {
         let mut balance_data = vec![vec![String::new()]];
         balance_data[0].extend(get_all_tx_methods(self.conn));
         balance_data[0].extend(vec!["Total".to_string()]);
 
-        let current_table_index = self.table.state.selected();
+        let current_table_index = self.home_table.state.selected();
 
         let (current_balance, current_changes) = match current_table_index {
             // Pass out the current index to get the necessary balance & changes data

@@ -1,4 +1,5 @@
 mod home_data;
+#[cfg(not(tarpaulin_include))]
 mod home_ui;
 
 pub use home_data::TransactionData;

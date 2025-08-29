@@ -1,3 +1,6 @@
+#[cfg(not(tarpaulin_include))]
+use app::conn::DbConn;
+use app::fetcher::get_txs_index;
 use crossterm::event::poll;
 use crossterm::event::{self, Event, KeyEventKind};
 use ratatui::Terminal;
@@ -45,6 +48,7 @@ pub fn start_app<B: Backend>(
     terminal: &mut Terminal<B>,
     new_version_data: &Option<Vec<String>>,
     conn: &mut Connection,
+    migrated_conn: &mut DbConn,
 ) -> Result<HandlingOutput, UiHandlingError> {
     // Setting up some default values. Let's go through all of them
 
@@ -90,6 +94,10 @@ pub fn start_app<B: Backend>(
     let mut search_txs = TransactionData::new_search(Vec::new(), Vec::new());
     // Data for the HomePage's tx table
     let mut table = TableData::new(all_tx_data.get_txs());
+
+    let mut home_txs = get_txs_index(home_months.index, home_years.index, migrated_conn).unwrap();
+
+    let mut home_table = TableData::new(home_txs.tx_array());
 
     // The page which is currently selected. Default is the initial page
     let mut page = CurrentUi::Initial;
@@ -196,12 +204,13 @@ pub fn start_app<B: Backend>(
                         f,
                         &home_months,
                         &home_years,
-                        &mut table,
-                        &mut balance_data,
+                        &mut home_table,
                         &home_tab,
                         &mut width_data,
                         &mut lerp_state,
+                        &mut home_txs,
                         conn,
+                        migrated_conn,
                     ),
 
                     CurrentUi::AddTx => add_tx_ui(
@@ -318,6 +327,8 @@ pub fn start_app<B: Backend>(
                 &mut chart_data,
                 &mut summary_data,
                 &mut table,
+                &mut home_table,
+                &mut home_txs,
                 &mut summary_table,
                 &mut home_months,
                 &mut home_years,
@@ -350,6 +361,7 @@ pub fn start_app<B: Backend>(
                 &mut last_summary_methods,
                 &mut last_summary_net,
                 conn,
+                migrated_conn,
             );
 
             let status = match handler.page {
