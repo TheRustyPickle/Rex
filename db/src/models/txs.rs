@@ -1,11 +1,10 @@
 use chrono::{Datelike, Days, Months, NaiveDate};
-use diesel::dsl::Returning;
 use diesel::prelude::*;
 use diesel::result::Error;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
-use crate::DbConn;
+use crate::ConnCache;
 use crate::models::{Tag, TxMethod, TxTag};
 use crate::schema::txs;
 
@@ -25,9 +24,9 @@ pub enum FetchNature {
 impl From<&str> for TxType {
     fn from(s: &str) -> Self {
         match s {
-            "income" => TxType::Income,
-            "expense" => TxType::Expense,
-            "transfer" => TxType::Transfer,
+            "Income" => TxType::Income,
+            "Expense" => TxType::Expense,
+            "Transfer" => TxType::Transfer,
             other => panic!("Invalid TxType string: {other}"),
         }
     }
@@ -67,7 +66,7 @@ pub struct Tx {
     activity_id: Option<i32>,
 }
 
-#[derive(Debug, Clone, Insertable)]
+#[derive(Clone, Insertable)]
 #[diesel(table_name = txs)]
 pub struct NewTx<'a> {
     date: NaiveDate,
@@ -100,13 +99,13 @@ impl<'a> NewTx<'a> {
         }
     }
 
-    pub fn insert(self, conn: &mut SqliteConnection) -> Result<Tx, Error> {
+    pub fn insert(self, db_conn: &mut impl ConnCache) -> Result<Tx, Error> {
         use crate::schema::txs::dsl::txs;
 
         diesel::insert_into(txs)
             .values(self)
             .returning(Tx::as_returning())
-            .get_result(conn)
+            .get_result(db_conn.conn())
     }
 }
 
@@ -114,7 +113,7 @@ impl FullTx {
     pub fn get_txs(
         d: NaiveDate,
         nature: FetchNature,
-        db_conn: &mut DbConn,
+        db_conn: &mut impl ConnCache,
     ) -> Result<Vec<Self>, Error> {
         use crate::schema::txs::dsl::{date, txs};
 
@@ -138,12 +137,15 @@ impl FullTx {
             .filter(date.le(end_date))
             .order(date.desc())
             .select(Tx::as_select())
-            .load(&mut db_conn.conn)?;
+            .load(db_conn.conn())?;
 
         FullTx::convert_to_full_tx(all_txs, db_conn)
     }
 
-    pub fn convert_to_full_tx(txs: Vec<Tx>, db_conn: &mut DbConn) -> Result<Vec<FullTx>, Error> {
+    pub fn convert_to_full_tx(
+        txs: Vec<Tx>,
+        db_conn: &mut impl ConnCache,
+    ) -> Result<Vec<FullTx>, Error> {
         let tx_ids = txs.iter().map(|t| t.id).collect::<Vec<i32>>();
 
         let tx_tags = TxTag::get_by_tx_ids(tx_ids, db_conn)?;
@@ -164,7 +166,7 @@ impl FullTx {
                 let tag_ids = tx_tags_map.get(&tx.id).unwrap_or(&EMPTY);
                 let mut v = Vec::with_capacity(tag_ids.len());
                 for tag_id in tag_ids {
-                    v.push(db_conn.tags.get(tag_id).unwrap().clone());
+                    v.push(db_conn.cache().tags.get(tag_id).unwrap().clone());
                 }
                 v
             };
@@ -172,10 +174,15 @@ impl FullTx {
             let full_tx = FullTx {
                 date: tx.date,
                 details: tx.details,
-                from_method: db_conn.tx_methods.get(&tx.from_method).unwrap().clone(),
+                from_method: db_conn
+                    .cache()
+                    .tx_methods
+                    .get(&tx.from_method)
+                    .unwrap()
+                    .clone(),
                 to_method: tx
                     .to_method
-                    .map(|method_id| db_conn.tx_methods.get(&method_id).unwrap().clone()),
+                    .map(|method_id| db_conn.cache().tx_methods.get(&method_id).unwrap().clone()),
                 amount: tx.amount,
                 tx_type: tx.tx_type.as_str().into(),
                 activity_id: tx.activity_id,
@@ -188,10 +195,10 @@ impl FullTx {
         Ok(to_return)
     }
 
-    pub fn get_changes(&self, db_conn: &DbConn) -> HashMap<i32, String> {
+    pub fn get_changes(&self, db_conn: &impl ConnCache) -> HashMap<i32, String> {
         let mut map = HashMap::new();
 
-        for method_id in db_conn.tx_methods.keys() {
+        for method_id in db_conn.cache().tx_methods.keys() {
             let mut no_impact = true;
 
             if self.from_method.id == *method_id {
@@ -229,10 +236,10 @@ impl FullTx {
         map
     }
 
-    pub fn empty_changes(db_conn: &DbConn) -> HashMap<i32, String> {
+    pub fn empty_changes(db_conn: &impl ConnCache) -> HashMap<i32, String> {
         let mut map = HashMap::new();
 
-        for method_id in db_conn.tx_methods.keys() {
+        for method_id in db_conn.cache().tx_methods.keys() {
             map.insert(*method_id, "0.00".to_string());
         }
 

@@ -1,5 +1,5 @@
 [package]
-name = "core"
+name = "app"
 version = "0.1.0"
 edition = "2024"
 
@@ -8,3 +8,4 @@ db.workspace = true
 chrono.workspace = true
 anyhow.workspace = true
 diesel.workspace = true
+log = "0.4.27"

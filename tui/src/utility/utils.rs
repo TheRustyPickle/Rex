@@ -196,6 +196,8 @@ pub fn get_sql_dates(month: usize, year: usize, date_type: &DateType) -> (String
 #[cfg(not(tarpaulin_include))]
 pub fn check_old_sql(conn: &mut Connection) {
     // Earlier version of the database didn't had the Tag column
+    use crate::db::migrate_to_new_schema;
+
     if !get_all_tx_columns(conn).contains(&"tags".to_string()) {
         println!("Old database detected. Starting migration...");
         let status = add_tags_column(conn);
@@ -236,6 +238,8 @@ pub fn check_old_sql(conn: &mut Connection) {
             }
         }
     }
+
+    migrate_to_new_schema(conn);
 }
 
 /// Checks if the `balance_all` table is outdated

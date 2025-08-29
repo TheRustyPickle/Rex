@@ -23,7 +23,7 @@ CREATE TABLE txs (
     from_method INTEGER NOT NULL REFERENCES tx_methods(id),
     to_method INTEGER REFERENCES tx_methods(id),
     amount BigInt NOT NULL,
-    tx_type TEXT NOT NULL CHECK (tx_type IN ('income', 'expense', 'transfer')),
+    tx_type TEXT NOT NULL CHECK (tx_type IN ('Income', 'Expense', 'Transfer')),
     activity_id INTEGER REFERENCES activities(id) ON DELETE SET NULL
 );
 

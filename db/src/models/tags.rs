@@ -1,7 +1,7 @@
 use diesel::prelude::*;
 use diesel::result::Error;
 
-use crate::DbConn;
+use crate::ConnCache;
 use crate::schema::tags;
 
 #[derive(Clone, Queryable, Insertable, Selectable)]
@@ -21,22 +21,23 @@ impl<'a> NewTag<'a> {
         NewTag { name }
     }
 
-    pub fn insert(self, conn: &mut SqliteConnection) -> Result<Tag, Error> {
+    pub fn insert(self, db_conn: &mut impl ConnCache) -> Result<Tag, Error> {
         use crate::schema::tags::dsl::{name, tags};
 
         diesel::insert_into(tags)
             .values(self)
             .on_conflict(name)
-            .do_nothing()
+            .do_update()
+            .set(name.eq(name))
             .returning(Tag::as_returning())
-            .get_result(conn)
+            .get_result(db_conn.conn())
     }
 }
 
 impl Tag {
-    pub fn get_all(db_conn: &mut DbConn) -> Result<Vec<Tag>, Error> {
+    pub fn get_all(db_conn: &mut impl ConnCache) -> Result<Vec<Tag>, Error> {
         use crate::schema::tags::dsl::tags;
 
-        tags.select(Tag::as_select()).load(&mut db_conn.conn)
+        tags.select(Tag::as_select()).load(db_conn.conn())
     }
 }

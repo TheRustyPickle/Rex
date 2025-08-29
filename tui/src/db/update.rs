@@ -1,3 +1,5 @@
+use app::conn::{get_conn, get_conn_old};
+use app::migration::start_migration;
 use rusqlite::{Connection, Result, Savepoint};
 
 use crate::db::{
@@ -209,6 +211,44 @@ pub fn migrate_to_activities(conn: &mut Connection) -> Result<()> {
     create_missing_indexes(&sp)?;
 
     sp.commit()?;
+
+    Ok(())
+}
+
+pub fn migrate_to_new_schema(conn: &mut Connection) -> Result<()> {
+    let mut new_conn = get_conn("/mnt/sdb1/Projects/Rex/v2.sqlite");
+
+    let mut statement = conn
+        .prepare("SELECT * FROM tx_all ORDER BY date, id_num")
+        .expect("could not prepare statement");
+
+    let rows = statement
+        .query_map([], |row| {
+            let id_num: i32 = row.get(5).unwrap();
+
+            Ok(vec![
+                row.get(0).unwrap(),
+                row.get(1).unwrap(),
+                row.get(2).unwrap(),
+                row.get(3).unwrap(),
+                row.get(4).unwrap(),
+                row.get(6).unwrap(),
+                id_num.to_string(),
+            ])
+        })
+        .unwrap();
+
+    let mut row_list = Vec::new();
+    for row in rows {
+        let row = row.unwrap();
+        row_list.push(row);
+    }
+
+    let db_path = conn.path().unwrap();
+
+    let old_conn = get_conn_old(db_path);
+
+    start_migration(row_list, old_conn, &mut new_conn).unwrap();
 
     Ok(())
 }
