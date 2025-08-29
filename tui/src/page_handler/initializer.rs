@@ -4,25 +4,30 @@ use std::env::set_current_dir;
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::prelude::*;
+#[cfg(not(tarpaulin_include))]
+use std::path::Path;
 use std::path::PathBuf;
 use std::process;
 
-use crate::db::{add_new_tx_methods, rename_column, reposition_column};
+use crate::db::{add_new_tx_methods, migrate_to_new_schema, rename_column, reposition_column};
 use crate::initial_page::check_version;
 use crate::outputs::HandlingOutput;
 use crate::page_handler::{ResetType, UserInputType, start_app};
 use crate::utility::{
-    check_n_create_db, check_old_sql, create_backup_location_file, create_change_location_file,
-    delete_backup_db, delete_location_change, enter_tui_interface, exit_tui_interface,
-    is_location_changed, save_backup_db, start_taking_input, start_terminal, start_timer,
+    check_n_create_db, create_backup_location_file, create_change_location_file, delete_backup_db,
+    delete_location_change, enter_tui_interface, exit_tui_interface, is_location_changed,
+    save_backup_db, start_taking_input, start_terminal, start_timer,
 };
 
 /// Initialize the TUI loop
 #[cfg(not(tarpaulin_include))]
 pub fn initialize_app(
     original_db_path: &PathBuf,
+    migrated_bd_path: &Path,
     original_dir: &PathBuf,
 ) -> Result<(), Box<dyn Error>> {
+    use app::conn::get_conn;
+
     let new_version = check_version();
 
     let new_version_available = new_version.unwrap_or_default();
@@ -54,14 +59,19 @@ pub fn initialize_app(
     // Create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
     check_n_create_db(&db_path)?;
 
+    let mut migrated_conn = get_conn(migrated_bd_path.to_string_lossy().as_ref());
     let mut conn = Connection::open(&db_path)?;
 
-    // Initiates migration if old database is detected.
-    check_old_sql(&mut conn);
+    // migrate_to_new_schema(&mut conn, &mut migrated_conn).unwrap();
 
     loop {
         let mut terminal = enter_tui_interface()?;
-        let result = start_app(&mut terminal, &new_version_available, &mut conn);
+        let result = start_app(
+            &mut terminal,
+            &new_version_available,
+            &mut conn,
+            &mut migrated_conn,
+        );
         exit_tui_interface()?;
 
         match result {

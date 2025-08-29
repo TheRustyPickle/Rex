@@ -26,6 +26,7 @@ pub fn get_txs_date(date: NaiveDate, db_conn: &mut DbConn) -> Result<TxViewGroup
 }
 
 fn get_txs(date: NaiveDate, db_conn: &mut DbConn) -> Result<TxViewGroup> {
+    log::info!("Getting txs for {date}");
     let nature = FetchNature::Monthly;
 
     let txs = FullTx::get_txs(date, nature, db_conn)?;
@@ -76,6 +77,8 @@ fn get_txs(date: NaiveDate, db_conn: &mut DbConn) -> Result<TxViewGroup> {
         to_insert.insert(db_conn)?;
     }
 
+    log::info!("Got {} txs", all_tx_views.len());
+
     Ok(TxViewGroup(all_tx_views))
 }
 
@@ -111,6 +114,8 @@ impl TxViewGroup {
 
         to_return[0].extend(sorted_methods.iter().map(|m| m.name.to_string()));
 
+        to_return[0].push(String::from("Total"));
+
         let changes = if let Some(index) = index {
             let target_tx = &self.0[index];
 
@@ -134,35 +139,59 @@ impl TxViewGroup {
         let mut to_insert_daily_income = vec![String::from("Daily Income")];
         let mut to_insert_daily_expense = vec![String::from("Daily Expense")];
 
+        let mut total_balance = 0;
+        let mut total_income = 0;
+        let mut total_expense = 0;
+        let mut total_daily_income = 0;
+        let mut total_daily_expense = 0;
+
         for method in sorted_methods {
             let method_id = method.id;
 
             if let Some(index) = index {
                 let target_tx = &self.0[index];
 
-                let method_balance = *target_tx.balance.get(&method_id).unwrap() as f64 / 100.0;
+                let balance = *target_tx.balance.get(&method_id).unwrap();
+                total_balance += balance;
+
+                let method_balance = balance as f64 / 100.0;
                 to_insert_balance.push(format!("{method_balance:.2}"));
             } else {
-                let method_balance =
-                    *final_balance.as_ref().unwrap().get(&method_id).unwrap() as f64 / 100.0;
+                let balance = *final_balance.as_ref().unwrap().get(&method_id).unwrap();
+                total_balance += balance;
+
+                let method_balance = balance as f64 / 100.0;
                 to_insert_balance.push(format!("{method_balance:.2}"));
             }
 
             let changes_value = changes.get(&method_id).unwrap();
             to_insert_changes.push(changes_value.to_string());
 
-            let method_income = *income.get(&method_id).unwrap() as f64 / 100.0;
-            to_insert_income.push(format!("{method_income:.2}"));
+            let method_income = *income.get(&method_id).unwrap();
+            total_income += method_income;
 
-            let method_expense = *expense.get(&method_id).unwrap() as f64 / 100.0;
-            to_insert_expense.push(format!("{method_expense:.2}"));
+            to_insert_income.push(format!("{:.2}", method_income as f64 / 100.0));
 
-            let method_daily_income = *daily_income.get(&method_id).unwrap() as f64 / 100.0;
-            to_insert_daily_income.push(format!("{method_daily_income:.2}"));
+            let method_expense = *expense.get(&method_id).unwrap();
+            total_expense += method_expense;
+            to_insert_expense.push(format!("{:.2}", method_expense as f64 / 100.0));
 
-            let method_daily_expense = *daily_expense.get(&method_id).unwrap() as f64 / 100.0;
-            to_insert_daily_expense.push(format!("{method_daily_expense:.2}"));
+            let method_daily_income = *daily_income.get(&method_id).unwrap();
+            total_daily_income += method_daily_income;
+            to_insert_daily_income.push(format!("{:.2}", method_daily_income as f64 / 100.0));
+
+            let method_daily_expense = *daily_expense.get(&method_id).unwrap();
+            total_daily_expense += method_daily_expense;
+            to_insert_daily_expense.push(format!("{:.2}", method_daily_expense as f64 / 100.0));
         }
+
+        to_insert_balance.push(format!("{:.2}", total_balance as f64 / 100.0));
+
+        to_insert_income.push(format!("{:.2}", total_income as f64 / 100.0));
+        to_insert_expense.push(format!("{:.2}", total_expense as f64 / 100.0));
+
+        to_insert_daily_income.push(format!("{:.2}", total_daily_income as f64 / 100.0));
+        to_insert_daily_expense.push(format!("{:.2}", total_daily_expense as f64 / 100.0));
 
         to_return.push(to_insert_balance);
         to_return.push(to_insert_changes);

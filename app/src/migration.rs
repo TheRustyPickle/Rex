@@ -164,7 +164,6 @@ fn migrate_tx(
 
     let new_tx = NewTx::new(date, details, from_method, to_method, amount, tx_type, None);
 
-    // Would be a bug if the current balance is not gotten
     let current_balance = Balance::get_balance(date, db_conn)?;
 
     let mut balance_to_update = Vec::new();

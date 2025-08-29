@@ -1,12 +1,8 @@
-use app::conn::{get_conn, get_conn_old};
+use app::conn::{DbConn, get_conn_old};
 use app::migration::start_migration;
-use rusqlite::{Connection, Result, Savepoint};
+use rusqlite::{Connection, Result};
 
-use crate::db::{
-    create_activities_table, create_activity_txs_table, create_balances_table,
-    create_changes_table, create_missing_indexes,
-};
-use crate::utility::get_all_tx_methods;
+use crate::db::{create_balances_table, create_changes_table};
 
 /// Adds new tx methods as columns on `balance_all` and `changes_all` tables. Gets called after
 /// successful handling of 'J' from the app
@@ -25,114 +21,6 @@ pub fn add_new_tx_methods(tx_methods: &[String], conn: &mut Connection) -> Resul
     }
     sp.commit()?;
     Ok(())
-}
-
-/// Adds the tags column inside the database. Used when the old database without the tags column is detected
-pub fn add_tags_column(conn: &mut Connection) -> Result<()> {
-    let sp = conn.savepoint()?;
-    sp.execute("ALTER TABLE tx_all ADD tags TEXT DEFAULT Unknown;", [])?;
-    sp.commit()?;
-    Ok(())
-}
-
-/// Migrates existing database's `balance_all` column's datatype from TEXT to REAL
-pub fn update_balance_type(conn: &mut Connection) -> Result<()> {
-    let all_methods = get_all_tx_methods(conn);
-
-    let sp = conn.savepoint()?;
-    let old_last_balance = get_last_balance(&sp, &all_methods);
-
-    // rename table
-    let query = "ALTER TABLE balance_all RENAME TO balance_all_old";
-    sp.execute(query, [])?;
-
-    // Create the new updated balance_all table
-    create_balances_table(&all_methods, &sp)?;
-
-    let columns = all_methods
-        .iter()
-        .map(|column_name| format!(r#""{column_name}""#))
-        .collect::<Vec<String>>()
-        .join(",");
-
-    let values = all_methods
-        .iter()
-        .map(|method| format!(r#"CAST("{method}" as REAL)"#))
-        .collect::<Vec<_>>()
-        .join(",");
-
-    // Insert everything from old table to the new balance_all
-    let query = format!(
-        "INSERT INTO balance_all (id_num, {columns}) SELECT id_num, {values} FROM balance_all_old"
-    );
-
-    sp.execute(&query, [])?;
-    sp.execute("DROP TABLE balance_all_old", [])?;
-    sp.execute(
-        "CREATE UNIQUE INDEX balance_all_id_num_IDX ON balance_all (id_num);",
-        [],
-    )?;
-
-    // Fill up `balance_all` table with total year * 12 + 1 rows with 0 balance for all columns
-    let zero_values = vec!["0.00"; all_methods.len()];
-
-    let highlighted_tx_methods = all_methods
-        .iter()
-        .map(|method| format!("\"{method}\""))
-        .collect::<Vec<String>>()
-        .join(",");
-
-    let query = format!(
-        "INSERT INTO balance_all ({}) VALUES ({})",
-        highlighted_tx_methods,
-        zero_values.join(",")
-    );
-
-    // The old db had 49 rows. So add 144 more to match total year * 12 + 1 rows
-    for _a in 0..144 {
-        sp.execute(&query, [])?;
-    }
-
-    // Swap the values from 49 row of the old table to the new table at 193
-    let new_values = old_last_balance
-        .iter()
-        .enumerate()
-        .map(|(index, data)| format!(r#""{}" = {data}"#, all_methods[index]))
-        .collect::<Vec<_>>()
-        .join(",");
-
-    let query = format!("UPDATE balance_all SET {new_values} WHERE id_num = 193",);
-    sp.execute(&query, [])?;
-
-    let new_values = all_methods
-        .iter()
-        .map(|data| format!(r#""{data}" = 0.00"#,))
-        .collect::<Vec<_>>()
-        .join(",");
-
-    let query = format!("UPDATE balance_all SET {new_values} WHERE id_num = 49",);
-
-    sp.execute(&query, [])?;
-    sp.commit()?;
-    Ok(())
-}
-
-/// Return the last balance from the db
-fn get_last_balance(sp: &Savepoint, all_methods: &Vec<String>) -> Vec<String> {
-    let mut query =
-        format!("SELECT {all_methods:?} FROM balance_all ORDER BY id_num DESC LIMIT 1",);
-    query = query.replace('[', "");
-    query = query.replace(']', "");
-
-    let final_balance = sp.query_row(&query, [], |row| {
-        let mut final_data: Vec<String> = Vec::new();
-        for i in 0..all_methods.len() {
-            let row_data: String = row.get(i).unwrap();
-            final_data.push(row_data.to_string());
-        }
-        Ok(final_data)
-    });
-    final_balance.unwrap()
 }
 
 /// Updates the DB with the new tx method name
@@ -202,22 +90,7 @@ pub fn reposition_column(tx_methods: &[String], conn: &mut Connection) -> Result
     Ok(())
 }
 
-/// Create new tables to migrate to the new form of database to include activities
-pub fn migrate_to_activities(conn: &mut Connection) -> Result<()> {
-    let sp = conn.savepoint()?;
-
-    create_activities_table(&sp)?;
-    create_activity_txs_table(&sp)?;
-    create_missing_indexes(&sp)?;
-
-    sp.commit()?;
-
-    Ok(())
-}
-
-pub fn migrate_to_new_schema(conn: &mut Connection) -> Result<()> {
-    let mut new_conn = get_conn("/mnt/sdb1/Projects/Rex/v2.sqlite");
-
+pub fn migrate_to_new_schema(conn: &mut Connection, new_conn: &mut DbConn) -> Result<()> {
     let mut statement = conn
         .prepare("SELECT * FROM tx_all ORDER BY date, id_num")
         .expect("could not prepare statement");
@@ -248,7 +121,7 @@ pub fn migrate_to_new_schema(conn: &mut Connection) -> Result<()> {
 
     let old_conn = get_conn_old(db_path);
 
-    start_migration(row_list, old_conn, &mut new_conn).unwrap();
+    start_migration(row_list, old_conn, new_conn).unwrap();
 
     Ok(())
 }

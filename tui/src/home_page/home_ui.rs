@@ -1,3 +1,5 @@
+use app::conn::DbConn;
+use app::fetcher::TxViewGroup;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
@@ -26,12 +28,13 @@ pub fn home_ui(
     f: &mut Frame,
     months: &IndexedData,
     years: &IndexedData,
-    table: &mut TableData,
-    balance: &mut [Vec<String>],
+    home_table: &mut TableData,
     current_tab: &HomeTab,
     width_data: &mut [Constraint],
     lerp_state: &mut LerpState,
+    view_group: &mut TxViewGroup,
     conn: &Connection,
+    migrated_conn: &mut DbConn,
 ) {
     let all_methods = get_all_tx_methods(conn);
     let size = f.area();
@@ -40,7 +43,7 @@ pub fn home_ui(
     let selected_style_income = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
     let selected_style_expense = Style::default().fg(RED).add_modifier(Modifier::REVERSED);
 
-    let tx_count = table.items.len();
+    let tx_count = home_table.items.len();
     let lerp_id = "home_tx_count";
     let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64) as i64;
 
@@ -57,22 +60,26 @@ pub fn home_ui(
         .bottom_margin(0);
 
     // Iter through table data and turn them into rows and columns
-    let rows = table.items.iter().enumerate().map(|(row_index, item)| {
-        let cells = item.iter().enumerate().map(|(index, c)| {
-            let Ok(parsed_num) = c.parse::<f64>() else {
-                return Cell::from(c.separate_with_commas());
-            };
+    let rows = home_table
+        .items
+        .iter()
+        .enumerate()
+        .map(|(row_index, item)| {
+            let cells = item.iter().enumerate().map(|(index, c)| {
+                let Ok(parsed_num) = c.parse::<f64>() else {
+                    return Cell::from(c.separate_with_commas());
+                };
 
-            let lerp_id = format!("home_table:{index}:{row_index}");
-            let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                let lerp_id = format!("home_table:{index}:{row_index}");
+                let new_c = lerp_state.lerp(&lerp_id, parsed_num);
 
-            Cell::from(format!("{new_c:.2}").separate_with_commas())
+                Cell::from(format!("{new_c:.2}").separate_with_commas())
+            });
+            Row::new(cells)
+                .height(1)
+                .bottom_margin(0)
+                .style(Style::default().bg(BACKGROUND).fg(TEXT))
         });
-        Row::new(cells)
-            .height(1)
-            .bottom_margin(0)
-            .style(Style::default().bg(BACKGROUND).fg(TEXT))
-    });
 
     // Decides how many chunks of spaces in the terminal will be.
     // Each constraint creates an empty space in the terminal with the given
@@ -120,11 +127,14 @@ pub fn home_ui(
     .header(header)
     .block(styled_block(&table_name));
 
+    let balance_array = view_group
+        .balance_array(home_table.state.selected(), migrated_conn)
+        .unwrap();
     // Go through all data of the Balance widget and style it as necessary
-    let bal_data = balance.iter().map(|item| {
+    let bal_data = balance_array.into_iter().map(|item| {
         let height = 1_u16;
 
-        let row_type = HomeRow::get_row(item);
+        let row_type = HomeRow::get_row(&item);
 
         let mut index = 0;
 
@@ -209,13 +219,13 @@ pub fn home_ui(
         }
         // Changes the color of row based on Expense or Income tx type on Transaction widget.
         HomeTab::Table => {
-            if let Some(a) = table.state.selected() {
+            if let Some(a) = home_table.state.selected() {
                 table_area = table_area.highlight_symbol(">> ");
-                if table.items[a][4] == "Expense" {
+                if home_table.items[a][4] == "Expense" {
                     table_area = table_area.row_highlight_style(selected_style_expense);
-                } else if table.items[a][4] == "Income" {
+                } else if home_table.items[a][4] == "Income" {
                     table_area = table_area.row_highlight_style(selected_style_income);
-                } else if table.items[a][4] == "Transfer" {
+                } else if home_table.items[a][4] == "Transfer" {
                     table_area = table_area.row_highlight_style(Style::default().bg(SELECTED));
                 }
             }
@@ -223,10 +233,10 @@ pub fn home_ui(
     }
 
     // Always keep some items rendered on the upper side of the table
-    if let Some(index) = table.state.selected()
+    if let Some(index) = home_table.state.selected()
         && index > 10
     {
-        *table.state.offset_mut() = index - 10;
+        *home_table.state.offset_mut() = index - 10;
     }
 
     // After all data is in place, render the widgets one by one
@@ -236,5 +246,5 @@ pub fn home_ui(
     f.render_widget(year_tab, chunks[1]);
 
     // This one is different because the Transaction widget interface works differently
-    f.render_stateful_widget(table_area, chunks[3], &mut table.state);
+    f.render_stateful_widget(table_area, chunks[3], &mut home_table.state);
 }
