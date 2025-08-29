@@ -1,11 +1,10 @@
-use anyhow::Result;
+use anyhow::{Context, Error, Result};
 use chrono::NaiveDate;
-use db::DbConn;
 use db::models::{Balance, NewTag, NewTx, NewTxMethod, TxMethod, TxTag, TxType};
+use db::{ConnCache, DbConn, MutDbConn};
 use diesel::prelude::*;
-use diesel::result::Error;
 
-pub fn add_new_tx_methods(method_list: &mut Vec<String>, db_conn: &mut DbConn) -> Result<()> {
+pub fn add_new_tx_methods(method_list: &Vec<String>, db_conn: &mut DbConn) -> Result<()> {
     let mut last_position = TxMethod::get_last_position(db_conn)?;
 
     let mut methods = Vec::new();
@@ -18,11 +17,19 @@ pub fn add_new_tx_methods(method_list: &mut Vec<String>, db_conn: &mut DbConn) -
         last_position += 1;
     }
 
-    db_conn.conn.transaction::<_, Error, _>(|conn| {
+    let DbConn { conn, cache } = db_conn;
+
+    let mut new_methods = Vec::new();
+
+    conn.transaction::<_, Error, _>(|conn| {
+        let mut mut_db_conn = MutDbConn::new(conn, cache);
+
         let mut final_balances = Vec::new();
 
         for method in methods {
-            let new_method = method.insert(conn)?;
+            let new_method = method.insert(&mut mut_db_conn)?;
+
+            new_methods.push(new_method.clone());
 
             let new_balance = Balance::new(new_method.id, 0, 0, 0, true);
             final_balances.push(new_balance);
@@ -33,7 +40,7 @@ pub fn add_new_tx_methods(method_list: &mut Vec<String>, db_conn: &mut DbConn) -
         Ok(())
     })?;
 
-    db_conn.reload_methods();
+    db_conn.cache.new_tx_methods(new_methods);
 
     Ok(())
 }
@@ -83,8 +90,7 @@ pub fn add_new_tx(
 
     let new_tx = NewTx::new(date, details, from_method, to_method, amount, tx_type, None);
 
-    // Would be a bug if the current balance is not gotten
-    let current_balance = Balance::get_balance(date, db_conn)?.unwrap();
+    let current_balance = Balance::get_balance(date, db_conn)?;
 
     let mut balance_to_update = Vec::new();
 
@@ -114,28 +120,50 @@ pub fn add_new_tx(
         }
     }
 
+    let DbConn { conn, cache } = db_conn;
+
+    let mut new_tags = Vec::new();
+
     // TODO: Add activity txs later
-    db_conn.conn.transaction::<_, Error, _>(|conn| {
-        let added_tx = new_tx.insert(conn)?;
+    conn.transaction::<_, Error, _>(|conn| {
+        let mut mut_db_conn = MutDbConn::new(conn, cache);
+
+        let added_tx = new_tx
+            .insert(&mut mut_db_conn)
+            .context("Failed on new tx")?;
 
         let mut tx_tags = Vec::new();
 
         for tag in tag_list {
-            let tag_data = NewTag::new(&tag).insert(conn)?;
+            if let Some(tag_id) = mut_db_conn.cache().get_tag_id(&tag) {
+                let tx_tag = TxTag::new(added_tx.id, tag_id);
+                tx_tags.push(tx_tag);
+                continue;
+            } else {
+                let tag_data = NewTag::new(&tag)
+                    .insert(&mut mut_db_conn)
+                    .context("Failed on new tag")?;
 
-            let tx_tag = TxTag::new(added_tx.id, tag_data.id);
+                new_tags.push(tag_data.clone());
 
-            tx_tags.push(tx_tag);
+                let tx_tag = TxTag::new(added_tx.id, tag_data.id);
+
+                tx_tags.push(tx_tag);
+            }
         }
 
-        TxTag::insert_batch(tx_tags, conn)?;
+        TxTag::insert_batch(tx_tags, &mut mut_db_conn).context("Failed on tx tags")?;
 
         for balance in balance_to_update {
-            balance.insert_conn(conn)?;
+            balance
+                .insert_conn(&mut mut_db_conn)
+                .context("Failed on balance")?;
         }
 
         Ok(())
     })?;
+
+    db_conn.cache.new_tags(new_tags);
 
     Ok(())
 }

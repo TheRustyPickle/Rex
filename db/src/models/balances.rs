@@ -4,7 +4,7 @@ use diesel::result::Error;
 use diesel::upsert::excluded;
 use std::collections::{HashMap, HashSet};
 
-use crate::DbConn;
+use crate::ConnCache;
 use crate::schema::balances;
 
 #[derive(Clone, Queryable, Insertable, Selectable)]
@@ -33,7 +33,7 @@ impl Balance {
         }
     }
 
-    pub fn insert(self, db_conn: &mut DbConn) -> Result<usize, Error> {
+    pub fn insert(self, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
         use crate::schema::balances::dsl::*;
 
         diesel::insert_into(balances)
@@ -41,10 +41,10 @@ impl Balance {
             .on_conflict((method_id, year, month))
             .do_update()
             .set(balance.eq(excluded(balance)))
-            .execute(&mut db_conn.conn)
+            .execute(db_conn.conn())
     }
 
-    pub fn insert_conn(self, conn: &mut SqliteConnection) -> Result<usize, Error> {
+    pub fn insert_conn(self, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
         use crate::schema::balances::dsl::*;
 
         diesel::insert_into(balances)
@@ -52,7 +52,7 @@ impl Balance {
             .on_conflict((method_id, year, month))
             .do_update()
             .set(balance.eq(excluded(balance)))
-            .execute(conn)
+            .execute(db_conn.conn())
     }
 
     pub fn insert_batch_final_balance(
@@ -64,26 +64,47 @@ impl Balance {
         diesel::insert_into(balances).values(txs).execute(conn)
     }
 
-    pub fn get_balance(date: NaiveDate, db_conn: &mut DbConn) -> Result<Option<Vec<Self>>, Error> {
-        use crate::schema::balances::dsl::{balances, method_id, month, year};
+    pub fn get_balance(date: NaiveDate, db_conn: &mut impl ConnCache) -> Result<Vec<Self>, Error> {
+        use crate::schema::balances::dsl::{balances, is_final_balance, method_id, month, year};
+
+        let mut pending_balance_tx_methods = HashSet::new();
+
+        for key in db_conn.cache().tx_methods.keys().copied() {
+            pending_balance_tx_methods.insert(key);
+        }
 
         let date_year = date.year();
         let date_month = date.month() as i32;
 
-        let tx_method_ids: Vec<&i32> = db_conn.tx_methods.keys().collect();
+        let tx_method_ids: Vec<i32> = db_conn.cache().tx_methods.keys().copied().collect();
 
-        balances
+        let mut balance_list = balances
             .filter(year.eq(date_year))
             .filter(month.eq(date_month))
             .filter(method_id.eq_any(tx_method_ids))
+            .filter(is_final_balance.eq(false))
             .select(Self::as_select())
-            .load(&mut db_conn.conn)
-            .optional()
+            .load(db_conn.conn())?;
+
+        if balance_list.len() == pending_balance_tx_methods.len() {
+            return Ok(balance_list);
+        }
+
+        for bal in &balance_list {
+            pending_balance_tx_methods.remove(&bal.method_id);
+        }
+
+        for m_id in pending_balance_tx_methods {
+            let new_bal = Balance::new(m_id, date_year, date_month, 0, false);
+            balance_list.push(new_bal);
+        }
+
+        Ok(balance_list)
     }
 
     pub fn get_last_balance(
         date: NaiveDate,
-        db_conn: &mut DbConn,
+        db_conn: &mut impl ConnCache,
     ) -> Result<HashMap<i32, i64>, Error> {
         use crate::schema::balances::dsl::{balances, method_id, month, year};
 
@@ -91,7 +112,7 @@ impl Balance {
 
         let mut pending_balance_tx_methods = HashSet::new();
 
-        for key in db_conn.tx_methods.keys() {
+        for key in db_conn.cache().tx_methods.keys().copied() {
             pending_balance_tx_methods.insert(key);
         }
 
@@ -106,7 +127,7 @@ impl Balance {
                 .filter(month.eq(date_month))
                 .filter(method_id.eq_any(&pending_balance_tx_methods))
                 .select(Self::as_select())
-                .load(&mut db_conn.conn)
+                .load(db_conn.conn())
                 .optional()?
             else {
                 continue;
@@ -132,16 +153,16 @@ impl Balance {
                     )
                     .order((year.desc(), month.desc()))
                     .select(Self::as_select())
-                    .first::<Self>(&mut db_conn.conn)
+                    .first::<Self>(db_conn.conn())
                     .optional()?
                 {
-                    found_method_balances.insert(*mid, last_balance.balance);
+                    found_method_balances.insert(mid, last_balance.balance);
                 }
             }
         }
 
-        if found_method_balances.len() != db_conn.tx_methods.len() {
-            for method in db_conn.tx_methods.keys() {
+        if found_method_balances.len() != db_conn.cache().tx_methods.len() {
+            for method in db_conn.cache().tx_methods.keys() {
                 if !found_method_balances.contains_key(method) {
                     found_method_balances.insert(*method, 0);
                 }
@@ -151,15 +172,15 @@ impl Balance {
         Ok(found_method_balances)
     }
 
-    pub fn get_final_balance(db_conn: &mut DbConn) -> Result<Vec<Balance>, Error> {
+    pub fn get_final_balance(db_conn: &mut impl ConnCache) -> Result<Vec<Balance>, Error> {
         use crate::schema::balances::dsl::{balances, is_final_balance};
 
         let balance_list = balances
             .filter(is_final_balance.eq(true))
             .select(Balance::as_select())
-            .load(&mut db_conn.conn)?;
+            .load(db_conn.conn())?;
 
-        if balance_list.len() != db_conn.tx_methods.len() {
+        if balance_list.len() != db_conn.cache().tx_methods.len() {
             panic!("Final balances are not set for all transaction methods");
         }
 

@@ -60,11 +60,4 @@ diesel::joinable!(tx_tags -> tags (tag_id));
 diesel::joinable!(tx_tags -> txs (tx_id));
 diesel::joinable!(txs -> activities (activity_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    activities,
-    balances,
-    tags,
-    tx_methods,
-    tx_tags,
-    txs,
-);
+diesel::allow_tables_to_appear_in_same_query!(activities, balances, tags, tx_methods, tx_tags, txs,);

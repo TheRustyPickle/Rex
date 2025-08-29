@@ -1,7 +1,7 @@
 use anyhow::Result;
 use chrono::NaiveDate;
-use db::DbConn;
 use db::models::{Balance, FetchNature, FullTx, TxMethod, TxType};
+use db::{ConnCache, DbConn};
 use std::collections::HashMap;
 
 pub struct TxView {
@@ -13,12 +13,19 @@ pub struct TxView {
 pub struct TxViewGroup(Vec<TxView>);
 
 // Month and year are in index value. 0 for month is January while 0 for year is 2022
-pub fn get_txs(month: usize, year: usize, db_conn: &mut DbConn) -> Result<TxViewGroup> {
+pub fn get_txs_index(month: usize, year: usize, db_conn: &mut DbConn) -> Result<TxViewGroup> {
     let month_num = (month + 1) as u32;
     let year_num = (year + 2022) as i32;
 
-    let date = NaiveDate::from_ymd_opt(year_num, month_num, 0).unwrap();
+    let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
+    get_txs(date, db_conn)
+}
 
+pub fn get_txs_date(date: NaiveDate, db_conn: &mut DbConn) -> Result<TxViewGroup> {
+    get_txs(date, db_conn)
+}
+
+fn get_txs(date: NaiveDate, db_conn: &mut DbConn) -> Result<TxViewGroup> {
     let nature = FetchNature::Monthly;
 
     let txs = FullTx::get_txs(date, nature, db_conn)?;
@@ -55,15 +62,13 @@ pub fn get_txs(month: usize, year: usize, db_conn: &mut DbConn) -> Result<TxView
 
     let mut to_insert_balance = Vec::new();
 
-    if let Some(current_balance) = current_balance {
-        for mut balance in current_balance {
-            let method_id = balance.method_id;
-            let last_balance = *last_balance.get(&method_id).unwrap();
+    for mut balance in current_balance {
+        let method_id = balance.method_id;
+        let last_balance = *last_balance.get(&method_id).unwrap();
 
-            if balance.balance != last_balance {
-                balance.balance = last_balance;
-                to_insert_balance.push(balance);
-            }
+        if balance.balance != last_balance {
+            balance.balance = last_balance;
+            to_insert_balance.push(balance);
         }
     }
 
@@ -99,7 +104,7 @@ impl TxViewGroup {
             );
         }
 
-        let mut sorted_methods: Vec<&TxMethod> = db_conn.tx_methods.values().collect();
+        let mut sorted_methods: Vec<&TxMethod> = db_conn.cache().tx_methods.values().collect();
         sorted_methods.sort_by_key(|value| value.position);
 
         let mut to_return = vec![vec![String::new()]];
@@ -174,7 +179,7 @@ impl TxViewGroup {
     fn get_daily_income(&self, index: Option<usize>, db_conn: &DbConn) -> HashMap<i32, i64> {
         let mut to_return = HashMap::new();
 
-        for method in db_conn.tx_methods.keys() {
+        for method in db_conn.cache().tx_methods.keys() {
             to_return.insert(*method, 0);
         }
 
@@ -202,7 +207,7 @@ impl TxViewGroup {
     fn get_daily_expense(&self, index: Option<usize>, db_conn: &DbConn) -> HashMap<i32, i64> {
         let mut to_return = HashMap::new();
 
-        for method in db_conn.tx_methods.keys() {
+        for method in db_conn.cache().tx_methods.keys() {
             to_return.insert(*method, 0);
         }
 
@@ -230,7 +235,7 @@ impl TxViewGroup {
     fn get_income(&self, index: Option<usize>, db_conn: &DbConn) -> HashMap<i32, i64> {
         let mut to_return = HashMap::new();
 
-        for method in db_conn.tx_methods.keys() {
+        for method in db_conn.cache().tx_methods.keys() {
             to_return.insert(*method, 0);
         }
 
@@ -256,7 +261,7 @@ impl TxViewGroup {
     fn get_expense(&self, index: Option<usize>, db_conn: &DbConn) -> HashMap<i32, i64> {
         let mut to_return = HashMap::new();
 
-        for method in db_conn.tx_methods.keys() {
+        for method in db_conn.cache().tx_methods.keys() {
             to_return.insert(*method, 0);
         }
 

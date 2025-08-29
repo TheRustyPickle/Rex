@@ -1,11 +1,11 @@
 [workspace]
-members = ["core", "db", "tui"]
+members = ["app", "db", "tui"]
 
 resolver = "2"
 
 [workspace.dependencies]
 db = { path = "db" }
-core = { path = "core" }
+app = { path = "app" }
 chrono = "0.4.41"
 diesel = { version = "2.2.12", default-features = false, features = [
     "returning_clauses_for_sqlite_3_35",
