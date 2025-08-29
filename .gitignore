@@ -3,3 +3,4 @@
 .vscode
 .fleet
 todo.txt
+*.log
