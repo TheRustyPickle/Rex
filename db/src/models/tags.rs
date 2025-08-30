@@ -4,7 +4,7 @@ use diesel::result::Error;
 use crate::ConnCache;
 use crate::schema::tags;
 
-#[derive(Clone, Queryable, Insertable, Selectable)]
+#[derive(Clone, Debug, Queryable, Insertable, Selectable)]
 pub struct Tag {
     pub id: i32,
     pub name: String,

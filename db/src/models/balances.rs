@@ -33,7 +33,7 @@ impl Balance {
         }
     }
 
-    pub fn insert(self, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
+    pub fn insert(&self, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
         use crate::schema::balances::dsl::*;
 
         diesel::insert_into(balances)

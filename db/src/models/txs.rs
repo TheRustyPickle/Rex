@@ -10,6 +10,7 @@ use crate::schema::txs;
 
 static EMPTY: Vec<i32> = Vec::new();
 
+#[derive(Clone, Debug, Copy)]
 pub enum TxType {
     Income,
     Expense,
@@ -43,6 +44,7 @@ impl Display for TxType {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct FullTx {
     pub id: i32,
     pub date: NaiveDate,
@@ -55,7 +57,7 @@ pub struct FullTx {
     pub tags: Vec<Tag>,
 }
 
-#[derive(Clone, Queryable, Selectable)]
+#[derive(Clone, Queryable, Selectable, Insertable)]
 pub struct Tx {
     pub id: i32,
     date: NaiveDate,
@@ -70,13 +72,13 @@ pub struct Tx {
 #[derive(Clone, Insertable)]
 #[diesel(table_name = txs)]
 pub struct NewTx<'a> {
-    date: NaiveDate,
-    details: Option<&'a str>,
-    from_method: i32,
-    to_method: Option<i32>,
-    amount: i64,
-    tx_type: &'a str,
-    activity_id: Option<i32>,
+    pub date: NaiveDate,
+    pub details: Option<&'a str>,
+    pub from_method: i32,
+    pub to_method: Option<i32>,
+    pub amount: i64,
+    pub tx_type: &'a str,
+    pub activity_id: Option<i32>,
 }
 
 impl<'a> NewTx<'a> {
@@ -249,6 +251,15 @@ impl FullTx {
 }
 
 impl Tx {
+    pub fn insert(self, db_conn: &mut impl ConnCache) -> Result<Self, Error> {
+        use crate::schema::txs::dsl::txs;
+
+        diesel::insert_into(txs)
+            .values(self)
+            .returning(Tx::as_returning())
+            .get_result(db_conn.conn())
+    }
+
     pub fn get_txs(
         d: NaiveDate,
         nature: FetchNature,
@@ -276,5 +287,24 @@ impl Tx {
             .order((date.asc(), id.asc()))
             .select(Tx::as_select())
             .load(db_conn.conn())
+    }
+
+    pub fn delete_tx(id: i32, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
+        use crate::schema::txs::dsl::txs;
+
+        diesel::delete(txs.find(id)).execute(db_conn.conn())
+    }
+
+    pub fn from_new_tx(new_tx: NewTx, id: i32) -> Self {
+        Self {
+            id,
+            date: new_tx.date,
+            details: new_tx.details.map(|s| s.to_string()),
+            from_method: new_tx.from_method,
+            to_method: new_tx.to_method,
+            amount: new_tx.amount,
+            tx_type: new_tx.tx_type.to_string(),
+            activity_id: new_tx.activity_id,
+        }
     }
 }
