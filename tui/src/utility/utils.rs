@@ -20,7 +20,7 @@ use std::time::Duration;
 use std::{process, thread};
 use strsim::normalized_levenshtein;
 
-use crate::db::{YEARS, create_db, migrate_to_new_schema};
+use crate::db::{YEARS, create_db};
 use crate::outputs::ComparisonType;
 use crate::page_handler::{
     ActivityType, BACKGROUND, BOX, DateType, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT,
