@@ -372,42 +372,10 @@ impl<'a> InputKeyHandler<'a> {
     /// Based on transaction Selected, opens Add Tx page and
     /// allocates the data of the tx to the input boxes
     pub fn home_edit_tx(&mut self) {
-        if let Some(a) = self.table.state.selected() {
-            let target_data = self.all_tx_data.get_tx(a);
-            let target_id_num = self.all_tx_data.get_id_num(a);
-            let tx_type = &target_data[4];
-
-            // Based on what kind of transaction is selected, passes the tx data to the struct
-            // and change the current interface
-            if tx_type == "Transfer" {
-                let split_method = target_data[2].split(" to ").collect::<Vec<&str>>();
-                let from_method = split_method[0];
-                let to_method = split_method[1];
-
-                *self.add_tx_data = TxData::custom(
-                    &target_data[0],
-                    &target_data[1],
-                    from_method,
-                    to_method,
-                    &target_data[3],
-                    "Transfer",
-                    &target_data[5],
-                    target_id_num,
-                );
-                *self.page = CurrentUi::AddTx;
-            } else {
-                *self.add_tx_data = TxData::custom(
-                    &target_data[0],
-                    &target_data[1],
-                    &target_data[2],
-                    "",
-                    &target_data[3],
-                    &target_data[4],
-                    &target_data[5],
-                    target_id_num,
-                );
-                *self.page = CurrentUi::AddTx;
-            }
+        if let Some(index) = self.table.state.selected() {
+            let target_tx = self.home_txs.get_tx(index);
+            *self.add_tx_data = TxData::from_full_tx(target_tx, true);
+            *self.page = CurrentUi::AddTx;
             self.add_tx_data.add_tx_status(
                 "Info: Entering Transaction edit mode. Press C to reset.".to_string(),
             );
@@ -432,6 +400,8 @@ impl<'a> InputKeyHandler<'a> {
                     self.reload_summary_data();
                     self.reset_search_data();
                     self.reload_activity_table();
+                    *self.add_tx_data = TxData::new();
+                    self.reload_add_tx_balance_data();
 
                     if index == 0 {
                         self.table.state.select(None);

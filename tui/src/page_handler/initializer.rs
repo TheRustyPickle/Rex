@@ -23,7 +23,7 @@ use crate::utility::{
 #[cfg(not(tarpaulin_include))]
 pub fn initialize_app(
     original_db_path: &PathBuf,
-    migrated_bd_path: &Path,
+    migrated_db_path: &Path,
     original_dir: &PathBuf,
 ) -> Result<(), Box<dyn Error>> {
     use app::conn::get_conn;
@@ -59,10 +59,14 @@ pub fn initialize_app(
     // Create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
     check_n_create_db(&db_path)?;
 
-    let mut migrated_conn = get_conn(migrated_bd_path.to_string_lossy().as_ref());
+    let migration_required = !migrated_db_path.exists();
+
+    let mut migrated_conn = get_conn(migrated_db_path.to_string_lossy().as_ref());
     let mut conn = Connection::open(&db_path)?;
 
-    // migrate_to_new_schema(&mut conn, &mut migrated_conn).unwrap();
+    if migration_required {
+        migrate_to_new_schema(&mut conn, &mut migrated_conn).unwrap();
+    }
 
     loop {
         let mut terminal = enter_tui_interface()?;

@@ -1,3 +1,4 @@
+use app::fetcher::FullTx;
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::cmp::Ordering;
@@ -80,6 +81,29 @@ impl TxData {
             tx_status: Vec::new(),
             editing_tx: false,
             id_num: 0,
+            current_index: 0,
+            autofill: String::new(),
+        }
+    }
+
+    pub fn from_full_tx(tx: &FullTx, edit: bool) -> Self {
+        Self {
+            date: tx.date.format("%d-%m-%Y").to_string(),
+            details: tx.details.clone().unwrap_or_default(),
+            from_method: tx.from_method.name.clone(),
+            to_method: tx.to_method.clone().map(|t| t.name).unwrap_or_default(),
+            amount: tx.amount.to_string(),
+            tx_type: tx.tx_type.to_string(),
+            tags: tx
+                .tags
+                .clone()
+                .iter()
+                .map(|t| t.name.as_str())
+                .collect::<Vec<&str>>()
+                .join(", "),
+            tx_status: Vec::new(),
+            editing_tx: edit,
+            id_num: tx.id,
             current_index: 0,
             autofill: String::new(),
         }
