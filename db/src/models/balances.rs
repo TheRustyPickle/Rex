@@ -44,24 +44,62 @@ impl Balance {
             .execute(db_conn.conn())
     }
 
-    pub fn insert_conn(self, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
-        use crate::schema::balances::dsl::*;
-
-        diesel::insert_into(balances)
-            .values(self)
-            .on_conflict((method_id, year, month))
-            .do_update()
-            .set(balance.eq(excluded(balance)))
-            .execute(db_conn.conn())
-    }
-
     pub fn insert_batch_final_balance(
         txs: Vec<Balance>,
-        conn: &mut SqliteConnection,
+        db_conn: &mut impl ConnCache,
     ) -> Result<usize, Error> {
         use crate::schema::balances::dsl::*;
 
-        diesel::insert_into(balances).values(txs).execute(conn)
+        diesel::insert_into(balances)
+            .values(txs)
+            .execute(db_conn.conn())
+    }
+
+    pub fn update_final_balance(&self, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
+        use crate::schema::balances::dsl::*;
+
+        diesel::update(
+            balances
+                .filter(method_id.eq(self.method_id))
+                .filter(is_final_balance.eq(true)),
+        )
+        .set(balance.eq(self.balance))
+        .execute(db_conn.conn())
+    }
+
+    pub fn get_balance_map(
+        date: NaiveDate,
+        db_conn: &mut impl ConnCache,
+    ) -> Result<HashMap<i32, Self>, Error> {
+        use crate::schema::balances::dsl::{balances, is_final_balance, method_id, month, year};
+
+        let date_year = date.year();
+        let date_month = date.month() as i32;
+
+        let tx_method_ids: Vec<i32> = db_conn.cache().tx_methods.keys().copied().collect();
+
+        let balance_list = balances
+            .filter(year.eq(date_year))
+            .filter(month.eq(date_month))
+            .filter(method_id.eq_any(tx_method_ids))
+            .filter(is_final_balance.eq(false))
+            .select(Self::as_select())
+            .load(db_conn.conn())?;
+
+        let mut balance_map =
+            HashMap::from_iter(balance_list.into_iter().map(|b| (b.method_id, b)));
+
+        if balance_map.len() == db_conn.cache().tx_methods.len() {
+            return Ok(balance_map);
+        }
+
+        for bal in db_conn.cache().tx_methods.values() {
+            balance_map
+                .entry(bal.id)
+                .or_insert_with(|| Balance::new(bal.id, date_year, date_month, 0, false));
+        }
+
+        Ok(balance_map)
     }
 
     pub fn get_balance(date: NaiveDate, db_conn: &mut impl ConnCache) -> Result<Vec<Self>, Error> {
@@ -172,7 +210,7 @@ impl Balance {
         Ok(found_method_balances)
     }
 
-    pub fn get_final_balance(db_conn: &mut impl ConnCache) -> Result<Vec<Balance>, Error> {
+    pub fn get_final_balance(db_conn: &mut impl ConnCache) -> Result<HashMap<i32, Self>, Error> {
         use crate::schema::balances::dsl::{balances, is_final_balance};
 
         let balance_list = balances
@@ -184,6 +222,8 @@ impl Balance {
             panic!("Final balances are not set for all transaction methods");
         }
 
-        Ok(balance_list)
+        let balance_map = HashMap::from_iter(balance_list.into_iter().map(|b| (b.method_id, b)));
+
+        Ok(balance_map)
     }
 }

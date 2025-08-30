@@ -44,6 +44,7 @@ impl Display for TxType {
 }
 
 pub struct FullTx {
+    pub id: i32,
     pub date: NaiveDate,
     pub details: Option<String>,
     pub from_method: TxMethod,
@@ -150,6 +151,7 @@ impl FullTx {
             };
 
             let full_tx = FullTx {
+                id: tx.id,
                 date: tx.date,
                 details: tx.details,
                 from_method: db_conn
