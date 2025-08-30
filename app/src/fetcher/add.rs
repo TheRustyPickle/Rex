@@ -172,7 +172,9 @@ pub fn add_new_tx(
 
         TxTag::insert_batch(tx_tags, &mut mut_db_conn)?;
 
-        Balance::insert_batch_final_balance(final_balance_updates, &mut mut_db_conn)?;
+        for balance in final_balance_updates {
+            balance.update_final_balance(&mut mut_db_conn)?;
+        }
 
         for balance in balance_to_update {
             balance.insert(&mut mut_db_conn)?;
