@@ -35,7 +35,7 @@ pub fn add_new_tx_methods(method_list: &Vec<String>, db_conn: &mut DbConn) -> Re
             final_balances.push(new_balance);
         }
 
-        Balance::insert_batch_final_balance(final_balances, conn)?;
+        Balance::insert_batch_final_balance(final_balances, &mut mut_db_conn)?;
 
         Ok(())
     })?;
@@ -90,33 +90,51 @@ pub fn add_new_tx(
 
     let new_tx = NewTx::new(date, details, from_method, to_method, amount, tx_type, None);
 
-    let current_balance = Balance::get_balance(date, db_conn)?;
+    let mut current_balance = Balance::get_balance_map(date, db_conn)?;
 
     let mut balance_to_update = Vec::new();
 
-    for mut balance in current_balance {
-        match tx_type.into() {
-            TxType::Income => {
-                if from_method == balance.method_id {
-                    balance.balance += amount;
-                    balance_to_update.push(balance);
-                }
-            }
-            TxType::Expense => {
-                if from_method == balance.method_id {
-                    balance.balance -= amount;
-                    balance_to_update.push(balance);
-                }
-            }
-            TxType::Transfer => {
-                if from_method == balance.method_id {
-                    balance.balance -= amount;
-                    balance_to_update.push(balance);
-                } else if to_method.unwrap() == balance.method_id {
-                    balance.balance += amount;
-                    balance_to_update.push(balance);
-                }
-            }
+    let final_balance = Balance::get_final_balance(db_conn)?;
+
+    let mut final_balance_updates = Vec::new();
+
+    match tx_type.into() {
+        TxType::Income => {
+            let mut balance = current_balance.remove(&from_method).unwrap();
+            let mut final_balance_entry = final_balance.get(&from_method).unwrap().clone();
+
+            balance.balance += amount;
+            final_balance_entry.balance += amount;
+
+            final_balance_updates.push(final_balance_entry);
+
+            balance_to_update.push(balance);
+        }
+        TxType::Expense => {
+            let mut balance = current_balance.remove(&from_method).unwrap();
+            let mut final_balance_entry = final_balance.get(&from_method).unwrap().clone();
+
+            balance.balance -= amount;
+            final_balance_entry.balance -= amount;
+
+            balance_to_update.push(balance);
+        }
+        TxType::Transfer => {
+            let mut balance_from = current_balance.remove(&from_method).unwrap();
+            let mut balance_to = current_balance.remove(&to_method.unwrap()).unwrap();
+
+            let mut from_final_balance_entry = final_balance.get(&from_method).unwrap().clone();
+            let mut to_final_balance_entry =
+                final_balance.get(&to_method.unwrap()).unwrap().clone();
+
+            balance_from.balance -= amount;
+            balance_to.balance += amount;
+
+            from_final_balance_entry.balance -= amount;
+            to_final_balance_entry.balance += amount;
+
+            balance_to_update.push(balance_from);
+            balance_to_update.push(balance_to);
         }
     }
 
@@ -152,12 +170,12 @@ pub fn add_new_tx(
             }
         }
 
-        TxTag::insert_batch(tx_tags, &mut mut_db_conn).context("Failed on tx tags")?;
+        TxTag::insert_batch(tx_tags, &mut mut_db_conn)?;
+
+        Balance::insert_batch_final_balance(final_balance_updates, &mut mut_db_conn)?;
 
         for balance in balance_to_update {
-            balance
-                .insert_conn(&mut mut_db_conn)
-                .context("Failed on balance")?;
+            balance.insert(&mut mut_db_conn)?;
         }
 
         tidy_balances(date, &mut mut_db_conn)?;
