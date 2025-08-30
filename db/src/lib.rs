@@ -45,116 +45,27 @@ impl Cache {
     }
 }
 
-pub struct MutDbConn<'a> {
-    conn: &'a mut SqliteConnection,
-    cache: &'a Cache,
+pub fn get_connection(db_url: &str) -> SqliteConnection {
+    let mut conn =
+        SqliteConnection::establish(db_url).expect("Failed to create connection to database");
+
+    conn.run_pending_migrations(MIGRATIONS)
+        .expect("Failed to run database migrations");
+
+    diesel::sql_query("PRAGMA foreign_keys = ON;")
+        .execute(&mut conn)
+        .unwrap();
+
+    conn
 }
 
-impl<'a> MutDbConn<'a> {
-    pub fn new(conn: &'a mut SqliteConnection, cache: &'a Cache) -> Self {
-        MutDbConn { conn, cache }
-    }
-}
+pub fn get_connection_no_migrations(db_url: &str) -> SqliteConnection {
+    let mut conn =
+        SqliteConnection::establish(db_url).expect("Failed to create connection to database");
 
-impl<'a> ConnCache for MutDbConn<'a> {
-    fn conn(&mut self) -> &mut SqliteConnection {
-        self.conn
-    }
+    diesel::sql_query("PRAGMA foreign_keys = ON;")
+        .execute(&mut conn)
+        .unwrap();
 
-    fn cache(&self) -> &Cache {
-        self.cache
-    }
-}
-
-pub struct DbConn {
-    pub conn: SqliteConnection,
-    pub cache: Cache,
-}
-
-impl ConnCache for DbConn {
-    fn conn(&mut self) -> &mut SqliteConnection {
-        &mut self.conn
-    }
-
-    fn cache(&self) -> &Cache {
-        &self.cache
-    }
-}
-
-impl DbConn {
-    #[must_use]
-    pub fn new(db_url: &str) -> Self {
-        let mut conn = get_connection(db_url);
-
-        conn.run_pending_migrations(MIGRATIONS)
-            .expect("Failed to run database migrations");
-
-        diesel::sql_query("PRAGMA foreign_keys = ON;")
-            .execute(&mut conn)
-            .unwrap();
-
-        let mut to_return = DbConn {
-            conn,
-            cache: Cache {
-                tags: HashMap::new(),
-                tx_methods: HashMap::new(),
-            },
-        };
-
-        to_return.reload_methods();
-        to_return.reload_tags();
-
-        to_return
-    }
-
-    pub fn new_no_migrations(db_url: &str) -> Self {
-        let conn = get_connection(db_url);
-        DbConn {
-            conn,
-            cache: Cache {
-                tags: HashMap::new(),
-                tx_methods: HashMap::new(),
-            },
-        }
-    }
-
-    pub fn reload_methods(&mut self) {
-        let tx_methods = TxMethod::get_all(self)
-            .unwrap()
-            .into_iter()
-            .map(|t| (t.id, t))
-            .collect();
-
-        self.cache.tx_methods = tx_methods;
-    }
-
-    pub fn reload_tags(&mut self) {
-        let tags = Tag::get_all(self)
-            .unwrap()
-            .into_iter()
-            .map(|t| (t.id, t))
-            .collect();
-
-        self.cache.tags = tags;
-    }
-
-    pub fn get_method_id(&self, name: &str) -> Option<i32> {
-        self.cache
-            .tx_methods
-            .values()
-            .find(|m| m.name == name)
-            .map(|m| m.id)
-    }
-
-    pub fn get_tag_id(&self, name: &str) -> Option<i32> {
-        self.cache
-            .tags
-            .values()
-            .find(|m| m.name == name)
-            .map(|m| m.id)
-    }
-}
-
-fn get_connection(db_url: &str) -> SqliteConnection {
-    SqliteConnection::establish(db_url).expect("Failed to create connection to database")
+    conn
 }

@@ -31,4 +31,10 @@ impl TxTag {
             .values(txs)
             .execute(db_conn.conn())
     }
+
+    pub fn delete_by_tx_id(tx_id_value: i32, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
+        use crate::schema::tx_tags::dsl::{tx_id, tx_tags};
+
+        diesel::delete(tx_tags.filter(tx_id.eq(tx_id_value))).execute(db_conn.conn())
+    }
 }
