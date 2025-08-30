@@ -1,12 +1,13 @@
 use anyhow::{Context, Error, Result};
 use chrono::{Datelike, Months, NaiveDate};
+use db::ConnCache;
 use db::models::{Balance, NewTag, NewTx, TxTag, TxType};
-use db::{ConnCache, DbConn, MutDbConn};
 use diesel::sql_types::Text;
 use diesel::{prelude::*, sql_query};
 use std::collections::HashMap;
 use std::io::Write;
 
+use crate::conn::{DbConn, MutDbConn};
 use crate::fetcher::get_txs_date;
 use crate::modifier::add_new_tx_methods;
 
@@ -31,7 +32,8 @@ pub fn start_migration(
 
     let tx_methods = columns.into_iter().map(|c| c.name).collect();
 
-    add_new_tx_methods(&tx_methods, db_conn)?;
+    let new_methods = add_new_tx_methods(&tx_methods, db_conn)?;
+    db_conn.cache.new_tx_methods(new_methods);
 
     let DbConn { conn, cache } = db_conn;
 
@@ -135,7 +137,6 @@ pub fn start_migration(
     Ok(())
 }
 
-#[allow(clippy::too_many_arguments)]
 fn migrate_tx(
     date: &str,
     details: &str,
