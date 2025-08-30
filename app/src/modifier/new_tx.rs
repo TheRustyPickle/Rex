@@ -1,49 +1,10 @@
 use anyhow::{Context, Error, Result};
 use chrono::NaiveDate;
-use db::models::{Balance, FetchNature, NewTag, NewTx, NewTxMethod, Tx, TxMethod, TxTag, TxType};
+use db::models::{Balance, NewTag, NewTx, TxTag, TxType};
 use db::{ConnCache, DbConn, MutDbConn};
 use diesel::prelude::*;
 
-pub fn add_new_tx_methods(method_list: &Vec<String>, db_conn: &mut DbConn) -> Result<()> {
-    let mut last_position = TxMethod::get_last_position(db_conn)?;
-
-    let mut methods = Vec::new();
-
-    for method in method_list {
-        let new_method = NewTxMethod::new(method, last_position + 1);
-
-        methods.push(new_method);
-
-        last_position += 1;
-    }
-
-    let DbConn { conn, cache } = db_conn;
-
-    let mut new_methods = Vec::new();
-
-    conn.transaction::<_, Error, _>(|conn| {
-        let mut mut_db_conn = MutDbConn::new(conn, cache);
-
-        let mut final_balances = Vec::new();
-
-        for method in methods {
-            let new_method = method.insert(&mut mut_db_conn)?;
-
-            new_methods.push(new_method.clone());
-
-            let new_balance = Balance::new(new_method.id, 0, 0, 0, true);
-            final_balances.push(new_balance);
-        }
-
-        Balance::insert_batch_final_balance(final_balances, &mut mut_db_conn)?;
-
-        Ok(())
-    })?;
-
-    db_conn.cache.new_tx_methods(new_methods);
-
-    Ok(())
-}
+use crate::modifier::tidy_balances;
 
 #[allow(clippy::too_many_arguments)]
 pub fn add_new_tx(
@@ -186,55 +147,6 @@ pub fn add_new_tx(
     })?;
 
     db_conn.cache.new_tags(new_tags);
-
-    Ok(())
-}
-
-fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Result<()> {
-    let nature = FetchNature::Monthly;
-
-    let txs = Tx::get_txs(date, nature, db_conn)?;
-
-    let current_balance = Balance::get_balance(date, db_conn)?;
-
-    let mut last_balance = Balance::get_last_balance(date, db_conn)?;
-
-    for tx in txs {
-        match tx.tx_type.as_str().into() {
-            TxType::Income => {
-                let method_id = tx.from_method;
-                *last_balance.get_mut(&method_id).unwrap() += tx.amount;
-            }
-            TxType::Expense => {
-                let method_id = tx.from_method;
-                *last_balance.get_mut(&method_id).unwrap() -= tx.amount;
-            }
-
-            TxType::Transfer => {
-                let from_method_id = tx.from_method;
-                let to_method_id = tx.to_method.as_ref().unwrap();
-
-                *last_balance.get_mut(&from_method_id).unwrap() -= tx.amount;
-                *last_balance.get_mut(to_method_id).unwrap() += tx.amount;
-            }
-        }
-    }
-
-    let mut to_insert_balance = Vec::new();
-
-    for mut balance in current_balance {
-        let method_id = balance.method_id;
-        let last_balance = *last_balance.get(&method_id).unwrap();
-
-        if balance.balance != last_balance {
-            balance.balance = last_balance;
-            to_insert_balance.push(balance);
-        }
-    }
-
-    for to_insert in to_insert_balance {
-        to_insert.insert(db_conn)?;
-    }
 
     Ok(())
 }

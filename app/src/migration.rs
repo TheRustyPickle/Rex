@@ -7,7 +7,8 @@ use diesel::{prelude::*, sql_query};
 use std::collections::HashMap;
 use std::io::Write;
 
-use crate::fetcher::{add_new_tx_methods, get_txs_date};
+use crate::fetcher::get_txs_date;
+use crate::modifier::add_new_tx_methods;
 
 #[derive(QueryableByName)]
 struct ColumnInfo {
