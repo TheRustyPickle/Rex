@@ -1,6 +1,7 @@
 use anyhow::Result;
 use chrono::NaiveDate;
-use db::models::{Balance, FetchNature, FullTx, TxMethod, TxType};
+pub use db::models::FullTx;
+use db::models::{Balance, FetchNature, TxMethod, TxType};
 use db::{ConnCache, DbConn};
 use std::collections::HashMap;
 
@@ -26,7 +27,6 @@ pub fn get_txs_date(date: NaiveDate, db_conn: &mut DbConn) -> Result<TxViewGroup
 }
 
 fn get_txs(date: NaiveDate, db_conn: &mut DbConn) -> Result<TxViewGroup> {
-    log::info!("Getting txs for {date}");
     let nature = FetchNature::Monthly;
 
     let txs = FullTx::get_txs(date, nature, db_conn)?;
@@ -77,8 +77,6 @@ fn get_txs(date: NaiveDate, db_conn: &mut DbConn) -> Result<TxViewGroup> {
         to_insert.insert(db_conn)?;
     }
 
-    log::info!("Got {} txs", all_tx_views.len());
-
     Ok(TxViewGroup(all_tx_views))
 }
 
@@ -94,17 +92,10 @@ impl TxViewGroup {
         index: Option<usize>,
         db_conn: &mut DbConn,
     ) -> Result<Vec<Vec<String>>> {
-        let mut final_balance: Option<HashMap<i32, i64>> = None;
+        let mut final_balance: Option<HashMap<i32, Balance>> = None;
 
         if index.is_none() {
-            let balance = Balance::get_final_balance(db_conn)?;
-
-            final_balance = Some(
-                balance
-                    .into_iter()
-                    .map(|b| (b.method_id, b.balance))
-                    .collect(),
-            );
+            final_balance = Some(Balance::get_final_balance(db_conn)?);
         }
 
         let mut sorted_methods: Vec<&TxMethod> = db_conn.cache().tx_methods.values().collect();
@@ -157,7 +148,12 @@ impl TxViewGroup {
                 let method_balance = balance as f64 / 100.0;
                 to_insert_balance.push(format!("{method_balance:.2}"));
             } else {
-                let balance = *final_balance.as_ref().unwrap().get(&method_id).unwrap();
+                let balance = final_balance
+                    .as_ref()
+                    .unwrap()
+                    .get(&method_id)
+                    .unwrap()
+                    .balance;
                 total_balance += balance;
 
                 let method_balance = balance as f64 / 100.0;
@@ -315,5 +311,9 @@ impl TxViewGroup {
 
     pub fn tx_array(&self) -> Vec<Vec<String>> {
         self.0.iter().map(|tx_view| tx_view.tx.to_array()).collect()
+    }
+
+    pub fn get_tx(&self, index: usize) -> &FullTx {
+        &self.0[index].tx
     }
 }
