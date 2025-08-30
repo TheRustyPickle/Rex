@@ -88,13 +88,14 @@ pub fn start_migration(
             handle.flush().unwrap();
         }
 
-        let final_balance_vec = final_balance.into_values().collect();
-        Balance::insert_batch_final_balance(final_balance_vec, &mut mut_db_conn)?;
+        for balance in final_balance.values() {
+            balance.update_final_balance(&mut mut_db_conn).unwrap();
+        }
 
         Ok(())
     })?;
 
-    println!("All transactions migrated successfully");
+    println!("\nAll transactions migrated successfully");
 
     db_conn.reload_tags();
 
@@ -123,10 +124,10 @@ pub fn start_migration(
             .unwrap();
             handle.flush().unwrap();
         }
-        println!("Balances migrated successfully");
+        println!("\nBalances migrated successfully");
     } else {
         println!(
-            "Looks like no balance to tidy up. This should usually not happen. If it's a bug, report it on github"
+            "\nLooks like no balance to tidy up. This should usually not happen. If it's a bug, report it on github"
         )
     }
 
