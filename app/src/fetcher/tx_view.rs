@@ -1,9 +1,11 @@
 use anyhow::Result;
 use chrono::NaiveDate;
+use db::ConnCache;
 pub use db::models::FullTx;
 use db::models::{Balance, FetchNature, TxMethod, TxType};
-use db::{ConnCache, DbConn};
 use std::collections::HashMap;
+
+use crate::conn::DbConn;
 
 pub struct TxView {
     tx: FullTx,

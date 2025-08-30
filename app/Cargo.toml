@@ -9,3 +9,6 @@ chrono.workspace = true
 anyhow.workspace = true
 diesel.workspace = true
 log = "0.4.27"
+
+[lints.clippy]
+too_many_arguments = { level = "allow" }
