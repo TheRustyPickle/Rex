@@ -4,6 +4,7 @@ use db::models::{Balance, NewTag, NewTx, TxTag, TxType};
 use db::{ConnCache, DbConn, MutDbConn};
 use diesel::sql_types::Text;
 use diesel::{prelude::*, sql_query};
+use std::collections::HashMap;
 use std::io::Write;
 
 use crate::fetcher::{add_new_tx_methods, get_txs_date};
@@ -40,6 +41,8 @@ pub fn start_migration(
     conn.transaction::<_, Error, _>(|conn| {
         let mut mut_db_conn = MutDbConn::new(conn, cache);
 
+        let mut final_balance = Balance::get_final_balance(&mut mut_db_conn)?;
+
         let mut count = 0;
         let stdout = std::io::stdout();
         let mut handle = stdout.lock();
@@ -75,6 +78,7 @@ pub fn start_migration(
                 &row[3],
                 &row[4],
                 &row[5],
+                &mut final_balance,
                 &mut mut_db_conn,
             )
             .unwrap();
@@ -84,8 +88,13 @@ pub fn start_migration(
             handle.flush().unwrap();
         }
 
+        let final_balance_vec = final_balance.into_values().collect();
+        Balance::insert_batch_final_balance(final_balance_vec, &mut mut_db_conn)?;
+
         Ok(())
     })?;
+
+    println!("All transactions migrated successfully");
 
     db_conn.reload_tags();
 
@@ -114,6 +123,11 @@ pub fn start_migration(
             .unwrap();
             handle.flush().unwrap();
         }
+        println!("Balances migrated successfully");
+    } else {
+        println!(
+            "Looks like no balance to tidy up. This should usually not happen. If it's a bug, report it on github"
+        )
     }
 
     Ok(())
@@ -128,6 +142,7 @@ fn migrate_tx(
     amount: &str,
     tx_type: &str,
     tags: &str,
+    final_balance: &mut HashMap<i32, Balance>,
     db_conn: &mut impl ConnCache,
 ) -> Result<()> {
     let date = date.parse::<NaiveDate>()?;
@@ -164,33 +179,37 @@ fn migrate_tx(
 
     let new_tx = NewTx::new(date, details, from_method, to_method, amount, tx_type, None);
 
-    let current_balance = Balance::get_balance(date, db_conn)?;
+    let mut current_balance = Balance::get_balance_map(date, db_conn)?;
 
     let mut balance_to_update = Vec::new();
 
-    for mut balance in current_balance {
-        match tx_type.into() {
-            TxType::Income => {
-                if from_method == balance.method_id {
-                    balance.balance += amount;
-                    balance_to_update.push(balance);
-                }
-            }
-            TxType::Expense => {
-                if from_method == balance.method_id {
-                    balance.balance -= amount;
-                    balance_to_update.push(balance);
-                }
-            }
-            TxType::Transfer => {
-                if from_method == balance.method_id {
-                    balance.balance -= amount;
-                    balance_to_update.push(balance);
-                } else if to_method.unwrap() == balance.method_id {
-                    balance.balance += amount;
-                    balance_to_update.push(balance);
-                }
-            }
+    match tx_type.into() {
+        TxType::Income => {
+            let mut target_balance = current_balance.remove(&from_method).unwrap();
+
+            target_balance.balance += amount;
+
+            final_balance.get_mut(&from_method).unwrap().balance += amount;
+            balance_to_update.push(target_balance);
+        }
+        TxType::Expense => {
+            let mut target_balance = current_balance.remove(&from_method).unwrap();
+            target_balance.balance -= amount;
+            final_balance.get_mut(&from_method).unwrap().balance -= amount;
+            balance_to_update.push(target_balance);
+        }
+        TxType::Transfer => {
+            let mut target_balance_from = current_balance.remove(&from_method).unwrap();
+            let mut target_balance_to = current_balance.remove(&to_method.unwrap()).unwrap();
+
+            target_balance_from.balance -= amount;
+            target_balance_to.balance += amount;
+
+            balance_to_update.push(target_balance_from);
+            balance_to_update.push(target_balance_to);
+
+            final_balance.get_mut(&from_method).unwrap().balance -= amount;
+            final_balance.get_mut(&to_method.unwrap()).unwrap().balance += amount;
         }
     }
 
@@ -213,7 +232,7 @@ fn migrate_tx(
     TxTag::insert_batch(tx_tags, db_conn).context("Failed on tx tags")?;
 
     for balance in balance_to_update {
-        balance.insert_conn(db_conn).context("Failed on balance")?;
+        balance.insert(db_conn).context("Failed on balance")?;
     }
 
     Ok(())
