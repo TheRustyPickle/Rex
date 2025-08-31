@@ -123,6 +123,14 @@ impl FullTx {
         FullTx::convert_to_full_tx(all_txs, db_conn)
     }
 
+    pub fn get_tx_by_id(id_num: i32, db_conn: &mut impl ConnCache) -> Result<Self, Error> {
+        let tx = Tx::get_tx_by_id(id_num, db_conn)?;
+
+        Ok(FullTx::convert_to_full_tx(vec![tx], db_conn)?
+            .pop()
+            .unwrap())
+    }
+
     pub fn convert_to_full_tx(
         txs: Vec<Tx>,
         db_conn: &mut impl ConnCache,
@@ -305,6 +313,14 @@ impl Tx {
             .values(self)
             .returning(Tx::as_returning())
             .get_result(db_conn.conn())
+    }
+
+    pub fn get_tx_by_id(id_num: i32, db_conn: &mut impl ConnCache) -> Result<Self, Error> {
+        use crate::schema::txs::dsl::{id, txs};
+
+        txs.filter(id.eq(id_num))
+            .select(Self::as_select())
+            .first(db_conn.conn())
     }
 
     pub fn get_txs(

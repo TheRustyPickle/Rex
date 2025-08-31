@@ -118,7 +118,7 @@ impl Display for SteppingError {
 pub enum TxUpdateError {
     FailedAddTx(sqlError),
     FailedEditTx(sqlError),
-    FailedDeleteTx(sqlError),
+    FailedDeleteTx(String),
 }
 
 impl Display for TxUpdateError {

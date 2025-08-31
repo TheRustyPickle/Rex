@@ -11,15 +11,12 @@ use crate::home_page::TransactionData;
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
 use crate::page_handler::{
-    ActivityTab, ActivityType, ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData,
-    PopupState, SortingType, SummaryTab, TableData, TxTab,
+    ActivityTab, ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData, PopupState,
+    SortingType, SummaryTab, TableData, TxTab,
 };
 use crate::summary_page::{SummaryData, SummaryMethods, SummaryNet};
 use crate::tx_handler::TxData;
-use crate::utility::{
-    LerpState, add_new_activity, add_new_activity_tx, get_all_tx_methods_cumulative,
-    sort_table_data, switch_tx_index,
-};
+use crate::utility::{LerpState, get_all_tx_methods_cumulative, sort_table_data, switch_tx_index};
 
 /// Stores all the data that is required to handle
 /// every single possible keypress event from the
@@ -27,7 +24,7 @@ use crate::utility::{
 pub struct InputKeyHandler<'a> {
     pub key: KeyEvent,
     pub page: &'a mut CurrentUi,
-    balance_data: &'a mut Vec<Vec<String>>,
+    add_tx_balance: &'a mut Vec<Vec<String>>,
     pub popup: &'a mut PopupState,
     pub add_tx_tab: &'a mut TxTab,
     chart_tab: &'a mut ChartTab,
@@ -80,7 +77,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn new(
         key: KeyEvent,
         page: &'a mut CurrentUi,
-        balance_data: &'a mut Vec<Vec<String>>,
+        add_tx_balance: &'a mut Vec<Vec<String>>,
         popup: &'a mut PopupState,
         add_tx_tab: &'a mut TxTab,
         chart_tab: &'a mut ChartTab,
@@ -133,7 +130,7 @@ impl<'a> InputKeyHandler<'a> {
         InputKeyHandler {
             key,
             page,
-            balance_data,
+            add_tx_balance,
             popup,
             add_tx_tab,
             chart_tab,
@@ -354,7 +351,7 @@ impl<'a> InputKeyHandler<'a> {
 
     /// Adds new tx and reloads home and chart data
     pub fn add_tx(&mut self) {
-        let status = self.add_tx_data.add_tx(self.conn);
+        let status = self.add_tx_data.add_tx(self.home_txs, self.migrated_conn);
 
         match status {
             Ok(()) => {
@@ -385,42 +382,43 @@ impl<'a> InputKeyHandler<'a> {
             self.lerp_state.clear();
         }
     }
-    // TODO: Refactor this function
 
     /// Deletes the selected transaction and reloads pages
     pub fn home_delete_tx(&mut self) {
-        if let Some(index) = self.home_table.state.selected() {
-            let mut tx_data = self.all_tx_data.get_tx(index).to_owned();
-            let id_num = self.all_tx_data.get_id_num(index);
-            tx_data.push(id_num.to_string());
+        let Some(index) = self.home_table.state.selected() else {
+            return;
+        };
 
-            let status = self.all_tx_data.del_tx(index, self.conn);
-            match status {
-                Ok(()) => {
-                    // Transaction deleted so reload the data again
-                    self.reload_home_table();
-                    self.reload_chart_data();
-                    self.reload_summary_data();
-                    self.reset_search_data();
-                    self.reload_activity_table();
-                    *self.add_tx_data = TxData::new();
-                    self.reload_add_tx_balance_data();
+        let target_tx = self.home_txs.get_tx(index);
+        let result = self.migrated_conn.delete_tx(target_tx);
 
-                    if index == 0 {
-                        self.table.state.select(None);
-                        *self.home_tab = HomeTab::Months;
-                    } else {
-                        self.table.state.select(Some(index - 1));
-                    }
+        match result {
+            Ok(()) => {
+                // Transaction deleted so reload the data again
+                self.reload_home_table();
+                self.reload_chart_data();
+                self.reload_summary_data();
+                self.reset_search_data();
+                self.reload_activity_table();
+                *self.add_tx_data = TxData::new();
+                self.reload_add_tx_balance_data();
 
-                    let activity_num =
-                        add_new_activity(ActivityType::DeleteTX(Some(id_num)), self.conn);
-                    add_new_activity_tx(&tx_data, activity_num, self.conn);
+                if index == 0 {
+                    self.table.state.select(None);
+                    *self.home_tab = HomeTab::Months;
+                } else {
+                    self.table.state.select(Some(index - 1));
                 }
-                Err(err) => {
-                    *self.popup =
-                        PopupState::DeleteFailed(TxUpdateError::FailedDeleteTx(err).to_string());
-                }
+
+                // TODO: Activity log
+                // let activity_num =
+                //     add_new_activity(ActivityType::DeleteTX(Some(id_num)), self.conn);
+                // add_new_activity_tx(&tx_data, activity_num, self.conn);
+            }
+            Err(err) => {
+                *self.popup = PopupState::DeleteFailed(
+                    TxUpdateError::FailedDeleteTx(err.to_string()).to_string(),
+                );
             }
         }
     }
@@ -944,8 +942,9 @@ impl<'a> InputKeyHandler<'a> {
                     self.reset_search_data();
                 }
                 Err(err) => {
-                    *self.popup =
-                        PopupState::DeleteFailed(TxUpdateError::FailedDeleteTx(err).to_string());
+                    *self.popup = PopupState::DeleteFailed(
+                        TxUpdateError::FailedDeleteTx(err.to_string()).to_string(),
+                    );
                 }
             }
         }
@@ -1985,7 +1984,7 @@ impl InputKeyHandler<'_> {
     fn reload_add_tx_balance_data(&mut self) {
         let current_table_index = self.home_table.state.selected();
 
-        *self.balance_data = self.add_tx_data.generate_balance_section(
+        *self.add_tx_balance = self.add_tx_data.generate_balance_section(
             self.home_txs,
             current_table_index,
             self.migrated_conn,
