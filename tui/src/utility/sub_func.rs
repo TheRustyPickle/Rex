@@ -8,7 +8,6 @@ use std::process::Command;
 use crate::activity_page::{ActivityDetails, ActivityTx};
 use crate::outputs::{ComparisonType, TerminalExecutionError};
 use crate::page_handler::{ActivityType, DateType, ResetType, UserInputType};
-use crate::tx_handler::{TxData, delete_tx};
 use crate::utility::{
     add_new_activity, add_new_activity_tx, check_comparison, check_restricted, clear_terminal,
     flush_output, get_all_tx_methods, get_sql_dates, reverse_date_format, take_input,
@@ -963,68 +962,6 @@ pub fn get_search_data(
     add_new_activity_tx(&search_data, activity_num, conn);
 
     (all_txs, all_ids)
-}
-
-/// Switches `id_num` of 2 txs in the DB to switch the indexes of the value in the UI table
-pub fn switch_tx_index(
-    id_1: i32,
-    id_2: i32,
-    tx_1: &[String],
-    tx_2: &[String],
-    conn: &mut Connection,
-) {
-    let tx_type_1 = &tx_1[4];
-    let tx_type_2 = &tx_2[4];
-
-    let tx_data_1 = if tx_type_1 == "Transfer" {
-        let split_method = tx_1[2].split(" to ").collect::<Vec<&str>>();
-        let from_method = split_method[0];
-        let to_method = split_method[1];
-
-        TxData::custom(
-            &tx_1[0],
-            &tx_1[1],
-            from_method,
-            to_method,
-            &tx_1[3],
-            "Transfer",
-            &tx_1[5],
-            id_1,
-        )
-    } else {
-        TxData::custom(
-            &tx_1[0], &tx_1[1], &tx_1[2], "", &tx_1[3], &tx_1[4], &tx_1[5], id_1,
-        )
-    };
-
-    let tx_data_2 = if tx_type_2 == "Transfer" {
-        let split_method = tx_2[2].split(" to ").collect::<Vec<&str>>();
-        let from_method = split_method[0];
-        let to_method = split_method[1];
-
-        TxData::custom(
-            &tx_2[0],
-            &tx_2[1],
-            from_method,
-            to_method,
-            &tx_2[3],
-            "Transfer",
-            &tx_2[5],
-            id_2,
-        )
-    } else {
-        TxData::custom(
-            &tx_2[0], &tx_2[1], &tx_2[2], "", &tx_2[3], &tx_2[4], &tx_2[5], id_1,
-        )
-    };
-
-    delete_tx(id_1, conn).unwrap();
-    delete_tx(id_2, conn).unwrap();
-
-    let activity_num = add_new_activity(ActivityType::IDNumSwap(Some(id_1), Some(id_2)), conn);
-
-    tx_data_1.switch_tx_id(id_2, activity_num, conn);
-    tx_data_2.switch_tx_id(id_1, activity_num, conn);
 }
 
 /// Returns all activities recorded within a given month and a year and all the activity txs related to the activities

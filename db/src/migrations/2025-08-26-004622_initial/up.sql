@@ -24,7 +24,8 @@ CREATE TABLE txs (
     to_method INTEGER REFERENCES tx_methods(id),
     amount BigInt NOT NULL,
     tx_type TEXT NOT NULL CHECK (tx_type IN ('Income', 'Expense', 'Transfer')),
-    activity_id INTEGER REFERENCES activities(id) ON DELETE SET NULL
+    activity_id INTEGER REFERENCES activities(id) ON DELETE SET NULL,
+    display_order INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE tx_tags (
