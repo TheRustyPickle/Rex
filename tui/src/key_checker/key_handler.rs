@@ -31,7 +31,6 @@ pub struct InputKeyHandler<'a> {
     summary_tab: &'a mut SummaryTab,
     home_tab: &'a mut HomeTab,
     add_tx_data: &'a mut TxData,
-    all_tx_data: &'a mut TransactionData,
     chart_data: &'a mut ChartData,
     summary_data: &'a mut SummaryData,
     home_table: &'a mut TableData,
@@ -83,7 +82,6 @@ impl<'a> InputKeyHandler<'a> {
         summary_tab: &'a mut SummaryTab,
         home_tab: &'a mut HomeTab,
         add_tx_data: &'a mut TxData,
-        all_tx_data: &'a mut TransactionData,
         chart_data: &'a mut ChartData,
         summary_data: &'a mut SummaryData,
         home_table: &'a mut TableData,
@@ -135,7 +133,6 @@ impl<'a> InputKeyHandler<'a> {
             summary_tab,
             home_tab,
             add_tx_data,
-            all_tx_data,
             chart_data,
             summary_data,
             home_table,
@@ -994,10 +991,10 @@ impl<'a> InputKeyHandler<'a> {
     /// Opens a popup that shows the details of the selected transaction on the Homepage
     pub fn show_home_tx_details(&mut self) {
         if let Some(index) = self.home_table.state.selected() {
-            let selected_tx = self.all_tx_data.get_tx(index);
-            let tx_details = &selected_tx[1];
+            let selected_tx = self.home_txs.get_tx(index);
+            let tx_details = selected_tx.details.clone().unwrap_or_default();
 
-            *self.popup = PopupState::ShowDetails(tx_details.to_string());
+            *self.popup = PopupState::ShowDetails(tx_details);
         }
     }
 
@@ -1059,7 +1056,7 @@ impl<'a> InputKeyHandler<'a> {
 }
 
 impl InputKeyHandler<'_> {
-    /// Handle Arrow Up key press on the Homepage
+    /// Handle Arrow Up keypress on the Homepage
     fn do_home_up(&mut self) {
         match &self.home_tab {
             HomeTab::Table => {
@@ -1067,19 +1064,19 @@ impl InputKeyHandler<'_> {
                 // there is no transaction
                 // if arrow key up is pressed and table index is 0, select the Month widget
                 // else just select the upper index of the table
-                if self.all_tx_data.is_tx_empty() {
+                if self.home_txs.is_empty() {
                     *self.home_tab = self.home_tab.change_tab_up();
                 } else if self.home_table.state.selected() == Some(0) {
                     *self.home_tab = HomeTab::Months;
                     self.home_table.state.select(None);
-                } else if !self.all_tx_data.is_tx_empty() {
+                } else if !self.home_txs.is_empty() {
                     self.home_table.previous();
                 }
             }
             HomeTab::Years => {
                 // Do not select any table rows in the table section If
                 // there is no transaction
-                if self.all_tx_data.is_tx_empty() {
+                if self.home_txs.is_empty() {
                     *self.home_tab = self.home_tab.change_tab_down();
                 } else {
                     // Move to the selected value on table widget
@@ -1094,7 +1091,7 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    /// Handle Arrow Down key press on the Homepage
+    /// Handle Arrow Down keypress on the Homepage
     fn do_home_down(&mut self) {
         match &self.home_tab {
             HomeTab::Table => {
@@ -1102,20 +1099,20 @@ impl InputKeyHandler<'_> {
                 // there is no transaction
                 // if arrow key down is pressed and table index is final, select the year widget
                 // else just select the next index of the table
-                if self.all_tx_data.is_tx_empty() {
+                if self.home_txs.is_empty() {
                     *self.home_tab = self.home_tab.change_tab_down();
                 } else if self.home_table.state.selected() == Some(self.home_table.items.len() - 1)
                 {
                     *self.home_tab = HomeTab::Years;
                     self.home_table.state.select(None);
-                } else if !self.all_tx_data.is_tx_empty() {
+                } else if !self.home_txs.is_empty() {
                     self.home_table.next();
                 }
             }
             HomeTab::Months => {
                 // Do not select any table rows in the table section If
                 // there is no transaction
-                if self.all_tx_data.is_tx_empty() {
+                if self.home_txs.is_empty() {
                     *self.home_tab = self.home_tab.change_tab_up();
                 } else {
                     *self.home_tab = self.home_tab.change_tab_down();
@@ -1674,8 +1671,6 @@ impl InputKeyHandler<'_> {
 
     /// Reload Home page's table data by fetching from the DB
     fn reload_home_table(&mut self) {
-        *self.all_tx_data =
-            TransactionData::new(self.home_months.index, self.home_years.index, self.conn);
         *self.home_txs = get_txs_index(
             self.home_months.index,
             self.home_years.index,

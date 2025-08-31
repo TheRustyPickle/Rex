@@ -13,7 +13,6 @@ use crate::tx_handler::TxData;
 use crate::utility::{LerpState, get_all_tx_methods, main_block, styled_block};
 
 /// The function draws the Add Transaction page of the interface.
-#[cfg(not(tarpaulin_include))]
 pub fn add_tx_ui(
     f: &mut Frame,
     balance: &mut [Vec<String>],

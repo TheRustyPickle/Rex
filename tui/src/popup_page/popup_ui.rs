@@ -10,7 +10,6 @@ use crate::page_handler::{BACKGROUND, BLUE, BOX, DeletionStatus, HIGHLIGHTED, RE
 use crate::utility::create_bolded_text;
 
 /// Creates a popup on top of a window with the given size, title, and text attributes
-#[cfg(not(tarpaulin_include))]
 pub fn create_popup(f: &mut Frame, title: &str, text: &str, position: usize) {
     let size = f.area();
     let x_value = 60;
@@ -63,7 +62,6 @@ pub fn create_popup(f: &mut Frame, title: &str, text: &str, position: usize) {
     f.render_stateful_widget(scrollbar, new_chunks[0], &mut scrollbar_state);
 }
 
-#[cfg(not(tarpaulin_include))]
 pub fn create_deletion_popup(f: &mut Frame, deletion_status: &DeletionStatus) {
     let text = "Are you sure you want to delete this transaction?";
     let title = "TX Deletion";
@@ -143,7 +141,6 @@ pub fn create_deletion_popup(f: &mut Frame, deletion_status: &DeletionStatus) {
 /// The function takes certain parameters to create an empty space in the layout
 /// and returns an area where we can place various widgets. Taken from tui-rs examples.
 /// This is used as a popup for helpful information.
-#[cfg(not(tarpaulin_include))]
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)

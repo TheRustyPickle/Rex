@@ -1,4 +1,6 @@
+#[cfg(not(tarpaulin_include))]
 mod initial_ui;
+#[cfg(not(tarpaulin_include))]
 mod version_checker;
 
 pub use initial_ui::initial_ui;

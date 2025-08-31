@@ -9,7 +9,6 @@ use crate::page_handler::{
     BACKGROUND, BOX, HEADER, IndexedData, SELECTED, SortingType, SummaryTab, TEXT, TableData,
 };
 use crate::summary_page::SummaryData;
-#[cfg(not(tarpaulin_include))]
 use crate::summary_page::{SummaryMethods, SummaryNet};
 use crate::utility::{
     LerpState, create_tab, get_all_tx_methods, main_block, styled_block, styled_block_no_bottom,
@@ -17,7 +16,6 @@ use crate::utility::{
 };
 
 /// The function draws the Summary page of the interface.
-#[cfg(not(tarpaulin_include))]
 pub fn summary_ui(
     f: &mut Frame,
     months: &IndexedData,

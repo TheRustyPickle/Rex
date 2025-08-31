@@ -10,7 +10,6 @@ use crate::page_handler::{
 };
 use crate::utility::{LerpState, create_tab, main_block, styled_block};
 
-#[cfg(not(tarpaulin_include))]
 pub fn activity_ui(
     f: &mut Frame,
     months: &IndexedData,
