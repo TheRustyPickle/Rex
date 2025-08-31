@@ -950,7 +950,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    pub fn switch_tx_index_up(&mut self) {
+    pub fn switch_tx_position_up(&mut self) {
         if let Some(index) = self.home_table.state.selected() {
             // Don't do anything if there is 2 or less items or is selecting the first index which can't be moved up
             if self.table.items.len() <= 2 || index == 0 {
@@ -971,7 +971,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    pub fn switch_tx_index_down(&mut self) {
+    pub fn switch_tx_position_down(&mut self) {
         if let Some(index) = self.home_table.state.selected() {
             // Don't do anything if there is 1 or less items or is selecting the last index which can't be moved up
             if self.table.items.len() <= 2 || index == self.table.items.len() - 1 {
