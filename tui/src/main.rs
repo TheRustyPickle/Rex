@@ -34,7 +34,7 @@ fn main() {
         let mut migrated_path = working_path.clone();
         migrated_path.push("v2.sqlite");
 
-        working_path.push("data.sqlite");
+        working_path.push("test.sqlite");
         if initialize_app(&working_path, &migrated_path, &original_dir).is_err() {
             std::process::exit(1);
         }
