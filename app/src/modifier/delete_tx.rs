@@ -4,7 +4,7 @@ use db::models::{Balance, FullTx, Tx, TxTag, TxType};
 
 use crate::modifier::tidy_balances;
 
-pub fn delete_tx(tx: &FullTx, db_conn: &mut impl ConnCache) -> Result<()> {
+pub(crate) fn delete_tx(tx: &FullTx, db_conn: &mut impl ConnCache) -> Result<()> {
     let mut current_balance = Balance::get_balance_map(tx.date, db_conn)?;
 
     let mut balance_to_update = Vec::new();

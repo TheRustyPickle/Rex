@@ -2,7 +2,7 @@ use anyhow::Result;
 use db::ConnCache;
 use db::models::{Balance, NewTxMethod, TxMethod};
 
-pub fn add_new_tx_methods(
+pub(crate) fn add_new_tx_methods(
     method_list: &Vec<String>,
     db_conn: &mut impl ConnCache,
 ) -> Result<Vec<TxMethod>> {

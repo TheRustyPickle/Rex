@@ -52,6 +52,7 @@ diesel::table! {
         amount -> BigInt,
         tx_type -> Text,
         activity_id -> Nullable<Integer>,
+        display_order -> Integer,
     }
 }
 

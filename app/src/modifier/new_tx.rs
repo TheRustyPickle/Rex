@@ -4,7 +4,7 @@ use db::models::{Balance, NewTag, NewTx, Tag, Tx, TxTag, TxType};
 
 use crate::modifier::tidy_balances;
 
-pub fn add_new_tx(
+pub(crate) fn add_new_tx(
     tx: NewTx,
     tags: &str,
     maintain_id: Option<i32>,

@@ -1,6 +1,8 @@
 use chrono::{Datelike, Days, Months, NaiveDate};
+use diesel::dsl::sql;
 use diesel::prelude::*;
 use diesel::result::Error;
+use diesel::sql_types::Bool;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
@@ -55,6 +57,7 @@ pub struct FullTx {
     pub tx_type: TxType,
     pub activity_id: Option<i32>,
     pub tags: Vec<Tag>,
+    pub display_order: i32,
 }
 
 #[derive(Clone, Queryable, Selectable, Insertable)]
@@ -67,6 +70,7 @@ pub struct Tx {
     pub amount: i64,
     pub tx_type: String,
     activity_id: Option<i32>,
+    display_order: i32,
 }
 
 #[derive(Clone, Insertable)]
@@ -177,6 +181,7 @@ impl FullTx {
                 tx_type: tx.tx_type.as_str().into(),
                 activity_id: tx.activity_id,
                 tags,
+                display_order: tx.display_order,
             };
 
             to_return.push(full_tx);
@@ -303,6 +308,14 @@ impl FullTx {
                 .join(", "),
         ]
     }
+
+    pub fn set_display_order(&self, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
+        use crate::schema::txs::dsl::{display_order, id, txs};
+
+        diesel::update(txs.filter(id.eq(self.id)))
+            .set(display_order.eq(self.display_order))
+            .execute(db_conn.conn())
+    }
 }
 
 impl Tx {
@@ -328,7 +341,7 @@ impl Tx {
         nature: FetchNature,
         db_conn: &mut impl ConnCache,
     ) -> Result<Vec<Self>, Error> {
-        use crate::schema::txs::dsl::{date, id, txs};
+        use crate::schema::txs::dsl::{date, display_order, id, txs};
 
         let (start_date, end_date) = match nature {
             FetchNature::Monthly => {
@@ -347,7 +360,12 @@ impl Tx {
 
         txs.filter(date.ge(start_date))
             .filter(date.le(end_date))
-            .order((date.asc(), id.asc()))
+            .order((
+                date.asc(),
+                sql::<Bool>("display_order = 0"),
+                display_order.asc(),
+                id.asc(),
+            ))
             .select(Tx::as_select())
             .load(db_conn.conn())
     }
@@ -368,6 +386,7 @@ impl Tx {
             amount: new_tx.amount,
             tx_type: new_tx.tx_type.to_string(),
             activity_id: new_tx.activity_id,
+            display_order: 0,
         }
     }
 }

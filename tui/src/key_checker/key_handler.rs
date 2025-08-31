@@ -16,7 +16,7 @@ use crate::page_handler::{
 };
 use crate::summary_page::{SummaryData, SummaryMethods, SummaryNet};
 use crate::tx_handler::TxData;
-use crate::utility::{LerpState, get_all_tx_methods_cumulative, sort_table_data, switch_tx_index};
+use crate::utility::{LerpState, get_all_tx_methods_cumulative, sort_table_data};
 
 /// Stores all the data that is required to handle
 /// every single possible keypress event from the
@@ -951,60 +951,44 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     pub fn switch_tx_index_up(&mut self) {
-        if let Some(index) = self.table.state.selected() {
-            // Don't do anything if there is 1 or less items or is selecting the first index which can't be moved up
-            if self.table.items.len() <= 1 || index == 0 {
+        if let Some(index) = self.home_table.state.selected() {
+            // Don't do anything if there is 2 or less items or is selecting the first index which can't be moved up
+            if self.table.items.len() <= 2 || index == 0 {
                 return;
             }
 
-            let selected_tx = self.all_tx_data.get_tx(index);
-            let previous_tx = self.all_tx_data.get_tx(index - 1);
+            let reload_stuff = self
+                .home_txs
+                .switch_tx_index(index, index - 1, self.migrated_conn)
+                .unwrap();
 
-            if selected_tx[0] != previous_tx[0] {
-                // If both are not in the same date, no switching can happen
-                return;
+            if reload_stuff {
+                // TODO: Activity
+                *self.home_table = TableData::new(self.home_txs.tx_array());
+                self.home_down_till(index - 1);
+                self.reload_activity_table();
             }
-
-            let selected_tx_id = self.all_tx_data.get_id_num(index);
-            let previous_tx_id = self.all_tx_data.get_id_num(index - 1);
-
-            switch_tx_index(
-                selected_tx_id,
-                previous_tx_id,
-                selected_tx,
-                previous_tx,
-                self.conn,
-            );
-
-            self.reload_home_table();
-            self.reload_activity_table();
-            self.table.state.select(Some(index - 1));
         }
     }
 
     pub fn switch_tx_index_down(&mut self) {
-        if let Some(index) = self.table.state.selected() {
+        if let Some(index) = self.home_table.state.selected() {
             // Don't do anything if there is 1 or less items or is selecting the last index which can't be moved up
-            if self.table.items.len() <= 1 || index == self.table.items.len() - 1 {
+            if self.table.items.len() <= 2 || index == self.table.items.len() - 1 {
                 return;
             }
 
-            let selected_tx = self.all_tx_data.get_tx(index);
-            let next_tx = self.all_tx_data.get_tx(index + 1);
+            let reload_stuff = self
+                .home_txs
+                .switch_tx_index(index, index + 1, self.migrated_conn)
+                .unwrap();
 
-            if selected_tx[0] != next_tx[0] {
-                // If both are not in the same date, no switching can happen
-                return;
+            if reload_stuff {
+                // TODO: Activity
+                *self.home_table = TableData::new(self.home_txs.tx_array());
+                self.home_down_till(index + 1);
+                self.reload_activity_table();
             }
-
-            let selected_tx_id = self.all_tx_data.get_id_num(index);
-            let next_tx_id = self.all_tx_data.get_id_num(index + 1);
-
-            switch_tx_index(selected_tx_id, next_tx_id, selected_tx, next_tx, self.conn);
-
-            self.reload_home_table();
-            self.reload_activity_table();
-            self.table.state.select(Some(index + 1));
         }
     }
 
@@ -1143,7 +1127,7 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    /// Handle Arrow Up key press on the Summary page
+    /// Handle Arrow Up keypress on the Summary page
     fn do_summary_up(&mut self) {
         if !*self.summary_hidden_mode {
             match self.summary_modes.index {
@@ -1989,5 +1973,11 @@ impl InputKeyHandler<'_> {
             current_table_index,
             self.migrated_conn,
         );
+    }
+
+    fn home_down_till(&mut self, index: usize) {
+        while self.home_table.state.selected() != Some(index) {
+            self.do_home_down();
+        }
     }
 }
