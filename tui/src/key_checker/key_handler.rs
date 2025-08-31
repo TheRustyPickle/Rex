@@ -17,8 +17,8 @@ use crate::page_handler::{
 use crate::summary_page::{SummaryData, SummaryMethods, SummaryNet};
 use crate::tx_handler::TxData;
 use crate::utility::{
-    LerpState, add_new_activity, add_new_activity_tx, get_all_tx_methods,
-    get_all_tx_methods_cumulative, get_empty_changes, sort_table_data, switch_tx_index,
+    LerpState, add_new_activity, add_new_activity_tx, get_all_tx_methods_cumulative,
+    sort_table_data, switch_tx_index,
 };
 
 /// Stores all the data that is required to handle
@@ -350,6 +350,8 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
+    // TODO: Refactor this function
+
     /// Adds new tx and reloads home and chart data
     pub fn add_tx(&mut self) {
         let status = self.add_tx_data.add_tx(self.conn);
@@ -372,7 +374,7 @@ impl<'a> InputKeyHandler<'a> {
     /// Based on transaction Selected, opens Add Tx page and
     /// allocates the data of the tx to the input boxes
     pub fn home_edit_tx(&mut self) {
-        if let Some(index) = self.table.state.selected() {
+        if let Some(index) = self.home_table.state.selected() {
             let target_tx = self.home_txs.get_tx(index);
             *self.add_tx_data = TxData::from_full_tx(target_tx, true);
             *self.page = CurrentUi::AddTx;
@@ -383,10 +385,11 @@ impl<'a> InputKeyHandler<'a> {
             self.lerp_state.clear();
         }
     }
+    // TODO: Refactor this function
 
     /// Deletes the selected transaction and reloads pages
     pub fn home_delete_tx(&mut self) {
-        if let Some(index) = self.table.state.selected() {
+        if let Some(index) = self.home_table.state.selected() {
             let mut tx_data = self.all_tx_data.get_tx(index).to_owned();
             let id_num = self.all_tx_data.get_id_num(index);
             tx_data.push(id_num.to_string());
@@ -1980,32 +1983,12 @@ impl InputKeyHandler<'_> {
 
     /// Update add tx page balance section data that is being shown on the UI
     fn reload_add_tx_balance_data(&mut self) {
-        let mut balance_data = vec![vec![String::new()]];
-        balance_data[0].extend(get_all_tx_methods(self.conn));
-        balance_data[0].extend(vec!["Total".to_string()]);
-
         let current_table_index = self.home_table.state.selected();
 
-        let (current_balance, current_changes) = match current_table_index {
-            // Pass out the current index to get the necessary balance & changes data
-            Some(a) => (
-                self.all_tx_data.get_balance(a),
-                self.all_tx_data.get_changes(a),
-            ),
-            // If none selected, get empty changes + the absolute final balance
-            None => (
-                self.all_tx_data.get_last_balance(self.conn),
-                get_empty_changes(self.conn),
-            ),
-        };
-
-        balance_data.push(self.add_tx_data.generate_balance_section(
-            self.conn,
-            current_balance,
-            current_changes,
-        ));
-        balance_data.push(self.add_tx_data.generate_changes_section(self.conn));
-
-        *self.balance_data = balance_data;
+        *self.balance_data = self.add_tx_data.generate_balance_section(
+            self.home_txs,
+            current_table_index,
+            self.migrated_conn,
+        );
     }
 }
