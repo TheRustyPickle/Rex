@@ -1,8 +1,8 @@
-use app::fetcher::FullTx;
+use app::conn::DbConn;
+use app::fetcher::{FullTx, PartialTx, TxViewGroup};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::cmp::Ordering;
-use std::collections::HashMap;
 
 use crate::outputs::{
     CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, TxUpdateError,
@@ -13,7 +13,7 @@ use crate::tx_handler::{add_tx, delete_tx};
 use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
 use crate::utility::{
     add_char_to, add_new_activity, add_new_activity_tx, check_comparison, get_all_tx_methods,
-    get_empty_changes, get_last_balances, get_last_tx, get_search_data, get_tx_id_num,
+    get_last_balances, get_last_tx, get_search_data, get_tx_id_num,
 };
 
 /// Contains all data for a Transaction to work
@@ -88,11 +88,11 @@ impl TxData {
 
     pub fn from_full_tx(tx: &FullTx, edit: bool) -> Self {
         Self {
-            date: tx.date.format("%d-%m-%Y").to_string(),
+            date: tx.date.format("%Y-%m-%d").to_string(),
             details: tx.details.clone().unwrap_or_default(),
             from_method: tx.from_method.name.clone(),
             to_method: tx.to_method.clone().map(|t| t.name).unwrap_or_default(),
-            amount: tx.amount.to_string(),
+            amount: format!("{:.2}", tx.amount as f64 / 100.0),
             tx_type: tx.tx_type.to_string(),
             tags: tx
                 .tags
@@ -919,134 +919,25 @@ impl TxData {
     /// Generate Add Transaction page Balance section's balance data based on what fields are filled up
     pub fn generate_balance_section(
         &self,
-        conn: &Connection,
-        mut current_balance: Vec<String>,
-        mut current_changes: Vec<String>,
-    ) -> Vec<String> {
-        let mut balance_data = vec![String::from("Balance")];
-
-        // If editing tx, it means we have data of the balance of the current selected row on the
-        // homepage. In this case, instead of showing the absolute final balance, we will show the
-        // balance before the selected tx happened. So if any fields are modified, it will show
-        // what the balance will look like if the new balance is saved
-        let last_balance_data = if self.editing_tx {
-            let mut new_balance = Vec::new();
-            // First index is the text "Balance" and "Changes". Remove them
-            current_balance.remove(0);
-            current_changes.remove(0);
-            for (balance, change) in current_balance.iter().zip(current_changes.iter()) {
-                let income = if change.contains("↑") {
-                    true
-                } else if change.contains("↓") {
-                    false
-                } else {
-                    new_balance.push(balance.to_string());
-                    continue;
-                };
-                let change: f64 = change.replace("↑", "").replace("↓", "").parse().unwrap();
-                let balance: f64 = balance.parse().unwrap();
-                if income {
-                    new_balance.push(format!("{}", balance - change));
-                } else {
-                    new_balance.push(format!("{}", balance + change));
-                }
-            }
-            new_balance
-        } else {
-            get_last_balances(conn)
-        };
-
+        tx_view: &TxViewGroup,
+        index: Option<usize>,
+        migrated_conn: &mut DbConn,
+    ) -> Vec<Vec<String>> {
         if !self.generation_fields_exists() {
-            let mut total = 0.0;
+            let partial_tx = PartialTx {
+                from_method: &self.from_method,
+                to_method: &self.to_method,
+                amount: &self.amount,
+                tx_type: &self.tx_type,
+            };
 
-            for balance in last_balance_data {
-                total += balance.parse::<f64>().unwrap();
-                balance_data.push(balance);
-            }
-            balance_data.push(total.to_string());
-            return balance_data;
-        }
-
-        let all_tx_methods = get_all_tx_methods(conn);
-
-        let mut last_balances: HashMap<String, f64> = all_tx_methods
-            .iter()
-            .zip(last_balance_data.iter())
-            .map(|(method, balance)| (method.clone(), balance.parse().unwrap()))
-            .collect();
-
-        let from_method = &self.from_method;
-        let to_method = &self.to_method;
-        let amount: f64 = self.amount.parse().unwrap();
-
-        if self.tx_type == "Transfer" {
-            let target_from_balance = last_balances.get_mut(from_method).unwrap();
-            *target_from_balance -= amount;
-
-            let target_to_balance = last_balances.get_mut(to_method).unwrap();
-            *target_to_balance += amount;
+            tx_view
+                .add_tx_balance_array(index, Some(partial_tx), migrated_conn)
+                .unwrap()
         } else {
-            match self.tx_type.as_ref() {
-                "Income" => {
-                    let target_balance = last_balances.get_mut(from_method).unwrap();
-                    *target_balance += amount;
-                }
-                "Expense" => {
-                    let target_balance = last_balances.get_mut(from_method).unwrap();
-                    *target_balance -= amount;
-                }
-                _ => unreachable!(),
-            }
+            tx_view
+                .add_tx_balance_array(index, None, migrated_conn)
+                .unwrap()
         }
-
-        let mut total_bal = 0.0;
-        for method in get_all_tx_methods(conn) {
-            total_bal += last_balances[&method];
-            balance_data.push(last_balances[&method].to_string());
-        }
-        balance_data.push(total_bal.to_string());
-
-        balance_data
-    }
-
-    /// Generate Add Transaction page Balance section's changes data based on what fields are filled up
-    pub fn generate_changes_section(&self, conn: &Connection) -> Vec<String> {
-        let mut changes_data = vec![String::from("Changes")];
-
-        if !self.generation_fields_exists() {
-            return get_empty_changes(conn);
-        }
-
-        let from_method = &self.from_method;
-        let to_method = &self.to_method;
-        let amount: f64 = self.amount.parse().unwrap();
-
-        let all_tx_methods = get_all_tx_methods(conn);
-
-        if self.tx_type == "Transfer" {
-            for method in all_tx_methods {
-                if &method == from_method {
-                    changes_data.push(format!("↓{amount}"));
-                } else if &method == to_method {
-                    changes_data.push(format!("↑{amount}"));
-                } else {
-                    changes_data.push("0.00".to_string());
-                }
-            }
-        } else {
-            for method in all_tx_methods {
-                if &method == from_method {
-                    match self.tx_type.as_ref() {
-                        "Income" => changes_data.push(format!("↑{amount}")),
-                        "Expense" => changes_data.push(format!("↓{amount}")),
-                        _ => unreachable!(),
-                    }
-                } else {
-                    changes_data.push("0.00".to_string());
-                }
-            }
-        }
-
-        changes_data
     }
 }

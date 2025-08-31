@@ -228,6 +228,53 @@ impl FullTx {
         map
     }
 
+    pub fn get_changes_partial(
+        from_method: i32,
+        to_method: Option<i32>,
+        tx_type: TxType,
+        amount: i64,
+        db_conn: &impl ConnCache,
+    ) -> HashMap<i32, String> {
+        let mut map = HashMap::new();
+
+        for method_id in db_conn.cache().tx_methods.keys() {
+            let mut no_impact = true;
+
+            if from_method == *method_id {
+                no_impact = false;
+            }
+
+            if let Some(to_method) = &to_method
+                && to_method == method_id
+            {
+                no_impact = false;
+            }
+
+            if no_impact {
+                map.insert(*method_id, "0.00".to_string());
+                continue;
+            }
+
+            match tx_type {
+                TxType::Income => {
+                    map.insert(*method_id, format!("↑{:.2}", amount as f64 / 100.0));
+                }
+                TxType::Expense => {
+                    map.insert(*method_id, format!("↓{:.2}", amount as f64 / 100.0));
+                }
+                TxType::Transfer => {
+                    if from_method == *method_id {
+                        map.insert(*method_id, format!("↓{:.2}", amount as f64 / 100.0));
+                    } else {
+                        map.insert(*method_id, format!("↑{:.2}", amount as f64 / 100.0));
+                    }
+                }
+            }
+        }
+
+        map
+    }
+
     pub fn to_array(&self) -> Vec<String> {
         let mut method = self.from_method.name.clone();
 

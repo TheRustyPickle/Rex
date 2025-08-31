@@ -2,6 +2,7 @@ use app::fetcher::get_txs_date;
 use app::modifier::parse_tx_fields;
 use chrono::NaiveDate;
 use db::ConnCache;
+use std::fs;
 
 use crate::common::create_test_db;
 
@@ -142,4 +143,7 @@ fn add_tx_test() {
             index
         );
     }
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
 }

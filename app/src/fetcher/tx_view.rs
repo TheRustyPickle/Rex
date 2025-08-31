@@ -7,6 +7,13 @@ use std::collections::HashMap;
 
 use crate::conn::DbConn;
 
+pub struct PartialTx<'a> {
+    pub from_method: &'a str,
+    pub to_method: &'a str,
+    pub tx_type: &'a str,
+    pub amount: &'a str,
+}
+
 #[derive(Debug)]
 pub struct TxView {
     tx: FullTx,
@@ -318,5 +325,89 @@ impl TxViewGroup {
 
     pub fn get_tx(&self, index: usize) -> &FullTx {
         &self.0[index].tx
+    }
+
+    pub fn add_tx_balance_array(
+        &self,
+        index: Option<usize>,
+        partial_tx: Option<PartialTx>,
+        db_conn: &mut DbConn,
+    ) -> Result<Vec<Vec<String>>> {
+        let mut final_balance: Option<HashMap<i32, Balance>> = None;
+
+        if index.is_none() {
+            final_balance = Some(Balance::get_final_balance(db_conn)?);
+        }
+
+        let mut sorted_methods: Vec<&TxMethod> = db_conn.cache().tx_methods.values().collect();
+        sorted_methods.sort_by_key(|value| value.position);
+
+        let mut to_return = vec![vec![String::new()]];
+
+        to_return[0].extend(sorted_methods.iter().map(|m| m.name.to_string()));
+
+        to_return[0].push(String::from("Total"));
+
+        let changes = if let Some(partial_tx) = partial_tx {
+            let tx_type = partial_tx.tx_type.into();
+            let amount = (partial_tx.amount.parse::<f64>()? * 100.0).round() as i64;
+
+            let from_method = db_conn
+                .cache()
+                .get_method_id(partial_tx.from_method)
+                .unwrap();
+            let to_method = if partial_tx.to_method.is_empty() {
+                None
+            } else {
+                Some(db_conn.cache().get_method_id(partial_tx.to_method).unwrap())
+            };
+
+            FullTx::get_changes_partial(from_method, to_method, tx_type, amount, db_conn)
+        } else if let Some(index) = index {
+            let target_tx = &self.0[index];
+
+            target_tx.tx.get_changes(db_conn)
+        } else {
+            FullTx::empty_changes(db_conn)
+        };
+
+        let mut total_balance = 0;
+        let mut to_insert_balance = vec![String::from("Balance")];
+        let mut to_insert_changes = vec![String::from("Changes")];
+
+        for method in sorted_methods {
+            let method_id = method.id;
+
+            if let Some(index) = index {
+                let target_tx = &self.0[index];
+
+                let balance = *target_tx.balance.get(&method_id).unwrap();
+                total_balance += balance;
+
+                let method_balance = balance as f64 / 100.0;
+                to_insert_balance.push(format!("{method_balance:.2}"));
+            } else {
+                let balance = final_balance
+                    .as_ref()
+                    .unwrap()
+                    .get(&method_id)
+                    .unwrap()
+                    .balance;
+                total_balance += balance;
+
+                let method_balance = balance as f64 / 100.0;
+                to_insert_balance.push(format!("{method_balance:.2}"));
+            }
+
+            let changes_value = changes.get(&method_id).unwrap();
+            to_insert_changes.push(changes_value.to_string());
+        }
+
+        to_insert_balance.push(format!("{:.2}", total_balance as f64 / 100.0));
+
+        to_return.push(to_insert_balance);
+        to_return.push(to_insert_changes);
+
+        Ok(to_return)
     }
 }
