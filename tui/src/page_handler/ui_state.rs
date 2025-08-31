@@ -60,10 +60,6 @@ impl TableData {
         };
         self.state.select(Some(i));
     }
-
-    pub fn set_selected_index(&mut self, index: Option<usize>) {
-
-    }
 }
 
 /// This struct takes anything inside a vector and adds an index it it.
