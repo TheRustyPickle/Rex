@@ -327,6 +327,13 @@ impl TxViewGroup {
         &self.0[index].tx
     }
 
+    pub fn get_tx_by_id(&self, id: i32) -> Option<&FullTx> {
+        self.0
+            .iter()
+            .find(|tx_view| tx_view.tx.id == id)
+            .map(|tx_view| &tx_view.tx)
+    }
+
     pub fn add_tx_balance_array(
         &self,
         index: Option<usize>,

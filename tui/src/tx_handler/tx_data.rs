@@ -1,19 +1,19 @@
 use app::conn::DbConn;
 use app::fetcher::{FullTx, PartialTx, TxViewGroup};
+use app::modifier::parse_tx_fields;
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::cmp::Ordering;
 
 use crate::outputs::{
-    CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, TxUpdateError,
-    VerifyingOutput,
+    CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, VerifyingOutput,
 };
-use crate::page_handler::{ActivityType, DateType, TxTab};
-use crate::tx_handler::{add_tx, delete_tx};
+use crate::page_handler::{DateType, TxTab};
+use crate::tx_handler::add_tx;
 use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
 use crate::utility::{
-    add_char_to, add_new_activity, add_new_activity_tx, check_comparison, get_all_tx_methods,
-    get_last_balances, get_last_tx, get_search_data, get_tx_id_num,
+    add_char_to, add_new_activity_tx, check_comparison, get_all_tx_methods, get_last_balances,
+    get_search_data,
 };
 
 /// Contains all data for a Transaction to work
@@ -225,76 +225,43 @@ impl TxData {
     }
 
     /// Takes all data and adds it as a transaction
-    pub fn add_tx(&mut self, conn: &mut Connection) -> Result<(), String> {
+    pub fn add_tx(
+        &mut self,
+        tx_view: &TxViewGroup,
+        migrated_conn: &mut DbConn,
+    ) -> Result<(), String> {
         if let Some(output) = self.check_all_fields() {
             return Err(output.to_string());
         }
 
-        let tx_method = self.get_tx_method();
+        let editing_tx = self.editing_tx;
+        let parsed_tx = parse_tx_fields(
+            &self.date,
+            &self.details,
+            &self.from_method,
+            &self.to_method,
+            &self.amount,
+            &self.tx_type,
+            migrated_conn,
+        )
+        .unwrap();
 
-        if self.editing_tx {
-            self.editing_tx = false;
-            // How saving an edited tx works
-            // delete the tx that was being edited from the db using the id_num ->
-            // add another tx using the new data but take the earlier id to add to the db
-            let deleted_tx = get_tx_id_num(self.id_num, conn);
-            let status = delete_tx(self.id_num, conn);
-            match status {
-                Ok(()) => {}
-                Err(e) => return Err(TxUpdateError::FailedEditTx(e).to_string()),
-            }
-
-            let id_num = self.id_num.to_string();
-            let status_add = add_tx(
-                &self.date,
-                &self.details,
-                &tx_method,
-                &self.amount,
-                &self.tx_type,
-                &self.tags,
-                Some(&id_num),
-                conn,
-            );
-
-            match status_add {
-                Ok(()) => {
-                    let activity_num =
-                        add_new_activity(ActivityType::EditTX(Some(self.id_num)), conn);
-                    let new_tx = vec![
-                        &self.date,
-                        &self.details,
-                        &tx_method,
-                        &self.amount,
-                        &self.tx_type,
-                        &self.tags,
-                        &id_num,
-                    ];
-                    add_new_activity_tx(&new_tx, activity_num, conn);
-                    add_new_activity_tx(&deleted_tx, activity_num, conn);
-                    Ok(())
-                }
-                Err(e) => Err(TxUpdateError::FailedEditTx(e).to_string()),
-            }
+        // TODO: Handle activity txs
+        // TODO: Handle error properly
+        if editing_tx {
+            let old_tx_id = self.id_num;
+            let old_tx = if let Some(tx) = tx_view.get_tx_by_id(old_tx_id) {
+                tx
+            } else {
+                &migrated_conn.fetch_tx_with_id(old_tx_id).unwrap()
+            };
+            migrated_conn
+                .edit_tx(old_tx, parsed_tx, &self.tags)
+                .map_err(|e| e.to_string())
         } else {
-            let status = add_tx(
-                &self.date,
-                &self.details,
-                &tx_method,
-                &self.amount,
-                &self.tx_type,
-                &self.tags,
-                None,
-                conn,
-            );
-            match status {
-                Ok(()) => {
-                    let activity_num = add_new_activity(ActivityType::NewTX, conn);
-                    let last_tx = get_last_tx(conn);
-                    add_new_activity_tx(&last_tx, activity_num, conn);
-                    Ok(())
-                }
-                Err(e) => Err(TxUpdateError::FailedAddTx(e).to_string()),
-            }
+            migrated_conn
+                .add_new_tx(parsed_tx, &self.tags)
+                .map_err(|e| e.to_string())
         }
     }
 
@@ -923,7 +890,7 @@ impl TxData {
         index: Option<usize>,
         migrated_conn: &mut DbConn,
     ) -> Vec<Vec<String>> {
-        if !self.generation_fields_exists() {
+        if self.generation_fields_exists() {
             let partial_tx = PartialTx {
                 from_method: &self.from_method,
                 to_method: &self.to_method,

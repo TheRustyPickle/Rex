@@ -156,4 +156,10 @@ impl DbConn {
 
         Ok(())
     }
+
+    pub fn fetch_tx_with_id(&mut self, id: i32) -> Result<FullTx> {
+        let tx = FullTx::get_tx_by_id(id, self)?;
+
+        Ok(tx)
+    }
 }

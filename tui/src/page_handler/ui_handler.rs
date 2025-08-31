@@ -173,7 +173,7 @@ pub fn start_app<B: Backend>(
     let mut max_popup_scroll = 0;
 
     // Home and Add TX Page balance data
-    let mut balance_data = Vec::new();
+    let mut add_tx_balance = Vec::new();
     // Home and add TX page balance section's column space
     let mut width_data = Vec::new();
     let total_columns = get_all_tx_methods(conn).len() + 2;
@@ -215,7 +215,7 @@ pub fn start_app<B: Backend>(
 
                     CurrentUi::AddTx => add_tx_ui(
                         f,
-                        &mut balance_data,
+                        &mut add_tx_balance,
                         &add_tx_data,
                         &add_tx_tab,
                         &mut width_data,
@@ -316,7 +316,7 @@ pub fn start_app<B: Backend>(
             let mut handler = InputKeyHandler::new(
                 key,
                 &mut page,
-                &mut balance_data,
+                &mut add_tx_balance,
                 &mut popup_state,
                 &mut add_tx_tab,
                 &mut chart_tab,
