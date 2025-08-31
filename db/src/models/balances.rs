@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 use crate::ConnCache;
 use crate::schema::balances;
 
-#[derive(Clone, Queryable, Insertable, Selectable)]
+#[derive(Clone, Debug, Queryable, Insertable, Selectable)]
 pub struct Balance {
     pub method_id: i32,
     pub year: i32,
@@ -140,11 +140,14 @@ impl Balance {
         Ok(balance_list)
     }
 
+    /// Get the last non-final balance of a method. Date = Current date
     pub fn get_last_balance(
         date: NaiveDate,
         db_conn: &mut impl ConnCache,
     ) -> Result<HashMap<i32, i64>, Error> {
-        use crate::schema::balances::dsl::{balances, method_id, month, year};
+        use crate::schema::balances::dsl::{balances, is_final_balance, method_id, month, year};
+
+        let mut ongoing_date = date;
 
         let mut found_method_balances = HashMap::new();
 
@@ -155,10 +158,10 @@ impl Balance {
         }
 
         for _ in 0..3 {
-            let previous_date = date - Months::new(1);
+            ongoing_date = ongoing_date - Months::new(1);
 
-            let date_year = previous_date.year();
-            let date_month = previous_date.month() as i32;
+            let date_year = ongoing_date.year();
+            let date_month = ongoing_date.month() as i32;
 
             let Some(last_balances) = balances
                 .filter(year.eq(date_year))
@@ -181,10 +184,14 @@ impl Balance {
             }
         }
 
+        // Fallback. Start from the previous month and look for the last non-final balance
+        let date = date - Months::new(1);
+
         if !pending_balance_tx_methods.is_empty() {
             for mid in pending_balance_tx_methods {
                 if let Some(last_balance) = balances
                     .filter(method_id.eq(mid))
+                    .filter(is_final_balance.eq(false))
                     .filter(
                         year.lt(date.year())
                             .or(year.eq(date.year()).and(month.lt(date.month() as i32))),
