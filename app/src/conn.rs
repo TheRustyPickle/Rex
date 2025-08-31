@@ -1,5 +1,5 @@
 use anyhow::{Error, Result};
-use db::models::{FullTx, Tag, TxMethod};
+use db::models::{FullTx, NewTx, Tag, TxMethod};
 use db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
 use diesel::{Connection, SqliteConnection};
 use std::collections::HashMap;
@@ -100,30 +100,11 @@ impl DbConn {
         self.cache.tags = tags;
     }
 
-    pub fn add_new_tx(
-        &mut self,
-        date: &str,
-        details: &str,
-        from_method: &str,
-        to_method: &str,
-        amount: &str,
-        tx_type: &str,
-        tags: &str,
-    ) -> Result<()> {
+    pub fn add_new_tx(&mut self, tx: NewTx, tags: &str) -> Result<()> {
         self.conn.transaction::<_, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
-            let new_tags = add_new_tx(
-                date,
-                details,
-                from_method,
-                to_method,
-                amount,
-                tx_type,
-                tags,
-                None,
-                &mut db_conn,
-            )?;
+            let new_tags = add_new_tx(tx, tags, None, &mut db_conn)?;
 
             self.cache.new_tags(new_tags);
 
@@ -145,34 +126,14 @@ impl DbConn {
         Ok(())
     }
 
-    pub fn edit_tx(
-        &mut self,
-        old_tx: &FullTx,
-        date: &str,
-        details: &str,
-        from_method: &str,
-        to_method: &str,
-        amount: &str,
-        tx_type: &str,
-        tags: &str,
-    ) -> Result<()> {
+    pub fn edit_tx(&mut self, old_tx: &FullTx, new_tx: NewTx, tags: &str) -> Result<()> {
         self.conn.transaction::<_, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
             let old_tx_id = old_tx.id;
             delete_tx(old_tx, &mut db_conn)?;
 
-            let new_tags = add_new_tx(
-                date,
-                details,
-                from_method,
-                to_method,
-                amount,
-                tx_type,
-                tags,
-                Some(old_tx_id),
-                &mut db_conn,
-            )?;
+            let new_tags = add_new_tx(new_tx, tags, Some(old_tx_id), &mut db_conn)?;
 
             self.cache.new_tags(new_tags);
 
