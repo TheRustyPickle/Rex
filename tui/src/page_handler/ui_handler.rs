@@ -1,4 +1,3 @@
-#[cfg(not(tarpaulin_include))]
 use app::conn::DbConn;
 use app::fetcher::get_txs_index;
 use crossterm::event::poll;
@@ -43,7 +42,6 @@ pub const BLUE: Color = Color::Rgb(51, 51, 255);
 pub const GRAY: Color = Color::Rgb(128, 128, 128);
 
 /// Starts the interface and run the app
-#[cfg(not(tarpaulin_include))]
 pub fn start_app<B: Backend>(
     terminal: &mut Terminal<B>,
     new_version_data: &Option<Vec<String>>,
@@ -86,8 +84,6 @@ pub fn start_app<B: Backend>(
     conn.execute("PRAGMA foreign_keys = ON", [])
         .expect("Could not enable foreign keys");
 
-    // Stores all data relevant for home page such as balance, changes and txs
-    let mut all_tx_data = TransactionData::new(home_months.index, home_years.index, conn);
     // Stores all activity for a specific month of a year alongside the txs involved in an activity
     let mut activity_data = ActivityData::new(activity_months.index, activity_years.index, conn);
 
@@ -323,7 +319,6 @@ pub fn start_app<B: Backend>(
                 &mut summary_tab,
                 &mut home_tab,
                 &mut add_tx_data,
-                &mut all_tx_data,
                 &mut chart_data,
                 &mut summary_data,
                 &mut home_table,

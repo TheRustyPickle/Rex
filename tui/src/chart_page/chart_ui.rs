@@ -16,7 +16,6 @@ use crate::utility::{
 };
 
 /// Creates the balance chart from the transactions
-#[cfg(not(tarpaulin_include))]
 pub fn chart_ui<S: ::std::hash::BuildHasher>(
     f: &mut Frame,
     months: &IndexedData,

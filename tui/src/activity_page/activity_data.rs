@@ -30,7 +30,6 @@ impl ActivityDetails {
         self.activity_num
     }
 
-    #[cfg(not(tarpaulin_include))]
     fn to_vec(&self) -> Vec<String> {
         vec![
             self.created_on.clone(),
@@ -81,7 +80,6 @@ impl ActivityTx {
         self.activity_num
     }
 
-    #[cfg(not(tarpaulin_include))]
     pub fn to_vec(&self, smaller_num: Option<i32>) -> Vec<String> {
         if let Some(id) = smaller_num {
             let is_smaller = id == self.insertion_id;
@@ -128,7 +126,6 @@ pub struct ActivityData {
 }
 
 impl ActivityData {
-    #[cfg(not(tarpaulin_include))]
     pub fn new(month: usize, year: usize, conn: &Connection) -> Self {
         let (activities, activity_txs) = get_all_activities(month, year, conn);
 
@@ -139,7 +136,6 @@ impl ActivityData {
     }
 
     /// Convert all activity to a Vector where each value of the vector is a vector of the activity
-    #[cfg(not(tarpaulin_include))]
     pub fn get_txs(&self) -> Vec<Vec<String>> {
         let mut txs = Vec::new();
 
@@ -151,7 +147,6 @@ impl ActivityData {
     }
 
     /// Convert all activity txs to a Vector where each value of the vector is a vector of the tx data
-    #[cfg(not(tarpaulin_include))]
     pub fn get_activity_txs(&self, index: Option<usize>) -> Vec<Vec<String>> {
         let Some(index) = index else {
             return Vec::new();
@@ -195,13 +190,11 @@ impl ActivityData {
     }
 
     /// Whether there is any activity data
-    #[cfg(not(tarpaulin_include))]
     pub fn is_activity_empty(&self) -> bool {
         self.activities.is_empty()
     }
 
     /// Whether the activity at this index should have an extra field in the UI
-    #[cfg(not(tarpaulin_include))]
     pub fn add_extra_field(&self, index: usize) -> bool {
         let target_activity = self.activities.get(index).unwrap();
 

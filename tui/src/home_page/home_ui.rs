@@ -23,7 +23,6 @@ pub const BALANCE_BOLD: [&str; 7] = [
 ];
 
 /// The function draws the Homepage of the interface.
-#[cfg(not(tarpaulin_include))]
 pub fn home_ui(
     f: &mut Frame,
     months: &IndexedData,

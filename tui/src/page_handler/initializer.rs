@@ -4,7 +4,6 @@ use std::env::set_current_dir;
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::prelude::*;
-#[cfg(not(tarpaulin_include))]
 use std::path::Path;
 use std::path::PathBuf;
 use std::process;
@@ -20,7 +19,6 @@ use crate::utility::{
 };
 
 /// Initialize the TUI loop
-#[cfg(not(tarpaulin_include))]
 pub fn initialize_app(
     original_db_path: &PathBuf,
     migrated_db_path: &Path,

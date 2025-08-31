@@ -1,4 +1,6 @@
+#[cfg(not(tarpaulin_include))]
 mod popup_data;
+#[cfg(not(tarpaulin_include))]
 mod popup_ui;
 
 pub use popup_data::{A, F, H, PopupData, Q, R, V, W, Y, Z};

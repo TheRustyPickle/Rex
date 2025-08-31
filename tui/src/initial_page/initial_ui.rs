@@ -8,7 +8,6 @@ use crate::popup_page::{A, F, H, Q, R, V, W, Y, Z};
 use crate::utility::{create_bolded_text, main_block, styled_block};
 
 /// The function draws the Initial page of the interface.
-#[cfg(not(tarpaulin_include))]
 pub fn initial_ui(f: &mut Frame, start_from: usize) {
     let size = f.area();
     let chunks = Layout::default()

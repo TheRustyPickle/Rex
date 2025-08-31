@@ -19,17 +19,14 @@ pub struct PopupData<'a> {
 }
 
 impl<'a> PopupData<'a> {
-    #[cfg(not(tarpaulin_include))]
     pub fn new() -> Self {
         PopupData { title: "" }
     }
 
-    #[cfg(not(tarpaulin_include))]
     pub fn set_title(&mut self, title: &'a str) {
         self.title = title;
     }
 
-    #[cfg(not(tarpaulin_include))]
     pub fn create_popup(
         &mut self,
         f: &mut Frame,
@@ -66,7 +63,6 @@ impl<'a> PopupData<'a> {
         }
     }
 
-    #[cfg(not(tarpaulin_include))]
     fn get_new_update_text(&mut self, data: &[String]) -> String {
         self.set_title("New Update");
         format!(
@@ -78,7 +74,6 @@ Enter: Redirect to the new version",
         )
     }
 
-    #[cfg(not(tarpaulin_include))]
     fn get_add_tx_help_text(&mut self) -> String {
         self.set_title("Help");
         format!(
@@ -121,7 +116,6 @@ Example amount: 100 + b, b + b, 5 * b, 1.2k + 1m
         )
     }
 
-    #[cfg(not(tarpaulin_include))]
     fn get_chart_help_text(&mut self) -> String {
         self.set_title("Help");
         format!(
@@ -147,7 +141,6 @@ Arrow Left/Right: Move value of the widget
         )
     }
 
-    #[cfg(not(tarpaulin_include))]
     fn get_summary_help_text(&mut self) -> String {
         self.set_title("Help");
         format!(
@@ -174,7 +167,6 @@ Arrow Left/Right: Move value of the widget
         )
     }
 
-    #[cfg(not(tarpaulin_include))]
     fn get_home_help_text(&mut self) -> String {
         self.set_title("Help");
         format!("This is the Home page where all txs added so far, the balances and the changes are shown
@@ -201,13 +193,11 @@ Swapping transaction location will only work if they are on the same date.
 ")
     }
 
-    #[cfg(not(tarpaulin_include))]
     fn get_delete_failed_text(&mut self, err: &str) -> String {
         self.set_title("Delete Failed");
         err.to_string()
     }
 
-    #[cfg(not(tarpaulin_include))]
     fn get_search_help_text(&mut self) -> String {
         self.set_title("Help");
         format!(
@@ -261,7 +251,6 @@ Example amount : <1000, >=10000
         )
     }
 
-    #[cfg(not(tarpaulin_include))]
     fn get_activity_help_text(&mut self) -> String {
         self.set_title("Help");
         format!(
@@ -286,7 +275,6 @@ Arrow Left/Right: Move value of the widget
         )
     }
 
-    #[cfg(not(tarpaulin_include))]
     fn get_transaction_details_text(&mut self, details: String) -> String {
         self.set_title("Transaction Details");
         details

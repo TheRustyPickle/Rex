@@ -12,7 +12,6 @@ struct GithubRelease {
 }
 
 /// Uses GitHub API to get the latest release version number to check if the current version matches with it.
-#[cfg(not(tarpaulin_include))]
 pub fn check_version() -> Result<Option<Vec<String>>, Error> {
     let current_version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
 
