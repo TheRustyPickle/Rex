@@ -6,4 +6,4 @@ mod shared;
 pub use delete_tx::*;
 pub use new_method::*;
 pub use new_tx::*;
-use shared::*;
+pub use shared::*;
