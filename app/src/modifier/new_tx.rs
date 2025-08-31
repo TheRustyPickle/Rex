@@ -1,38 +1,20 @@
 use anyhow::{Context, Result};
-use chrono::NaiveDate;
 use db::ConnCache;
 use db::models::{Balance, NewTag, NewTx, Tag, Tx, TxTag, TxType};
 
 use crate::modifier::tidy_balances;
 
 pub fn add_new_tx(
-    date: &str,
-    details: &str,
-    from_method: &str,
-    to_method: &str,
-    amount: &str,
-    tx_type: &str,
+    tx: NewTx,
     tags: &str,
     maintain_id: Option<i32>,
     db_conn: &mut impl ConnCache,
 ) -> Result<Vec<Tag>> {
-    let date = date.parse::<NaiveDate>()?;
-
-    let details = if details.is_empty() {
-        None
-    } else {
-        Some(details)
-    };
-
-    let amount = (amount.parse::<f64>()? * 100.0).round() as i64;
-
-    let from_method = db_conn.cache().get_method_id(from_method).unwrap();
-    let to_method = if to_method.is_empty() {
-        None
-    } else {
-        Some(db_conn.cache().get_method_id(to_method).unwrap())
-    };
-
+    let date = tx.date;
+    let from_method = tx.from_method;
+    let to_method = tx.to_method;
+    let amount = tx.amount;
+    let tx_type = tx.tx_type;
     let mut tag_list = Vec::new();
 
     if !tags.is_empty() {
@@ -47,8 +29,6 @@ pub fn add_new_tx(
     } else {
         tag_list.push("Unknown".to_string());
     }
-
-    let new_tx = NewTx::new(date, details, from_method, to_method, amount, tx_type, None);
 
     let mut current_balance = Balance::get_balance_map(date, db_conn)?;
 
@@ -108,9 +88,9 @@ pub fn add_new_tx(
     // TODO: Add activity txs later
 
     let added_tx = if let Some(id) = maintain_id {
-        Tx::from_new_tx(new_tx, id).insert(db_conn)?
+        Tx::from_new_tx(tx, id).insert(db_conn)?
     } else {
-        new_tx.insert(db_conn).context("Failed on new tx")?
+        tx.insert(db_conn).context("Failed on new tx")?
     };
 
     let mut tx_tags = Vec::new();

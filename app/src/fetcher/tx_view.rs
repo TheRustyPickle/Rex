@@ -7,13 +7,14 @@ use std::collections::HashMap;
 
 use crate::conn::DbConn;
 
+#[derive(Debug)]
 pub struct TxView {
     tx: FullTx,
     /// Tx Method ID -> Balance after this tx was committed
-    balance: HashMap<i32, i64>,
+    pub balance: HashMap<i32, i64>,
 }
 
-pub struct TxViewGroup(Vec<TxView>);
+pub struct TxViewGroup(pub Vec<TxView>);
 
 // Month and year are in index value. 0 for month is January while 0 for year is 2022
 pub fn get_txs_index(month: usize, year: usize, db_conn: &mut DbConn) -> Result<TxViewGroup> {

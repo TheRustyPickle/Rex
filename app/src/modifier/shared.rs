@@ -1,7 +1,7 @@
 use anyhow::Result;
 use chrono::NaiveDate;
 use db::ConnCache;
-use db::models::{Balance, FetchNature, Tx, TxType};
+use db::models::{Balance, FetchNature, NewTx, Tx, TxType};
 
 pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Result<()> {
     let nature = FetchNature::Monthly;
@@ -50,4 +50,34 @@ pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Re
     }
 
     Ok(())
+}
+
+pub fn parse_tx_fields<'a>(
+    date: &'a str,
+    details: &'a str,
+    from_method: &'a str,
+    to_method: &'a str,
+    amount: &'a str,
+    tx_type: &'a str,
+    db_conn: &impl ConnCache,
+) -> Result<NewTx<'a>> {
+    let date = date.parse::<NaiveDate>()?;
+
+    let details = if details.is_empty() {
+        None
+    } else {
+        Some(details)
+    };
+
+    let amount = (amount.parse::<f64>()? * 100.0).round() as i64;
+
+    let from_method = db_conn.cache().get_method_id(from_method).unwrap();
+    let to_method = if to_method.is_empty() {
+        None
+    } else {
+        Some(db_conn.cache().get_method_id(to_method).unwrap())
+    };
+
+    let new_tx = NewTx::new(date, details, from_method, to_method, amount, tx_type, None);
+    Ok(new_tx)
 }
