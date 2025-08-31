@@ -34,7 +34,6 @@ pub struct InputKeyHandler<'a> {
     all_tx_data: &'a mut TransactionData,
     chart_data: &'a mut ChartData,
     summary_data: &'a mut SummaryData,
-    table: &'a mut TableData,
     home_table: &'a mut TableData,
     home_txs: &'a mut TxViewGroup,
     summary_table: &'a mut TableData,
@@ -87,7 +86,6 @@ impl<'a> InputKeyHandler<'a> {
         all_tx_data: &'a mut TransactionData,
         chart_data: &'a mut ChartData,
         summary_data: &'a mut SummaryData,
-        table: &'a mut TableData,
         home_table: &'a mut TableData,
         home_txs: &'a mut TxViewGroup,
         summary_table: &'a mut TableData,
@@ -140,7 +138,6 @@ impl<'a> InputKeyHandler<'a> {
             all_tx_data,
             chart_data,
             summary_data,
-            table,
             home_table,
             home_txs,
             summary_table,
@@ -264,7 +261,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn do_deletion_popup(&mut self) {
         match self.page {
             CurrentUi::Home => {
-                if self.table.state.selected().is_some() {
+                if self.home_table.state.selected().is_some() {
                     *self.popup = PopupState::TxDeletion;
                 }
             }
@@ -394,6 +391,8 @@ impl<'a> InputKeyHandler<'a> {
 
         match result {
             Ok(()) => {
+                // INFO: maybe can reduce fetches by directly deleted from tx list?
+
                 // Transaction deleted so reload the data again
                 self.reload_home_table();
                 self.reload_chart_data();
@@ -404,10 +403,10 @@ impl<'a> InputKeyHandler<'a> {
                 self.reload_add_tx_balance_data();
 
                 if index == 0 {
-                    self.table.state.select(None);
+                    self.home_table.state.select(None);
                     *self.home_tab = HomeTab::Months;
                 } else {
-                    self.table.state.select(Some(index - 1));
+                    self.home_table.state.select(Some(index - 1));
                 }
 
                 // TODO: Activity log
@@ -953,7 +952,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn switch_tx_position_up(&mut self) {
         if let Some(index) = self.home_table.state.selected() {
             // Don't do anything if there is 2 or less items or is selecting the first index which can't be moved up
-            if self.table.items.len() <= 2 || index == 0 {
+            if self.home_table.items.len() <= 2 || index == 0 {
                 return;
             }
 
@@ -974,7 +973,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn switch_tx_position_down(&mut self) {
         if let Some(index) = self.home_table.state.selected() {
             // Don't do anything if there is 1 or less items or is selecting the last index which can't be moved up
-            if self.table.items.len() <= 2 || index == self.table.items.len() - 1 {
+            if self.home_table.items.len() <= 2 || index == self.home_table.items.len() - 1 {
                 return;
             }
 

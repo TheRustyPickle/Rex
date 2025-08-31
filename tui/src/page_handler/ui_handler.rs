@@ -92,11 +92,11 @@ pub fn start_app<B: Backend>(
     let mut activity_data = ActivityData::new(activity_months.index, activity_years.index, conn);
 
     let mut search_txs = TransactionData::new_search(Vec::new(), Vec::new());
-    // Data for the HomePage's tx table
-    let mut table = TableData::new(all_tx_data.get_txs());
 
+    // Contains the tx views for that month and year. Used for home page data + balances
     let mut home_txs = get_txs_index(home_months.index, home_years.index, migrated_conn).unwrap();
 
+    // Home tx data but in vector form with index tracking
     let mut home_table = TableData::new(home_txs.tx_array());
 
     // The page which is currently selected. Default is the initial page
@@ -326,7 +326,6 @@ pub fn start_app<B: Backend>(
                 &mut all_tx_data,
                 &mut chart_data,
                 &mut summary_data,
-                &mut table,
                 &mut home_table,
                 &mut home_txs,
                 &mut summary_table,
