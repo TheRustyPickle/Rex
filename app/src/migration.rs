@@ -1,14 +1,13 @@
 use anyhow::{Context, Error, Result};
 use chrono::{Datelike, Months, NaiveDate};
 use db::ConnCache;
-use db::models::{Balance, NewTag, NewTx, TxTag, TxType};
+use db::models::{Balance, FetchNature, NewTag, NewTx, TxTag, TxType};
 use diesel::sql_types::Text;
 use diesel::{prelude::*, sql_query};
 use std::collections::HashMap;
 use std::io::Write;
 
 use crate::conn::{DbConn, MutDbConn};
-use crate::fetcher::get_txs_date;
 use crate::modifier::add_new_tx_methods;
 
 #[derive(QueryableByName)]
@@ -116,7 +115,7 @@ pub fn start_migration(
         let mut ongoing_date = start_date;
 
         while ongoing_date <= end_date {
-            get_txs_date(ongoing_date, db_conn)?;
+            db_conn.fetch_txs_with_date(ongoing_date, FetchNature::Monthly)?;
             ongoing_date = ongoing_date + Months::new(1);
 
             count += 1;

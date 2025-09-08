@@ -1,5 +1,5 @@
-use app::conn::DbConn;
-use app::fetcher::{TxViewGroup, get_txs_index};
+use app::conn::{DbConn, FetchNature};
+use app::fetcher::{SearchView, TxViewGroup};
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::collections::HashMap;
@@ -7,7 +7,6 @@ use std::collections::HashMap;
 use crate::activity_page::ActivityData;
 use crate::chart_page::ChartData;
 use crate::db::MONTHS;
-use crate::home_page::TransactionData;
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
 use crate::page_handler::{
@@ -50,7 +49,7 @@ pub struct InputKeyHandler<'a> {
     search_date_type: &'a mut DateType,
     pub search_tab: &'a mut TxTab,
     search_table: &'a mut TableData,
-    search_txs: &'a mut TransactionData,
+    search_txs: &'a mut SearchView,
     activity_months: &'a mut IndexedData,
     activity_years: &'a mut IndexedData,
     activity_tab: &'a mut ActivityTab,
@@ -101,7 +100,7 @@ impl<'a> InputKeyHandler<'a> {
         search_date_type: &'a mut DateType,
         search_tab: &'a mut TxTab,
         search_table: &'a mut TableData,
-        search_txs: &'a mut TransactionData,
+        search_txs: &'a mut SearchView,
         activity_months: &'a mut IndexedData,
         activity_years: &'a mut IndexedData,
         activity_tab: &'a mut ActivityTab,
@@ -320,17 +319,16 @@ impl<'a> InputKeyHandler<'a> {
             self.search_data
                 .add_tx_status("Search: All fields cannot be empty".to_string());
         } else {
-            let search_txs = self
-                .search_data
-                .get_search_tx(self.search_date_type, self.conn);
+            let search_txs = self.search_data.get_search_tx(self.migrated_conn);
 
-            if search_txs.0.is_empty() {
+            if search_txs.is_empty() {
                 self.search_data.add_tx_status(
                     "Search: No transactions found with the provided input".to_string(),
                 );
             } else {
-                *self.search_txs = TransactionData::new_search(search_txs.0.clone(), search_txs.1);
-                *self.search_table = TableData::new(search_txs.0);
+                *self.search_table = TableData::new(search_txs.tx_array());
+                *self.search_txs = search_txs;
+
                 self.search_table.state.select(Some(0));
                 self.search_data.add_tx_status(format!(
                     "Search: Found {} Transactions",
@@ -886,62 +884,36 @@ impl<'a> InputKeyHandler<'a> {
     /// Start editing tx from a search result
     pub fn search_edit_tx(&mut self) {
         if let Some(a) = self.search_table.state.selected() {
-            let target_data = &self.search_txs.get_tx(a);
-            let target_id_num = self.search_txs.get_id_num(a);
-            let tx_type = &target_data[4];
+            let target_tx = &self.search_txs.get_tx(a);
 
-            // Based on what kind of transaction is selected, passes the tx data to the struct
-            // and changes the current interface
-            if tx_type == "Transfer" {
-                let split_method = target_data[2].split(" to ").collect::<Vec<&str>>();
-                let from_method = split_method[0];
-                let to_method = split_method[1];
+            *self.page = CurrentUi::AddTx;
+            *self.add_tx_data = TxData::from_full_tx(target_tx, true);
 
-                *self.add_tx_data = TxData::custom(
-                    &target_data[0],
-                    &target_data[1],
-                    from_method,
-                    to_method,
-                    &target_data[3],
-                    "Transfer",
-                    &target_data[5],
-                    target_id_num,
-                );
-                *self.page = CurrentUi::AddTx;
-            } else {
-                *self.add_tx_data = TxData::custom(
-                    &target_data[0],
-                    &target_data[1],
-                    &target_data[2],
-                    "",
-                    &target_data[3],
-                    &target_data[4],
-                    &target_data[5],
-                    target_id_num,
-                );
-                *self.page = CurrentUi::AddTx;
-            }
             self.reload_add_tx_balance_data();
         }
     }
 
     /// Delete a transaction from search page
     pub fn search_delete_tx(&mut self) {
-        if let Some(index) = self.search_table.state.selected() {
-            let status = self.search_txs.del_tx(index, self.conn);
-            match status {
-                Ok(()) => {
-                    // Transaction deleted so reload the data again
-                    self.reload_home_table();
-                    self.reload_chart_data();
-                    self.reload_summary_data();
-                    self.reset_search_data();
-                }
-                Err(err) => {
-                    *self.popup = PopupState::DeleteFailed(
-                        TxUpdateError::FailedDeleteTx(err.to_string()).to_string(),
-                    );
-                }
+        let Some(index) = self.search_table.state.selected() else {
+            return;
+        };
+
+        let target_tx = self.search_txs.get_tx(index);
+        let result = self.migrated_conn.delete_tx(target_tx);
+
+        match result {
+            Ok(()) => {
+                // Transaction deleted so reload the data again
+                self.reload_home_table();
+                self.reload_chart_data();
+                self.reload_summary_data();
+                self.reset_search_data();
+            }
+            Err(err) => {
+                *self.popup = PopupState::DeleteFailed(
+                    TxUpdateError::FailedDeleteTx(err.to_string()).to_string(),
+                );
             }
         }
     }
@@ -1671,12 +1643,14 @@ impl InputKeyHandler<'_> {
 
     /// Reload Home page's table data by fetching from the DB
     fn reload_home_table(&mut self) {
-        *self.home_txs = get_txs_index(
-            self.home_months.index,
-            self.home_years.index,
-            self.migrated_conn,
-        )
-        .unwrap();
+        *self.home_txs = self
+            .migrated_conn
+            .fetch_txs_with_index(
+                self.home_months.index,
+                self.home_years.index,
+                FetchNature::Monthly,
+            )
+            .unwrap();
         *self.home_table = TableData::new(self.home_txs.tx_array());
     }
 
@@ -1789,7 +1763,7 @@ impl InputKeyHandler<'_> {
     /// Reset all currently shown search related data to nothing
     fn reset_search_data(&mut self) {
         *self.search_table = TableData::new(Vec::new());
-        *self.search_txs = TransactionData::new_search(Vec::new(), Vec::new());
+        *self.search_txs = SearchView::new_empty();
     }
 
     /// Reload activity data by fetching from the DB
@@ -1856,7 +1830,7 @@ impl InputKeyHandler<'_> {
                     self.search_table
                         .state
                         .select(Some(self.search_table.items.len() - 1));
-                } else if !self.search_txs.is_tx_empty() {
+                } else if !self.search_txs.is_empty() {
                     self.search_table.previous();
                 }
                 Ok(())
@@ -1880,7 +1854,7 @@ impl InputKeyHandler<'_> {
             TxTab::Nothing => {
                 if self.search_table.state.selected() == Some(self.search_table.items.len() - 1) {
                     self.search_table.state.select(Some(0));
-                } else if !self.search_txs.is_tx_empty() {
+                } else if !self.search_txs.is_empty() {
                     self.search_table.next();
                 }
                 Ok(())
