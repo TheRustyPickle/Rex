@@ -8,7 +8,7 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Tabs};
-use rusqlite::{Connection, Result as sqlResult};
+use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
@@ -123,50 +123,6 @@ pub fn get_all_details(conn: &Connection) -> Vec<String> {
     sorted_details
 }
 
-/// Gets all columns inside the `tx_all` table. Used to determine if the database needs to be migrated
-pub fn get_all_tx_columns(conn: &Connection) -> Vec<String> {
-    let column_names = conn
-        .prepare("SELECT * FROM tx_all")
-        .expect("could not prepare statement");
-
-    column_names
-        .column_names()
-        .iter()
-        .map(ToString::to_string)
-        .collect()
-}
-
-/// Returns the a vector with data required to create the Changes row for zero changes in the homepage.
-pub fn get_empty_changes(conn: &Connection) -> Vec<String> {
-    // Function for quick vec with 0 changes for adding in widget
-    let tx_methods = get_all_tx_methods(conn);
-    let mut changes = vec!["Changes".to_string()];
-    for _i in tx_methods {
-        changes.push(format!("{:.2}", 0.0));
-    }
-    changes
-}
-
-/// Returns the last `id_num` recorded by `tx_all` table
-pub fn get_last_tx_id(conn: &Connection) -> sqlResult<i32> {
-    let last_id: sqlResult<i32> = conn.query_row(
-        "SELECT id_num FROM tx_all ORDER BY id_num DESC LIMIT 1",
-        [],
-        |row| row.get(0),
-    );
-    last_id
-}
-
-/// Returns the last `id_num` recorded by `balance_all` table or the `id_num` of the absolute final balance
-pub fn get_last_balance_id(conn: &Connection) -> sqlResult<i32> {
-    let last_id: sqlResult<i32> = conn.query_row(
-        "SELECT id_num FROM balance_all ORDER BY id_num DESC LIMIT 1",
-        [],
-        |row| row.get(0),
-    );
-    last_id
-}
-
 /// Returns two dates based on the month and year index. Used for the purpose of searching
 /// tx based on date
 #[must_use]
@@ -190,40 +146,6 @@ pub fn get_sql_dates(month: usize, year: usize, date_type: &DateType) -> (String
         }
         DateType::Exact => (String::new(), String::new()),
     }
-}
-
-/// Checks if the `balance_all` table is outdated
-pub fn check_old_balance_sql(conn: &Connection) -> bool {
-    let mut query = conn.prepare("PRAGMA table_info(balance_all)").unwrap();
-
-    let columns = query
-        .query_map([], |row| Ok((row.get(1).unwrap(), row.get(2).unwrap())))
-        .unwrap();
-
-    let mut result = false;
-
-    for column in columns {
-        let (name, data_type): (String, String) = column.unwrap();
-        if name != "id_num" && data_type == "TEXT" {
-            result = true;
-            break;
-        }
-    }
-    result
-}
-
-pub fn get_all_table_names(conn: &Connection) -> Vec<String> {
-    let mut stmt = conn
-        .prepare("SELECT name FROM sqlite_master WHERE type='table'")
-        .unwrap();
-    let table_names = stmt.query_map([], |row| row.get(0)).unwrap();
-
-    let mut result = Vec::new();
-    for table_name in table_names {
-        result.push(table_name.unwrap());
-    }
-
-    result
 }
 
 /// Enters raw mode so the TUI can render properly
@@ -363,11 +285,10 @@ pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
 
 /// Create a tab with some values where each value's color will depend on the provided `HashMap` bool value
 #[cfg(not(tarpaulin_include))]
-pub fn create_tab_activation<'a, S: ::std::hash::BuildHasher>(
+pub fn create_tab_activation<'a>(
     data: &'a IndexedData,
     name: &'a str,
-    // No idea what the BuildHasher does. Clippy pedantic said it so I did it.
-    activation: &HashMap<String, bool, S>,
+    activation: &HashMap<String, bool>,
 ) -> Tabs<'a> {
     let titles: Vec<Line> = data
         .titles
@@ -654,58 +575,6 @@ pub fn delete_location_change(original_db_path: &PathBuf) -> ioResult<()> {
     }
 
     fs::remove_file(json_path)
-}
-
-/// Returns a transaction detail from a given ID number
-pub fn get_tx_id_num(id_num: i32, conn: &Connection) -> Vec<String> {
-    let query = format!("SELECT * FROM tx_all WHERE id_num = {id_num}");
-
-    let tx_data = conn.query_row(&query, [], |row| {
-        let date: String = row.get(0).unwrap();
-        let id_num: i32 = row.get(5).unwrap();
-        let collected_date = date.split('-').collect::<Vec<&str>>();
-        let new_date = format!(
-            "{}-{}-{}",
-            collected_date[2], collected_date[1], collected_date[0]
-        );
-        Ok(vec![
-            new_date,
-            row.get(1).unwrap(),
-            row.get(2).unwrap(),
-            row.get(3).unwrap(),
-            row.get(4).unwrap(),
-            row.get(6).unwrap(),
-            id_num.to_string(),
-        ])
-    });
-
-    tx_data.unwrap()
-}
-
-/// Returns the details of the last added transaction
-pub fn get_last_tx(conn: &Connection) -> Vec<String> {
-    let query = "SELECT * FROM tx_all ORDER BY id_num DESC LIMIT 1";
-
-    let tx_data = conn.query_row(query, [], |row| {
-        let date: String = row.get(0).unwrap();
-        let id_num: i32 = row.get(5).unwrap();
-        let collected_date = date.split('-').collect::<Vec<&str>>();
-        let new_date = format!(
-            "{}-{}-{}",
-            collected_date[2], collected_date[1], collected_date[0]
-        );
-        Ok(vec![
-            new_date,
-            row.get(1).unwrap(),
-            row.get(2).unwrap(),
-            row.get(3).unwrap(),
-            row.get(4).unwrap(),
-            row.get(6).unwrap(),
-            id_num.to_string(),
-        ])
-    });
-
-    tx_data.unwrap()
 }
 
 /// Add a new activity row to the DB
