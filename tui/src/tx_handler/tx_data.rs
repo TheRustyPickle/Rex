@@ -831,35 +831,6 @@ impl TxData {
         status
     }
 
-    /// Add a previously deleted tx again but with a new `id_num`
-    pub fn switch_tx_id(&self, new_id: i32, activity_num: i32, conn: &mut Connection) {
-        add_tx(
-            &self.date,
-            &self.details,
-            &self.get_tx_method(),
-            &self.amount,
-            &self.tx_type,
-            &self.tags,
-            Some(&new_id.to_string()),
-            conn,
-        )
-        .unwrap();
-
-        add_new_activity_tx(
-            &[
-                &self.date,
-                &self.details,
-                &self.get_tx_method(),
-                &self.amount,
-                &self.tx_type,
-                &self.tags,
-                &new_id.to_string(),
-            ],
-            activity_num,
-            conn,
-        );
-    }
-
     /// Whether the required fields for balance section data generate is filled up
     fn generation_fields_exists(&self) -> bool {
         if self.amount.is_empty() {
