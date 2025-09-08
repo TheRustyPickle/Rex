@@ -1,9 +1,12 @@
 use anyhow::{Error, Result};
-use db::models::{FullTx, NewTx, Tag, TxMethod};
+use chrono::NaiveDate;
+pub use db::models::FetchNature;
+use db::models::{FullTx, NewSearch, NewTx, Tag, TxMethod};
 use db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
 use diesel::{Connection, SqliteConnection};
 use std::collections::HashMap;
 
+use crate::fetcher::{SearchView, TxViewGroup, get_search_txs, get_txs};
 use crate::modifier::{add_new_tx, add_new_tx_methods, delete_tx};
 
 pub fn get_conn(location: &str) -> DbConn {
@@ -161,5 +164,49 @@ impl DbConn {
         let tx = FullTx::get_tx_by_id(id, self)?;
 
         Ok(tx)
+    }
+
+    pub fn fetch_txs_with_index(
+        &mut self,
+        month: usize,
+        year: usize,
+        nature: FetchNature,
+    ) -> Result<TxViewGroup> {
+        let result = self.conn.transaction::<TxViewGroup, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            let month_num = (month + 1) as u32;
+            let year_num = (year + 2022) as i32;
+
+            let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
+
+            get_txs(date, nature, &mut db_conn)
+        })?;
+
+        Ok(result)
+    }
+
+    pub fn fetch_txs_with_date(
+        &mut self,
+        date: NaiveDate,
+        nature: FetchNature,
+    ) -> Result<TxViewGroup> {
+        let result = self.conn.transaction::<TxViewGroup, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            get_txs(date, nature, &mut db_conn)
+        })?;
+
+        Ok(result)
+    }
+
+    pub fn search_txs(&mut self, search: NewSearch) -> Result<SearchView> {
+        let result = self.conn.transaction::<SearchView, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            get_search_txs(search, &mut db_conn)
+        })?;
+
+        Ok(result)
     }
 }

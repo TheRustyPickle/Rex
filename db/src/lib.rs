@@ -1,6 +1,7 @@
 pub mod models;
 mod schema;
 
+use anyhow::{Result, anyhow};
 use diesel::prelude::*;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use std::collections::HashMap;
@@ -21,15 +22,20 @@ pub struct Cache {
 }
 
 impl Cache {
-    pub fn get_method_id(&self, name: &str) -> Option<i32> {
+    pub fn get_method_id(&self, name: &str) -> Result<i32> {
         self.tx_methods
             .values()
             .find(|m| m.name == name)
             .map(|m| m.id)
+            .ok_or_else(|| anyhow!("method '{}' not found", name))
     }
 
-    pub fn get_tag_id(&self, name: &str) -> Option<i32> {
-        self.tags.values().find(|m| m.name == name).map(|m| m.id)
+    pub fn get_tag_id(&self, name: &str) -> Result<i32> {
+        self.tags
+            .values()
+            .find(|m| m.name == name)
+            .map(|m| m.id)
+            .ok_or_else(|| anyhow!("tag '{}' not found", name))
     }
 
     pub fn new_tags(&mut self, tags: Vec<Tag>) {

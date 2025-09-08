@@ -18,27 +18,16 @@ pub struct PartialTx<'a> {
 pub struct TxView {
     tx: FullTx,
     /// Tx Method ID -> Balance after this tx was committed
-    pub balance: HashMap<i32, i64>,
+    balance: HashMap<i32, i64>,
 }
 
-pub struct TxViewGroup(pub Vec<TxView>);
+pub struct TxViewGroup(Vec<TxView>);
 
-// Month and year are in index value. 0 for month is January while 0 for year is 2022
-pub fn get_txs_index(month: usize, year: usize, db_conn: &mut DbConn) -> Result<TxViewGroup> {
-    let month_num = (month + 1) as u32;
-    let year_num = (year + 2022) as i32;
-
-    let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
-    get_txs(date, db_conn)
-}
-
-pub fn get_txs_date(date: NaiveDate, db_conn: &mut DbConn) -> Result<TxViewGroup> {
-    get_txs(date, db_conn)
-}
-
-fn get_txs(date: NaiveDate, db_conn: &mut DbConn) -> Result<TxViewGroup> {
-    let nature = FetchNature::Monthly;
-
+pub(crate) fn get_txs(
+    date: NaiveDate,
+    nature: FetchNature,
+    db_conn: &mut impl ConnCache,
+) -> Result<TxViewGroup> {
     let txs = FullTx::get_txs(date, nature, db_conn)?;
 
     let current_balance = Balance::get_balance(date, db_conn)?;
@@ -469,5 +458,13 @@ impl TxViewGroup {
 
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn get_tx_balance(&self, index: usize) -> &HashMap<i32, i64> {
+        &self.0[index].balance
     }
 }

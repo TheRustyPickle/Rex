@@ -1,5 +1,5 @@
 use chrono::{Datelike, Days, Months, NaiveDate};
-use diesel::dsl::sql;
+use diesel::dsl::{exists, sql};
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::sql_types::Bool;
@@ -8,7 +8,7 @@ use std::fmt::{Display, Formatter};
 
 use crate::ConnCache;
 use crate::models::{Tag, TxMethod, TxTag};
-use crate::schema::txs;
+use crate::schema::{tx_tags, txs};
 
 static EMPTY: Vec<i32> = Vec::new();
 
@@ -22,6 +22,132 @@ pub enum TxType {
 pub enum FetchNature {
     Monthly,
     Yearly,
+}
+
+pub enum DateNature {
+    Exact(NaiveDate),
+    ByMonth {
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+    },
+    ByYear {
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+    },
+}
+
+pub enum AmountNature {
+    Exact(i64),
+    MoreThan(i64),
+    MoreThanEqual(i64),
+    LessThan(i64),
+    LessThanEqual(i64),
+}
+
+pub struct NewSearch<'a> {
+    pub date: Option<DateNature>,
+    pub details: Option<&'a str>,
+    pub tx_type: Option<&'a str>,
+    pub from_method: Option<i32>,
+    pub to_method: Option<i32>,
+    pub amount: Option<AmountNature>,
+    pub tags: Option<Vec<i32>>,
+}
+
+impl<'a> NewSearch<'a> {
+    pub fn new(
+        date: Option<DateNature>,
+        details: Option<&'a str>,
+        tx_type: Option<&'a str>,
+        from_method: Option<i32>,
+        to_method: Option<i32>,
+        amount: Option<AmountNature>,
+        tags: Option<Vec<i32>>,
+    ) -> Self {
+        Self {
+            date,
+            details,
+            tx_type,
+            from_method,
+            to_method,
+            amount,
+            tags,
+        }
+    }
+
+    pub fn search_txs(self, db_conn: &mut impl ConnCache) -> Result<Vec<FullTx>, Error> {
+        use crate::schema::txs::dsl::*;
+
+        let mut query = txs.into_boxed();
+
+        if let Some(d) = self.date {
+            match d {
+                DateNature::Exact(d) => {
+                    query = query.filter(date.eq(d));
+                }
+                DateNature::ByMonth {
+                    start_date,
+                    end_date,
+                } => {
+                    query = query.filter(date.between(start_date, end_date));
+                }
+                DateNature::ByYear {
+                    start_date,
+                    end_date,
+                } => {
+                    query = query.filter(date.between(start_date, end_date));
+                }
+            }
+        }
+
+        if let Some(d) = self.details {
+            query = query.filter(details.like(format!("%{}%", d)));
+        }
+
+        if let Some(t) = self.tx_type {
+            query = query.filter(tx_type.eq(t));
+        }
+
+        if let Some(m) = self.from_method {
+            query = query.filter(from_method.eq(m));
+        }
+
+        if let Some(m) = self.to_method {
+            query = query.filter(to_method.eq(m));
+        }
+
+        if let Some(a) = self.amount {
+            match a {
+                AmountNature::Exact(a) => {
+                    query = query.filter(amount.eq(a));
+                }
+                AmountNature::MoreThan(a) => {
+                    query = query.filter(amount.gt(a));
+                }
+                AmountNature::MoreThanEqual(a) => {
+                    query = query.filter(amount.ge(a));
+                }
+                AmountNature::LessThan(a) => {
+                    query = query.filter(amount.lt(a));
+                }
+                AmountNature::LessThanEqual(a) => {
+                    query = query.filter(amount.le(a));
+                }
+            }
+        }
+
+        if let Some(tag_ids) = self.tags {
+            query = query.filter(exists(
+                tx_tags::table
+                    .filter(tx_tags::tx_id.eq(id))
+                    .filter(tx_tags::tag_id.eq_any(tag_ids)),
+            ));
+        }
+
+        let result = query.select(Tx::as_select()).load(db_conn.conn())?;
+
+        FullTx::convert_to_full_tx(result, db_conn)
+    }
 }
 
 impl From<&str> for TxType {

@@ -1,6 +1,6 @@
 use app::conn::DbConn;
-use app::fetcher::{FullTx, PartialTx, TxViewGroup};
-use app::modifier::parse_tx_fields;
+use app::fetcher::{FullTx, PartialTx, SearchView, TxViewGroup};
+use app::modifier::{parse_search_fields, parse_tx_fields};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::cmp::Ordering;
@@ -13,7 +13,6 @@ use crate::tx_handler::add_tx;
 use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
 use crate::utility::{
     add_char_to, add_new_activity_tx, check_comparison, get_all_tx_methods, get_last_balances,
-    get_search_data,
 };
 
 /// Contains all data for a Transaction to work
@@ -265,12 +264,8 @@ impl TxData {
         }
     }
 
-    pub fn get_search_tx(
-        &self,
-        date_type: &DateType,
-        conn: &Connection,
-    ) -> (Vec<Vec<String>>, Vec<String>) {
-        get_search_data(
+    pub fn get_search_tx(&self, migrated_conn: &mut DbConn) -> SearchView {
+        let new_search = parse_search_fields(
             &self.date,
             &self.details,
             &self.from_method,
@@ -278,9 +273,11 @@ impl TxData {
             &self.amount,
             &self.tx_type,
             &self.tags,
-            date_type,
-            conn,
+            migrated_conn,
         )
+        .unwrap();
+
+        migrated_conn.search_txs(new_search).unwrap()
     }
 
     /// Adds a value to tx status

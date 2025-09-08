@@ -1,7 +1,4 @@
-use app::conn::FetchNature;
-use app::modifier::parse_tx_fields;
-use chrono::NaiveDate;
-use db::ConnCache;
+use app::modifier::{parse_search_fields, parse_tx_fields};
 use std::fs;
 
 use crate::common::create_test_db;
@@ -9,11 +6,10 @@ use crate::common::create_test_db;
 mod common;
 
 #[test]
-fn add_tx_test() {
+fn search_tx_test() {
     let file_name = "test_add_tx.sqlite";
 
     let mut db_conn = create_test_db(file_name);
-    let cash_method = db_conn.cache().get_method_id("Cash").unwrap();
 
     let tx_list = [
         [
@@ -90,31 +86,7 @@ fn add_tx_test() {
         ],
     ];
 
-    let date_list = [
-        NaiveDate::from_ymd_opt(2022, 7, 1).unwrap(),
-        NaiveDate::from_ymd_opt(2022, 8, 1).unwrap(),
-        NaiveDate::from_ymd_opt(2022, 9, 1).unwrap(),
-        NaiveDate::from_ymd_opt(2022, 10, 1).unwrap(),
-        NaiveDate::from_ymd_opt(2022, 10, 1).unwrap(),
-        NaiveDate::from_ymd_opt(2022, 10, 1).unwrap(),
-        NaiveDate::from_ymd_opt(2022, 10, 1).unwrap(),
-        NaiveDate::from_ymd_opt(2022, 11, 1).unwrap(),
-    ];
-
-    let balance_list = [
-        1000 * 100,
-        900 * 100,
-        0,
-        5000 * 100,
-        4900 * 100,
-        4800 * 100,
-        4700 * 100,
-        (4700 - 10000) * 100,
-    ];
-
-    let tx_len = [1, 1, 1, 1, 2, 3, 4, 1];
-
-    for (index, tx_fields) in tx_list.iter().enumerate() {
+    for tx_fields in tx_list {
         let new_tx = parse_tx_fields(
             tx_fields[0],
             tx_fields[1],
@@ -127,23 +99,34 @@ fn add_tx_test() {
         .unwrap();
 
         db_conn.add_new_tx(new_tx, tx_fields[6]).unwrap();
+    }
 
-        let tx_list = db_conn
-            .fetch_txs_with_date(date_list[index], FetchNature::Monthly)
-            .unwrap();
+    let search_queries = [
+        ["2022", "", "", "", "", "", ""],
+        ["", "", "", "", "", "Income", ""],
+        ["", "", "", "", "", "Expense", ""],
+        ["", "", "", "", "", "", "Groceries"],
+        ["", "", "", "", "", "", ""],
+        ["2023", "", "", "", "", "", ""],
+    ];
+
+    let expected_len = [8, 2, 6, 2, 8, 0];
+
+    for (index, search) in search_queries.into_iter().enumerate() {
+        let search_tx = parse_search_fields(
+            search[0], search[1], search[2], search[3], search[4], search[5], search[6], &db_conn,
+        )
+        .unwrap();
+
+        let txs = search_tx.search_txs(&mut db_conn).unwrap();
+
+        let expected_len = expected_len[index];
 
         assert_eq!(
-            tx_list.len(),
-            tx_len[index],
-            "Length mismatch at index {}",
-            index
-        );
-
-        let balance = tx_list.get_tx_balance(tx_len[index] - 1)[&cash_method];
-        assert_eq!(
-            balance, balance_list[index],
-            "Balance mismatch at index {}",
-            index
+            txs.len(),
+            expected_len,
+            "Expected {} txs for index {index}",
+            expected_len
         );
     }
 

@@ -1,5 +1,5 @@
-use app::conn::DbConn;
-use app::fetcher::get_txs_index;
+use app::conn::{DbConn, FetchNature};
+use app::fetcher::SearchView;
 use crossterm::event::poll;
 use crossterm::event::{self, Event, KeyEventKind};
 use ratatui::Terminal;
@@ -13,7 +13,6 @@ use crate::activity_page::ActivityData;
 use crate::activity_page::activity_ui;
 use crate::add_tx_page::add_tx_ui;
 use crate::chart_page::{ChartData, chart_ui};
-use crate::home_page::TransactionData;
 use crate::home_page::home_ui;
 use crate::initial_page::initial_ui;
 use crate::key_checker::{
@@ -87,10 +86,12 @@ pub fn start_app<B: Backend>(
     // Stores all activity for a specific month of a year alongside the txs involved in an activity
     let mut activity_data = ActivityData::new(activity_months.index, activity_years.index, conn);
 
-    let mut search_txs = TransactionData::new_search(Vec::new(), Vec::new());
+    let mut search_txs = SearchView::new_empty();
 
     // Contains the tx views for that month and year. Used for home page data + balances
-    let mut home_txs = get_txs_index(home_months.index, home_years.index, migrated_conn).unwrap();
+    let mut home_txs = migrated_conn
+        .fetch_txs_with_index(home_months.index, home_years.index, FetchNature::Monthly)
+        .unwrap();
 
     // Home tx data but in vector form with index tracking
     let mut home_table = TableData::new(home_txs.tx_array());

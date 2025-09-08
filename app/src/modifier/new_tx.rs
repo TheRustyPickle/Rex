@@ -96,7 +96,7 @@ pub(crate) fn add_new_tx(
     let mut tx_tags = Vec::new();
 
     for tag in tag_list {
-        if let Some(tag_id) = db_conn.cache().get_tag_id(&tag) {
+        if let Ok(tag_id) = db_conn.cache().get_tag_id(&tag) {
             let tx_tag = TxTag::new(added_tx.id, tag_id);
             tx_tags.push(tx_tag);
             continue;
