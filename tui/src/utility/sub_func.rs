@@ -6,17 +6,17 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use crate::activity_page::{ActivityDetails, ActivityTx};
-use crate::outputs::{ComparisonType, TerminalExecutionError};
-use crate::page_handler::{ActivityType, DateType, ResetType, UserInputType};
+use crate::outputs::TerminalExecutionError;
+use crate::page_handler::{DateType, ResetType, UserInputType};
 use crate::utility::{
-    add_new_activity, add_new_activity_tx, check_comparison, check_restricted, clear_terminal,
-    flush_output, get_all_tx_methods, get_sql_dates, reverse_date_format, take_input,
+    check_restricted, clear_terminal, flush_output, get_all_tx_methods, get_sql_dates,
+    reverse_date_format, take_input,
 };
 
 /// Returns the balance of all methods based on year and month point.
 /// If the balance is empty/0 at the given point for any one of the methods
 /// it will try to find the balance for that method from one of the earlier points.
-pub fn get_last_time_balance(
+fn get_last_time_balance(
     month: usize,
     year: usize,
     tx_method: &Vec<String>,
@@ -82,34 +82,6 @@ pub fn get_last_time_balance(
     }
 
     final_value
-}
-
-/// The functions sends all the changes that happened after transactions on the month and year provided
-pub fn get_all_changes(month: usize, year: usize, conn: &Connection) -> Vec<Vec<String>> {
-    let mut final_result = Vec::new();
-    let tx_methods = get_all_tx_methods(conn);
-
-    let (datetime_1, datetime_2) = get_sql_dates(month, year, &DateType::Monthly);
-
-    let mut statement = conn
-        .prepare("SELECT * FROM changes_all Where date BETWEEN date(?) AND date(?) ORDER BY date, id_num")
-        .expect("could not prepare statement");
-
-    let rows = statement
-        .query_map([datetime_1, datetime_2], |row| {
-            let mut balance_vec: Vec<String> = Vec::new();
-            // Why start at 2? Because the first two rows are date and id_num
-            for i in 2..tx_methods.len() + 2 {
-                balance_vec.push(row.get(i).unwrap());
-            }
-            Ok(balance_vec)
-        })
-        .unwrap();
-
-    for i in rows {
-        final_result.push(i.unwrap());
-    }
-    final_result
 }
 
 /// Used to retrieving all Transaction within a given date, balance and the `id_num` related to them.
@@ -801,167 +773,6 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
         }
     }
     Ok(())
-}
-
-/// Creates the query to search for specific tx, gathers all rows and id numbers
-pub fn get_search_data(
-    date: &str,
-    details: &str,
-    from_method: &str,
-    to_method: &str,
-    amount: &str,
-    tx_type: &str,
-    tags: &str,
-    date_type: &DateType,
-    conn: &Connection,
-) -> (Vec<Vec<String>>, Vec<String>) {
-    let mut all_txs = Vec::new();
-    let mut all_ids = Vec::new();
-
-    // This will be used for the activity tx
-    let tx_method = if tx_type == "Transfer" && !from_method.is_empty() && !to_method.is_empty() {
-        format!("{from_method} to {to_method}").trim().to_string()
-    } else if tx_type == "Transfer" && !from_method.is_empty() && to_method.is_empty() {
-        format!("{from_method} to ?").trim().to_string()
-    } else if tx_type == "Transfer" && from_method.is_empty() && !to_method.is_empty() {
-        format!("? to {to_method}").trim().to_string()
-    } else if from_method.is_empty() && to_method.is_empty() {
-        String::new()
-    } else {
-        from_method.to_string()
-    };
-
-    let mut valid_fields = 0;
-
-    let mut query = "SELECT * FROM tx_all WHERE 1=1".to_string();
-
-    if !date.is_empty() {
-        valid_fields += 1;
-        match date_type {
-            DateType::Exact => query.push_str(&format!(r#" AND date = "{date}""#)),
-            DateType::Monthly => {
-                let split_date: Vec<usize> = date.split('-').map(|s| s.parse().unwrap()).collect();
-
-                let month_index = split_date[1] - 1;
-                let year_index = split_date[0] - 2022;
-
-                let (date_1, date_2) = get_sql_dates(month_index, year_index, date_type);
-
-                query.push_str(&format!(
-                    r#" AND date BETWEEN date("{date_1}") AND date("{date_2}")"#,
-                ));
-            }
-            DateType::Yearly => {
-                let year_index = date.parse::<usize>().unwrap() - 2022;
-
-                let (date_1, date_2) = get_sql_dates(0, year_index, date_type);
-
-                query.push_str(&format!(
-                    r#" AND date BETWEEN date("{date_1}") AND date("{date_2}")"#
-                ));
-            }
-        }
-    }
-
-    if !details.is_empty() {
-        valid_fields += 1;
-        query.push_str(&format!(r#" AND details LIKE "%{details}%""#,));
-    }
-
-    if !tx_type.is_empty() {
-        valid_fields += 1;
-        query.push_str(&format!(r#" AND tx_type = "{tx_type}""#,));
-    }
-
-    if !amount.is_empty() {
-        valid_fields += 1;
-        let comparison_type = check_comparison(amount);
-
-        let comparison_symbol = match comparison_type {
-            ComparisonType::BiggerThan => ">",
-            ComparisonType::SmallerThan => "<",
-            ComparisonType::Equal => "",
-            ComparisonType::EqualOrBigger => ">=",
-            ComparisonType::EqualOrSmaller => "<=",
-        };
-        let amount = amount.replace(comparison_symbol, "");
-
-        query.push_str(&format!(r#" AND {comparison_type} "{amount}""#));
-    }
-
-    if tx_type == "Transfer" {
-        // If neither are empty, look for exact matches
-        // Otherwise do partial matching
-        if !from_method.is_empty() && !to_method.is_empty() {
-            valid_fields += 1;
-            query.push_str(&format!(
-                r#" AND tx_method = "{from_method} to {to_method}""#
-            ));
-        } else if !from_method.is_empty() {
-            valid_fields += 1;
-            query.push_str(&format!(r#" AND tx_method LIKE "{from_method} to %" "#));
-        } else if !to_method.is_empty() {
-            valid_fields += 1;
-            query.push_str(&format!(r#" AND tx_method LIKE "% to {to_method}""#));
-        }
-    } else if tx_type != "Transfer" && !from_method.is_empty() {
-        valid_fields += 1;
-        query.push_str(&format!(r#" AND tx_method = "{from_method}""#));
-    }
-
-    if !tags.is_empty() {
-        valid_fields += 1;
-        let all_tags = tags.split(", ");
-        let tag_conditions = all_tags
-            .map(|tag| {
-                format!(
-                    r#"CASE 
-                          WHEN tags LIKE "{tag}, %" THEN 1
-                          WHEN tags LIKE "%, {tag}" THEN 1
-                          WHEN tags LIKE "%, {tag}," THEN 1
-                          WHEN tags = "{tag}" THEN 1
-                          ELSE 0
-                      END = 1"#,
-                )
-            })
-            .collect::<Vec<String>>()
-            .join(" OR ");
-        query.push_str(&format!(" AND ({tag_conditions})"));
-    }
-
-    let mut statement = conn.prepare(&query).unwrap();
-
-    let rows = statement
-        .query_map([], |row| {
-            let date = reverse_date_format(row.get(0).unwrap());
-            let id_num: i32 = row.get(5).unwrap();
-
-            Ok(vec![
-                date,
-                row.get(1).unwrap(),
-                row.get(2).unwrap(),
-                row.get(3).unwrap(),
-                row.get(4).unwrap(),
-                row.get(6).unwrap(),
-                id_num.to_string(),
-            ])
-        })
-        .unwrap();
-
-    for i in rows.flatten() {
-        let mut data = i;
-        let id_num = &data.pop().unwrap();
-        all_ids.push(id_num.to_string());
-        all_txs.push(data);
-    }
-
-    let activity_type = ActivityType::SearchTX(Some(valid_fields));
-    let search_data = vec![date, details, &tx_method, amount, tx_type, tags, ""];
-
-    let activity_num = add_new_activity(activity_type, conn);
-    add_new_activity_tx(&search_data, activity_num, conn);
-
-    (all_txs, all_ids)
 }
 
 /// Returns all activities recorded within a given month and a year and all the activity txs related to the activities

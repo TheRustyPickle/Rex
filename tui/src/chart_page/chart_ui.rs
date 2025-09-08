@@ -16,7 +16,7 @@ use crate::utility::{
 };
 
 /// Creates the balance chart from the transactions
-pub fn chart_ui<S: ::std::hash::BuildHasher>(
+pub fn chart_ui(
     f: &mut Frame,
     months: &IndexedData,
     years: &IndexedData,
@@ -26,7 +26,7 @@ pub fn chart_ui<S: ::std::hash::BuildHasher>(
     current_page: &ChartTab,
     chart_hidden_mode: bool,
     chart_hidden_legends: bool,
-    chart_activated_methods: &HashMap<String, bool, S>,
+    chart_activated_methods: &HashMap<String, bool>,
     lerp_state: &mut LerpState,
     conn: &Connection,
 ) {

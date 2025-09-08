@@ -9,11 +9,8 @@ use crate::outputs::{
     CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, VerifyingOutput,
 };
 use crate::page_handler::{DateType, TxTab};
-use crate::tx_handler::add_tx;
 use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
-use crate::utility::{
-    add_char_to, add_new_activity_tx, check_comparison, get_all_tx_methods, get_last_balances,
-};
+use crate::utility::{add_char_to, check_comparison, get_all_tx_methods, get_last_balances};
 
 /// Contains all data for a Transaction to work
 pub struct TxData {
