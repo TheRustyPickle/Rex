@@ -19,7 +19,7 @@ pub struct PartialTx<'a> {
 pub struct TxView {
     tx: FullTx,
     /// Tx Method ID -> Balance after this tx was committed
-    balance: HashMap<i32, i64>,
+    balance: HashMap<i32, Cent>,
 }
 
 pub struct TxViewGroup(Vec<TxView>);
@@ -33,7 +33,11 @@ pub(crate) fn get_txs(
 
     let current_balance = Balance::get_balance(date, db_conn)?;
 
-    let mut last_balance = Balance::get_last_balance(date, db_conn)?;
+    let last_balance = Balance::get_last_balance(date, db_conn)?;
+    let mut last_balance = last_balance
+        .into_iter()
+        .map(|b| (b.0, Cent::new(b.1)))
+        .collect::<HashMap<i32, Cent>>();
 
     let mut all_tx_views = Vec::with_capacity(txs.len());
 
@@ -67,8 +71,8 @@ pub(crate) fn get_txs(
         let method_id = balance.method_id;
         let last_balance = *last_balance.get(&method_id).unwrap();
 
-        if balance.balance != last_balance {
-            balance.balance = last_balance;
+        if last_balance != balance.balance {
+            balance.balance = last_balance.value();
             to_insert_balance.push(balance);
         }
     }
@@ -81,7 +85,7 @@ pub(crate) fn get_txs(
 }
 
 impl TxView {
-    fn new(tx: FullTx, balance: HashMap<i32, i64>) -> Self {
+    fn new(tx: FullTx, balance: HashMap<i32, Cent>) -> Self {
         Self { tx, balance }
     }
 }
@@ -145,7 +149,7 @@ impl TxViewGroup {
                 let balance = *target_tx.balance.get(&method_id).unwrap();
                 total_balance += balance;
 
-                let method_balance = balance as f64 / 100.0;
+                let method_balance = balance.dollar();
                 to_insert_balance.push(format!("{method_balance:.2}"));
             } else {
                 let balance = final_balance
@@ -378,7 +382,7 @@ impl TxViewGroup {
                 let balance = *target_tx.balance.get(&method_id).unwrap();
                 total_balance += balance;
 
-                let method_balance = balance as f64 / 100.0;
+                let method_balance = balance.dollar();
                 to_insert_balance.push(format!("{method_balance:.2}"));
             } else {
                 let balance = final_balance
@@ -458,7 +462,7 @@ impl TxViewGroup {
         self.0.len()
     }
 
-    pub fn get_tx_balance(&self, index: usize) -> &HashMap<i32, i64> {
+    pub fn get_tx_balance(&self, index: usize) -> &HashMap<i32, Cent> {
         &self.0[index].balance
     }
 }

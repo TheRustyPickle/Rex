@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use std::cmp::Ordering;
 use std::fmt;
-use std::ops::{Add, AddAssign, Div, Mul, Sub};
+use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
 impl Add<i64> for Cent {
     type Output = Cent;
@@ -76,6 +76,12 @@ impl AddAssign<f64> for Dollar {
 impl AddAssign<i64> for Cent {
     fn add_assign(&mut self, rhs: i64) {
         self.0 += rhs;
+    }
+}
+
+impl SubAssign<i64> for Cent {
+    fn sub_assign(&mut self, rhs: i64) {
+        self.0 -= rhs;
     }
 }
 
