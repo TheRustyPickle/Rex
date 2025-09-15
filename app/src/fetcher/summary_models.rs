@@ -79,6 +79,12 @@ impl AddAssign<i64> for Cent {
     }
 }
 
+impl AddAssign for Cent {
+    fn add_assign(&mut self, other: Self) {
+        self.0 += other.0;
+    }
+}
+
 impl Div<i64> for Cent {
     type Output = Cent;
 
@@ -140,6 +146,12 @@ impl PartialOrd<i64> for Cent {
 impl PartialOrd<f64> for Dollar {
     fn partial_cmp(&self, other: &f64) -> Option<Ordering> {
         self.0.partial_cmp(other)
+    }
+}
+
+impl fmt::Display for Dollar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:.2}", self.0)
     }
 }
 

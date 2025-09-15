@@ -6,6 +6,7 @@ use db::models::{Balance, FetchNature, TxMethod, TxType};
 use std::collections::HashMap;
 
 use crate::conn::DbConn;
+use crate::fetcher::Cent;
 
 pub struct PartialTx<'a> {
     pub from_method: &'a str,
@@ -129,11 +130,11 @@ impl TxViewGroup {
         let mut to_insert_daily_income = vec![String::from("Daily Income")];
         let mut to_insert_daily_expense = vec![String::from("Daily Expense")];
 
-        let mut total_balance = 0;
-        let mut total_income = 0;
-        let mut total_expense = 0;
-        let mut total_daily_income = 0;
-        let mut total_daily_expense = 0;
+        let mut total_balance = Cent::new(0);
+        let mut total_income = Cent::new(0);
+        let mut total_expense = Cent::new(0);
+        let mut total_daily_income = Cent::new(0);
+        let mut total_daily_expense = Cent::new(0);
 
         for method in sorted_methods {
             let method_id = method.id;
@@ -165,28 +166,28 @@ impl TxViewGroup {
             let method_income = *income.get(&method_id).unwrap();
             total_income += method_income;
 
-            to_insert_income.push(format!("{:.2}", method_income as f64 / 100.0));
+            to_insert_income.push(format!("{:.2}", method_income.dollar()));
 
             let method_expense = *expense.get(&method_id).unwrap();
             total_expense += method_expense;
-            to_insert_expense.push(format!("{:.2}", method_expense as f64 / 100.0));
+            to_insert_expense.push(format!("{:.2}", method_expense.dollar()));
 
             let method_daily_income = *daily_income.get(&method_id).unwrap();
             total_daily_income += method_daily_income;
-            to_insert_daily_income.push(format!("{:.2}", method_daily_income as f64 / 100.0));
+            to_insert_daily_income.push(format!("{:.2}", method_daily_income.dollar()));
 
             let method_daily_expense = *daily_expense.get(&method_id).unwrap();
             total_daily_expense += method_daily_expense;
-            to_insert_daily_expense.push(format!("{:.2}", method_daily_expense as f64 / 100.0));
+            to_insert_daily_expense.push(format!("{:.2}", method_daily_expense.dollar()));
         }
 
-        to_insert_balance.push(format!("{:.2}", total_balance as f64 / 100.0));
+        to_insert_balance.push(format!("{:.2}", total_balance.dollar()));
 
-        to_insert_income.push(format!("{:.2}", total_income as f64 / 100.0));
-        to_insert_expense.push(format!("{:.2}", total_expense as f64 / 100.0));
+        to_insert_income.push(format!("{:.2}", total_income.dollar()));
+        to_insert_expense.push(format!("{:.2}", total_expense.dollar()));
 
-        to_insert_daily_income.push(format!("{:.2}", total_daily_income as f64 / 100.0));
-        to_insert_daily_expense.push(format!("{:.2}", total_daily_expense as f64 / 100.0));
+        to_insert_daily_income.push(format!("{:.2}", total_daily_income.dollar()));
+        to_insert_daily_expense.push(format!("{:.2}", total_daily_expense.dollar()));
 
         to_return.push(to_insert_balance);
         to_return.push(to_insert_changes);
@@ -200,11 +201,11 @@ impl TxViewGroup {
         Ok(to_return)
     }
 
-    fn get_daily_income(&self, index: Option<usize>, db_conn: &DbConn) -> HashMap<i32, i64> {
+    fn get_daily_income(&self, index: Option<usize>, db_conn: &DbConn) -> HashMap<i32, Cent> {
         let mut to_return = HashMap::new();
 
         for method in db_conn.cache().tx_methods.keys() {
-            to_return.insert(*method, 0);
+            to_return.insert(*method, Cent::new(0));
         }
 
         let Some(index) = index else {
@@ -228,11 +229,11 @@ impl TxViewGroup {
         to_return
     }
 
-    fn get_daily_expense(&self, index: Option<usize>, db_conn: &DbConn) -> HashMap<i32, i64> {
+    fn get_daily_expense(&self, index: Option<usize>, db_conn: &DbConn) -> HashMap<i32, Cent> {
         let mut to_return = HashMap::new();
 
         for method in db_conn.cache().tx_methods.keys() {
-            to_return.insert(*method, 0);
+            to_return.insert(*method, Cent::new(0));
         }
 
         let Some(index) = index else {
@@ -256,11 +257,11 @@ impl TxViewGroup {
         to_return
     }
 
-    fn get_income(&self, index: Option<usize>, db_conn: &DbConn) -> HashMap<i32, i64> {
+    fn get_income(&self, index: Option<usize>, db_conn: &DbConn) -> HashMap<i32, Cent> {
         let mut to_return = HashMap::new();
 
         for method in db_conn.cache().tx_methods.keys() {
-            to_return.insert(*method, 0);
+            to_return.insert(*method, Cent::new(0));
         }
 
         if let Some(index) = index {
@@ -282,11 +283,11 @@ impl TxViewGroup {
         to_return
     }
 
-    fn get_expense(&self, index: Option<usize>, db_conn: &DbConn) -> HashMap<i32, i64> {
+    fn get_expense(&self, index: Option<usize>, db_conn: &DbConn) -> HashMap<i32, Cent> {
         let mut to_return = HashMap::new();
 
         for method in db_conn.cache().tx_methods.keys() {
-            to_return.insert(*method, 0);
+            to_return.insert(*method, Cent::new(0));
         }
 
         if let Some(index) = index {
@@ -348,14 +349,11 @@ impl TxViewGroup {
             let tx_type = partial_tx.tx_type.into();
             let amount = (partial_tx.amount.parse::<f64>()? * 100.0).round() as i64;
 
-            let from_method = db_conn
-                .cache()
-                .get_method_id(partial_tx.from_method)
-                .unwrap();
+            let from_method = db_conn.cache().get_method_id(partial_tx.from_method)?;
             let to_method = if partial_tx.to_method.is_empty() {
                 None
             } else {
-                Some(db_conn.cache().get_method_id(partial_tx.to_method).unwrap())
+                Some(db_conn.cache().get_method_id(partial_tx.to_method)?)
             };
 
             FullTx::get_changes_partial(from_method, to_method, tx_type, amount, db_conn)
@@ -367,7 +365,7 @@ impl TxViewGroup {
             FullTx::empty_changes(db_conn)
         };
 
-        let mut total_balance = 0;
+        let mut total_balance = Cent::new(0);
         let mut to_insert_balance = vec![String::from("Balance")];
         let mut to_insert_changes = vec![String::from("Changes")];
 
@@ -399,7 +397,7 @@ impl TxViewGroup {
             to_insert_changes.push(changes_value.to_string());
         }
 
-        to_insert_balance.push(format!("{:.2}", total_balance as f64 / 100.0));
+        to_insert_balance.push(format!("{:.2}", total_balance.dollar()));
 
         to_return.push(to_insert_balance);
         to_return.push(to_insert_changes);

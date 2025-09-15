@@ -156,8 +156,8 @@ impl SummaryView {
                 continue;
             }
 
-            to_push.push(format!("{:.2}", income_amount.value()));
-            to_push.push(format!("{:.2}", expense_amount.value()));
+            to_push.push(format!("{:.2}", income_amount));
+            to_push.push(format!("{:.2}", expense_amount));
 
             to_push.push(format!("{:.2}", income_percentage));
             to_push.push(format!("{:.2}", expense_percentage));
@@ -173,7 +173,7 @@ impl SummaryView {
                     let earning_increased_percentage =
                         ((income_amount - last_earning) / last_earning) * 100.0;
 
-                    if last_earning.value() == 0.0 {
+                    if last_earning == 0.0 {
                         to_push.push("∞".to_string());
                     } else if earning_increased_percentage < 0.0 {
                         to_push.push(format!("↓{:.2}", earning_increased_percentage.abs()));
@@ -189,7 +189,7 @@ impl SummaryView {
                     let expense_increased_percentage =
                         ((expense_amount - last_expense) / last_expense) * 100.0;
 
-                    if last_expense.value() == 0.0 {
+                    if last_expense == 0.0 {
                         to_push.push("∞".to_string());
                     } else if expense_increased_percentage < 0.0 {
                         to_push.push(format!("↓{:.2}", expense_increased_percentage.abs()));
@@ -236,6 +236,12 @@ impl SummaryView {
         last_summary: Option<&FullSummary>,
         conn: &impl ConnCache,
     ) -> FullSummary {
+        let mut no_mom_yoy = false;
+
+        if let FetchNature::All = self.nature {
+            no_mom_yoy = true;
+        }
+
         let mut total_income = Cent::new(0);
         let mut total_expense = Cent::new(0);
 
@@ -387,7 +393,9 @@ impl SummaryView {
                 average_expense = None;
             }
 
-            if let Some(last_summary) = last_summary {
+            if let Some(last_summary) = last_summary
+                && !no_mom_yoy
+            {
                 let comparison = &last_summary.methods;
 
                 let last_earning = comparison[index].total_earning;
@@ -419,6 +427,11 @@ impl SummaryView {
                 }
             }
 
+            if !no_mom_yoy && mom_yoy_expense.is_none() && mom_yoy_earning.is_none() {
+                mom_yoy_earning = Some("∞".to_string());
+                mom_yoy_expense = Some("∞".to_string());
+            }
+
             let method_summary = SummaryMethods::new(
                 method.name.to_string(),
                 method_earning[&method.name].dollar(),
@@ -442,7 +455,9 @@ impl SummaryView {
         let mut net_mom_yoy_earning = None;
         let mut net_mom_yoy_expense = None;
 
-        if let Some(last_summary) = last_summary {
+        if let Some(last_summary) = last_summary
+            && !no_mom_yoy
+        {
             let comparison = &last_summary.net;
 
             let last_earning = comparison.total_income;
@@ -469,6 +484,11 @@ impl SummaryView {
             } else {
                 net_mom_yoy_expense = Some(format!("↑{expense_increased_percentage:.2}"));
             }
+        }
+
+        if !no_mom_yoy && net_mom_yoy_expense.is_none() && net_mom_yoy_earning.is_none() {
+            net_mom_yoy_earning = Some("∞".to_string());
+            net_mom_yoy_expense = Some("∞".to_string());
         }
 
         let summary_net = SummaryNet::new(
