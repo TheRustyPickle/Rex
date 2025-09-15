@@ -7,7 +7,7 @@ mod common;
 
 #[test]
 fn search_tx_test() {
-    let file_name = "test_add_tx.sqlite";
+    let file_name = "test_search_tx.sqlite";
 
     let mut db_conn = create_test_db(file_name);
 
