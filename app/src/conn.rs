@@ -6,8 +6,9 @@ use db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
 use diesel::{Connection, SqliteConnection};
 use std::collections::HashMap;
 
-use crate::fetcher::{SearchView, TxViewGroup, get_search_txs, get_txs};
+use crate::fetcher::{SearchView, SummaryView, TxViewGroup, get_search_txs, get_summary, get_txs};
 use crate::modifier::{add_new_tx, add_new_tx_methods, delete_tx};
+use crate::utils::month_name_to_num;
 
 pub fn get_conn(location: &str) -> DbConn {
     DbConn::new(location)
@@ -63,6 +64,7 @@ impl DbConn {
             cache: Cache {
                 tags: HashMap::new(),
                 tx_methods: HashMap::new(),
+                txs: None,
             },
         };
 
@@ -79,6 +81,7 @@ impl DbConn {
             cache: Cache {
                 tags: HashMap::new(),
                 tx_methods: HashMap::new(),
+                txs: None,
             },
         }
     }
@@ -166,17 +169,17 @@ impl DbConn {
         Ok(tx)
     }
 
-    pub fn fetch_txs_with_index(
+    pub fn fetch_txs_with_str<'a>(
         &mut self,
-        month: usize,
-        year: usize,
+        month: &'a str,
+        year: &'a str,
         nature: FetchNature,
     ) -> Result<TxViewGroup> {
         let result = self.conn.transaction::<TxViewGroup, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
-            let month_num = (month + 1) as u32;
-            let year_num = (year + 2022) as i32;
+            let year_num = year.parse::<i32>().unwrap();
+            let month_num = month_name_to_num(month);
 
             let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
 
@@ -208,5 +211,35 @@ impl DbConn {
         })?;
 
         Ok(result)
+    }
+
+    pub fn get_summary_with_str<'a>(
+        &mut self,
+        month: &'a str,
+        year: &'a str,
+        nature: FetchNature,
+    ) -> Result<SummaryView> {
+        let (summary, txs) = self
+            .conn
+            .transaction::<(SummaryView, Option<HashMap<i32, Vec<FullTx>>>), Error, _>(|conn| {
+                let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+                let year_num = year.parse::<i32>().unwrap();
+                let month_num = month_name_to_num(month);
+
+                let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
+
+                get_summary(date, nature, &mut db_conn)
+            })?;
+
+        if let Some(txs) = txs {
+            self.cache.set_txs(txs);
+        }
+
+        Ok(summary)
+    }
+
+    pub fn get_tx_methods(&self) -> &HashMap<i32, TxMethod> {
+        &self.cache.tx_methods
     }
 }

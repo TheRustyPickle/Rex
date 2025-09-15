@@ -19,9 +19,11 @@ pub enum TxType {
     Transfer,
 }
 
+#[derive(Clone, Debug, Copy)]
 pub enum FetchNature {
     Monthly,
     Yearly,
+    All,
 }
 
 pub enum DateNature {
@@ -469,23 +471,29 @@ impl Tx {
     ) -> Result<Vec<Self>, Error> {
         use crate::schema::txs::dsl::{date, display_order, id, txs};
 
-        let (start_date, end_date) = match nature {
+        let dates = match nature {
             FetchNature::Monthly => {
                 let start_date = NaiveDate::from_ymd_opt(d.year(), d.month(), 1).unwrap();
 
                 let end_date = start_date + Months::new(1) - Days::new(1);
-                (start_date, end_date)
+                Some((start_date, end_date))
             }
             FetchNature::Yearly => {
                 let start_date = NaiveDate::from_ymd_opt(d.year(), 1, 1).unwrap();
 
                 let end_date = start_date + Months::new(12) - Days::new(1);
-                (start_date, end_date)
+                Some((start_date, end_date))
             }
+            FetchNature::All => None,
         };
 
-        txs.filter(date.ge(start_date))
-            .filter(date.le(end_date))
+        let mut query = txs.into_boxed();
+
+        if let Some((start_date, end_date)) = dates {
+            query = query.filter(date.ge(start_date)).filter(date.le(end_date));
+        }
+
+        query
             .order((
                 date.asc(),
                 sql::<Bool>("display_order = 0"),

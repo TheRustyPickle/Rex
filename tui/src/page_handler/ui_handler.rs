@@ -26,9 +26,9 @@ use crate::page_handler::{
 };
 use crate::popup_page::PopupData;
 use crate::search_page::search_ui;
-use crate::summary_page::{SummaryData, summary_ui};
+use crate::summary_page::summary_ui;
 use crate::tx_handler::TxData;
-use crate::utility::{LerpState, get_all_tx_methods, get_all_tx_methods_cumulative};
+use crate::utility::{LerpState, get_all_tx_methods_cumulative};
 
 pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
 pub const TEXT: Color = Color::Rgb(153, 78, 236);
@@ -90,7 +90,11 @@ pub fn start_app<B: Backend>(
 
     // Contains the tx views for that month and year. Used for home page data + balances
     let mut home_txs = migrated_conn
-        .fetch_txs_with_index(home_months.index, home_years.index, FetchNature::Monthly)
+        .fetch_txs_with_str(
+            home_months.get_selected_value(),
+            home_years.get_selected_value(),
+            FetchNature::Monthly,
+        )
         .unwrap();
 
     // Home tx data but in vector form with index tracking
@@ -120,8 +124,6 @@ pub fn start_app<B: Backend>(
 
     // Holds the data that will be/are inserted into the Add Tx page's input fields
     let mut add_tx_data = TxData::new();
-    // Holds the data that will be/are inserted into the Summary Page
-    let mut summary_data = SummaryData::new(conn);
     // Holds the data that will be/are inserted into the Search page's input fields
     let mut search_data = TxData::new_empty();
     // Holds the data that will be/are inserted into the Chart Page
@@ -129,15 +131,18 @@ pub fn start_app<B: Backend>(
     // Holds the popup data that will be/are inserted into the Popup page
     let mut popup_data = PopupData::new();
 
-    // Data for the Summary Page's table
-    let mut summary_table = TableData::new(summary_data.get_table_data(
-        &summary_modes,
-        summary_months.index,
-        summary_years.index,
-    ));
+    let mut summary_view = migrated_conn
+        .get_summary_with_str(
+            summary_months.get_selected_value(),
+            summary_years.get_selected_value(),
+            FetchNature::Monthly,
+        )
+        .unwrap();
 
-    let mut last_summary_methods = None;
-    let mut last_summary_net = None;
+    let mut full_summary = summary_view.generate_summary(None, migrated_conn);
+
+    // Data for the Summary Page's table
+    let mut summary_table = TableData::new(summary_view.tags_array(None, migrated_conn));
 
     // Data for the Search Page's table
     let mut search_table = TableData::new(Vec::new());
@@ -173,7 +178,7 @@ pub fn start_app<B: Backend>(
     let mut add_tx_balance = Vec::new();
     // Home and add TX page balance section's column space
     let mut width_data = Vec::new();
-    let total_columns = get_all_tx_methods(conn).len() + 2;
+    let total_columns = migrated_conn.get_tx_methods().len() + 2;
     let width_percent = (100 / total_columns) as u16;
 
     // Save the % of space each column should take in the Balance section based on the total
@@ -242,15 +247,13 @@ pub fn start_app<B: Backend>(
                         &summary_months,
                         &summary_years,
                         &summary_modes,
-                        &summary_data,
                         &mut summary_table,
                         &summary_tab,
                         summary_hidden_mode,
                         &summary_sort,
                         &mut lerp_state,
-                        &last_summary_methods,
-                        &last_summary_net,
-                        conn,
+                        &full_summary,
+                        migrated_conn,
                     ),
                     CurrentUi::Search => search_ui(
                         f,
@@ -321,7 +324,8 @@ pub fn start_app<B: Backend>(
                 &mut home_tab,
                 &mut add_tx_data,
                 &mut chart_data,
-                &mut summary_data,
+                &mut summary_view,
+                &mut full_summary,
                 &mut home_table,
                 &mut home_txs,
                 &mut summary_table,
@@ -353,8 +357,6 @@ pub fn start_app<B: Backend>(
                 &mut popup_scroll_position,
                 &mut max_popup_scroll,
                 &mut lerp_state,
-                &mut last_summary_methods,
-                &mut last_summary_net,
                 conn,
                 migrated_conn,
             );

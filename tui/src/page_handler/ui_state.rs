@@ -66,6 +66,7 @@ impl TableData {
 /// It is used for keeping track of the Months and Years current index.
 ///
 /// titles: `["January", "February",]`
+#[derive(Clone)]
 pub struct IndexedData {
     pub titles: Vec<String>,
     pub index: usize,
@@ -125,6 +126,10 @@ impl IndexedData {
 
     pub fn set_index_zero(&mut self) {
         self.index = 0;
+    }
+
+    pub fn get_selected_value(&self) -> &str {
+        &self.titles[self.index]
     }
 }
 

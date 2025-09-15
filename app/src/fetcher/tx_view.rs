@@ -418,7 +418,6 @@ impl TxViewGroup {
 
         // Can't switch index if not in the same date
         if tx_1.tx.date != tx_2.tx.date {
-            log::info!("Can't switch index if not in the same date");
             return Ok(false);
         }
 
@@ -439,15 +438,12 @@ impl TxViewGroup {
         let tx_1 = self.0.get_mut(index_1).unwrap();
         tx_1.tx.display_order = new_tx_1_order;
 
-        log::info!("{:#?}", tx_1.tx);
-
         tx_1.tx.set_display_order(db_conn)?;
 
         let tx_2 = self.0.get_mut(index_2).unwrap();
         tx_2.tx.display_order = new_tx_2_order;
 
         tx_2.tx.set_display_order(db_conn)?;
-        log::info!("{:#?}", tx_2.tx);
 
         self.0.swap(index_1, index_2);
 
