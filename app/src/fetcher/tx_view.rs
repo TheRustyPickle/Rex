@@ -16,13 +16,13 @@ pub struct PartialTx<'a> {
 }
 
 #[derive(Debug)]
-pub struct TxView {
-    tx: FullTx,
+pub(crate) struct TxView {
+    pub(crate) tx: FullTx,
     /// Tx Method ID -> Balance after this tx was committed
     balance: HashMap<i32, Cent>,
 }
 
-pub struct TxViewGroup(Vec<TxView>);
+pub struct TxViewGroup(pub(crate) Vec<TxView>);
 
 pub(crate) fn get_txs(
     date: NaiveDate,
@@ -31,9 +31,10 @@ pub(crate) fn get_txs(
 ) -> Result<TxViewGroup> {
     let txs = FullTx::get_txs(date, nature, db_conn)?;
 
-    let current_balance = Balance::get_balance(date, db_conn)?;
+    let current_balance = Balance::get_balance(date, nature, db_conn)?;
 
-    let last_balance = Balance::get_last_balance(date, db_conn)?;
+    let last_balance = Balance::get_last_balance(date, nature, db_conn)?;
+
     let mut last_balance = last_balance
         .into_iter()
         .map(|b| (b.0, Cent::new(b.1)))
@@ -63,6 +64,11 @@ pub(crate) fn get_txs(
 
         let tx_view = TxView::new(tx, last_balance.clone());
         all_tx_views.push(tx_view);
+    }
+
+    // If not calculating on monthly bases, no attempt to tidy up balances
+    if nature != FetchNature::Monthly {
+        return Ok(TxViewGroup(all_tx_views));
     }
 
     let mut to_insert_balance = Vec::new();
