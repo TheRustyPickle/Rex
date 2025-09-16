@@ -19,7 +19,7 @@ pub enum TxType {
     Transfer,
 }
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, Eq, PartialEq)]
 pub enum FetchNature {
     Monthly,
     Yearly,

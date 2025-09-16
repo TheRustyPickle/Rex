@@ -5,6 +5,7 @@ use diesel::upsert::excluded;
 use std::collections::{HashMap, HashSet};
 
 use crate::ConnCache;
+use crate::models::FetchNature;
 use crate::schema::balances;
 
 #[derive(Clone, Debug, Queryable, Insertable, Selectable)]
@@ -102,7 +103,11 @@ impl Balance {
         Ok(balance_map)
     }
 
-    pub fn get_balance(date: NaiveDate, db_conn: &mut impl ConnCache) -> Result<Vec<Self>, Error> {
+    pub fn get_balance(
+        date: NaiveDate,
+        nature: FetchNature,
+        db_conn: &mut impl ConnCache,
+    ) -> Result<Vec<Self>, Error> {
         use crate::schema::balances::dsl::{balances, is_final_balance, method_id, month, year};
 
         let mut pending_balance_tx_methods = HashSet::new();
@@ -112,9 +117,24 @@ impl Balance {
         }
 
         let date_year = date.year();
-        let date_month = date.month() as i32;
+        let mut date_month = date.month() as i32;
+
+        if let FetchNature::Yearly = nature {
+            date_month = 1;
+        }
 
         let tx_method_ids: Vec<i32> = db_conn.cache().tx_methods.keys().copied().collect();
+
+        if let FetchNature::All = nature {
+            let mut balance_list = Vec::new();
+
+            for m_id in pending_balance_tx_methods {
+                let new_bal = Balance::new(m_id, date_year, date_month, 0, false);
+                balance_list.push(new_bal);
+            }
+
+            return Ok(balance_list);
+        }
 
         let mut balance_list = balances
             .filter(year.eq(date_year))
@@ -143,15 +163,32 @@ impl Balance {
     /// Get the last non-final balance of a method. Date = Current date
     pub fn get_last_balance(
         date: NaiveDate,
+        nature: FetchNature,
         db_conn: &mut impl ConnCache,
     ) -> Result<HashMap<i32, i64>, Error> {
         use crate::schema::balances::dsl::{balances, is_final_balance, method_id, month, year};
 
         let mut ongoing_date = date;
 
+        if let FetchNature::Yearly = nature {
+            ongoing_date = NaiveDate::from_ymd_opt(date.year(), 1, 1).unwrap();
+        }
+
         let mut found_method_balances = HashMap::new();
 
         let mut pending_balance_tx_methods = HashSet::new();
+
+        // All means all txs were fetched. The last balance is the balance before the first tx
+        // which is 0
+        if let FetchNature::All = nature {
+            let mut to_return = HashMap::new();
+
+            for key in db_conn.cache().tx_methods.keys().copied() {
+                to_return.insert(key, 0);
+            }
+
+            return Ok(to_return);
+        }
 
         for key in db_conn.cache().tx_methods.keys().copied() {
             pending_balance_tx_methods.insert(key);
@@ -167,6 +204,7 @@ impl Balance {
                 .filter(year.eq(date_year))
                 .filter(month.eq(date_month))
                 .filter(method_id.eq_any(&pending_balance_tx_methods))
+                .filter(is_final_balance.eq(false))
                 .select(Self::as_select())
                 .load(db_conn.conn())
                 .optional()?
