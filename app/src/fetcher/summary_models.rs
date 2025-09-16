@@ -91,6 +91,12 @@ impl AddAssign for Cent {
     }
 }
 
+impl AddAssign<Dollar> for f64 {
+    fn add_assign(&mut self, other: Dollar) {
+        *self += other.0;
+    }
+}
+
 impl Div<i64> for Cent {
     type Output = Cent;
 
@@ -172,7 +178,7 @@ impl Cent {
         Self(value)
     }
 
-    pub(crate) fn dollar(&self) -> Dollar {
+    pub fn dollar(&self) -> Dollar {
         Dollar::new(self.0 as f64 / 100.0)
     }
 
@@ -186,7 +192,7 @@ impl Dollar {
         Self(value)
     }
 
-    pub(crate) fn value(&self) -> f64 {
+    pub fn value(&self) -> f64 {
         self.0
     }
 }

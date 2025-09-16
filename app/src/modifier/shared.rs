@@ -8,9 +8,9 @@ pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Re
 
     let txs = Tx::get_txs(date, nature, db_conn)?;
 
-    let current_balance = Balance::get_balance(date, db_conn)?;
+    let current_balance = Balance::get_balance(date, FetchNature::Monthly, db_conn)?;
 
-    let mut last_balance = Balance::get_last_balance(date, db_conn)?;
+    let mut last_balance = Balance::get_last_balance(date, FetchNature::Monthly, db_conn)?;
 
     for tx in txs {
         match tx.tx_type.as_str().into() {

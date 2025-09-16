@@ -81,11 +81,25 @@ impl IndexedData {
         }
     }
 
+    pub fn new_monthly_no_local() -> Self {
+        IndexedData {
+            titles: MONTHS.into_iter().map(ToString::to_string).collect(),
+            index: 0,
+        }
+    }
+
     pub fn new_yearly() -> Self {
         let year_index = Local::now().year() as usize - 2022;
         IndexedData {
             titles: YEARS.into_iter().map(ToString::to_string).collect(),
             index: year_index,
+        }
+    }
+
+    pub fn new_yearly_no_local() -> Self {
+        IndexedData {
+            titles: YEARS.into_iter().map(ToString::to_string).collect(),
+            index: 0,
         }
     }
 

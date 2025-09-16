@@ -12,7 +12,7 @@ use std::time::Duration;
 use crate::activity_page::ActivityData;
 use crate::activity_page::activity_ui;
 use crate::add_tx_page::add_tx_ui;
-use crate::chart_page::{ChartData, chart_ui};
+use crate::chart_page::chart_ui;
 use crate::home_page::home_ui;
 use crate::initial_page::initial_ui;
 use crate::key_checker::{
@@ -55,18 +55,18 @@ pub fn start_app<B: Backend>(
     // Contains the homepage year list that is indexed
     let mut home_years = IndexedData::new_yearly();
     // Contains the chart page month list that is indexed
-    let mut chart_months = IndexedData::new_monthly();
+    let mut chart_months = IndexedData::new_monthly_no_local();
     // Contains the chart page year list that is indexed
-    let mut chart_years = IndexedData::new_yearly();
+    let mut chart_years = IndexedData::new_yearly_no_local();
     // Contains the chart page mode selection list that is indexed
     let mut chart_modes = IndexedData::new_modes();
     // Contains the chart page tx method selection list that is indexed
     let mut chart_tx_methods = IndexedData::new_tx_methods_cumulative(conn);
 
     // Contains the summary page month list that is indexed
-    let mut summary_months = IndexedData::new_monthly();
+    let mut summary_months = IndexedData::new_monthly_no_local();
     // Contains the summary page year list that is indexed
-    let mut summary_years = IndexedData::new_yearly();
+    let mut summary_years = IndexedData::new_yearly_no_local();
     // Contains the summary page mode selection list that is indexed
     let mut summary_modes = IndexedData::new_modes();
     // Contains the Activity page month list that is indexed
@@ -126,8 +126,13 @@ pub fn start_app<B: Backend>(
     let mut add_tx_data = TxData::new();
     // Holds the data that will be/are inserted into the Search page's input fields
     let mut search_data = TxData::new_empty();
-    // Holds the data that will be/are inserted into the Chart Page
-    let mut chart_data = ChartData::new(conn);
+    let mut chart_view = migrated_conn
+        .get_chart_view_with_str(
+            chart_months.get_selected_value(),
+            chart_years.get_selected_value(),
+            FetchNature::Monthly,
+        )
+        .unwrap();
     // Holds the popup data that will be/are inserted into the Popup page
     let mut popup_data = PopupData::new();
 
@@ -233,13 +238,13 @@ pub fn start_app<B: Backend>(
                         &chart_years,
                         &chart_modes,
                         &chart_tx_methods,
-                        &chart_data,
                         &chart_tab,
                         chart_hidden_mode,
                         chart_hidden_legends,
                         &chart_activated_methods,
                         &mut lerp_state,
-                        conn,
+                        &chart_view,
+                        migrated_conn,
                     ),
 
                     CurrentUi::Summary => summary_ui(
@@ -323,7 +328,7 @@ pub fn start_app<B: Backend>(
                 &mut summary_tab,
                 &mut home_tab,
                 &mut add_tx_data,
-                &mut chart_data,
+                &mut chart_view,
                 &mut summary_view,
                 &mut full_summary,
                 &mut home_table,

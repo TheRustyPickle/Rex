@@ -1,3 +1,5 @@
+use app::conn::DbConn;
+use app::fetcher::ChartView;
 use chrono::{Duration, naive::NaiveDate};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
@@ -5,15 +7,10 @@ use ratatui::style::{Color, Modifier, Style};
 use ratatui::symbols::Marker;
 use ratatui::text::Span;
 use ratatui::widgets::{Axis, Block, Chart, Dataset, GraphType};
-use rusqlite::Connection;
 use std::collections::HashMap;
 
-use crate::chart_page::ChartData;
 use crate::page_handler::{BACKGROUND, BOX, ChartTab, IndexedData, SELECTED};
-use crate::utility::{
-    LerpState, create_tab, create_tab_activation, get_all_tx_methods,
-    get_all_tx_methods_cumulative, main_block,
-};
+use crate::utility::{LerpState, create_tab, create_tab_activation, main_block};
 
 /// Creates the balance chart from the transactions
 pub fn chart_ui(
@@ -22,16 +19,15 @@ pub fn chart_ui(
     years: &IndexedData,
     mode_selection: &IndexedData,
     chart_tx_methods: &IndexedData,
-    chart_data: &ChartData,
     current_page: &ChartTab,
     chart_hidden_mode: bool,
     chart_hidden_legends: bool,
     chart_activated_methods: &HashMap<String, bool>,
     lerp_state: &mut LerpState,
-    conn: &Connection,
+    chart_view: &ChartView,
+    migrated_conn: &mut DbConn,
 ) {
     let size = f.area();
-    let (all_txs, all_balance) = chart_data.get_data(mode_selection, months.index, years.index);
 
     // Divide the terminal into various chunks to draw the interface. This is a vertical chunk
     let mut main_layout = Layout::default().direction(Direction::Vertical).margin(2);
@@ -98,16 +94,19 @@ pub fn chart_ui(
         chart_activated_methods,
     );
 
-    let all_tx_methods = get_all_tx_methods(conn);
-    let all_tx_methods_cumulative = get_all_tx_methods_cumulative(conn);
+    let tx_methods = migrated_conn.get_tx_methods_sorted();
+
+    let mut all_tx_methods: Vec<&str> = tx_methods.iter().map(|t| t.name.as_str()).collect();
+    all_tx_methods.push("Cumulative");
 
     // A vector containing another vector vec![X, Y] with coordinate of where to render chart points
     let mut datasets: Vec<Vec<(f64, f64)>> = Vec::new();
+
     let mut last_balances = Vec::new();
 
     // Adding default initial value if no data to load
-    if all_txs.is_empty() {
-        for _i in &all_tx_methods_cumulative {
+    if chart_view.is_empty() {
+        for _ in 0..all_tx_methods.len() {
             datasets.push(vec![(0.0, 0.0)]);
             last_balances.push(0.0);
         }
@@ -121,22 +120,15 @@ pub fn chart_ui(
     let mut current_axis = 0.0;
 
     // If there are no transactions, we will create an empty chart
-    if !all_txs.is_empty() {
-        // Contains all dates of the transactions
-        let all_dates = chart_data.get_all_dates(mode_selection, months.index, years.index);
-
-        let mut checking_date = NaiveDate::parse_from_str(&all_txs[0][0], "%d-%m-%Y").unwrap();
+    if !chart_view.is_empty() {
+        let mut checking_date = chart_view.start_date();
 
         // The final date where the loop will stop
-        let final_date =
-            NaiveDate::parse_from_str(&all_txs[all_txs.len() - 1][0], "%d-%m-%Y").unwrap();
+        let final_date = chart_view.end_date();
 
         // Total days = number of loops required to render everything
         let total_loop = final_date.signed_duration_since(checking_date).num_days() as f64;
 
-        // When chart UI is selected, start by rendering this amount of day worth of data,
-        // then render_size * 2, 3 and so on until the final day is reached, creating a small animation.
-        // Numbers were determined after checking with data filled db and with --release flag
         let lerp_id = "chart_loop_size";
         let mut to_loop = lerp_state.lerp(lerp_id, total_loop);
 
@@ -144,22 +136,21 @@ pub fn chart_ui(
         date_labels.push(checking_date.to_string());
         date_labels.push(final_date.to_string());
 
-        // data_num represents which index to check out from all the txs and balances data.
-        // to_add_again will become true in cases where two or more transactions shares the same date simultaneously.
+        // `data_num` represents which index to check out from all the txs and balances data.
+        // `to_add_again` will become true in cases where two or more transactions shares the same date simultaneously.
         // Same date transactions movements will be combined together into 1 chart location
 
         let mut to_add_again = false;
         let mut data_num = 0;
         loop {
-            if all_dates.contains(&checking_date) {
-                let current_balances = &all_balance[data_num];
+            if chart_view.contains_date(&checking_date) {
+                let current_balances = chart_view.get_balance(data_num);
 
                 // Default next_date in case there is no more next_date
-                let mut next_date = NaiveDate::from_ymd_opt(2040, 1, 1).unwrap();
+                let mut next_date = NaiveDate::default();
 
-                if all_txs.len() > data_num + 1 {
-                    next_date =
-                        NaiveDate::parse_from_str(&all_txs[data_num + 1][0], "%d-%m-%Y").unwrap();
+                if chart_view.len() > data_num + 1 {
+                    next_date = chart_view.get_tx(data_num + 1).date;
                 }
                 // New valid transactions so the earlier looped balance is not required.
                 // If no tx exists in a date, data from last_balances/previous valid date is used to compensate for it
@@ -167,20 +158,23 @@ pub fn chart_ui(
 
                 let mut cumulative_balance = 0.0;
 
-                for method_index in 0..all_tx_methods_cumulative.len() {
+                for method_index in 0..all_tx_methods.len() {
                     // Keep track of the highest and the lowest point of the balance
-                    let current_balance = if method_index == all_tx_methods.len() {
+                    let current_balance = if method_index == all_tx_methods.len() - 1 {
                         cumulative_balance
                     } else {
-                        let balance = current_balances[method_index].parse::<f64>().unwrap();
+                        let method_at_index = tx_methods[method_index];
+                        let balance = current_balances.get(&method_at_index.id).unwrap().dollar();
+
                         cumulative_balance += balance;
-                        balance
+
+                        balance.value()
                     };
 
                     // We will not consider the highest/lowest balance if the method is currently deactivated on chart.
                     // We can't directly skip it because the dataset vector expects something in the index of this method.
                     // We will have the data but it just won't be shown on the chart.
-                    if chart_activated_methods[&all_tx_methods_cumulative[method_index]] {
+                    if chart_activated_methods[all_tx_methods[method_index]] {
                         if current_balance > highest_balance {
                             highest_balance = current_balance;
                         } else if current_balance < lowest_balance {
@@ -197,7 +191,6 @@ pub fn chart_ui(
                         let (position, _balance) = datasets[method_index].pop().unwrap();
                         let to_push = vec![(position, current_balance)];
                         datasets[method_index].extend(to_push);
-                        last_balances.push(current_balance);
                     } else {
                         let to_push = vec![(current_axis, current_balance)];
 
@@ -206,9 +199,9 @@ pub fn chart_ui(
                         } else {
                             datasets.push(to_push);
                         }
-
-                        last_balances.push(current_balance);
                     }
+
+                    last_balances.push(current_balance);
                 }
 
                 if next_date == checking_date {
@@ -242,12 +235,12 @@ pub fn chart_ui(
                 to_loop += -1.0;
             }
 
-            if checking_date >= final_date + Duration::days(1) {
+            if checking_date == NaiveDate::default() {
                 break;
             }
         }
     }
-    // Add a 10% extra value to the highest and the lowest balance
+    // Add a few % extra value to the highest and the lowest balance
     // so the chart can properly render
     highest_balance += highest_balance * 5.0 / 100.0;
     lowest_balance -= lowest_balance * 5.0 / 100.0;
@@ -280,13 +273,13 @@ pub fn chart_ui(
     let mut final_dataset = vec![];
 
     // Loop through the data that was added for each tx_method and turn them into chart data
-    for i in 0..all_tx_methods_cumulative.len() {
+    for i in 0..all_tx_methods.len() {
         // Run out of colors = cyan default
         if color_list.is_empty() {
             color_list.push(Color::Cyan);
         }
 
-        if !chart_activated_methods[&all_tx_methods_cumulative[i]] {
+        if !chart_activated_methods[all_tx_methods[i]] {
             continue;
         }
 
@@ -301,7 +294,7 @@ pub fn chart_ui(
             .data(&datasets[i]);
 
         if !chart_hidden_legends {
-            dataset = dataset.name(all_tx_methods_cumulative[i].clone());
+            dataset = dataset.name(all_tx_methods[i]);
         }
 
         final_dataset.push(dataset);
