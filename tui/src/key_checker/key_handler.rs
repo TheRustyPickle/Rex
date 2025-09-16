@@ -1,11 +1,10 @@
 use app::conn::{DbConn, FetchNature};
-use app::fetcher::{FullSummary, SearchView, SummaryView, TxViewGroup};
+use app::fetcher::{ChartView, FullSummary, SearchView, SummaryView, TxViewGroup};
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::collections::HashMap;
 
 use crate::activity_page::ActivityData;
-use crate::chart_page::ChartData;
 use crate::db::MONTHS;
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
@@ -29,7 +28,7 @@ pub struct InputKeyHandler<'a> {
     summary_tab: &'a mut SummaryTab,
     home_tab: &'a mut HomeTab,
     add_tx_data: &'a mut TxData,
-    chart_data: &'a mut ChartData,
+    chart_view: &'a mut ChartView,
     summary_view: &'a mut SummaryView,
     full_summary: &'a mut FullSummary,
     home_table: &'a mut TableData,
@@ -79,7 +78,7 @@ impl<'a> InputKeyHandler<'a> {
         summary_tab: &'a mut SummaryTab,
         home_tab: &'a mut HomeTab,
         add_tx_data: &'a mut TxData,
-        chart_data: &'a mut ChartData,
+        chart_view: &'a mut ChartView,
         summary_view: &'a mut SummaryView,
         full_summary: &'a mut FullSummary,
         home_table: &'a mut TableData,
@@ -127,7 +126,7 @@ impl<'a> InputKeyHandler<'a> {
             summary_tab,
             home_tab,
             add_tx_data,
-            chart_data,
+            chart_view,
             summary_view,
             full_summary,
             home_table,
@@ -487,15 +486,18 @@ impl<'a> InputKeyHandler<'a> {
                         ChartTab::ModeSelection => {
                             self.chart_modes.previous();
                             self.lerp_state.clear();
+                            self.reload_chart_data();
                         }
                         ChartTab::Years => {
                             self.chart_years.previous();
                             self.lerp_state.clear();
                             self.chart_months.set_index_zero();
+                            self.reload_chart_data();
                         }
                         ChartTab::Months => {
                             self.chart_months.previous();
                             self.lerp_state.clear();
+                            self.reload_chart_data();
                         }
                         ChartTab::TxMethods => {
                             self.chart_tx_methods.previous();
@@ -562,15 +564,18 @@ impl<'a> InputKeyHandler<'a> {
                         ChartTab::ModeSelection => {
                             self.lerp_state.clear();
                             self.chart_modes.next();
+                            self.reload_chart_data();
                         }
                         ChartTab::Years => {
                             self.lerp_state.clear();
                             self.chart_years.next();
                             self.chart_months.set_index_zero();
+                            self.reload_chart_data();
                         }
                         ChartTab::Months => {
                             self.lerp_state.clear();
                             self.chart_months.next();
+                            self.reload_chart_data();
                         }
                         ChartTab::TxMethods => {
                             self.chart_tx_methods.next();
@@ -1620,7 +1625,21 @@ impl InputKeyHandler<'_> {
 
     /// Reload chart data by fetching from the DB
     fn reload_chart_data(&mut self) {
-        *self.chart_data = ChartData::new(self.conn);
+        let fetch_nature = match self.chart_modes.index {
+            0 => FetchNature::Monthly,
+            1 => FetchNature::Yearly,
+            2 => FetchNature::All,
+            _ => panic!("Invalid chart mode"),
+        };
+
+        *self.chart_view = self
+            .migrated_conn
+            .get_chart_view_with_str(
+                self.chart_months.get_selected_value(),
+                self.chart_years.get_selected_value(),
+                fetch_nature,
+            )
+            .unwrap();
     }
 
     /// Reset all currently shown search related data to nothing

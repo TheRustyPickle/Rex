@@ -6,7 +6,10 @@ use db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
 use diesel::{Connection, SqliteConnection};
 use std::collections::HashMap;
 
-use crate::fetcher::{SearchView, SummaryView, TxViewGroup, get_search_txs, get_summary, get_txs};
+use crate::fetcher::{
+    ChartView, SearchView, SummaryView, TxViewGroup, get_chart_view, get_search_txs, get_summary,
+    get_txs,
+};
 use crate::modifier::{add_new_tx, add_new_tx_methods, delete_tx};
 use crate::utils::month_name_to_num;
 
@@ -239,7 +242,35 @@ impl DbConn {
         Ok(summary)
     }
 
+    pub fn get_chart_view_with_str<'a>(
+        &mut self,
+        month: &'a str,
+        year: &'a str,
+        nature: FetchNature,
+    ) -> Result<ChartView> {
+        let result = self.conn.transaction::<ChartView, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            let year_num = year.parse::<i32>().unwrap();
+            let month_num = month_name_to_num(month);
+
+            let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
+
+            let tx_view = get_txs(date, nature, &mut db_conn)?;
+
+            let chart_view = get_chart_view(tx_view);
+
+            Ok(chart_view)
+        })?;
+
+        Ok(result)
+    }
+
     pub fn get_tx_methods(&self) -> &HashMap<i32, TxMethod> {
         &self.cache.tx_methods
+    }
+
+    pub fn get_tx_methods_sorted(&self) -> Vec<&TxMethod> {
+        self.cache.get_methods()
     }
 }
