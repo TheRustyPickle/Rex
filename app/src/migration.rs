@@ -1,9 +1,9 @@
-use anyhow::{Context, Error, Result};
+use anyhow::{Error, Result};
 use chrono::{Datelike, Months, NaiveDate};
 use db::ConnCache;
 use db::models::{
-    Activity, ActivityNature, ActivityTx, ActivityTxTag, Balance, FetchNature, NewTag, NewTx,
-    TxTag, TxType,
+    Activity, ActivityNature, ActivityTx, ActivityTxTag, Balance, FetchNature, NewTag, NewTx, Tag,
+    TxMethod, TxTag, TxType,
 };
 use diesel::prelude::*;
 use diesel::sql_query;
@@ -13,6 +13,7 @@ use std::io::Write;
 
 use crate::conn::{DbConn, MutDbConn};
 use crate::modifier::add_new_tx_methods;
+use crate::utils::parse_amount_nature_cent;
 
 #[derive(QueryableByName)]
 struct ColumnInfo {
@@ -103,14 +104,14 @@ pub fn start_migration(mut old_db_conn: DbConn, db_conn: &mut DbConn) -> Result<
 
     let mut end_date = None;
 
+    let mut count = 0;
+    let stdout = std::io::stdout();
+    let mut handle = stdout.lock();
+
     conn.transaction::<_, Error, _>(|conn| {
         let mut mut_db_conn = MutDbConn::new(conn, cache);
 
         let mut final_balance = Balance::get_final_balance(&mut mut_db_conn)?;
-
-        let mut count = 0;
-        let stdout = std::io::stdout();
-        let mut handle = stdout.lock();
 
         let mut skipped_activity_id = HashSet::new();
 
@@ -159,6 +160,10 @@ pub fn start_migration(mut old_db_conn: DbConn, db_conn: &mut DbConn) -> Result<
             balance.update_final_balance(&mut mut_db_conn).unwrap();
         }
 
+        println!("\nAll transactions migrated successfully");
+
+        count = 0;
+
         for activity in activities {
             let skipped = migrate_activity(
                 &activity.date,
@@ -172,22 +177,54 @@ pub fn start_migration(mut old_db_conn: DbConn, db_conn: &mut DbConn) -> Result<
             if skipped {
                 skipped_activity_id.insert(activity.activity_num);
             }
+
+            count += 1;
+            write!(
+                handle,
+                "\rActivity migrated: {count} Activity skipped: {}",
+                skipped_activity_id.len()
+            )
+            .unwrap();
         }
 
+        println!("\nAll activities migrated successfully. Incompatible old activities are skipped");
+
+        count = 0;
+        let mut skipped_tx = 0;
+
         for tx in activity_txs {
+            if skipped_activity_id.contains(&tx.activity_num) {
+                skipped_tx += 1;
+                continue;
+            }
             migrate_activity_tx(tx, &mut mut_db_conn).unwrap();
+
+            count += 1;
+            write!(
+                handle,
+                "\rActivity transactions migrated: {count} Activity transactions skipped: {}",
+                skipped_tx
+            )
+            .unwrap();
         }
+
+        write!(
+            handle,
+            "\rActivity transactions migrated: {count} Activity transactions skipped: {}",
+            skipped_tx
+        )
+        .unwrap();
 
         Ok(())
     })?;
 
-    println!("\nAll transactions migrated successfully");
+    println!(
+        "\nAll activity transactions migrated successfully. Incompatible old activity transactions are skipped"
+    );
 
     db_conn.reload_tags();
 
-    let mut count = 0;
-    let stdout = std::io::stdout();
-    let mut handle = stdout.lock();
+    count = 0;
 
     if let Some(start_date) = start_date
         && let Some(end_date) = end_date
@@ -301,24 +338,22 @@ fn migrate_tx(
 
     // TODO: Add activity txs later
 
-    let added_tx = new_tx.insert(db_conn).context("Failed on new tx")?;
+    let added_tx = new_tx.insert(db_conn)?;
 
     let mut tx_tags = Vec::new();
 
     for tag in tag_list {
-        let tag_data = NewTag::new(&tag)
-            .insert(db_conn)
-            .context("Failed on new tag")?;
+        let tag_data = NewTag::new(&tag).insert(db_conn)?;
 
         let tx_tag = TxTag::new(added_tx.id, tag_data.id);
 
         tx_tags.push(tx_tag);
     }
 
-    TxTag::insert_batch(tx_tags, db_conn).context("Failed on tx tags")?;
+    TxTag::insert_batch(tx_tags, db_conn)?;
 
     for balance in balance_to_update {
-        balance.insert(db_conn).context("Failed on balance")?;
+        balance.insert(db_conn)?;
     }
 
     Ok(())
@@ -355,7 +390,7 @@ fn migrate_activity_tx(tx: OldActivityTx, conn: &mut impl ConnCache) -> Result<(
     let date = if tx.date.is_empty() {
         None
     } else {
-        Some(tx.date.parse::<NaiveDate>()?)
+        Some(tx.date)
     };
 
     let details = if tx.details.is_empty() {
@@ -381,29 +416,32 @@ fn migrate_activity_tx(tx: OldActivityTx, conn: &mut impl ConnCache) -> Result<(
             let to_method_name = split_method[1].trim();
             let from_method_name = split_method[0].trim();
 
-            if to_method_name != "?" || !to_method_name.is_empty() {
-                let to_method_id = conn.cache().get_method_id(to_method_name)?;
-                to_method = Some(to_method_id);
+            if to_method_name != "?" && !to_method_name.is_empty() {
+                let method = TxMethod::get_by_name(conn, to_method_name)?;
+                to_method = Some(method.id);
             }
 
-            if from_method_name != "?" || !from_method_name.is_empty() {
-                let from_method_id = conn.cache().get_method_id(from_method_name)?;
-                Some(from_method_id)
+            if from_method_name != "?" && !from_method_name.is_empty() {
+                let method = TxMethod::get_by_name(conn, from_method_name)?;
+                Some(method.id)
             } else {
                 None
             }
         } else {
-            Some(conn.cache().get_method_id(split_method[0])?)
+            let method = TxMethod::get_by_name(conn, split_method[0])?;
+            Some(method.id)
         }
     };
 
-    let amount = if tx.amount.is_empty() {
-        None
-    } else {
-        let amount = tx.amount.parse::<f64>()?;
+    let mut amount = None;
+    let mut amount_type = None;
 
-        Some((amount * 100.0) as i64)
-    };
+    let amount_nature = parse_amount_nature_cent(tx.amount.as_str())?;
+
+    if let Some(nature) = amount_nature {
+        amount_type = Some(nature.to_type().into());
+        amount = Some(nature.extract());
+    }
 
     ActivityTx::new(
         date,
@@ -411,6 +449,7 @@ fn migrate_activity_tx(tx: OldActivityTx, conn: &mut impl ConnCache) -> Result<(
         from_method,
         to_method,
         amount,
+        amount_type,
         tx_type,
         None,
         tx.activity_num,
@@ -425,7 +464,14 @@ fn migrate_activity_tx(tx: OldActivityTx, conn: &mut impl ConnCache) -> Result<(
 
         for tag in split_tags {
             let tag = tag.trim();
-            let tag_id = conn.cache().get_tag_id(tag)?;
+            let db_tag = Tag::get_by_name(conn, tag)?;
+
+            let tag_id = if let Some(t) = db_tag {
+                t.id
+            } else {
+                let new_tag = NewTag::new(tag).insert(conn)?;
+                new_tag.id
+            };
 
             let activity_tx_tag = ActivityTxTag::new(tx.insertion_id, tag_id);
 

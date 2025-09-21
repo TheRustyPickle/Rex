@@ -40,4 +40,10 @@ impl Tag {
 
         tags.select(Tag::as_select()).load(db_conn.conn())
     }
+
+    pub fn get_by_name(db_conn: &mut impl ConnCache, n: &str) -> Result<Option<Tag>, Error> {
+        use crate::schema::tags::dsl::{name, tags};
+
+        tags.filter(name.eq(n)).first(db_conn.conn()).optional()
+    }
 }

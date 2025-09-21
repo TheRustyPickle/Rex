@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use chrono::NaiveDate;
 use diesel::prelude::*;
 use diesel::result::Error;
 
@@ -11,11 +10,12 @@ use crate::schema::activity_txs;
 #[derive(Clone, Queryable, Selectable, Insertable)]
 pub struct ActivityTx {
     id: i32,
-    date: Option<NaiveDate>,
+    date: Option<String>,
     details: Option<String>,
     from_method: Option<i32>,
     to_method: Option<i32>,
     amount: Option<i64>,
+    amount_type: Option<String>,
     tx_type: Option<String>,
     display_order: Option<i32>,
     activity_num: i32,
@@ -23,11 +23,12 @@ pub struct ActivityTx {
 
 pub struct FullActivityTx {
     pub id: i32,
-    date: Option<NaiveDate>,
+    date: Option<String>,
     details: Option<String>,
     from_method: Option<TxMethod>,
     to_method: Option<TxMethod>,
     amount: Option<i64>,
+    amount_type: Option<String>,
     tx_type: Option<TxType>,
     pub display_order: Option<i32>,
     tags: Vec<Tag>,
@@ -36,11 +37,12 @@ pub struct FullActivityTx {
 #[derive(Insertable)]
 #[diesel(table_name = activity_txs)]
 pub struct NewActivityTx {
-    date: Option<NaiveDate>,
+    date: Option<String>,
     details: Option<String>,
     from_method: Option<i32>,
     to_method: Option<i32>,
     amount: Option<i64>,
+    amount_type: Option<String>,
     tx_type: Option<String>,
     display_order: Option<i32>,
     activity_num: i32,
@@ -49,11 +51,12 @@ pub struct NewActivityTx {
 impl NewActivityTx {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        date: Option<NaiveDate>,
+        date: Option<String>,
         details: Option<String>,
         from_method: Option<i32>,
         to_method: Option<i32>,
         amount: Option<i64>,
+        amount_type: Option<String>,
         tx_type: Option<String>,
         display_order: Option<i32>,
         activity_num: i32,
@@ -64,6 +67,7 @@ impl NewActivityTx {
             from_method,
             to_method,
             amount,
+            amount_type,
             tx_type,
             display_order,
             activity_num,
@@ -82,11 +86,12 @@ impl NewActivityTx {
 impl ActivityTx {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        date: Option<NaiveDate>,
+        date: Option<String>,
         details: Option<String>,
         from_method: Option<i32>,
         to_method: Option<i32>,
         amount: Option<i64>,
+        amount_type: Option<String>,
         tx_type: Option<String>,
         display_order: Option<i32>,
         activity_num: i32,
@@ -98,6 +103,7 @@ impl ActivityTx {
             from_method,
             to_method,
             amount,
+            amount_type,
             tx_type,
             display_order,
             activity_num,
@@ -156,11 +162,12 @@ impl ActivityTx {
 
             let full_tx = FullActivityTx {
                 id: tx.id,
-                date: tx.date,
+                date: tx.date.clone(),
                 details: tx.details.clone(),
                 from_method,
                 to_method,
                 amount: tx.amount,
+                amount_type: tx.amount_type.clone(),
                 tx_type,
                 tags,
                 display_order: tx.display_order,
@@ -175,12 +182,6 @@ impl ActivityTx {
 
 impl FullActivityTx {
     pub fn to_array(&self) -> Vec<String> {
-        let date = if let Some(date) = self.date {
-            date.format("%d-%m-%Y").to_string()
-        } else {
-            String::new()
-        };
-
         let amount = if let Some(amount) = self.amount {
             format!("{:.2}", amount as f64 / 100.0)
         } else {
@@ -188,7 +189,7 @@ impl FullActivityTx {
         };
 
         vec![
-            date,
+            self.date.clone().unwrap_or_default(),
             self.details.clone().unwrap_or_default(),
             self.from_method
                 .as_ref()
