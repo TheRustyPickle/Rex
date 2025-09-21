@@ -44,11 +44,12 @@ CREATE TABLE balances (
 
 CREATE TABLE activity_txs (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    date DATE,
+    date TEXT,
     details TEXT,
     from_method INTEGER REFERENCES tx_methods(id) ON DELETE CASCADE,
     to_method INTEGER REFERENCES tx_methods(id) ON DELETE CASCADE,
     amount BigInt,
+    amount_type TEXT CHECK (amount_type IN ('exact', 'more_than', 'more_than_equal', 'less_than', 'less_than_equal')),
     tx_type TEXT CHECK (tx_type IN ('Income', 'Expense', 'Transfer')),
     display_order INTEGER,
     activity_num INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE
