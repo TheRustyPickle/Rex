@@ -50,6 +50,7 @@ pub struct NewActivityTx {
 
 impl NewActivityTx {
     #[allow(clippy::too_many_arguments)]
+    #[must_use]
     pub fn new(
         date: Option<String>,
         details: Option<String>,
@@ -85,6 +86,7 @@ impl NewActivityTx {
 
 impl ActivityTx {
     #[allow(clippy::too_many_arguments)]
+    #[must_use]
     pub fn new(
         date: Option<String>,
         details: Option<String>,
@@ -98,6 +100,7 @@ impl ActivityTx {
         id: i32,
     ) -> Self {
         Self {
+            id,
             date,
             details,
             from_method,
@@ -107,7 +110,6 @@ impl ActivityTx {
             tx_type,
             display_order,
             activity_num,
-            id,
         }
     }
 
@@ -181,6 +183,7 @@ impl ActivityTx {
 }
 
 impl FullActivityTx {
+    #[must_use]
     pub fn to_array(&self) -> Vec<String> {
         let amount = if let Some(amount) = self.amount {
             format!("{:.2}", amount as f64 / 100.0)
@@ -202,7 +205,7 @@ impl FullActivityTx {
             amount,
             self.tx_type
                 .as_ref()
-                .map(|t| t.to_string())
+                .map(std::string::ToString::to_string)
                 .unwrap_or_default(),
             self.tags
                 .iter()

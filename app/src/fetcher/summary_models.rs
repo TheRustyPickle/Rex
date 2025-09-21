@@ -178,6 +178,7 @@ impl Cent {
         Self(value)
     }
 
+    #[must_use]
     pub fn dollar(&self) -> Dollar {
         Dollar::new(self.0 as f64 / 100.0)
     }
@@ -192,6 +193,7 @@ impl Dollar {
         Self(value)
     }
 
+    #[must_use]
     pub fn value(&self) -> f64 {
         self.0
     }

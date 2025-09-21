@@ -23,6 +23,7 @@ pub struct NewSearch<'a> {
 }
 
 impl<'a> NewSearch<'a> {
+    #[must_use]
     pub fn new(
         date: Option<DateNature>,
         details: Option<&'a str>,
@@ -44,7 +45,9 @@ impl<'a> NewSearch<'a> {
     }
 
     pub fn search_txs(self, db_conn: &mut impl ConnCache) -> Result<Vec<FullTx>, Error> {
-        use crate::schema::txs::dsl::*;
+        use crate::schema::txs::dsl::{
+            amount, date, details, from_method, id, to_method, tx_type, txs,
+        };
 
         let mut query = txs.into_boxed();
 
@@ -69,7 +72,7 @@ impl<'a> NewSearch<'a> {
         }
 
         if let Some(d) = self.details {
-            query = query.filter(details.like(format!("%{}%", d)));
+            query = query.filter(details.like(format!("%{d}%")));
         }
 
         if let Some(t) = self.tx_type {
@@ -177,6 +180,7 @@ pub struct NewTx<'a> {
 }
 
 impl<'a> NewTx<'a> {
+    #[must_use]
     pub fn new(
         date: NaiveDate,
         details: Option<&'a str>,
@@ -376,6 +380,7 @@ impl FullTx {
         map
     }
 
+    #[must_use]
     pub fn to_array(&self) -> Vec<String> {
         let mut method = self.from_method.name.clone();
 
@@ -470,11 +475,12 @@ impl Tx {
         diesel::delete(txs.find(id)).execute(db_conn.conn())
     }
 
+    #[must_use]
     pub fn from_new_tx(new_tx: NewTx, id: i32) -> Self {
         Self {
             id,
             date: new_tx.date,
-            details: new_tx.details.map(|s| s.to_string()),
+            details: new_tx.details.map(std::string::ToString::to_string),
             from_method: new_tx.from_method,
             to_method: new_tx.to_method,
             amount: new_tx.amount,

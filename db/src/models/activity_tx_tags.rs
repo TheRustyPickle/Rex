@@ -11,6 +11,7 @@ pub struct ActivityTxTag {
 }
 
 impl ActivityTxTag {
+    #[must_use]
     pub fn new(tx_id: i32, tag_id: i32) -> Self {
         Self { tx_id, tag_id }
     }

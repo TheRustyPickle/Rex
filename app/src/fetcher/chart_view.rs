@@ -52,30 +52,37 @@ pub(crate) fn get_chart_view(txs: TxViewGroup) -> ChartView {
 }
 
 impl ChartView {
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.txs.0.is_empty()
     }
 
+    #[must_use]
     pub fn contains_date(&self, date: &NaiveDate) -> bool {
         self.dates.contains(date)
     }
 
+    #[must_use]
     pub fn start_date(&self) -> NaiveDate {
         self.first_date
     }
 
+    #[must_use]
     pub fn end_date(&self) -> NaiveDate {
         self.last_date
     }
 
+    #[must_use]
     pub fn get_balance(&self, index: usize) -> &HashMap<i32, Cent> {
         self.txs.get_tx_balance(index)
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.txs.len()
     }
 
+    #[must_use]
     pub fn get_tx(&self, index: usize) -> &FullTx {
         &self.txs.0[index].tx
     }

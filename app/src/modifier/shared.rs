@@ -169,7 +169,7 @@ pub fn parse_search_fields<'a>(
     let tags = if tags.is_empty() {
         None
     } else {
-        let tags = tags.split(',').map(|t| t.trim()).collect::<Vec<&str>>();
+        let tags = tags.split(',').map(str::trim).collect::<Vec<&str>>();
         let tags = tags
             .iter()
             .map(|t| db_conn.cache().get_tag_id(t))

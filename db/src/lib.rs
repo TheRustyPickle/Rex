@@ -56,6 +56,7 @@ impl Cache {
         self.txs = Some(txs);
     }
 
+    #[must_use]
     pub fn get_txs(&self, id: i32) -> Option<&Vec<FullTx>> {
         if let Some(txs) = &self.txs {
             return txs.get(&id);
@@ -64,6 +65,7 @@ impl Cache {
         None
     }
 
+    #[must_use]
     pub fn get_methods(&self) -> Vec<&TxMethod> {
         let mut methods = self.tx_methods.values().collect::<Vec<&TxMethod>>();
         methods.sort_by_key(|value| value.position);
@@ -71,6 +73,7 @@ impl Cache {
     }
 }
 
+#[must_use]
 pub fn get_connection(db_url: &str) -> SqliteConnection {
     let mut conn =
         SqliteConnection::establish(db_url).expect("Failed to create connection to database");
@@ -85,6 +88,7 @@ pub fn get_connection(db_url: &str) -> SqliteConnection {
     conn
 }
 
+#[must_use]
 pub fn get_connection_no_migrations(db_url: &str) -> SqliteConnection {
     let mut conn =
         SqliteConnection::establish(db_url).expect("Failed to create connection to database");

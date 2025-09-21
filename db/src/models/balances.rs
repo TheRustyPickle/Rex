@@ -18,6 +18,7 @@ pub struct Balance {
 }
 
 impl Balance {
+    #[must_use]
     pub fn new(
         method_id: i32,
         year: i32,
@@ -35,7 +36,7 @@ impl Balance {
     }
 
     pub fn insert(&self, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
-        use crate::schema::balances::dsl::*;
+        use crate::schema::balances::dsl::{balance, balances, method_id, month, year};
 
         diesel::insert_into(balances)
             .values(self)
@@ -49,7 +50,7 @@ impl Balance {
         txs: Vec<Balance>,
         db_conn: &mut impl ConnCache,
     ) -> Result<usize, Error> {
-        use crate::schema::balances::dsl::*;
+        use crate::schema::balances::dsl::balances;
 
         diesel::insert_into(balances)
             .values(txs)
@@ -57,7 +58,7 @@ impl Balance {
     }
 
     pub fn update_final_balance(&self, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
-        use crate::schema::balances::dsl::*;
+        use crate::schema::balances::dsl::{balance, balances, is_final_balance, method_id};
 
         diesel::update(
             balances
@@ -263,9 +264,10 @@ impl Balance {
             .select(Balance::as_select())
             .load(db_conn.conn())?;
 
-        if balance_list.len() != db_conn.cache().tx_methods.len() {
-            panic!("Final balances are not set for all transaction methods");
-        }
+        assert!(
+            !(balance_list.len() != db_conn.cache().tx_methods.len()),
+            "Final balances are not set for all transaction methods"
+        );
 
         let balance_map = HashMap::from_iter(balance_list.into_iter().map(|b| (b.method_id, b)));
 
