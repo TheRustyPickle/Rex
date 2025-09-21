@@ -10,7 +10,7 @@ use crate::ConnCache;
 use crate::models::{Tag, TxMethod, TxTag};
 use crate::schema::{tx_tags, txs};
 
-static EMPTY: Vec<i32> = Vec::new();
+pub static EMPTY: Vec<i32> = Vec::new();
 
 #[derive(Clone, Debug, Copy)]
 pub enum TxType {
@@ -183,7 +183,6 @@ pub struct FullTx {
     pub to_method: Option<TxMethod>,
     pub amount: i64,
     pub tx_type: TxType,
-    pub activity_id: Option<i32>,
     pub tags: Vec<Tag>,
     pub display_order: i32,
 }
@@ -197,7 +196,6 @@ pub struct Tx {
     pub to_method: Option<i32>,
     pub amount: i64,
     pub tx_type: String,
-    activity_id: Option<i32>,
     display_order: i32,
 }
 
@@ -210,7 +208,6 @@ pub struct NewTx<'a> {
     pub to_method: Option<i32>,
     pub amount: i64,
     pub tx_type: &'a str,
-    pub activity_id: Option<i32>,
 }
 
 impl<'a> NewTx<'a> {
@@ -221,7 +218,6 @@ impl<'a> NewTx<'a> {
         to_method: Option<i32>,
         amount: i64,
         tx_type: &'a str,
-        activity_id: Option<i32>,
     ) -> Self {
         NewTx {
             date,
@@ -230,7 +226,6 @@ impl<'a> NewTx<'a> {
             to_method,
             amount,
             tx_type,
-            activity_id,
         }
     }
 
@@ -307,7 +302,6 @@ impl FullTx {
                     .map(|method_id| db_conn.cache().tx_methods.get(&method_id).unwrap().clone()),
                 amount: tx.amount,
                 tx_type: tx.tx_type.as_str().into(),
-                activity_id: tx.activity_id,
                 tags,
                 display_order: tx.display_order,
             };
@@ -519,7 +513,6 @@ impl Tx {
             to_method: new_tx.to_method,
             amount: new_tx.amount,
             tx_type: new_tx.tx_type.to_string(),
-            activity_id: new_tx.activity_id,
             display_order: 0,
         }
     }

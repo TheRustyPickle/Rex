@@ -91,37 +91,11 @@ pub fn reposition_column(tx_methods: &[String], conn: &mut Connection) -> Result
 }
 
 pub fn migrate_to_new_schema(conn: &mut Connection, new_conn: &mut DbConn) -> Result<()> {
-    let mut statement = conn
-        .prepare("SELECT * FROM tx_all ORDER BY date, id_num")
-        .expect("could not prepare statement");
-
-    let rows = statement
-        .query_map([], |row| {
-            let id_num: i32 = row.get(5).unwrap();
-
-            Ok(vec![
-                row.get(0).unwrap(),
-                row.get(1).unwrap(),
-                row.get(2).unwrap(),
-                row.get(3).unwrap(),
-                row.get(4).unwrap(),
-                row.get(6).unwrap(),
-                id_num.to_string(),
-            ])
-        })
-        .unwrap();
-
-    let mut row_list = Vec::new();
-    for row in rows {
-        let row = row.unwrap();
-        row_list.push(row);
-    }
-
     let db_path = conn.path().unwrap();
 
     let old_conn = get_conn_old(db_path);
 
-    start_migration(row_list, old_conn, new_conn).unwrap();
+    start_migration(old_conn, new_conn).unwrap();
 
     Ok(())
 }
