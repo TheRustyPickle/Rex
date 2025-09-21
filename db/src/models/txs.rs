@@ -7,44 +7,10 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
 use crate::ConnCache;
-use crate::models::{Tag, TxMethod, TxTag};
+use crate::models::{AmountNature, DateNature, FetchNature, Tag, TxMethod, TxTag, TxType};
 use crate::schema::{tx_tags, txs};
 
 pub static EMPTY: Vec<i32> = Vec::new();
-
-#[derive(Clone, Debug, Copy)]
-pub enum TxType {
-    Income,
-    Expense,
-    Transfer,
-}
-
-#[derive(Clone, Debug, Copy, Eq, PartialEq)]
-pub enum FetchNature {
-    Monthly,
-    Yearly,
-    All,
-}
-
-pub enum DateNature {
-    Exact(NaiveDate),
-    ByMonth {
-        start_date: NaiveDate,
-        end_date: NaiveDate,
-    },
-    ByYear {
-        start_date: NaiveDate,
-        end_date: NaiveDate,
-    },
-}
-
-pub enum AmountNature {
-    Exact(i64),
-    MoreThan(i64),
-    MoreThanEqual(i64),
-    LessThan(i64),
-    LessThanEqual(i64),
-}
 
 pub struct NewSearch<'a> {
     pub date: Option<DateNature>,

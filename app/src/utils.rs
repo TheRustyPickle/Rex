@@ -1,3 +1,6 @@
+use anyhow::Result;
+use db::models::AmountNature;
+
 pub fn month_name_to_num(name: &str) -> u32 {
     match name {
         "January" => 1,
@@ -29,4 +32,48 @@ pub fn get_percentages(value1: f64, value2: f64) -> (f64, f64) {
     let percentage1 = (value1 / total) * 100.0;
     let percentage2 = (value2 / total) * 100.0;
     (percentage1, percentage2)
+}
+
+pub fn parse_amount_nature_i64(amount: &str) -> Result<Option<AmountNature>> {
+    if amount.trim().is_empty() {
+        return Ok(None);
+    }
+
+    let parse = |s: &str| -> Result<i64> { Ok(s.parse::<f64>()? as i64) };
+
+    let res = if amount.starts_with("<=") {
+        AmountNature::LessThanEqual(parse(&amount[2..])?)
+    } else if amount.starts_with(">=") {
+        AmountNature::MoreThanEqual(parse(&amount[2..])?)
+    } else if amount.starts_with('<') {
+        AmountNature::LessThan(parse(&amount[1..])?)
+    } else if amount.starts_with('>') {
+        AmountNature::MoreThan(parse(&amount[1..])?)
+    } else {
+        AmountNature::Exact(parse(amount)?)
+    };
+
+    Ok(Some(res))
+}
+
+pub fn parse_amount_nature_cent(amount: &str) -> Result<Option<AmountNature>> {
+    if amount.trim().is_empty() {
+        return Ok(None);
+    }
+
+    let parse = |s: &str| -> Result<i64> { Ok((s.parse::<f64>()? * 100.0) as i64) };
+
+    let res = if amount.starts_with("<=") {
+        AmountNature::LessThanEqual(parse(&amount[2..])?)
+    } else if amount.starts_with(">=") {
+        AmountNature::MoreThanEqual(parse(&amount[2..])?)
+    } else if amount.starts_with('<') {
+        AmountNature::LessThan(parse(&amount[1..])?)
+    } else if amount.starts_with('>') {
+        AmountNature::MoreThan(parse(&amount[1..])?)
+    } else {
+        AmountNature::Exact(parse(amount)?)
+    };
+
+    Ok(Some(res))
 }

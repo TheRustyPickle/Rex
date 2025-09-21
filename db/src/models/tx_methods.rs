@@ -52,4 +52,12 @@ impl TxMethod {
             .optional()
             .map(|opt| opt.unwrap_or(0))
     }
+
+    pub fn get_by_name(db_conn: &mut impl ConnCache, name: &str) -> Result<TxMethod, Error> {
+        use crate::schema::tx_methods::dsl::{name as tx_method_name, tx_methods};
+
+        tx_methods
+            .filter(tx_method_name.eq(name))
+            .first(db_conn.conn())
+    }
 }

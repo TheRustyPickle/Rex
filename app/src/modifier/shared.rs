@@ -1,7 +1,9 @@
 use anyhow::{Result, anyhow};
 use chrono::{Days, Months, NaiveDate};
 use db::ConnCache;
-use db::models::{AmountNature, Balance, DateNature, FetchNature, NewSearch, NewTx, Tx, TxType};
+use db::models::{Balance, DateNature, FetchNature, NewSearch, NewTx, Tx, TxType};
+
+use crate::utils::parse_amount_nature_i64;
 
 pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Result<()> {
     let nature = FetchNature::Monthly;
@@ -155,29 +157,7 @@ pub fn parse_search_fields<'a>(
     let amount = if amount.is_empty() {
         None
     } else {
-        let amount_nature = if amount.starts_with("<=") {
-            let parsed_amount = amount.strip_prefix("<=").unwrap().parse::<f64>()? as i64;
-
-            AmountNature::LessThanEqual(parsed_amount)
-        } else if amount.starts_with(">=") {
-            let parsed_amount = amount.strip_prefix(">=").unwrap().parse::<f64>()? as i64;
-
-            AmountNature::MoreThanEqual(parsed_amount)
-        } else if amount.starts_with('<') {
-            let parsed_amount = amount.strip_prefix('<').unwrap().parse::<f64>()? as i64;
-
-            AmountNature::LessThan(parsed_amount)
-        } else if amount.starts_with('>') {
-            let parsed_amount = amount.strip_prefix('>').unwrap().parse::<f64>()? as i64;
-
-            AmountNature::MoreThan(parsed_amount)
-        } else {
-            let parsed_amount = amount.parse::<f64>()? as i64;
-
-            AmountNature::Exact(parsed_amount)
-        };
-
-        Some(amount_nature)
+        parse_amount_nature_i64(amount)?
     };
 
     let tx_type = if tx_type.is_empty() {
