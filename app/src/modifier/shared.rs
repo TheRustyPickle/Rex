@@ -78,7 +78,7 @@ pub fn parse_tx_fields<'a>(
         Some(db_conn.cache().get_method_id(to_method)?)
     };
 
-    let new_tx = NewTx::new(date, details, from_method, to_method, amount, tx_type, None);
+    let new_tx = NewTx::new(date, details, from_method, to_method, amount, tx_type);
     Ok(new_tx)
 }
 
