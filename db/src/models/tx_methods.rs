@@ -19,6 +19,7 @@ pub struct NewTxMethod<'a> {
 }
 
 impl NewTxMethod<'_> {
+    #[must_use]
     pub fn new(name: &str, position: i32) -> NewTxMethod<'_> {
         NewTxMethod { name, position }
     }

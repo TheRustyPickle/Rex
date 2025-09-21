@@ -202,16 +202,14 @@ pub fn start_migration(mut old_db_conn: DbConn, db_conn: &mut DbConn) -> Result<
             count += 1;
             write!(
                 handle,
-                "\rActivity transactions migrated: {count} Activity transactions skipped: {}",
-                skipped_tx
+                "\rActivity transactions migrated: {count} Activity transactions skipped: {skipped_tx}"
             )
             .unwrap();
         }
 
         write!(
             handle,
-            "\rActivity transactions migrated: {count} Activity transactions skipped: {}",
-            skipped_tx
+            "\rActivity transactions migrated: {count} Activity transactions skipped: {skipped_tx}"
         )
         .unwrap();
 
@@ -251,7 +249,7 @@ pub fn start_migration(mut old_db_conn: DbConn, db_conn: &mut DbConn) -> Result<
     } else {
         println!(
             "\nLooks like no balance to tidy up. This should usually not happen. If it's a bug, report it on github"
-        )
+        );
     }
 
     Ok(())
@@ -287,7 +285,9 @@ fn migrate_tx(
 
     let mut tag_list = Vec::new();
 
-    if !tags.is_empty() {
+    if tags.is_empty() {
+        tag_list.push("Unknown".to_string());
+    } else {
         let split_tags = tags.split(',').collect::<Vec<&str>>();
 
         for tag in split_tags {
@@ -296,8 +296,6 @@ fn migrate_tx(
                 tag_list.push(trimmed_tag.to_string());
             }
         }
-    } else {
-        tag_list.push("Unknown".to_string());
     }
 
     let new_tx = NewTx::new(date, details, from_method, to_method, amount, tx_type);
@@ -458,7 +456,7 @@ fn migrate_activity_tx(tx: OldActivityTx, conn: &mut impl ConnCache) -> Result<(
     .insert(conn)?;
 
     if !tx.tags.is_empty() {
-        let split_tags = tx.tags.split(",").collect::<Vec<&str>>();
+        let split_tags = tx.tags.split(',').collect::<Vec<&str>>();
 
         let mut new_activity_tags = Vec::new();
 
@@ -479,7 +477,7 @@ fn migrate_activity_tx(tx: OldActivityTx, conn: &mut impl ConnCache) -> Result<(
         }
 
         ActivityTxTag::insert_batch(new_activity_tags, conn)?;
-    };
+    }
 
     Ok(())
 }

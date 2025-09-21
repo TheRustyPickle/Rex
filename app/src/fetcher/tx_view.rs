@@ -319,14 +319,17 @@ impl TxViewGroup {
         to_return
     }
 
+    #[must_use]
     pub fn tx_array(&self) -> Vec<Vec<String>> {
         self.0.iter().map(|tx_view| tx_view.tx.to_array()).collect()
     }
 
+    #[must_use]
     pub fn get_tx(&self, index: usize) -> &FullTx {
         &self.0[index].tx
     }
 
+    #[must_use]
     pub fn get_tx_by_id(&self, id: i32) -> Option<&FullTx> {
         self.0
             .iter()
@@ -460,14 +463,17 @@ impl TxViewGroup {
         Ok(true)
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
+    #[must_use]
     pub fn get_tx_balance(&self, index: usize) -> &HashMap<i32, Cent> {
         &self.0[index].balance
     }

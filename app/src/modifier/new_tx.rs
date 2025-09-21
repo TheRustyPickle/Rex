@@ -17,7 +17,9 @@ pub(crate) fn add_new_tx(
     let tx_type = tx.tx_type;
     let mut tag_list = Vec::new();
 
-    if !tags.is_empty() {
+    if tags.is_empty() {
+        tag_list.push("Unknown".to_string());
+    } else {
         let split_tags = tags.split(',').collect::<Vec<&str>>();
 
         for tag in split_tags {
@@ -26,8 +28,6 @@ pub(crate) fn add_new_tx(
                 tag_list.push(trimmed_tag.to_string());
             }
         }
-    } else {
-        tag_list.push("Unknown".to_string());
     }
 
     let mut current_balance = Balance::get_balance_map(date, db_conn)?;

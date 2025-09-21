@@ -35,6 +35,7 @@ pub enum AmountNature {
 }
 
 impl AmountNature {
+    #[must_use]
     pub fn extract(self) -> i64 {
         match self {
             AmountNature::Exact(i) => i,
@@ -45,6 +46,7 @@ impl AmountNature {
         }
     }
 
+    #[must_use]
     pub fn to_type(&self) -> AmountType {
         match self {
             AmountNature::Exact(_) => AmountType::Exact,

@@ -17,6 +17,7 @@ pub struct NewTag<'a> {
 }
 
 impl<'a> NewTag<'a> {
+    #[must_use]
     pub fn new(name: &'a str) -> Self {
         NewTag { name }
     }

@@ -76,6 +76,7 @@ pub struct ActivityWithTxs {
 }
 
 impl NewActivity {
+    #[must_use]
     pub fn new(date: NaiveDate, activity_type: &str, description: &str) -> Self {
         Self {
             date,
@@ -95,6 +96,7 @@ impl NewActivity {
 }
 
 impl Activity {
+    #[must_use]
     pub fn new(date: NaiveDate, activity_type: ActivityNature, description: &str, id: i32) -> Self {
         Self {
             id,
@@ -154,6 +156,7 @@ impl Activity {
         Ok(grouped)
     }
 
+    #[must_use]
     pub fn to_array(&self) -> Vec<String> {
         vec![
             self.date.format("%d-%m-%Y").to_string(),
@@ -164,6 +167,7 @@ impl Activity {
 }
 
 impl ActivityWithTxs {
+    #[must_use]
     pub fn to_array(&self) -> Vec<Vec<String>> {
         let first_tx = self.txs.first().unwrap();
 
@@ -171,9 +175,10 @@ impl ActivityWithTxs {
 
         match self.activity.activity_type.as_str().into() {
             ActivityNature::PositionSwap | ActivityNature::EditTx => {
-                if first_tx.id == last_tx.id {
-                    panic!("Both activity tx id should not have matched")
-                }
+                assert!(
+                    !(first_tx.id == last_tx.id),
+                    "Both activity tx id should not have matched"
+                );
 
                 let lower_id_tx = if first_tx.id < last_tx.id {
                     first_tx
@@ -218,7 +223,7 @@ impl ActivityWithTxs {
                 }
             }
             _ => {}
-        };
+        }
 
         todo!()
     }

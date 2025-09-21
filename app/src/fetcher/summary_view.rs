@@ -25,6 +25,7 @@ pub struct FullSummary {
 }
 
 impl FullSummary {
+    #[must_use]
     pub fn net_array(&self) -> Vec<Vec<String>> {
         self.net.array()
     }
@@ -156,11 +157,11 @@ impl SummaryView {
                 continue;
             }
 
-            to_push.push(format!("{:.2}", income_amount));
-            to_push.push(format!("{:.2}", expense_amount));
+            to_push.push(format!("{income_amount:.2}"));
+            to_push.push(format!("{expense_amount:.2}"));
 
-            to_push.push(format!("{:.2}", income_percentage));
-            to_push.push(format!("{:.2}", expense_percentage));
+            to_push.push(format!("{income_percentage:.2}"));
+            to_push.push(format!("{expense_percentage:.2}"));
 
             if !no_mom_yoy && compare.is_some() {
                 let compare_income = compare_income_tags.get(&tag.name);
@@ -347,13 +348,13 @@ impl SummaryView {
         let mut average_income = if total_income == 0 {
             Some(Dollar::new(0.0))
         } else {
-            Some(total_income.dollar() / total_month_checked as f64)
+            Some(total_income.dollar() / f64::from(total_month_checked))
         };
 
         let mut average_expense = if total_income == 0 {
             Some(Dollar::new(0.0))
         } else {
-            Some(total_expense.dollar() / total_month_checked as f64)
+            Some(total_expense.dollar() / f64::from(total_month_checked))
         };
 
         let mut method_data = Vec::new();
@@ -376,13 +377,13 @@ impl SummaryView {
             let mut average_earning = if method_earning[&method.name] == 0 {
                 Some(Dollar::new(0.0))
             } else {
-                Some(method_earning[&method.name].dollar() / total_month_checked as f64)
+                Some(method_earning[&method.name].dollar() / f64::from(total_month_checked))
             };
 
             let mut average_expense = if method_expense[&method.name] == 0 {
                 Some(Dollar::new(0.0))
             } else {
-                Some(method_expense[&method.name].dollar() / total_month_checked as f64)
+                Some(method_expense[&method.name].dollar() / f64::from(total_month_checked))
             };
 
             let mut mom_yoy_earning = None;
