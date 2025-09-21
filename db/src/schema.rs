@@ -19,11 +19,12 @@ diesel::table! {
 diesel::table! {
     activity_txs (id) {
         id -> Integer,
-        date -> Nullable<Date>,
+        date -> Nullable<Text>,
         details -> Nullable<Text>,
         from_method -> Nullable<Integer>,
         to_method -> Nullable<Integer>,
         amount -> Nullable<BigInt>,
+        amount_type -> Nullable<Text>,
         tx_type -> Nullable<Text>,
         display_order -> Nullable<Integer>,
         activity_num -> Integer,
