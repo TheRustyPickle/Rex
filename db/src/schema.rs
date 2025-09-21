@@ -10,6 +10,27 @@ diesel::table! {
 }
 
 diesel::table! {
+    activity_tx_tags (tx_id, tag_id) {
+        tx_id -> Integer,
+        tag_id -> Integer,
+    }
+}
+
+diesel::table! {
+    activity_txs (id) {
+        id -> Integer,
+        date -> Nullable<Date>,
+        details -> Nullable<Text>,
+        from_method -> Nullable<Integer>,
+        to_method -> Nullable<Integer>,
+        amount -> Nullable<BigInt>,
+        tx_type -> Nullable<Text>,
+        display_order -> Nullable<Integer>,
+        activity_num -> Integer,
+    }
+}
+
+diesel::table! {
     balances (id) {
         id -> Integer,
         method_id -> Integer,
@@ -51,14 +72,24 @@ diesel::table! {
         to_method -> Nullable<Integer>,
         amount -> BigInt,
         tx_type -> Text,
-        activity_id -> Nullable<Integer>,
         display_order -> Integer,
     }
 }
 
+diesel::joinable!(activity_tx_tags -> activity_txs (tx_id));
+diesel::joinable!(activity_tx_tags -> tags (tag_id));
+diesel::joinable!(activity_txs -> activities (activity_num));
 diesel::joinable!(balances -> tx_methods (method_id));
 diesel::joinable!(tx_tags -> tags (tag_id));
 diesel::joinable!(tx_tags -> txs (tx_id));
-diesel::joinable!(txs -> activities (activity_id));
 
-diesel::allow_tables_to_appear_in_same_query!(activities, balances, tags, tx_methods, tx_tags, txs,);
+diesel::allow_tables_to_appear_in_same_query!(
+    activities,
+    activity_tx_tags,
+    activity_txs,
+    balances,
+    tags,
+    tx_methods,
+    tx_tags,
+    txs,
+);
