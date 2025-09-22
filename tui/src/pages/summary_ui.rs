@@ -29,19 +29,19 @@ pub fn summary_ui(
 ) {
     let size = f.area();
 
-    let tag_header = if let SortingType::ByTags = summary_sort {
+    let tag_header = if let SortingType::Tags = summary_sort {
         "Tags ↑"
     } else {
         "Tags"
     };
 
-    let total_income_header = if let SortingType::ByIncome = summary_sort {
+    let total_income_header = if let SortingType::Income = summary_sort {
         "Total Income ↑"
     } else {
         "Total Income"
     };
 
-    let total_expense_header = if let SortingType::ByExpense = summary_sort {
+    let total_expense_header = if let SortingType::Expense = summary_sort {
         "Total Expense ↑"
     } else {
         "Total Expense"

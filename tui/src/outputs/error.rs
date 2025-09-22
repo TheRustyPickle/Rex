@@ -112,25 +112,25 @@ impl Display for SteppingError {
 }
 
 pub enum TxUpdateError {
-    FailedAddTx(sqlError),
-    FailedEditTx(sqlError),
-    FailedDeleteTx(String),
+    Add(sqlError),
+    Edit(sqlError),
+    Delete(String),
 }
 
 impl Display for TxUpdateError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
         match self {
-            TxUpdateError::FailedAddTx(e) => {
+            TxUpdateError::Add(e) => {
                 write!(
                     f,
                     "Delete Transaction: Something went wrong. Failed to delete transaction. Error: \n{e}",
                 )
             }
-            TxUpdateError::FailedEditTx(e) => write!(
+            TxUpdateError::Edit(e) => write!(
                 f,
                 "Edit Transaction: Something went wrong. Failed to edit transaction. Error: {e}",
             ),
-            TxUpdateError::FailedDeleteTx(e) => {
+            TxUpdateError::Delete(e) => {
                 write!(
                     f,
                     "Add Transaction: Something went wrong. Failed to add transaction. Error: {e}",

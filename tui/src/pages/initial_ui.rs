@@ -4,7 +4,7 @@ use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Paragraph, Wrap};
 
 use crate::page_handler::{BACKGROUND, RED, TEXT};
-use crate::popup_page::{A, F, H, Q, R, V, W, Y, Z};
+use crate::pages::{A, F, H, Q, R, V, W, Y, Z};
 use crate::utility::{create_bolded_text, main_block, styled_block};
 
 /// The function draws the Initial page of the interface.

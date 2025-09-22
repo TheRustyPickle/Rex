@@ -1,7 +1,9 @@
 use ratatui::Frame;
 
-use crate::page_handler::{DeletionStatus, PopupState};
-use crate::popup_page::{create_deletion_popup, create_popup};
+use crate::{
+    page_handler::{DeletionStatus, PopupState},
+    pages::{create_deletion_popup, create_popup},
+};
 
 pub const F: &str = "F: Home Page";
 pub const A: &str = "A: Add Transaction Page";

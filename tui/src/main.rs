@@ -1,6 +1,14 @@
+mod db;
+mod key_checker;
+mod outputs;
+mod page_handler;
+mod pages;
+mod tx_handler;
+mod utility;
+
 use dirs::data_local_dir;
 use log::LevelFilter;
-use rex_tui::page_handler::initialize_app;
+use page_handler::initialize_app;
 use simplelog::{Config, WriteLogger};
 use std::env::{current_dir, set_current_dir};
 use std::fs::{self, File};

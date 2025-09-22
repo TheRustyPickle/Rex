@@ -1,4 +1,3 @@
-use app::conn::DbConn;
 use chrono::Datelike;
 use chrono::prelude::Local;
 use ratatui::widgets::TableState;
@@ -111,17 +110,6 @@ impl IndexedData {
         }
     }
 
-    pub fn new_tx_methods(conn: &DbConn) -> Self {
-        IndexedData {
-            titles: conn
-                .get_tx_methods_sorted()
-                .into_iter()
-                .map(|m| m.name.clone())
-                .collect(),
-            index: 0,
-        }
-    }
-
     pub fn new_tx_methods_cumulative(conn: &Connection) -> Self {
         IndexedData {
             titles: get_all_tx_methods_cumulative(conn),
@@ -198,7 +186,7 @@ pub enum TxTab {
 }
 
 /// Shows the currently active page in the terminal. Used to properly
-/// direct key presses to the relevant structs and widget selection.
+/// direct keypresses to the relevant structs and widget selection.
 pub enum CurrentUi {
     Initial,
     Home,
@@ -392,17 +380,17 @@ impl UserInputType {
 }
 
 pub enum SortingType {
-    ByTags,
-    ByIncome,
-    ByExpense,
+    Tags,
+    Income,
+    Expense,
 }
 
 impl SortingType {
     pub fn next_type(&mut self) -> Self {
         match self {
-            SortingType::ByTags => SortingType::ByIncome,
-            SortingType::ByIncome => SortingType::ByExpense,
-            SortingType::ByExpense => SortingType::ByTags,
+            SortingType::Tags => SortingType::Income,
+            SortingType::Income => SortingType::Expense,
+            SortingType::Expense => SortingType::Tags,
         }
     }
 }
@@ -503,60 +491,6 @@ impl ActivityTab {
             ActivityTab::List => ActivityTab::Years,
             ActivityTab::Years => ActivityTab::Months,
             ActivityTab::Months => ActivityTab::List,
-        }
-    }
-}
-
-pub enum ActivityType {
-    NewTX,
-    EditTX(Option<i32>),
-    DeleteTX(Option<i32>),
-    IDNumSwap(Option<i32>, Option<i32>),
-    SearchTX(Option<u8>),
-}
-
-impl ActivityType {
-    #[must_use]
-    pub fn from_s(data: &str) -> Self {
-        match data {
-            "Add TX" => Self::NewTX,
-            "Edit TX" => Self::EditTX(None),
-            "Delete TX" => Self::DeleteTX(None),
-            "TX Position Swap" => Self::IDNumSwap(None, None),
-            "Search TX" => Self::SearchTX(None),
-            _ => unreachable!(),
-        }
-    }
-
-    #[must_use]
-    pub fn to_details(&self) -> String {
-        match self {
-            Self::NewTX => String::from("A new Transaction was added"),
-            Self::EditTX(id) => format!("A transaction was edited with ID {}", id.unwrap()),
-            Self::DeleteTX(id) => format!("A transaction was deleted with ID {}", id.unwrap()),
-            Self::IDNumSwap(id_1, id_2) => format!(
-                "Transaction with ID num {} and ID num {} was swapped",
-                id_1.unwrap(),
-                id_2.unwrap()
-            ),
-            Self::SearchTX(total) => {
-                if total.unwrap() == 1 {
-                    String::from("Transactions were searched with one field")
-                } else {
-                    String::from("Transactions were searched with multiple fields")
-                }
-            }
-        }
-    }
-
-    #[must_use]
-    pub fn to_str(&self) -> String {
-        match self {
-            Self::NewTX => String::from("Add TX"),
-            Self::EditTX(_) => String::from("Edit TX"),
-            Self::DeleteTX(_) => String::from("Delete TX"),
-            Self::IDNumSwap(_, _) => String::from("TX Position Swap"),
-            Self::SearchTX(_) => String::from("Search TX"),
         }
     }
 }

@@ -1,4 +1,3 @@
-use chrono::{Months, NaiveDate};
 use crossterm::execute;
 use crossterm::terminal::{
     Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
@@ -19,10 +18,10 @@ use std::time::Duration;
 use std::{process, thread};
 use strsim::normalized_levenshtein;
 
-use crate::db::{YEARS, create_db};
+use crate::db::create_db;
 use crate::outputs::ComparisonType;
 use crate::page_handler::{
-    BACKGROUND, BOX, DateType, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT, UserInputType,
+    BACKGROUND, BOX, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT, UserInputType,
 };
 use crate::utility::get_user_tx_methods;
 
@@ -119,31 +118,6 @@ pub fn get_all_details(conn: &Connection) -> Vec<String> {
     let mut sorted_details = details_data.into_iter().collect::<Vec<String>>();
     sorted_details.sort();
     sorted_details
-}
-
-/// Returns two dates based on the month and year index. Used for the purpose of searching
-/// tx based on date
-#[must_use]
-pub fn get_sql_dates(month: usize, year: usize, date_type: &DateType) -> (String, String) {
-    match date_type {
-        DateType::Monthly => {
-            let datetime_1 = format!("{}-{:02}-01", YEARS[year], month + 1);
-            let last_date =
-                NaiveDate::from_ymd_opt(YEARS[year].parse().unwrap(), (month + 1) as u32, 1)
-                    .unwrap()
-                    .checked_add_months(Months::new(1))
-                    .unwrap()
-                    .pred_opt()
-                    .unwrap();
-            (datetime_1, last_date.to_string())
-        }
-        DateType::Yearly => {
-            let datetime_1 = format!("{}-01-01", YEARS[year]);
-            let datetime_2 = format!("{}-12-31", YEARS[year]);
-            (datetime_1, datetime_2)
-        }
-        DateType::Exact => (String::new(), String::new()),
-    }
 }
 
 /// Enters raw mode so the TUI can render properly
@@ -394,13 +368,13 @@ pub fn get_best_match(data: &str, matching_set: &[String]) -> String {
 #[must_use]
 pub fn sort_table_data(mut data: Vec<Vec<String>>, sort_type: &SortingType) -> Vec<Vec<String>> {
     match sort_type {
-        SortingType::ByTags => data.sort(),
-        SortingType::ByIncome => data.sort_by(|a, b| {
+        SortingType::Tags => data.sort(),
+        SortingType::Income => data.sort_by(|a, b| {
             let val_a: f64 = a[1].parse().unwrap();
             let val_b: f64 = b[1].parse().unwrap();
             val_b.partial_cmp(&val_a).unwrap()
         }),
-        SortingType::ByExpense => {
+        SortingType::Expense => {
             data.sort_by(|a, b| {
                 let val_a: f64 = a[2].parse().unwrap();
                 let val_b: f64 = b[2].parse().unwrap();
