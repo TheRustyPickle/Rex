@@ -6,9 +6,9 @@ use ratatui::widgets::{Cell, Paragraph, Row, Table};
 use rusqlite::Connection;
 use thousands::Separable;
 
-use crate::home_page::BALANCE_BOLD;
 use crate::outputs::TxType;
 use crate::page_handler::{BACKGROUND, BLUE, BOX, GRAY, HomeRow, RED, TEXT, TxTab};
+use crate::pages::BALANCE_BOLD;
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, get_all_tx_methods, main_block, styled_block};
 

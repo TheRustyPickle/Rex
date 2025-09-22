@@ -161,15 +161,6 @@ impl TxData {
     }
 
     #[must_use]
-    pub fn get_tx_method(&self) -> String {
-        if self.tx_type == "Transfer" {
-            format!("{} to {}", self.from_method, self.to_method)
-        } else {
-            self.from_method.to_string()
-        }
-    }
-
-    #[must_use]
     pub fn get_tx_status(&self) -> &Vec<String> {
         &self.tx_status
     }

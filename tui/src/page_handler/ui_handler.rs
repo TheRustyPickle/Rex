@@ -9,11 +9,6 @@ use ratatui::style::Color;
 use rusqlite::Connection;
 use std::time::Duration;
 
-use crate::activity_page::activity_ui;
-use crate::add_tx_page::add_tx_ui;
-use crate::chart_page::chart_ui;
-use crate::home_page::home_ui;
-use crate::initial_page::initial_ui;
 use crate::key_checker::{
     InputKeyHandler, activity_keys, add_tx_keys, chart_keys, home_keys, initial_keys, search_keys,
     summary_keys,
@@ -23,9 +18,9 @@ use crate::page_handler::{
     ActivityTab, ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData, PopupState,
     SortingType, SummaryTab, TableData, TxTab,
 };
-use crate::popup_page::PopupData;
-use crate::search_page::search_ui;
-use crate::summary_page::summary_ui;
+use crate::pages::{
+    PopupData, activity_ui, add_tx_ui, chart_ui, home_ui, initial_ui, search_ui, summary_ui,
+};
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, get_all_tx_methods_cumulative};
 
@@ -77,7 +72,7 @@ pub fn start_app<B: Backend>(
     let mut home_tab = HomeTab::Months;
 
     // How summary table will be sorted
-    let mut summary_sort = SortingType::ByTags;
+    let mut summary_sort = SortingType::Tags;
 
     conn.execute("PRAGMA foreign_keys = ON", [])
         .expect("Could not enable foreign keys");

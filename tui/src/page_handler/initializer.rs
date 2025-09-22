@@ -9,9 +9,9 @@ use std::path::PathBuf;
 use std::process;
 
 use crate::db::{add_new_tx_methods, migrate_to_new_schema, rename_column, reposition_column};
-use crate::initial_page::check_version;
 use crate::outputs::HandlingOutput;
 use crate::page_handler::{ResetType, UserInputType, start_app};
+use crate::utility::check_version;
 use crate::utility::{
     check_n_create_db, create_backup_location_file, create_change_location_file, delete_backup_db,
     delete_location_change, enter_tui_interface, exit_tui_interface, is_location_changed,
@@ -42,7 +42,7 @@ pub fn initialize_app(
         process::exit(1);
     }
 
-    // If the location was changed/json file found, change the db directory.
+    // If the location was changed/JSON file found, change the db directory.
     let db_path = if let Some(mut location) = is_location_changed(original_db_path) {
         let Ok(()) = set_current_dir(&location) else {
             println!("Failed to set the new path. Exiting program...");

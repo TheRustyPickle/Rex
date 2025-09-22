@@ -404,9 +404,8 @@ impl<'a> InputKeyHandler<'a> {
                 // add_new_activity_tx(&tx_data, activity_num, self.conn);
             }
             Err(err) => {
-                *self.popup = PopupState::DeleteFailed(
-                    TxUpdateError::FailedDeleteTx(err.to_string()).to_string(),
-                );
+                *self.popup =
+                    PopupState::DeleteFailed(TxUpdateError::Delete(err.to_string()).to_string());
             }
         }
     }
@@ -824,9 +823,8 @@ impl<'a> InputKeyHandler<'a> {
                 self.reset_search_data();
             }
             Err(err) => {
-                *self.popup = PopupState::DeleteFailed(
-                    TxUpdateError::FailedDeleteTx(err.to_string()).to_string(),
-                );
+                *self.popup =
+                    PopupState::DeleteFailed(TxUpdateError::Delete(err.to_string()).to_string());
             }
         }
     }
@@ -1585,7 +1583,7 @@ impl InputKeyHandler<'_> {
             )
             .unwrap();
 
-        *self.summary_sort = SortingType::ByTags;
+        *self.summary_sort = SortingType::Tags;
 
         let (previous_month, previous_year) = self.get_summary_previous_value();
 
