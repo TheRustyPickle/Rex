@@ -155,11 +155,11 @@ impl From<ActivityNature> for String {
 impl Display for ActivityNature {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ActivityNature::AddTx => write!(f, "add_tx"),
-            ActivityNature::EditTx => write!(f, "edit_tx"),
-            ActivityNature::DeleteTx => write!(f, "delete_tx"),
-            ActivityNature::SearchTx => write!(f, "search_tx"),
-            ActivityNature::PositionSwap => write!(f, "position_swap"),
+            ActivityNature::AddTx => write!(f, "Add Transaction"),
+            ActivityNature::EditTx => write!(f, "Edit Transaction"),
+            ActivityNature::DeleteTx => write!(f, "Delete Transaction"),
+            ActivityNature::SearchTx => write!(f, "Search Transaction"),
+            ActivityNature::PositionSwap => write!(f, "Position Swap"),
         }
     }
 }

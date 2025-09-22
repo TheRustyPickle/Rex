@@ -11,9 +11,8 @@ CREATE TABLE tags (
 
 CREATE TABLE activities (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    date DATE NOT NULL,
-    activity_type TEXT NOT NULL CHECK (activity_type IN ('add_tx', 'edit_tx', 'delete_tx', 'search_tx', 'position_swap')),
-    description TEXT NOT NULL
+    date DATETIME NOT NULL,
+    activity_type TEXT NOT NULL CHECK (activity_type IN ('add_tx', 'edit_tx', 'delete_tx', 'search_tx', 'position_swap'))
 );
 
 CREATE TABLE txs (
