@@ -1,26 +1,24 @@
-use chrono::{Datelike, Days, Months, NaiveDate};
+use chrono::{Datelike, Days, Local, Months, NaiveDate, NaiveDateTime, NaiveTime};
 use diesel::prelude::*;
 use diesel::result::Error;
 
 use crate::ConnCache;
-use crate::models::{ActivityNature, ActivityTx, FullActivityTx};
+use crate::models::{ActivityNature, ActivityTx, FullActivityTx, NewActivityTx};
 use crate::schema::activities;
 
 #[derive(Clone, Queryable, Selectable, Insertable)]
 #[diesel(table_name = activities)]
 pub struct NewActivity {
-    date: NaiveDate,
+    date: NaiveDateTime,
     activity_type: String,
-    description: String,
 }
 
 #[derive(Queryable, Selectable, Insertable)]
 #[diesel(table_name = activities)]
 pub struct Activity {
     id: i32,
-    date: NaiveDate,
+    date: NaiveDateTime,
     pub activity_type: String,
-    description: String,
 }
 
 pub struct ActivityWithTxs {
@@ -30,11 +28,19 @@ pub struct ActivityWithTxs {
 
 impl NewActivity {
     #[must_use]
-    pub fn new(date: NaiveDate, activity_type: &str, description: &str) -> Self {
+    pub fn new(activity_type: ActivityNature, txs: Vec<NewActivityTx>) -> Self {
+        let now = Local::now().naive_local();
+
+        match activity_type {
+            ActivityNature::PositionSwap | ActivityNature::EditTx => {
+                assert!(txs.len() == 2);
+            }
+            _ => {}
+        }
+
         Self {
-            date,
+            date: now,
             activity_type: activity_type.to_string(),
-            description: description.to_string(),
         }
     }
 
@@ -50,12 +56,11 @@ impl NewActivity {
 
 impl Activity {
     #[must_use]
-    pub fn new(date: NaiveDate, activity_type: ActivityNature, description: &str, id: i32) -> Self {
+    pub fn new(date: NaiveDateTime, activity_type: ActivityNature, id: i32) -> Self {
         Self {
             id,
             date,
             activity_type: activity_type.into(),
-            description: description.to_string(),
         }
     }
 
@@ -77,6 +82,9 @@ impl Activity {
 
         let start_date = NaiveDate::from_ymd_opt(d.year(), d.month(), 1).unwrap();
         let end_date = start_date + Months::new(1) - Days::new(1);
+
+        let start_date = start_date.and_time(NaiveTime::MIN);
+        let end_date = end_date.and_time(NaiveTime::MIN);
 
         let results: Vec<(Activity, ActivityTx)> = act::activities
             .inner_join(tx::activity_txs.on(tx::activity_num.eq(act::id)))
@@ -111,10 +119,10 @@ impl Activity {
 
     #[must_use]
     pub fn to_array(&self) -> Vec<String> {
+        let activity_type: ActivityNature = self.activity_type.as_str().into();
         vec![
-            self.date.format("%d-%m-%Y").to_string(),
-            self.activity_type.clone(),
-            self.description.clone(),
+            self.date.format("%a %d %I:%M %p").to_string(),
+            activity_type.to_string(),
         ]
     }
 }

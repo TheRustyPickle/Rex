@@ -3,9 +3,8 @@
 diesel::table! {
     activities (id) {
         id -> Integer,
-        date -> Date,
+        date -> Timestamp,
         activity_type -> Text,
-        description -> Text,
     }
 }
 

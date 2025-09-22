@@ -52,18 +52,16 @@ pub fn activity_ui(
             Constraint::Percentage(13),
             Constraint::Percentage(8),
             Constraint::Percentage(13),
-            Constraint::Percentage(5),
-            Constraint::Percentage(5),
+            Constraint::Percentage(10),
         ]
     } else {
         vec![
             Constraint::Percentage(10),
             Constraint::Percentage(37),
             Constraint::Percentage(13),
-            Constraint::Percentage(13),
-            Constraint::Percentage(8),
-            Constraint::Percentage(13),
-            Constraint::Percentage(5),
+            Constraint::Percentage(15),
+            Constraint::Percentage(10),
+            Constraint::Percentage(15),
         ]
     };
 
@@ -88,7 +86,7 @@ pub fn activity_ui(
 
     let table_name = format!("Transactions: {lerp_tx_count}");
 
-    let activity_header_cells = ["Created At", "Activity Type", "Description"]
+    let activity_header_cells = ["Created At", "Activity Type"]
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
 
@@ -136,11 +134,7 @@ pub fn activity_ui(
 
     let mut activity_table_area = Table::new(
         activity_rows,
-        [
-            Constraint::Percentage(10),
-            Constraint::Percentage(15),
-            Constraint::Percentage(75),
-        ],
+        [Constraint::Percentage(50), Constraint::Percentage(50)],
     )
     .header(activity_header)
     .block(styled_block(&table_name));

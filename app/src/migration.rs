@@ -1,5 +1,5 @@
 use anyhow::{Error, Result};
-use chrono::{Datelike, Months, NaiveDate};
+use chrono::{Datelike, Months, NaiveDate, NaiveTime};
 use db::ConnCache;
 use db::models::{
     Activity, ActivityNature, ActivityTx, ActivityTxTag, Balance, FetchNature, NewTag, NewTx, Tag,
@@ -44,6 +44,7 @@ struct OldActivity {
     #[diesel(sql_type = Text)]
     activity_type: String,
     #[diesel(sql_type = Text)]
+    #[allow(dead_code)]
     description: String,
     #[diesel(sql_type = Integer)]
     activity_num: i32,
@@ -168,7 +169,6 @@ pub fn start_migration(mut old_db_conn: DbConn, db_conn: &mut DbConn) -> Result<
             let skipped = migrate_activity(
                 &activity.date,
                 &activity.activity_type,
-                &activity.description,
                 activity.activity_num,
                 &mut mut_db_conn,
             )
@@ -360,7 +360,6 @@ fn migrate_tx(
 fn migrate_activity(
     date: &str,
     activity: &str,
-    description: &str,
     activity_num: i32,
     conn: &mut impl ConnCache,
 ) -> Result<bool> {
@@ -373,16 +372,14 @@ fn migrate_activity(
         _ => panic!("Invalid activity type {activity} found"),
     };
 
-    println!("{activity}");
-
     if let ActivityNature::PositionSwap = activity_type {
-        println!("Skipped");
         return Ok(true);
     }
 
     let date = date.parse::<NaiveDate>()?;
+    let date = date.and_time(NaiveTime::MIN);
 
-    Activity::new(date, activity_type, description, activity_num).insert(conn)?;
+    Activity::new(date, activity_type, activity_num).insert(conn)?;
 
     Ok(false)
 }
