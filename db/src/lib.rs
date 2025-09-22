@@ -31,6 +31,13 @@ impl Cache {
             .ok_or_else(|| anyhow!("method '{}' not found", name))
     }
 
+    pub fn get_method_by_name(&self, name: &str) -> Result<&TxMethod> {
+        self.tx_methods
+            .values()
+            .find(|m| m.name == name)
+            .ok_or_else(|| anyhow!("method '{}' not found", name))
+    }
+
     pub fn get_tag_id(&self, name: &str) -> Result<i32> {
         self.tags
             .values()

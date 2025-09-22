@@ -4,7 +4,7 @@ use diesel::prelude::*;
 use diesel::result::Error;
 
 use crate::ConnCache;
-use crate::models::{ActivityTxTag, EMPTY, Tag, TxMethod, TxType};
+use crate::models::{ActivityTxTag, AmountNature, AmountType, EMPTY, Tag, TxMethod, TxType};
 use crate::schema::activity_txs;
 
 #[derive(Clone, Queryable, Selectable, Insertable)]
@@ -24,11 +24,10 @@ pub struct ActivityTx {
 pub struct FullActivityTx {
     pub id: i32,
     date: Option<String>,
-    details: Option<String>,
+    pub details: Option<String>,
     from_method: Option<TxMethod>,
     to_method: Option<TxMethod>,
-    amount: Option<i64>,
-    amount_type: Option<String>,
+    amount: Option<AmountNature>,
     tx_type: Option<TxType>,
     pub display_order: Option<i32>,
     tags: Vec<Tag>,
@@ -162,14 +161,20 @@ impl ActivityTx {
 
             let tx_type = tx.tx_type.as_ref().map(|tx_type| tx_type.as_str().into());
 
+            let mut amount = None;
+
+            if let Some(a) = tx.amount.as_ref() {
+                let amount_type: AmountType = tx.amount_type.as_ref().unwrap().as_str().into();
+                amount = Some(AmountNature::from_type(amount_type, *a));
+            }
+
             let full_tx = FullActivityTx {
                 id: tx.id,
                 date: tx.date.clone(),
                 details: tx.details.clone(),
                 from_method,
                 to_method,
-                amount: tx.amount,
-                amount_type: tx.amount_type.clone(),
+                amount,
                 tx_type,
                 tags,
                 display_order: tx.display_order,
@@ -185,23 +190,46 @@ impl ActivityTx {
 impl FullActivityTx {
     #[must_use]
     pub fn to_array(&self) -> Vec<String> {
-        let amount = if let Some(amount) = self.amount {
-            format!("{:.2}", amount as f64 / 100.0)
+        let amount = if let Some(amount) = self.amount.as_ref() {
+            amount.to_string()
         } else {
             String::new()
+        };
+
+        let method_name = if let Some(tx_type) = self.tx_type.as_ref() {
+            match tx_type {
+                TxType::Transfer => {
+                    let to_method = self
+                        .to_method
+                        .as_ref()
+                        .map(|m| m.name.clone())
+                        .unwrap_or("?".to_string());
+
+                    let from_method = self
+                        .from_method
+                        .as_ref()
+                        .map(|m| m.name.clone())
+                        .unwrap_or("?".to_string());
+
+                    format!("{to_method} → {from_method}")
+                }
+                TxType::Income | TxType::Expense => self
+                    .from_method
+                    .as_ref()
+                    .map(|m| m.name.clone())
+                    .unwrap_or_default(),
+            }
+        } else {
+            self.from_method
+                .as_ref()
+                .map(|m| m.name.clone())
+                .unwrap_or_default()
         };
 
         vec![
             self.date.clone().unwrap_or_default(),
             self.details.clone().unwrap_or_default(),
-            self.from_method
-                .as_ref()
-                .map(|m| m.name.clone())
-                .unwrap_or_default(),
-            self.to_method
-                .as_ref()
-                .map(|m| m.name.clone())
-                .unwrap_or_default(),
+            method_name,
             amount,
             self.tx_type
                 .as_ref()

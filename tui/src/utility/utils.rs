@@ -1,4 +1,4 @@
-use chrono::{Local, Months, NaiveDate};
+use chrono::{Months, NaiveDate};
 use crossterm::execute;
 use crossterm::terminal::{
     Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
@@ -12,7 +12,6 @@ use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::fmt::Display;
 use std::fs::{self, File};
 use std::io::{Read, Result as ioResult, Stdout, Write, stdout};
 use std::path::{Path, PathBuf};
@@ -23,8 +22,7 @@ use strsim::normalized_levenshtein;
 use crate::db::{YEARS, create_db};
 use crate::outputs::ComparisonType;
 use crate::page_handler::{
-    ActivityType, BACKGROUND, BOX, DateType, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT,
-    UserInputType,
+    BACKGROUND, BOX, DateType, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT, UserInputType,
 };
 use crate::utility::get_user_tx_methods;
 
@@ -285,6 +283,7 @@ pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
 
 /// Create a tab with some values where each value's color will depend on the provided `HashMap` bool value
 #[cfg(not(tarpaulin_include))]
+#[must_use]
 pub fn create_tab_activation<'a>(
     data: &'a IndexedData,
     name: &'a str,
@@ -575,77 +574,4 @@ pub fn delete_location_change(original_db_path: &PathBuf) -> ioResult<()> {
     }
 
     fs::remove_file(json_path)
-}
-
-/// Add a new activity row to the DB
-pub fn add_new_activity(activity_type: ActivityType, conn: &Connection) -> i32 {
-    let activity_type_str = activity_type.to_str();
-    let activity_details = activity_type.to_details();
-    let current_date = Local::now().date_naive().to_string();
-
-    let query = format!(
-        r#"INSERT INTO activities 
-    (date, activity_type, description) 
-    VALUES ("{current_date}", "{activity_type_str}", "{activity_details}")"#
-    );
-
-    conn.execute(&query, []).unwrap();
-
-    // Fetch the latest row's activity num so this can be used to reference activity txs
-    let query = "SELECT activity_num FROM activities ORDER BY activity_num DESC LIMIT 1";
-
-    let activity_num = conn.query_row(query, [], |row| {
-        let id_num: i32 = row.get(0).unwrap();
-        Ok(id_num)
-    });
-
-    activity_num.unwrap()
-}
-
-/// Add a new tx that is related to a given activity number
-pub fn add_new_activity_tx<T: AsRef<str> + Display>(
-    tx_data: &[T],
-    activity_num: i32,
-    conn: &Connection,
-) {
-    let date = &tx_data[0];
-    let details = &tx_data[1];
-    let tx_method = &tx_data[2];
-    let amount = &tx_data[3];
-    let tx_type = &tx_data[4];
-    let tags = &tx_data[5];
-    let id_num = &tx_data[6];
-
-    let mut string_date = date.to_string();
-    let split_date = string_date.split('-').collect::<Vec<&str>>();
-
-    if split_date[0].len() == 2 {
-        string_date = reverse_date_format(string_date);
-    }
-
-    let query = format!(
-        r#"INSERT INTO activity_txs 
-    (date, details, tx_method, amount, tx_type, tags, id_num, activity_num)
-    VALUES ("{string_date}", "{details}", "{tx_method}", "{amount}", "{tx_type}", "{tags}", "{id_num}", "{activity_num}")"#
-    );
-
-    conn.execute(&query, []).unwrap();
-}
-
-/// Switch from YYYY-MM-DD to DD-MM-YYYY or vice versa.
-/// Will return the original value if either empty or does not have 2 dashes in the string
-#[must_use]
-pub fn reverse_date_format(date: String) -> String {
-    if date.is_empty() {
-        return date;
-    }
-    let collected_date = date.split('-').collect::<Vec<&str>>();
-    if collected_date.len() != 3 {
-        return date;
-    }
-    let new_date = format!(
-        "{}-{}-{}",
-        collected_date[2], collected_date[1], collected_date[0]
-    );
-    new_date
 }

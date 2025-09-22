@@ -373,7 +373,10 @@ fn migrate_activity(
         _ => panic!("Invalid activity type {activity} found"),
     };
 
+    println!("{activity}");
+
     if let ActivityNature::PositionSwap = activity_type {
+        println!("Skipped");
         return Ok(true);
     }
 

@@ -10,7 +10,7 @@ use crate::outputs::{
 };
 use crate::page_handler::{DateType, TxTab};
 use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
-use crate::utility::{add_char_to, check_comparison, get_all_tx_methods, get_last_balances};
+use crate::utility::{add_char_to, check_comparison};
 
 /// Contains all data for a Transaction to work
 pub struct TxData {
@@ -82,6 +82,7 @@ impl TxData {
         }
     }
 
+    #[must_use]
     pub fn from_full_tx(tx: &FullTx, edit: bool) -> Self {
         Self {
             date: tx.date.format("%Y-%m-%d").to_string(),
@@ -349,7 +350,7 @@ impl TxData {
     }
 
     /// Checks the inputted Amount by the user upon pressing Enter/Esc for various error.
-    pub fn check_amount(&mut self, is_search: bool, conn: &Connection) -> VerifyingOutput {
+    pub fn check_amount(&mut self, is_search: bool, conn: &mut DbConn) -> VerifyingOutput {
         if let Err(e) = self.check_b_field(conn) {
             return e;
         }
@@ -461,21 +462,24 @@ impl TxData {
     }
 
     /// Checks for b on amount field to replace with the balance of the tx method field
-    fn check_b_field(&mut self, conn: &Connection) -> Result<(), VerifyingOutput> {
+    fn check_b_field(&mut self, conn: &mut DbConn) -> Result<(), VerifyingOutput> {
         self.check_suffixes();
         let user_amount = self.amount.to_lowercase();
 
         // 'b' represents the current balance of the original tx method
         if user_amount.contains('b') && !self.from_method.is_empty() {
-            let all_methods = get_all_tx_methods(conn);
+            let final_balances = conn.get_final_balances().unwrap();
+
+            let target_method = conn
+                .get_tx_method_by_name(self.from_method.as_str())
+                .unwrap();
 
             // Get all the method's final balance, loop through the balances and match the tx method name
-            let last_balances = get_last_balances(conn);
 
-            for x in 0..all_methods.len() {
-                if all_methods[x] == self.from_method {
-                    self.amount = user_amount.replace('b', &last_balances[x]);
-                    break;
+            for balance in final_balances.values() {
+                if balance.method_id == target_method.id {
+                    self.amount =
+                        user_amount.replace('b', &(balance.balance as f64 / 100.0).to_string());
                 }
             }
         } else if user_amount.contains('b') && self.from_method.is_empty() {
@@ -726,7 +730,7 @@ impl TxData {
     pub fn do_amount_up(
         &mut self,
         is_search: bool,
-        conn: &Connection,
+        conn: &mut DbConn,
     ) -> Result<(), SteppingError> {
         if self.check_b_field(conn).is_err() {
             return Err(SteppingError::UnknownBValue);
@@ -767,7 +771,7 @@ impl TxData {
     pub fn do_amount_down(
         &mut self,
         is_search: bool,
-        conn: &Connection,
+        conn: &mut DbConn,
     ) -> Result<(), SteppingError> {
         if self.check_b_field(conn).is_err() {
             return Err(SteppingError::UnknownBValue);

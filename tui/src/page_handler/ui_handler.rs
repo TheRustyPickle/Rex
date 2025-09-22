@@ -9,7 +9,6 @@ use ratatui::style::Color;
 use rusqlite::Connection;
 use std::time::Duration;
 
-use crate::activity_page::ActivityData;
 use crate::activity_page::activity_ui;
 use crate::add_tx_page::add_tx_ui;
 use crate::chart_page::chart_ui;
@@ -84,7 +83,6 @@ pub fn start_app<B: Backend>(
         .expect("Could not enable foreign keys");
 
     // Stores all activity for a specific month of a year alongside the txs involved in an activity
-    let mut activity_data = ActivityData::new(activity_months.index, activity_years.index, conn);
 
     let mut search_txs = SearchView::new_empty();
 
@@ -144,6 +142,13 @@ pub fn start_app<B: Backend>(
         )
         .unwrap();
 
+    let mut activity_view = migrated_conn
+        .get_activity_view_with_str(
+            activity_months.get_selected_value(),
+            activity_years.get_selected_value(),
+        )
+        .unwrap();
+
     let mut full_summary = summary_view.generate_summary(None, migrated_conn);
 
     // Data for the Summary Page's table
@@ -153,7 +158,7 @@ pub fn start_app<B: Backend>(
     let mut search_table = TableData::new(Vec::new());
 
     // Data for the Activity Page's table
-    let mut activity_table = TableData::new(activity_data.get_txs());
+    let mut activity_table = TableData::new(activity_view.get_activity_table());
 
     // The initial page REX loading index
     let mut starter_index = 0;
@@ -273,7 +278,7 @@ pub fn start_app<B: Backend>(
                         &activity_months,
                         &activity_years,
                         &activity_tab,
-                        &activity_data,
+                        &activity_view,
                         &mut activity_table,
                         &mut lerp_state,
                     ),
@@ -352,7 +357,7 @@ pub fn start_app<B: Backend>(
                 &mut activity_months,
                 &mut activity_years,
                 &mut activity_tab,
-                &mut activity_data,
+                &mut activity_view,
                 &mut activity_table,
                 &mut chart_hidden_mode,
                 &mut chart_hidden_legends,
