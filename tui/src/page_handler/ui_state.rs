@@ -1,3 +1,4 @@
+use app::conn::DbConn;
 use chrono::Datelike;
 use chrono::prelude::Local;
 use ratatui::widgets::TableState;
@@ -6,7 +7,7 @@ use std::fmt::{self, Display, Result};
 use std::path::PathBuf;
 
 use crate::db::{MODES, MONTHS, YEARS};
-use crate::utility::{get_all_tx_methods, get_all_tx_methods_cumulative};
+use crate::utility::get_all_tx_methods_cumulative;
 
 /// The struct stores all transaction data for the Transaction widget
 /// and creates an index to keep track of which transactions row is selected
@@ -110,9 +111,13 @@ impl IndexedData {
         }
     }
 
-    pub fn new_tx_methods(conn: &Connection) -> Self {
+    pub fn new_tx_methods(conn: &DbConn) -> Self {
         IndexedData {
-            titles: get_all_tx_methods(conn),
+            titles: conn
+                .get_tx_methods_sorted()
+                .into_iter()
+                .map(|m| m.name.clone())
+                .collect(),
             index: 0,
         }
     }
@@ -142,6 +147,7 @@ impl IndexedData {
         self.index = 0;
     }
 
+    #[must_use]
     pub fn get_selected_value(&self) -> &str {
         &self.titles[self.index]
     }

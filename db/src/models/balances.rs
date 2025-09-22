@@ -265,7 +265,7 @@ impl Balance {
             .load(db_conn.conn())?;
 
         assert!(
-            !(balance_list.len() != db_conn.cache().tx_methods.len()),
+            (balance_list.len() == db_conn.cache().tx_methods.len()),
             "Final balances are not set for all transaction methods"
         );
 

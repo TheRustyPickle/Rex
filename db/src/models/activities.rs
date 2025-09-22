@@ -1,57 +1,10 @@
 use chrono::{Datelike, Days, Months, NaiveDate};
 use diesel::prelude::*;
 use diesel::result::Error;
-use std::fmt::{Display, Formatter};
 
 use crate::ConnCache;
-use crate::models::{ActivityTx, FullActivityTx};
+use crate::models::{ActivityNature, ActivityTx, FullActivityTx};
 use crate::schema::activities;
-
-#[derive(Clone, Debug, Copy)]
-pub enum ActivityNature {
-    AddTx,
-    EditTx,
-    DeleteTx,
-    SearchTx,
-    PositionSwap,
-}
-
-impl From<&str> for ActivityNature {
-    fn from(s: &str) -> Self {
-        match s {
-            "add_tx" => ActivityNature::AddTx,
-            "edit_tx" => ActivityNature::EditTx,
-            "delete_tx" => ActivityNature::DeleteTx,
-            "search_tx" => ActivityNature::SearchTx,
-            "position_swap" => ActivityNature::PositionSwap,
-            other => panic!("Invalid TxType string: {other}"),
-        }
-    }
-}
-
-impl From<ActivityNature> for String {
-    fn from(a: ActivityNature) -> Self {
-        match a {
-            ActivityNature::AddTx => "add_tx".to_string(),
-            ActivityNature::EditTx => "edit_tx".to_string(),
-            ActivityNature::DeleteTx => "delete_tx".to_string(),
-            ActivityNature::SearchTx => "search_tx".to_string(),
-            ActivityNature::PositionSwap => "position_swap".to_string(),
-        }
-    }
-}
-
-impl Display for ActivityNature {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ActivityNature::AddTx => write!(f, "add_tx"),
-            ActivityNature::EditTx => write!(f, "edit_tx"),
-            ActivityNature::DeleteTx => write!(f, "delete_tx"),
-            ActivityNature::SearchTx => write!(f, "search_tx"),
-            ActivityNature::PositionSwap => write!(f, "position_swap"),
-        }
-    }
-}
 
 #[derive(Clone, Queryable, Selectable, Insertable)]
 #[diesel(table_name = activities)]
@@ -176,7 +129,7 @@ impl ActivityWithTxs {
         match self.activity.activity_type.as_str().into() {
             ActivityNature::PositionSwap | ActivityNature::EditTx => {
                 assert!(
-                    !(first_tx.id == last_tx.id),
+                    (first_tx.id != last_tx.id),
                     "Both activity tx id should not have matched"
                 );
 
@@ -210,21 +163,21 @@ impl ActivityWithTxs {
                         higher_id_tx_array
                             .push(format!("{lower_display_order} → {higher_display_order}"));
 
-                        return vec![lower_id_tx_array, higher_id_tx_array];
+                        vec![lower_id_tx_array, higher_id_tx_array]
                     }
                     ActivityNature::EditTx => {
                         lower_id_tx_array.push("New Tx".to_string());
 
                         higher_id_tx_array.push("Old Tx".to_string());
 
-                        return vec![lower_id_tx_array, higher_id_tx_array];
+                        vec![lower_id_tx_array, higher_id_tx_array]
                     }
-                    _ => {}
+                    _ => unreachable!(),
                 }
             }
-            _ => {}
+            _ => {
+                vec![first_tx.to_array()]
+            }
         }
-
-        todo!()
     }
 }

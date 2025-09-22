@@ -1,10 +1,9 @@
 use app::conn::{DbConn, FetchNature};
-use app::fetcher::{ChartView, FullSummary, SearchView, SummaryView, TxViewGroup};
+use app::fetcher::{ActivityView, ChartView, FullSummary, SearchView, SummaryView, TxViewGroup};
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::collections::HashMap;
 
-use crate::activity_page::ActivityData;
 use crate::db::MONTHS;
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
@@ -52,7 +51,7 @@ pub struct InputKeyHandler<'a> {
     activity_months: &'a mut IndexedData,
     activity_years: &'a mut IndexedData,
     activity_tab: &'a mut ActivityTab,
-    activity_data: &'a mut ActivityData,
+    activity_view: &'a mut ActivityView,
     activity_table: &'a mut TableData,
     total_tags: usize,
     chart_hidden_mode: &'a mut bool,
@@ -102,7 +101,7 @@ impl<'a> InputKeyHandler<'a> {
         activity_months: &'a mut IndexedData,
         activity_years: &'a mut IndexedData,
         activity_tab: &'a mut ActivityTab,
-        activity_data: &'a mut ActivityData,
+        activity_view: &'a mut ActivityView,
         activity_table: &'a mut TableData,
         chart_hidden_mode: &'a mut bool,
         chart_hidden_legends: &'a mut bool,
@@ -150,7 +149,7 @@ impl<'a> InputKeyHandler<'a> {
             activity_months,
             activity_years,
             activity_tab,
-            activity_data,
+            activity_view,
             activity_table,
             total_tags,
             chart_hidden_mode,
@@ -887,20 +886,20 @@ impl<'a> InputKeyHandler<'a> {
     /// Opens a popup that shows the details of the selected activity tx details on the Activity page
     pub fn show_activity_tx_details(&mut self) {
         if let Some(index) = self.activity_table.state.selected() {
-            let activity_txs = self.activity_data.get_activity_txs(Some(index));
+            let activity_txs = self.activity_view.get_activity_txs(index);
 
             let mut popup_text = String::new();
 
             if activity_txs.len() == 2 {
-                for (index, tx) in activity_txs.iter().enumerate() {
-                    let tx_details = &tx[1];
+                for (index, tx) in activity_txs.into_iter().enumerate() {
+                    let tx_details = tx.details.clone().unwrap_or_default();
                     popup_text += &format!("Transaction {}: {tx_details}", index + 1);
                     if index == 0 {
                         popup_text += "\n\n";
                     }
                 }
             } else {
-                let tx_details = &activity_txs[0][1];
+                let tx_details = &activity_txs[0].details.clone().unwrap_or_default();
                 popup_text += &format!("Transaction 1: {tx_details}");
             }
             *self.popup = PopupState::ShowDetails(popup_text);
@@ -1084,7 +1083,7 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    /// Handle Arrow Down key press on the Summary page
+    /// Handle Arrow Down keypress on the Summary page
     fn do_summary_down(&mut self) {
         if !*self.summary_hidden_mode {
             match self.summary_modes.index {
@@ -1159,7 +1158,7 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    /// Handle Arrow Up key press on the chart page
+    /// Handle Arrow Up keypress on the chart page
     fn do_chart_up(&mut self) {
         if !*self.chart_hidden_mode {
             match self.chart_modes.index {
@@ -1171,7 +1170,7 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    /// Handle Arrow Down key press on the chart page
+    /// Handle Arrow Down keypress on the chart page
     fn do_chart_down(&mut self) {
         if !*self.chart_hidden_mode {
             match self.chart_modes.index {
@@ -1328,7 +1327,7 @@ impl InputKeyHandler<'_> {
     fn check_add_tx_amount(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.add_tx_data.check_amount(false, self.conn);
+                let status = self.add_tx_data.check_amount(false, self.migrated_conn);
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
@@ -1340,7 +1339,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.add_tx_data.check_amount(false, self.conn);
+                let status = self.add_tx_data.check_amount(false, self.migrated_conn);
                 self.add_tx_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
@@ -1510,7 +1509,7 @@ impl InputKeyHandler<'_> {
     fn check_search_amount(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.search_data.check_amount(true, self.conn);
+                let status = self.search_data.check_amount(true, self.migrated_conn);
                 self.search_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
@@ -1521,7 +1520,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.search_data.check_amount(true, self.conn);
+                let status = self.search_data.check_amount(true, self.migrated_conn);
                 self.search_data.add_tx_status(status.to_string());
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
@@ -1642,7 +1641,7 @@ impl InputKeyHandler<'_> {
             .unwrap();
     }
 
-    /// Reset all currently shown search related data to nothing
+    /// Reset all currently shown search related data
     fn reset_search_data(&mut self) {
         *self.search_table = TableData::new(Vec::new());
         *self.search_txs = SearchView::new_empty();
@@ -1650,12 +1649,15 @@ impl InputKeyHandler<'_> {
 
     /// Reload activity data by fetching from the DB
     fn reload_activity_table(&mut self) {
-        *self.activity_data = ActivityData::new(
-            self.activity_months.index,
-            self.activity_years.index,
-            self.conn,
-        );
-        *self.activity_table = TableData::new(self.activity_data.get_txs());
+        *self.activity_view = self
+            .migrated_conn
+            .get_activity_view_with_str(
+                self.activity_months.get_selected_value(),
+                self.activity_years.get_selected_value(),
+            )
+            .unwrap();
+
+        *self.activity_table = TableData::new(self.activity_view.get_activity_table());
     }
 
     /// Move the cursor for text fields to the correct position, if it's misplaced
@@ -1672,7 +1674,7 @@ impl InputKeyHandler<'_> {
             TxTab::Date => self.add_tx_data.do_date_up(&DateType::Exact),
             TxTab::FromMethod => self.add_tx_data.do_from_method_up(self.conn),
             TxTab::ToMethod => self.add_tx_data.do_to_method_up(self.conn),
-            TxTab::Amount => self.add_tx_data.do_amount_up(false, self.conn),
+            TxTab::Amount => self.add_tx_data.do_amount_up(false, self.migrated_conn),
             TxTab::TxType => self.add_tx_data.do_tx_type_up(),
             TxTab::Tags => self.add_tx_data.do_tags_up(self.conn),
             _ => Ok(()),
@@ -1688,7 +1690,7 @@ impl InputKeyHandler<'_> {
             TxTab::Date => self.add_tx_data.do_date_down(&DateType::Exact),
             TxTab::FromMethod => self.add_tx_data.do_from_method_down(self.conn),
             TxTab::ToMethod => self.add_tx_data.do_to_method_down(self.conn),
-            TxTab::Amount => self.add_tx_data.do_amount_down(false, self.conn),
+            TxTab::Amount => self.add_tx_data.do_amount_down(false, self.migrated_conn),
             TxTab::TxType => self.add_tx_data.do_tx_type_down(),
             TxTab::Tags => self.add_tx_data.do_tags_down(self.conn),
             _ => Ok(()),
@@ -1704,7 +1706,7 @@ impl InputKeyHandler<'_> {
             TxTab::Date => self.search_data.do_date_up(self.search_date_type),
             TxTab::FromMethod => self.search_data.do_from_method_up(self.conn),
             TxTab::ToMethod => self.search_data.do_to_method_up(self.conn),
-            TxTab::Amount => self.search_data.do_amount_up(true, self.conn),
+            TxTab::Amount => self.search_data.do_amount_up(true, self.migrated_conn),
             TxTab::TxType => self.search_data.do_tx_type_up(),
             TxTab::Tags => self.search_data.do_tags_up(self.conn),
             TxTab::Nothing => {
@@ -1730,7 +1732,7 @@ impl InputKeyHandler<'_> {
             TxTab::Date => self.search_data.do_date_down(self.search_date_type),
             TxTab::FromMethod => self.search_data.do_from_method_down(self.conn),
             TxTab::ToMethod => self.search_data.do_to_method_down(self.conn),
-            TxTab::Amount => self.search_data.do_amount_down(true, self.conn),
+            TxTab::Amount => self.search_data.do_amount_down(true, self.migrated_conn),
             TxTab::TxType => self.search_data.do_tx_type_down(),
             TxTab::Tags => self.search_data.do_tags_down(self.conn),
             TxTab::Nothing => {
@@ -1752,7 +1754,7 @@ impl InputKeyHandler<'_> {
     fn do_activity_up(&mut self) {
         match self.activity_tab {
             ActivityTab::Years => {
-                if self.activity_data.is_activity_empty() {
+                if self.activity_view.is_empty() {
                     *self.activity_tab = self.activity_tab.change_tab_down();
                 } else {
                     *self.activity_tab = self.activity_tab.change_tab_up();
@@ -1781,7 +1783,7 @@ impl InputKeyHandler<'_> {
                 *self.activity_tab = self.activity_tab.change_tab_down();
             }
             ActivityTab::Months => {
-                if self.activity_data.is_activity_empty() {
+                if self.activity_view.is_empty() {
                     *self.activity_tab = self.activity_tab.change_tab_up();
                 } else {
                     *self.activity_tab = self.activity_tab.change_tab_down();
@@ -1857,7 +1859,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             _ => {}
-        };
+        }
 
         (previous_month, previous_year)
     }

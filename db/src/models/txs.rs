@@ -4,7 +4,6 @@ use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::sql_types::Bool;
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
 
 use crate::ConnCache;
 use crate::models::{AmountNature, DateNature, FetchNature, Tag, TxMethod, TxTag, TxType};
@@ -118,28 +117,6 @@ impl<'a> NewSearch<'a> {
         let result = query.select(Tx::as_select()).load(db_conn.conn())?;
 
         FullTx::convert_to_full_tx(result, db_conn)
-    }
-}
-
-impl From<&str> for TxType {
-    fn from(s: &str) -> Self {
-        match s {
-            "Income" => TxType::Income,
-            "Expense" => TxType::Expense,
-            "Transfer" => TxType::Transfer,
-            other => panic!("Invalid TxType string: {other}"),
-        }
-    }
-}
-
-impl Display for TxType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            TxType::Income => "Income",
-            TxType::Expense => "Expense",
-            TxType::Transfer => "Transfer",
-        };
-        write!(f, "{s}")
     }
 }
 

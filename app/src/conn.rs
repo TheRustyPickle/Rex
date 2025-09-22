@@ -1,22 +1,24 @@
 use anyhow::{Error, Result};
 use chrono::NaiveDate;
 pub use db::models::FetchNature;
-use db::models::{FullTx, NewSearch, NewTx, Tag, TxMethod};
+use db::models::{Balance, FullTx, NewSearch, NewTx, Tag, TxMethod};
 use db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
 use diesel::{Connection, SqliteConnection};
 use std::collections::HashMap;
 
 use crate::fetcher::{
-    ChartView, SearchView, SummaryView, TxViewGroup, get_chart_view, get_search_txs, get_summary,
-    get_txs,
+    ActivityView, ChartView, SearchView, SummaryView, TxViewGroup, get_activity_view,
+    get_chart_view, get_search_txs, get_summary, get_txs,
 };
 use crate::modifier::{add_new_tx, add_new_tx_methods, delete_tx};
 use crate::utils::month_name_to_num;
 
+#[must_use]
 pub fn get_conn(location: &str) -> DbConn {
     DbConn::new(location)
 }
 
+#[must_use]
 pub fn get_conn_old(location: &str) -> DbConn {
     DbConn::new_no_migrations(location)
 }
@@ -32,7 +34,7 @@ impl<'a> MutDbConn<'a> {
     }
 }
 
-impl<'a> ConnCache for MutDbConn<'a> {
+impl ConnCache for MutDbConn<'_> {
     fn conn(&mut self) -> &mut SqliteConnection {
         self.conn
     }
@@ -77,6 +79,7 @@ impl DbConn {
         to_return
     }
 
+    #[must_use]
     pub fn new_no_migrations(db_url: &str) -> Self {
         let conn = get_connection_no_migrations(db_url);
         DbConn {
@@ -266,11 +269,42 @@ impl DbConn {
         Ok(result)
     }
 
+    pub fn get_activity_view_with_str<'a>(
+        &mut self,
+        month: &'a str,
+        year: &'a str,
+    ) -> Result<ActivityView> {
+        let result = self.conn.transaction::<ActivityView, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            let year_num = year.parse::<i32>().unwrap();
+            let month_num = month_name_to_num(month);
+
+            let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
+
+            let activity_view = get_activity_view(date, &mut db_conn)?;
+
+            Ok(activity_view)
+        })?;
+
+        Ok(result)
+    }
+
+    #[must_use]
     pub fn get_tx_methods(&self) -> &HashMap<i32, TxMethod> {
         &self.cache.tx_methods
     }
 
+    #[must_use]
     pub fn get_tx_methods_sorted(&self) -> Vec<&TxMethod> {
         self.cache.get_methods()
+    }
+
+    pub fn get_tx_method_by_name(&mut self, name: &str) -> Result<&TxMethod> {
+        self.cache.get_method_by_name(name)
+    }
+
+    pub fn get_final_balances(&mut self) -> Result<HashMap<i32, Balance>> {
+        Ok(Balance::get_final_balance(self)?)
     }
 }

@@ -1,10 +1,10 @@
+use app::fetcher::ActivityView;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Cell, Row, Table};
 use thousands::Separable;
 
-use crate::activity_page::ActivityData;
 use crate::page_handler::{
     ActivityTab, BACKGROUND, HEADER, IndexedData, SELECTED, TEXT, TableData,
 };
@@ -15,15 +15,15 @@ pub fn activity_ui(
     months: &IndexedData,
     years: &IndexedData,
     current_tab: &ActivityTab,
-    activity_data: &ActivityData,
+    activity_view: &ActivityView,
     table_data: &mut TableData,
     lerp_state: &mut LerpState,
 ) {
-    let activity_txs_data = activity_data.get_activity_txs(table_data.state.selected());
+    let activity_txs_data = activity_view.get_activity_txs_table(table_data.state.selected());
     let mut activity_txs_table = TableData::new(activity_txs_data);
 
     let add_extra_field = if let Some(index) = table_data.state.selected() {
-        activity_data.add_extra_field(index)
+        activity_view.add_extra_field(index)
     } else {
         false
     };
@@ -37,19 +37,10 @@ pub fn activity_ui(
             "Amount",
             "Type",
             "Tags",
-            "ID",
             "Status",
         ]
     } else {
-        vec![
-            "Date",
-            "Details",
-            "TX Method",
-            "Amount",
-            "Type",
-            "Tags",
-            "ID",
-        ]
+        vec!["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
     };
 
     // Based on extra field, allocate size
@@ -91,8 +82,8 @@ pub fn activity_ui(
 
     f.render_widget(main_block(), size);
 
-    let tx_count = table_data.items.len();
-    let lerp_id = "home_tx_count";
+    let tx_count = activity_view.total_activity();
+    let lerp_id = "activity_tx_count";
     let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64) as i64;
 
     let table_name = format!("Transactions: {lerp_tx_count}");
