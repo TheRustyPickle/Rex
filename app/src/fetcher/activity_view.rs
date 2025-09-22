@@ -26,6 +26,7 @@ impl ActivityView {
         self.0.iter().map(|a| a.activity.to_array()).collect()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
@@ -51,6 +52,7 @@ impl ActivityView {
         )
     }
 
+    #[must_use]
     pub fn get_activity_txs(&self, index: usize) -> Vec<&FullActivityTx> {
         self.0.get(index).unwrap().txs.iter().collect()
     }
