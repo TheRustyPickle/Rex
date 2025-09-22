@@ -197,6 +197,10 @@ impl Dollar {
     pub fn value(&self) -> f64 {
         self.0
     }
+
+    pub(crate) fn cent(&self) -> Cent {
+        Cent::new((self.0 * 100.0) as i64)
+    }
 }
 
 #[derive(Default, Clone)]

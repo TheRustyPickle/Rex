@@ -3,7 +3,8 @@ use chrono::{Days, Months, NaiveDate};
 use db::ConnCache;
 use db::models::{Balance, DateNature, FetchNature, NewSearch, NewTx, Tx, TxType};
 
-use crate::utils::parse_amount_nature_i64;
+use crate::fetcher::Dollar;
+use crate::utils::parse_amount_nature_cent;
 
 pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Result<()> {
     let nature = FetchNature::Monthly;
@@ -71,7 +72,7 @@ pub fn parse_tx_fields<'a>(
         Some(details)
     };
 
-    let amount = (amount.parse::<f64>()? * 100.0).round() as i64;
+    let amount = Dollar::new(amount.parse()?).cent().value();
 
     let from_method = db_conn.cache().get_method_id(from_method)?;
     let to_method = if to_method.is_empty() {
@@ -157,7 +158,7 @@ pub fn parse_search_fields<'a>(
     let amount = if amount.is_empty() {
         None
     } else {
-        parse_amount_nature_i64(amount)?
+        parse_amount_nature_cent(amount)?
     };
 
     let tx_type = if tx_type.is_empty() {
