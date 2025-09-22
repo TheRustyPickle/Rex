@@ -60,6 +60,7 @@ impl AmountNature {
         }
     }
 
+    #[must_use]
     pub fn from_type(t: AmountType, amount: i64) -> Self {
         match t {
             AmountType::Exact => AmountNature::Exact(amount),
@@ -80,7 +81,7 @@ impl Display for AmountNature {
             AmountNature::LessThan(v) => format!("<{}", *v as f64 / 100.0),
             AmountNature::LessThanEqual(v) => format!("<={}", *v as f64 / 100.0),
         };
-        write!(f, "{}", a)
+        write!(f, "{a}")
     }
 }
 

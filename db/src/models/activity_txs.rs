@@ -202,14 +202,12 @@ impl FullActivityTx {
                     let to_method = self
                         .to_method
                         .as_ref()
-                        .map(|m| m.name.clone())
-                        .unwrap_or("?".to_string());
+                        .map_or("?".to_string(), |m| m.name.clone());
 
                     let from_method = self
                         .from_method
                         .as_ref()
-                        .map(|m| m.name.clone())
-                        .unwrap_or("?".to_string());
+                        .map_or("?".to_string(), |m| m.name.clone());
 
                     format!("{to_method} → {from_method}")
                 }

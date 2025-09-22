@@ -12,7 +12,6 @@ use crate::utility::{
 };
 
 /// Prompts the user to select and option and start taking relevant inputs
-#[cfg(not(tarpaulin_include))]
 pub fn start_taking_input(conn: &Connection) -> UserInputType {
     let mut stdout = stdout();
     clear_terminal(&mut stdout);
@@ -49,7 +48,6 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
 /// Once the collection is done sends to the database for adding the columns.
 /// This functions is both used when creating the initial db and when updating
 /// the database with new transaction methods.
-#[cfg(not(tarpaulin_include))]
 pub fn get_user_tx_methods(add_new_method: bool, conn: Option<&Connection>) -> UserInputType {
     let mut stdout = stdout();
 
@@ -168,7 +166,6 @@ Example input: Bank, Cash, PayPal.\n\nEnter Transaction Methods: "
 }
 
 /// Gets a new tx method name from the user to replace an existing method
-#[cfg(not(tarpaulin_include))]
 fn get_rename_data(conn: &Connection) -> UserInputType {
     let mut stdout = stdout();
 
@@ -268,7 +265,6 @@ Currently added Transaction Methods: \n"
 }
 
 /// Gets a new sequence of tx methods to reformat their location
-#[cfg(not(tarpaulin_include))]
 fn get_reposition_data(conn: &Connection) -> UserInputType {
     let mut stdout = stdout();
 
@@ -366,7 +362,6 @@ Currently added Transaction Methods: \n".to_string();
 }
 
 /// Asks the user for a location where the app data will be stored
-#[cfg(not(tarpaulin_include))]
 fn get_new_location() -> UserInputType {
     let mut stdout = stdout();
 
@@ -420,7 +415,6 @@ Windows: C:\\data\\save\\";
     }
 }
 
-#[cfg(not(tarpaulin_include))]
 fn get_backup_db_paths() -> UserInputType {
     let mut stdout = stdout();
 
@@ -495,7 +489,6 @@ Windows: C:\\data\\save\\, C:\\backup\\save\\, C:\\folder\\app\\";
 
 /// Tries to open terminal/cmd and run this app
 /// Currently supports windows cmd, konsole, gnome-terminal, kgx (also known as gnome-console)
-#[cfg(not(tarpaulin_include))]
 pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> {
     if cfg!(target_os = "windows") {
         Command::new("cmd.exe")

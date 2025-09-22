@@ -39,8 +39,5 @@ serde_json = "1.0.142"
 log = "0.4.27"
 simplelog = "0.12.2"
 
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
-
 [lints.clippy]
 too_many_arguments = { level = "allow" }

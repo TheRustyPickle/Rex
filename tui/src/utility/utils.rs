@@ -121,7 +121,6 @@ pub fn get_all_details(conn: &Connection) -> Vec<String> {
 }
 
 /// Enters raw mode so the TUI can render properly
-#[cfg(not(tarpaulin_include))]
 pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
     enable_raw_mode()?;
     let mut stdout = stdout();
@@ -132,7 +131,6 @@ pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<d
 }
 
 /// Exits raw mode so the terminal starts working normally
-#[cfg(not(tarpaulin_include))]
 pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     let stdout = stdout();
     let backend = CrosstermBackend::new(stdout);
@@ -145,7 +143,6 @@ pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
 }
 
 /// Checks if a db already exists or prompts to create a new one
-#[cfg(not(tarpaulin_include))]
 pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>> {
     if !verifying_path.exists() {
         let UserInputType::AddNewTxMethod(db_tx_methods) = get_user_tx_methods(false, None) else {
@@ -169,7 +166,6 @@ pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>>
 }
 
 /// Returns a styled block for UI to use
-#[cfg(not(tarpaulin_include))]
 #[must_use]
 pub fn styled_block(title: &str) -> Block<'_> {
     Block::default()
@@ -206,7 +202,6 @@ pub fn styled_block_no_bottom(title: &str) -> Block<'_> {
         ))
 }
 
-#[cfg(not(tarpaulin_include))]
 #[must_use]
 pub fn main_block<'a>() -> Block<'a> {
     Block::default().style(Style::default().bg(BACKGROUND).fg(BOX))
@@ -214,7 +209,6 @@ pub fn main_block<'a>() -> Block<'a> {
 
 /// Takes a string and makes any word before the first occurrence of : to Bold
 /// Used for rendering
-#[cfg(not(tarpaulin_include))]
 #[must_use]
 pub fn create_bolded_text(text: &str) -> Vec<Line<'_>> {
     let mut text_data = Vec::new();
@@ -235,7 +229,6 @@ pub fn create_bolded_text(text: &str) -> Vec<Line<'_>> {
 }
 
 /// Tabs from some given data for the UI
-#[cfg(not(tarpaulin_include))]
 #[must_use]
 pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
     let titles: Vec<Line> = data
@@ -256,7 +249,6 @@ pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
 }
 
 /// Create a tab with some values where each value's color will depend on the provided `HashMap` bool value
-#[cfg(not(tarpaulin_include))]
 #[must_use]
 pub fn create_tab_activation<'a>(
     data: &'a IndexedData,
@@ -283,7 +275,6 @@ pub fn create_tab_activation<'a>(
 }
 
 /// Does the 5 second timer after input taking ends
-#[cfg(not(tarpaulin_include))]
 pub fn start_timer<T: std::fmt::Display>(input: T) {
     let stdout = std::io::stdout();
     let mut handle = stdout.lock();
@@ -296,7 +287,6 @@ pub fn start_timer<T: std::fmt::Display>(input: T) {
 }
 
 /// Takes a user input and returns the trimmed input as String
-#[cfg(not(tarpaulin_include))]
 #[must_use]
 pub fn take_input() -> String {
     let mut input = String::new();
@@ -305,13 +295,11 @@ pub fn take_input() -> String {
 }
 
 /// Clears the terminal of all text
-#[cfg(not(tarpaulin_include))]
 pub fn clear_terminal(stdout: &mut Stdout) {
     execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
 }
 
 /// Flushes output to the terminal
-#[cfg(not(tarpaulin_include))]
 pub fn flush_output(stdout: &Stdout) {
     let mut handle = stdout.lock();
     handle.flush().unwrap();
@@ -486,7 +474,6 @@ pub fn create_backup_location_file(original_db_path: &PathBuf, backup_paths: Vec
 }
 
 /// Copies the latest DB to the backup location specified in `backend_paths.json`
-#[cfg(not(tarpaulin_include))]
 pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
     let mut json_path = original_db_path.to_owned();
     json_path.pop();
@@ -521,7 +508,6 @@ pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
 }
 
 /// Deletes `backup_paths.json` which contains all locations where backup DB is located.
-#[cfg(not(tarpaulin_include))]
 pub fn delete_backup_db(original_db_path: &PathBuf) -> ioResult<()> {
     let mut json_path = original_db_path.to_owned();
     json_path.pop();
@@ -536,7 +522,6 @@ pub fn delete_backup_db(original_db_path: &PathBuf) -> ioResult<()> {
 }
 
 /// Deletes `locations.json` file which stores alternative location information of the DB.
-#[cfg(not(tarpaulin_include))]
 pub fn delete_location_change(original_db_path: &PathBuf) -> ioResult<()> {
     let mut json_path = original_db_path.to_owned();
     json_path.pop();
