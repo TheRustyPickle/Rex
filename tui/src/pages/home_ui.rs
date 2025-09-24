@@ -115,8 +115,8 @@ pub fn home_ui(
     let mut table_area = Table::new(
         rows,
         [
-            Constraint::Percentage(10),
-            Constraint::Percentage(37),
+            Constraint::Percentage(13),
+            Constraint::Percentage(35),
             Constraint::Percentage(13),
             Constraint::Percentage(13),
             Constraint::Percentage(8),

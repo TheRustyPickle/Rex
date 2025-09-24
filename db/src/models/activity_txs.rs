@@ -79,8 +79,7 @@ impl NewActivityTx {
     }
 
     pub fn new_from_new_tx(tx: &NewTx, activity_num: i32) -> Self {
-        // TODO: Update date format
-        let date = Some(tx.date.format("%Y-%m-%d").to_string());
+        let date = Some(tx.date.to_string());
 
         let details = Some(tx.details.unwrap_or_default().to_string());
 

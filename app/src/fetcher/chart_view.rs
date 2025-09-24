@@ -22,7 +22,7 @@ pub(crate) fn get_chart_view(txs: TxViewGroup) -> ChartView {
         .0
         .iter()
         .map(|tx| {
-            let tx_date = tx.tx.date;
+            let tx_date = tx.tx.date.date();
 
             if first_date == default_date {
                 first_date = tx_date;
@@ -40,7 +40,7 @@ pub(crate) fn get_chart_view(txs: TxViewGroup) -> ChartView {
                 last_date = tx_date;
             }
 
-            tx.tx.date
+            tx_date
         })
         .collect();
 

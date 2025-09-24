@@ -298,7 +298,14 @@ fn migrate_tx(
         }
     }
 
-    let new_tx = NewTx::new(date, details, from_method, to_method, amount, tx_type);
+    let new_tx = NewTx::new(
+        date.and_time(NaiveTime::MIN),
+        details,
+        from_method,
+        to_method,
+        amount,
+        tx_type,
+    );
 
     let mut current_balance = Balance::get_balance_map(date, db_conn)?;
 

@@ -33,7 +33,7 @@ impl NewActivity {
 
         Self {
             date: now,
-            activity_type: activity_type.to_string(),
+            activity_type: activity_type.into(),
         }
     }
 

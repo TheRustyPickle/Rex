@@ -30,7 +30,7 @@ pub(crate) fn add_new_tx(
         }
     }
 
-    let mut current_balance = Balance::get_balance_map(date, db_conn)?;
+    let mut current_balance = Balance::get_balance_map(date.date(), db_conn)?;
 
     let mut balance_to_update = Vec::new();
 
@@ -85,8 +85,6 @@ pub(crate) fn add_new_tx(
 
     let mut new_tags = Vec::new();
 
-    // TODO: Add activity txs later
-
     let added_tx = if let Some(id) = maintain_id {
         Tx::from_new_tx(tx, id).insert(db_conn)?
     } else {
@@ -123,7 +121,7 @@ pub(crate) fn add_new_tx(
         balance.insert(db_conn)?;
     }
 
-    tidy_balances(date, db_conn)?;
+    tidy_balances(date.date(), db_conn)?;
 
     Ok(new_tags)
 }
