@@ -3,6 +3,7 @@ use app::fetcher::{ActivityView, ChartView, FullSummary, SearchView, SummaryView
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::collections::HashMap;
+use std::fmt::Write;
 
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
@@ -890,14 +891,14 @@ impl<'a> InputKeyHandler<'a> {
             if activity_txs.len() == 2 {
                 for (index, tx) in activity_txs.into_iter().enumerate() {
                     let tx_details = tx.details.clone().unwrap_or_default();
-                    popup_text += &format!("Transaction {}: {tx_details}", index + 1);
+                    write!(&mut popup_text, "Transaction {}: {tx_details}", index + 1).unwrap();
                     if index == 0 {
                         popup_text += "\n\n";
                     }
                 }
             } else {
                 let tx_details = &activity_txs[0].details.clone().unwrap_or_default();
-                popup_text += &format!("Transaction 1: {tx_details}");
+                write!(&mut popup_text, "Transaction 1: {tx_details}").unwrap();
             }
             *self.popup = PopupState::ShowDetails(popup_text);
         }
