@@ -17,7 +17,7 @@ CREATE TABLE activities (
 
 CREATE TABLE txs (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    date DATE NOT NULL,
+    date DATETIME NOT NULL,
     details TEXT,
     from_method INTEGER NOT NULL REFERENCES tx_methods(id) ON DELETE CASCADE,
     to_method INTEGER REFERENCES tx_methods(id) ON DELETE CASCADE,

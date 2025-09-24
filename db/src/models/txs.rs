@@ -1,4 +1,4 @@
-use chrono::{Datelike, Days, Months, NaiveDate};
+use chrono::{Datelike, Days, Months, NaiveDate, NaiveDateTime, NaiveTime};
 use diesel::dsl::{exists, sql};
 use diesel::prelude::*;
 use diesel::result::Error;
@@ -124,7 +124,7 @@ impl<'a> NewSearch<'a> {
 #[derive(Clone, Debug)]
 pub struct FullTx {
     pub id: i32,
-    pub date: NaiveDate,
+    pub date: NaiveDateTime,
     pub details: Option<String>,
     pub from_method: TxMethod,
     pub to_method: Option<TxMethod>,
@@ -137,7 +137,7 @@ pub struct FullTx {
 #[derive(Clone, Queryable, Selectable, Insertable)]
 pub struct Tx {
     pub id: i32,
-    date: NaiveDate,
+    date: NaiveDateTime,
     details: Option<String>,
     pub from_method: i32,
     pub to_method: Option<i32>,
@@ -149,7 +149,7 @@ pub struct Tx {
 #[derive(Clone, Insertable)]
 #[diesel(table_name = txs)]
 pub struct NewTx<'a> {
-    pub date: NaiveDate,
+    pub date: NaiveDateTime,
     pub details: Option<&'a str>,
     pub from_method: i32,
     pub to_method: Option<i32>,
@@ -160,7 +160,7 @@ pub struct NewTx<'a> {
 impl<'a> NewTx<'a> {
     #[must_use]
     pub fn new(
-        date: NaiveDate,
+        date: NaiveDateTime,
         details: Option<&'a str>,
         from_method: i32,
         to_method: Option<i32>,
@@ -315,7 +315,7 @@ impl FullTx {
         from_method: i32,
         to_method: Option<i32>,
         tx_type: TxType,
-        amount: i64,
+        amount: Cent,
         db_conn: &impl ConnCache,
     ) -> HashMap<i32, String> {
         let mut map = HashMap::new();
@@ -340,16 +340,16 @@ impl FullTx {
 
             match tx_type {
                 TxType::Income => {
-                    map.insert(*method_id, format!("↑{:.2}", amount as f64 / 100.0));
+                    map.insert(*method_id, format!("↑{:.2}", amount.dollar()));
                 }
                 TxType::Expense => {
-                    map.insert(*method_id, format!("↓{:.2}", amount as f64 / 100.0));
+                    map.insert(*method_id, format!("↓{:.2}", amount.dollar()));
                 }
                 TxType::Transfer => {
                     if from_method == *method_id {
-                        map.insert(*method_id, format!("↓{:.2}", amount as f64 / 100.0));
+                        map.insert(*method_id, format!("↓{:.2}", amount.dollar()));
                     } else {
-                        map.insert(*method_id, format!("↑{:.2}", amount as f64 / 100.0));
+                        map.insert(*method_id, format!("↑{:.2}", amount.dollar()));
                     }
                 }
             }
@@ -367,7 +367,7 @@ impl FullTx {
         }
 
         vec![
-            self.date.format("%d-%m-%Y").to_string(),
+            self.date.format("%a %d %I:%M %p").to_string(),
             self.details.clone().unwrap_or_default(),
             method,
             format!("{:.2}", self.amount.dollar()),
@@ -412,17 +412,23 @@ impl Tx {
         nature: FetchNature,
         db_conn: &mut impl ConnCache,
     ) -> Result<Vec<Self>, Error> {
+        let d = d.and_time(NaiveTime::MIN);
+
         use crate::schema::txs::dsl::{date, display_order, id, txs};
 
         let dates = match nature {
             FetchNature::Monthly => {
-                let start_date = NaiveDate::from_ymd_opt(d.year(), d.month(), 1).unwrap();
+                let start_date = NaiveDate::from_ymd_opt(d.year(), d.month(), 1)
+                    .unwrap()
+                    .and_time(NaiveTime::MIN);
 
                 let end_date = start_date + Months::new(1) - Days::new(1);
                 Some((start_date, end_date))
             }
             FetchNature::Yearly => {
-                let start_date = NaiveDate::from_ymd_opt(d.year(), 1, 1).unwrap();
+                let start_date = NaiveDate::from_ymd_opt(d.year(), 1, 1)
+                    .unwrap()
+                    .and_time(NaiveTime::MIN);
 
                 let end_date = start_date + Months::new(12) - Days::new(1);
                 Some((start_date, end_date))

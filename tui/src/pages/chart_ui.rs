@@ -150,7 +150,7 @@ pub fn chart_ui(
                 let mut next_date = NaiveDate::default();
 
                 if chart_view.len() > data_num + 1 {
-                    next_date = chart_view.get_tx(data_num + 1).date;
+                    next_date = chart_view.get_tx(data_num + 1).date.date();
                 }
                 // New valid transactions so the earlier looped balance is not required.
                 // If no tx exists in a date, data from last_balances/previous valid date is used to compensate for it

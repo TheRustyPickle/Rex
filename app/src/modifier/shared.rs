@@ -1,5 +1,5 @@
 use anyhow::{Result, anyhow};
-use chrono::{Days, Months, NaiveDate};
+use chrono::{Days, Local, Months, NaiveDate, NaiveTime};
 use db::ConnCache;
 use db::models::{Balance, DateNature, FetchNature, NewSearch, NewTx, Tx, TxType};
 use shared::models::Dollar;
@@ -66,6 +66,14 @@ pub fn parse_tx_fields<'a>(
 ) -> Result<NewTx<'a>> {
     let date = date.parse::<NaiveDate>()?;
 
+    let local_now = Local::now().naive_local();
+
+    let new_date = if date == local_now.date() {
+        local_now
+    } else {
+        date.and_time(NaiveTime::MIN)
+    };
+
     let details = if details.is_empty() {
         None
     } else {
@@ -81,7 +89,7 @@ pub fn parse_tx_fields<'a>(
         Some(db_conn.cache().get_method_id(to_method)?)
     };
 
-    let new_tx = NewTx::new(date, details, from_method, to_method, amount, tx_type);
+    let new_tx = NewTx::new(new_date, details, from_method, to_method, amount, tx_type);
     Ok(new_tx)
 }
 
@@ -105,10 +113,12 @@ pub fn parse_search_fields<'a>(
                 let year = split_date[0].parse::<i32>()?;
 
                 let start_date = NaiveDate::from_ymd_opt(year, 1, 1)
-                    .ok_or_else(|| anyhow!("{} is an invalid year", year))?;
+                    .ok_or_else(|| anyhow!("{} is an invalid year", year))?
+                    .and_time(NaiveTime::MIN);
 
                 let end_date = NaiveDate::from_ymd_opt(year + 1, 1, 1)
-                    .ok_or_else(|| anyhow!("{} is an invalid year", year))?;
+                    .ok_or_else(|| anyhow!("{} is an invalid year", year))?
+                    .and_time(NaiveTime::MIN);
 
                 Some(DateNature::ByYear {
                     start_date,
@@ -120,7 +130,8 @@ pub fn parse_search_fields<'a>(
                 let month = split_date[1].parse::<u32>()?;
 
                 let start_date = NaiveDate::from_ymd_opt(year, month, 1)
-                    .ok_or_else(|| anyhow!("{year} or {month} value is invalid"))?;
+                    .ok_or_else(|| anyhow!("{year} or {month} value is invalid"))?
+                    .and_time(NaiveTime::MIN);
 
                 let end_date = start_date + Months::new(1) - Days::new(1);
 
@@ -130,7 +141,7 @@ pub fn parse_search_fields<'a>(
                 })
             }
             3 => {
-                let date = date.parse::<NaiveDate>()?;
+                let date = date.parse::<NaiveDate>()?.and_time(NaiveTime::MIN);
                 Some(DateNature::Exact(date))
             }
             _ => None,

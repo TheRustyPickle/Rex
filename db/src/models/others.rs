@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::NaiveDateTime;
 use shared::models::Cent;
 use std::fmt::{self, Display};
 
@@ -17,14 +17,14 @@ pub enum FetchNature {
 }
 
 pub enum DateNature {
-    Exact(NaiveDate),
+    Exact(NaiveDateTime),
     ByMonth {
-        start_date: NaiveDate,
-        end_date: NaiveDate,
+        start_date: NaiveDateTime,
+        end_date: NaiveDateTime,
     },
     ByYear {
-        start_date: NaiveDate,
-        end_date: NaiveDate,
+        start_date: NaiveDateTime,
+        end_date: NaiveDateTime,
     },
 }
 

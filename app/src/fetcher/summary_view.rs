@@ -271,7 +271,7 @@ impl SummaryView {
         let mut last_peak_expense = PeakMonthlyMovement::default();
 
         for tx in &self.txs {
-            ongoing_date = tx.date;
+            ongoing_date = tx.date.date();
 
             let time_unique = month_year_to_unique(tx.date.month() as i32, tx.date.year());
 
@@ -285,12 +285,12 @@ impl SummaryView {
 
                 if last_peak_earning.amount > peak_earning.amount {
                     peak_earning = last_peak_earning;
-                    last_peak_earning = PeakMonthlyMovement::new(tx.date);
+                    last_peak_earning = PeakMonthlyMovement::new(tx.date.date());
                 }
 
                 if last_peak_expense.amount > peak_expense.amount {
                     peak_expense = last_peak_expense;
-                    last_peak_expense = PeakMonthlyMovement::new(tx.date);
+                    last_peak_expense = PeakMonthlyMovement::new(tx.date.date());
                 }
             }
 
@@ -305,7 +305,7 @@ impl SummaryView {
 
                     if biggest_earning.amount < tx.amount {
                         biggest_earning.amount = tx.amount;
-                        biggest_earning.date = tx.date;
+                        biggest_earning.date = tx.date.date();
                         biggest_earning.method = tx.from_method.name.clone();
                     }
 
@@ -321,7 +321,7 @@ impl SummaryView {
 
                     if biggest_expense.amount < tx.amount {
                         biggest_expense.amount = tx.amount;
-                        biggest_expense.date = tx.date;
+                        biggest_expense.date = tx.date.date();
                         biggest_expense.method = tx.from_method.name.clone();
                     }
 

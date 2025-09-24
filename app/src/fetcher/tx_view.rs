@@ -3,7 +3,7 @@ use chrono::NaiveDate;
 use db::ConnCache;
 pub use db::models::FullTx;
 use db::models::{Balance, FetchNature, TxMethod, TxType};
-use shared::models::Cent;
+use shared::models::{Cent, Dollar};
 use std::collections::HashMap;
 
 use crate::conn::DbConn;
@@ -358,9 +358,9 @@ impl TxViewGroup {
 
         to_return[0].push(String::from("Total"));
 
-        let changes = if let Some(partial_tx) = partial_tx {
+        let changes = if let Some(partial_tx) = &partial_tx {
             let tx_type = partial_tx.tx_type.into();
-            let amount = (partial_tx.amount.parse::<f64>()? * 100.0).round() as i64;
+            let amount = Dollar::new(partial_tx.amount.parse()?).cent();
 
             let from_method = db_conn.cache().get_method_id(partial_tx.from_method)?;
             let to_method = if partial_tx.to_method.is_empty() {
@@ -370,10 +370,6 @@ impl TxViewGroup {
             };
 
             FullTx::get_changes_partial(from_method, to_method, tx_type, amount, db_conn)
-        } else if let Some(index) = index {
-            let target_tx = &self.0[index];
-
-            target_tx.tx.get_changes(db_conn)
         } else {
             FullTx::empty_changes(db_conn)
         };
@@ -385,14 +381,13 @@ impl TxViewGroup {
         for method in sorted_methods {
             let method_id = method.id;
 
-            if let Some(index) = index {
+            let mut method_balance = if let Some(index) = index {
                 let target_tx = &self.0[index];
 
                 let balance = *target_tx.balance.get(&method_id).unwrap();
                 total_balance += balance;
 
-                let method_balance = balance.dollar();
-                to_insert_balance.push(format!("{method_balance:.2}"));
+                balance
             } else {
                 let balance = final_balance
                     .as_ref()
@@ -402,9 +397,48 @@ impl TxViewGroup {
                     .balance;
                 total_balance += balance;
 
-                let method_balance = balance as f64 / 100.0;
-                to_insert_balance.push(format!("{method_balance:.2}"));
+                Cent::new(balance)
+            };
+
+            if let Some(partial_tx) = &partial_tx {
+                let tx_type = partial_tx.tx_type.into();
+                let amount = Dollar::new(partial_tx.amount.parse()?).cent();
+
+                let from_method = db_conn.cache().get_method_id(partial_tx.from_method)?;
+                let to_method = if partial_tx.to_method.is_empty() {
+                    None
+                } else {
+                    Some(db_conn.cache().get_method_id(partial_tx.to_method)?)
+                };
+
+                match tx_type {
+                    TxType::Income => {
+                        if from_method == method_id {
+                            method_balance += amount;
+                            total_balance += amount;
+                        }
+                    }
+                    TxType::Expense => {
+                        if from_method == method_id {
+                            method_balance -= amount;
+                            total_balance -= amount;
+                        }
+                    }
+
+                    TxType::Transfer => {
+                        if from_method == method_id {
+                            method_balance -= amount;
+                            total_balance -= amount;
+                        } else if let Some(to_method) = to_method
+                            && to_method == method_id
+                        {
+                            method_balance += amount;
+                            total_balance += amount;
+                        }
+                    }
+                }
             }
+            to_insert_balance.push(format!("{:.2}", method_balance.dollar()));
 
             let changes_value = changes.get(&method_id).unwrap();
             to_insert_changes.push(changes_value.to_string());
@@ -457,8 +491,6 @@ impl TxViewGroup {
         tx_2.tx.set_display_order(db_conn)?;
 
         self.0.swap(index_1, index_2);
-
-        // TODO: Activity txs
 
         Ok(true)
     }

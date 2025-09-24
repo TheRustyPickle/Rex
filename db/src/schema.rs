@@ -66,7 +66,7 @@ diesel::table! {
 diesel::table! {
     txs (id) {
         id -> Integer,
-        date -> Date,
+        date -> Timestamp,
         details -> Nullable<Text>,
         from_method -> Integer,
         to_method -> Nullable<Integer>,
