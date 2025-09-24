@@ -44,14 +44,14 @@ impl<'a> NewSearch<'a> {
         }
     }
 
-    pub fn search_txs(self, db_conn: &mut impl ConnCache) -> Result<Vec<FullTx>, Error> {
+    pub fn search_txs(&self, db_conn: &mut impl ConnCache) -> Result<Vec<FullTx>, Error> {
         use crate::schema::txs::dsl::{
             amount, date, details, from_method, id, to_method, tx_type, txs,
         };
 
         let mut query = txs.into_boxed();
 
-        if let Some(d) = self.date {
+        if let Some(d) = self.date.as_ref() {
             match d {
                 DateNature::Exact(d) => {
                     query = query.filter(date.eq(d));
@@ -87,7 +87,7 @@ impl<'a> NewSearch<'a> {
             query = query.filter(to_method.eq(m));
         }
 
-        if let Some(a) = self.amount {
+        if let Some(a) = self.amount.as_ref() {
             match a {
                 AmountNature::Exact(a) => {
                     query = query.filter(amount.eq(a.value()));
@@ -107,7 +107,7 @@ impl<'a> NewSearch<'a> {
             }
         }
 
-        if let Some(tag_ids) = self.tags {
+        if let Some(tag_ids) = self.tags.as_ref() {
             query = query.filter(exists(
                 tx_tags::table
                     .filter(tx_tags::tx_id.eq(id))

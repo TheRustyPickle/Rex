@@ -28,6 +28,7 @@ pub enum DateNature {
     },
 }
 
+#[derive(Clone, Debug, Copy)]
 pub enum AmountNature {
     Exact(Cent),
     MoreThan(Cent),

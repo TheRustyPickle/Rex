@@ -5,7 +5,7 @@ use db::models::{FullTx, NewSearch};
 pub struct SearchView(Vec<FullTx>);
 
 pub(crate) fn get_search_txs(
-    search: NewSearch,
+    search: &NewSearch,
     db_conn: &mut impl ConnCache,
 ) -> Result<SearchView> {
     let result = search.search_txs(db_conn)?;

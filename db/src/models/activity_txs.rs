@@ -1,15 +1,19 @@
-use std::collections::HashMap;
-
+use chrono::Datelike;
 use diesel::prelude::*;
 use diesel::result::Error;
+use shared::models::Cent;
+use std::collections::HashMap;
 
 use crate::ConnCache;
-use crate::models::{ActivityTxTag, AmountNature, AmountType, EMPTY, Tag, TxMethod, TxType};
+use crate::models::{
+    ActivityTxTag, AmountNature, AmountType, DateNature, EMPTY, FullTx, NewSearch, NewTx, Tag,
+    TxMethod, TxType,
+};
 use crate::schema::activity_txs;
 
 #[derive(Clone, Queryable, Selectable, Insertable)]
 pub struct ActivityTx {
-    id: i32,
+    pub id: i32,
     date: Option<String>,
     details: Option<String>,
     from_method: Option<i32>,
@@ -74,12 +78,93 @@ impl NewActivityTx {
         }
     }
 
-    pub fn insert(self, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
+    pub fn new_from_new_tx(tx: &NewTx, activity_num: i32) -> Self {
+        // TODO: Update date format
+        let date = Some(tx.date.format("%Y-%m-%d").to_string());
+
+        let details = Some(tx.details.unwrap_or_default().to_string());
+
+        let from_method = Some(tx.from_method);
+        let amount = Some(tx.amount);
+        let amount_type = Some(AmountType::Exact.into());
+        let tx_type = Some(tx.tx_type.to_string());
+
+        Self {
+            date,
+            details,
+            from_method,
+            to_method: tx.to_method,
+
+            amount,
+            amount_type,
+            tx_type,
+            display_order: None,
+            activity_num,
+        }
+    }
+
+    pub fn new_from_full_tx(tx: &FullTx, activity_num: i32) -> Self {
+        let date = Some(tx.date.to_string());
+
+        let details = tx.details.as_ref().map(|a| a.to_string());
+
+        let from_method = Some(tx.from_method.id);
+        let to_method = tx.to_method.as_ref().map(|to_method| to_method.id);
+
+        let amount = Some(tx.amount.value());
+        let amount_type = Some(AmountType::Exact.into());
+        let tx_type = Some(tx.tx_type.to_string());
+
+        Self {
+            date,
+            details,
+            from_method,
+            to_method,
+            amount,
+            amount_type,
+            tx_type,
+            display_order: None,
+            activity_num,
+        }
+    }
+
+    pub fn new_from_search_tx(tx: &NewSearch, activity_num: i32) -> Self {
+        let date = if let Some(date) = tx.date.as_ref() {
+            match date {
+                DateNature::Exact(d) => Some(d.to_string()),
+                DateNature::ByMonth {
+                    start_date,
+                    end_date: _,
+                } => Some(format!("{}-{}", start_date.year(), start_date.month())),
+                DateNature::ByYear {
+                    start_date,
+                    end_date: _,
+                } => Some(format!("{}", start_date.year())),
+            }
+        } else {
+            None
+        };
+
+        Self {
+            date,
+            details: tx.details.map(|a| a.to_string()),
+            from_method: tx.from_method,
+            to_method: tx.to_method,
+            amount: tx.amount.map(|a| a.extract().value()),
+            amount_type: tx.amount.map(|a| a.to_type().into()),
+            tx_type: tx.tx_type.map(|a| a.to_string()),
+            display_order: None,
+            activity_num,
+        }
+    }
+
+    pub fn insert(self, db_conn: &mut impl ConnCache) -> Result<ActivityTx, Error> {
         use crate::schema::activity_txs::dsl::activity_txs;
 
         diesel::insert_into(activity_txs)
             .values(self)
-            .execute(db_conn.conn())
+            .returning(ActivityTx::as_select())
+            .get_result(db_conn.conn())
     }
 }
 
@@ -165,7 +250,7 @@ impl ActivityTx {
 
             if let Some(a) = tx.amount.as_ref() {
                 let amount_type: AmountType = tx.amount_type.as_ref().unwrap().as_str().into();
-                amount = Some(AmountNature::from_type(amount_type, *a));
+                amount = Some(AmountNature::from_type(amount_type, Cent::new(*a)));
             }
 
             let full_tx = FullActivityTx {
