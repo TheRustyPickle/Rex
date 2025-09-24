@@ -13,7 +13,7 @@ use crate::outputs::HandlingOutput;
 use crate::page_handler::{ResetType, UserInputType, start_app};
 use crate::utility::check_version;
 use crate::utility::{
-    check_n_create_db, create_backup_location_file, create_change_location_file, delete_backup_db,
+    create_backup_location_file, create_change_location_file, delete_backup_db,
     delete_location_change, enter_tui_interface, exit_tui_interface, is_location_changed,
     save_backup_db, start_taking_input, start_terminal, start_timer,
 };
@@ -53,9 +53,6 @@ pub fn initialize_app(
     } else {
         original_db_path.clone()
     };
-
-    // Create a new db if not found. If there is an error, delete the failed data.sqlite file and exit
-    check_n_create_db(&db_path)?;
 
     let migration_required = !migrated_db_path.exists();
 

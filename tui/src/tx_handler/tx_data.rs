@@ -88,7 +88,7 @@ impl TxData {
             details: tx.details.clone().unwrap_or_default(),
             from_method: tx.from_method.name.clone(),
             to_method: tx.to_method.clone().map(|t| t.name).unwrap_or_default(),
-            amount: format!("{:.2}", tx.amount as f64 / 100.0),
+            amount: format!("{:.2}", tx.amount.dollar()),
             tx_type: tx.tx_type.to_string(),
             tags: tx
                 .tags

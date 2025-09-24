@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+use shared::models::Cent;
 use std::fmt::{self, Display};
 
 #[derive(Clone, Debug, Copy)]
@@ -28,16 +29,16 @@ pub enum DateNature {
 }
 
 pub enum AmountNature {
-    Exact(i64),
-    MoreThan(i64),
-    MoreThanEqual(i64),
-    LessThan(i64),
-    LessThanEqual(i64),
+    Exact(Cent),
+    MoreThan(Cent),
+    MoreThanEqual(Cent),
+    LessThan(Cent),
+    LessThanEqual(Cent),
 }
 
 impl AmountNature {
     #[must_use]
-    pub fn extract(&self) -> i64 {
+    pub fn extract(&self) -> Cent {
         let i = match self {
             AmountNature::Exact(i) => i,
             AmountNature::MoreThan(i) => i,
@@ -61,7 +62,7 @@ impl AmountNature {
     }
 
     #[must_use]
-    pub fn from_type(t: AmountType, amount: i64) -> Self {
+    pub fn from_type(t: AmountType, amount: Cent) -> Self {
         match t {
             AmountType::Exact => AmountNature::Exact(amount),
             AmountType::MoreThan => AmountNature::MoreThan(amount),
@@ -75,11 +76,11 @@ impl AmountNature {
 impl Display for AmountNature {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let a = match self {
-            AmountNature::Exact(v) => format!("{}", *v as f64 / 100.0),
-            AmountNature::MoreThan(v) => format!(">{}", *v as f64 / 100.0),
-            AmountNature::MoreThanEqual(v) => format!(">={}", *v as f64 / 100.0),
-            AmountNature::LessThan(v) => format!("<{}", *v as f64 / 100.0),
-            AmountNature::LessThanEqual(v) => format!("<={}", *v as f64 / 100.0),
+            AmountNature::Exact(v) => format!("{}", v.dollar()),
+            AmountNature::MoreThan(v) => format!(">{}", v.dollar()),
+            AmountNature::MoreThanEqual(v) => format!(">={}", v.dollar()),
+            AmountNature::LessThan(v) => format!("<{}", v.dollar()),
+            AmountNature::LessThanEqual(v) => format!("<={}", v.dollar()),
         };
         write!(f, "{a}")
     }

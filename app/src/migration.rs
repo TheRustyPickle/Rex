@@ -438,7 +438,7 @@ fn migrate_activity_tx(tx: OldActivityTx, conn: &mut impl ConnCache) -> Result<(
 
     if let Some(nature) = amount_nature {
         amount_type = Some(nature.to_type().into());
-        amount = Some(nature.extract());
+        amount = Some(nature.extract().value());
     }
 
     ActivityTx::new(

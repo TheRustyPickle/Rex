@@ -4,12 +4,11 @@ use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::collections::HashMap;
 
-use crate::db::MONTHS;
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
 use crate::page_handler::{
-    ActivityTab, ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData, PopupState,
-    SortingType, SummaryTab, TableData, TxTab,
+    ActivityTab, ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData, MONTHS,
+    PopupState, SortingType, SummaryTab, TableData, TxTab,
 };
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, get_all_tx_methods_cumulative, sort_table_data};

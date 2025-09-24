@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 db.workspace = true
+shared.workspace = true
 chrono.workspace = true
 anyhow.workspace = true
 diesel.workspace = true
