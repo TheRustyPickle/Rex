@@ -1,5 +1,6 @@
 use anyhow::Result;
 use db::models::AmountNature;
+use shared::models::{Cent, Dollar};
 
 pub fn month_name_to_num(name: &str) -> u32 {
     match name {
@@ -39,7 +40,7 @@ pub fn parse_amount_nature_cent(amount: &str) -> Result<Option<AmountNature>> {
         return Ok(None);
     }
 
-    let parse = |s: &str| -> Result<i64> { Ok((s.parse::<f64>()? * 100.0) as i64) };
+    let parse = |s: &str| -> Result<Cent> { Ok(Dollar::new(s.parse()?).cent()) };
 
     let res = if let Some(rest) = amount.strip_prefix("<=") {
         AmountNature::LessThanEqual(parse(rest)?)

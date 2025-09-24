@@ -2,6 +2,7 @@ use chrono::{Datelike, Months, NaiveDate};
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::upsert::excluded;
+use shared::models::Cent;
 use std::collections::{HashMap, HashSet};
 
 use crate::ConnCache;
@@ -166,7 +167,7 @@ impl Balance {
         date: NaiveDate,
         nature: FetchNature,
         db_conn: &mut impl ConnCache,
-    ) -> Result<HashMap<i32, i64>, Error> {
+    ) -> Result<HashMap<i32, Cent>, Error> {
         use crate::schema::balances::dsl::{balances, is_final_balance, method_id, month, year};
 
         let mut ongoing_date = date;
@@ -185,7 +186,7 @@ impl Balance {
             let mut to_return = HashMap::new();
 
             for key in db_conn.cache().tx_methods.keys().copied() {
-                to_return.insert(key, 0);
+                to_return.insert(key, Cent::new(0));
             }
 
             return Ok(to_return);
@@ -218,7 +219,7 @@ impl Balance {
                     continue;
                 }
 
-                found_method_balances.insert(bal.method_id, bal.balance);
+                found_method_balances.insert(bal.method_id, Cent::new(bal.balance));
                 pending_balance_tx_methods.remove(&bal.method_id);
             }
         }
@@ -240,7 +241,7 @@ impl Balance {
                     .first::<Self>(db_conn.conn())
                     .optional()?
                 {
-                    found_method_balances.insert(mid, last_balance.balance);
+                    found_method_balances.insert(mid, Cent::new(last_balance.balance));
                 }
             }
         }
@@ -248,7 +249,7 @@ impl Balance {
         if found_method_balances.len() != db_conn.cache().tx_methods.len() {
             for method in db_conn.cache().tx_methods.keys() {
                 if !found_method_balances.contains_key(method) {
-                    found_method_balances.insert(*method, 0);
+                    found_method_balances.insert(*method, Cent::new(0));
                 }
             }
         }

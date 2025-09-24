@@ -2,11 +2,12 @@ use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
 use db::ConnCache;
 use db::models::{FetchNature, FullTx, TxType};
+use shared::models::{Cent, Dollar};
 use std::collections::HashMap;
 
 use crate::fetcher::{
-    Cent, Dollar, LargestMomvement, LargestType, PeakMonthlyMovement, PeakType, SummaryLargest,
-    SummaryMethods, SummaryNet, SummaryPeak,
+    LargestMomvement, LargestType, PeakMonthlyMovement, PeakType, SummaryLargest, SummaryMethods,
+    SummaryNet, SummaryPeak,
 };
 use crate::utils::{get_percentages, month_year_to_unique};
 
@@ -303,7 +304,7 @@ impl SummaryView {
                     *amount += tx.amount;
 
                     if biggest_earning.amount < tx.amount {
-                        biggest_earning.amount = Cent::new(tx.amount);
+                        biggest_earning.amount = tx.amount;
                         biggest_earning.date = tx.date;
                         biggest_earning.method = tx.from_method.name.clone();
                     }
@@ -319,7 +320,7 @@ impl SummaryView {
                     *amount += tx.amount;
 
                     if biggest_expense.amount < tx.amount {
-                        biggest_expense.amount = Cent::new(tx.amount);
+                        biggest_expense.amount = tx.amount;
                         biggest_expense.date = tx.date;
                         biggest_expense.method = tx.from_method.name.clone();
                     }

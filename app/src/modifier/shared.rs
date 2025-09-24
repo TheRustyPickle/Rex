@@ -2,8 +2,8 @@ use anyhow::{Result, anyhow};
 use chrono::{Days, Months, NaiveDate};
 use db::ConnCache;
 use db::models::{Balance, DateNature, FetchNature, NewSearch, NewTx, Tx, TxType};
+use shared::models::Dollar;
 
-use crate::fetcher::Dollar;
 use crate::utils::parse_amount_nature_cent;
 
 pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Result<()> {
@@ -43,7 +43,7 @@ pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Re
         let last_balance = *last_balance.get(&method_id).unwrap();
 
         if balance.balance != last_balance {
-            balance.balance = last_balance;
+            balance.balance = last_balance.value();
             to_insert_balance.push(balance);
         }
     }

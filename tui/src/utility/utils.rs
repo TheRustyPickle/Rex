@@ -14,16 +14,12 @@ use std::error::Error;
 use std::fs::{self, File};
 use std::io::{Read, Result as ioResult, Stdout, Write, stdout};
 use std::path::{Path, PathBuf};
+use std::thread;
 use std::time::Duration;
-use std::{process, thread};
 use strsim::normalized_levenshtein;
 
-use crate::db::create_db;
 use crate::outputs::ComparisonType;
-use crate::page_handler::{
-    BACKGROUND, BOX, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT, UserInputType,
-};
-use crate::utility::get_user_tx_methods;
+use crate::page_handler::{BACKGROUND, BOX, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT};
 
 const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense", "Cancel"];
 
@@ -142,28 +138,29 @@ pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-/// Checks if a db already exists or prompts to create a new one
-pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>> {
-    if !verifying_path.exists() {
-        let UserInputType::AddNewTxMethod(db_tx_methods) = get_user_tx_methods(false, None) else {
-            return Err("Failed to get tx methods.".into());
-        };
-        println!("Creating New Database. It may take some time...");
-
-        let mut conn = Connection::open(verifying_path)?;
-        let status = create_db(&db_tx_methods, &mut conn);
-        conn.close().unwrap();
-        match status {
-            Ok(()) => start_timer("Database creation successful."),
-            Err(e) => {
-                println!("Database creation failed. Try again. Error: {e}");
-                fs::remove_file("data.sqlite")?;
-                process::exit(1);
-            }
-        }
-    }
-    Ok(())
-}
+// TODO: Add this back
+/// /// Checks if a db already exists or prompts to create a new one
+/// pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>> {
+///     if !verifying_path.exists() {
+///         let UserInputType::AddNewTxMethod(db_tx_methods) = get_user_tx_methods(false, None) else {
+///             return Err("Failed to get tx methods.".into());
+///         };
+///         println!("Creating New Database. It may take some time...");
+///
+///         let mut conn = Connection::open(verifying_path)?;
+///         let status = create_db(&db_tx_methods, &mut conn);
+///         conn.close().unwrap();
+///         match status {
+///             Ok(()) => start_timer("Database creation successful."),
+///             Err(e) => {
+///                 println!("Database creation failed. Try again. Error: {e}");
+///                 fs::remove_file("data.sqlite")?;
+///                 process::exit(1);
+///             }
+///         }
+///     }
+///     Ok(())
+/// }
 
 /// Returns a styled block for UI to use
 #[must_use]

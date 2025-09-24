@@ -3,6 +3,7 @@ use diesel::dsl::{exists, sql};
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::sql_types::Bool;
+use shared::models::Cent;
 use std::collections::HashMap;
 
 use crate::ConnCache;
@@ -89,19 +90,19 @@ impl<'a> NewSearch<'a> {
         if let Some(a) = self.amount {
             match a {
                 AmountNature::Exact(a) => {
-                    query = query.filter(amount.eq(a));
+                    query = query.filter(amount.eq(a.value()));
                 }
                 AmountNature::MoreThan(a) => {
-                    query = query.filter(amount.gt(a));
+                    query = query.filter(amount.gt(a.value()));
                 }
                 AmountNature::MoreThanEqual(a) => {
-                    query = query.filter(amount.ge(a));
+                    query = query.filter(amount.ge(a.value()));
                 }
                 AmountNature::LessThan(a) => {
-                    query = query.filter(amount.lt(a));
+                    query = query.filter(amount.lt(a.value()));
                 }
                 AmountNature::LessThanEqual(a) => {
-                    query = query.filter(amount.le(a));
+                    query = query.filter(amount.le(a.value()));
                 }
             }
         }
@@ -127,7 +128,7 @@ pub struct FullTx {
     pub details: Option<String>,
     pub from_method: TxMethod,
     pub to_method: Option<TxMethod>,
-    pub amount: i64,
+    pub amount: Cent,
     pub tx_type: TxType,
     pub tags: Vec<Tag>,
     pub display_order: i32,
@@ -247,7 +248,7 @@ impl FullTx {
                 to_method: tx
                     .to_method
                     .map(|method_id| db_conn.cache().tx_methods.get(&method_id).unwrap().clone()),
-                amount: tx.amount,
+                amount: Cent::new(tx.amount),
                 tx_type: tx.tx_type.as_str().into(),
                 tags,
                 display_order: tx.display_order,
@@ -282,16 +283,16 @@ impl FullTx {
 
             match self.tx_type {
                 TxType::Income => {
-                    map.insert(*method_id, format!("↑{:.2}", self.amount as f64 / 100.0));
+                    map.insert(*method_id, format!("↑{:.2}", self.amount.dollar()));
                 }
                 TxType::Expense => {
-                    map.insert(*method_id, format!("↓{:.2}", self.amount as f64 / 100.0));
+                    map.insert(*method_id, format!("↓{:.2}", self.amount.dollar()));
                 }
                 TxType::Transfer => {
                     if self.from_method.id == *method_id {
-                        map.insert(*method_id, format!("↓{:.2}", self.amount as f64 / 100.0));
+                        map.insert(*method_id, format!("↓{:.2}", self.amount.dollar()));
                     } else {
-                        map.insert(*method_id, format!("↑{:.2}", self.amount as f64 / 100.0));
+                        map.insert(*method_id, format!("↑{:.2}", self.amount.dollar()));
                     }
                 }
             }
@@ -369,7 +370,7 @@ impl FullTx {
             self.date.format("%d-%m-%Y").to_string(),
             self.details.clone().unwrap_or_default(),
             method,
-            format!("{:.2}", self.amount as f64 / 100.0),
+            format!("{:.2}", self.amount.dollar()),
             self.tx_type.to_string(),
             self.tags
                 .iter()

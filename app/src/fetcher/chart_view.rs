@@ -1,8 +1,9 @@
 use chrono::NaiveDate;
 use db::models::FullTx;
+use shared::models::Cent;
 use std::collections::{HashMap, HashSet};
 
-use crate::fetcher::{Cent, TxViewGroup};
+use crate::fetcher::TxViewGroup;
 
 pub struct ChartView {
     txs: TxViewGroup,

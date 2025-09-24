@@ -3,10 +3,10 @@ use chrono::NaiveDate;
 use db::ConnCache;
 pub use db::models::FullTx;
 use db::models::{Balance, FetchNature, TxMethod, TxType};
+use shared::models::Cent;
 use std::collections::HashMap;
 
 use crate::conn::DbConn;
-use crate::fetcher::Cent;
 
 pub struct PartialTx<'a> {
     pub from_method: &'a str,
@@ -37,7 +37,7 @@ pub(crate) fn get_txs(
 
     let mut last_balance = last_balance
         .into_iter()
-        .map(|b| (b.0, Cent::new(b.1)))
+        .map(|b| (b.0, b.1))
         .collect::<HashMap<i32, Cent>>();
 
     let mut all_tx_views = Vec::with_capacity(txs.len());

@@ -5,8 +5,29 @@ use rusqlite::Connection;
 use std::fmt::{self, Display, Result};
 use std::path::PathBuf;
 
-use crate::db::{MODES, MONTHS, YEARS};
 use crate::utility::get_all_tx_methods_cumulative;
+
+pub const MONTHS: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+
+pub const YEARS: [&str; 16] = [
+    "2022", "2023", "2024", "2025", "2026", "2027", "2028", "2029", "2030", "2031", "2032", "2033",
+    "2034", "2035", "2036", "2037",
+];
+
+pub const MODES: [&str; 3] = ["Monthly", "Yearly", "All Time"];
 
 /// The struct stores all transaction data for the Transaction widget
 /// and creates an index to keep track of which transactions row is selected

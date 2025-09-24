@@ -53,6 +53,7 @@ dependencies = [
  "db",
  "diesel",
  "log",
+ "shared",
 ]
 
 [[package]]
@@ -287,6 +288,7 @@ dependencies = [
  "diesel",
  "diesel_migrations",
  "libsqlite3-sys",
+ "shared",
 ]
 
 [[package]]
@@ -1645,6 +1647,10 @@ dependencies = [
  "ryu",
  "serde",
 ]
+
+[[package]]
+name = "shared"
+version = "0.1.0"
 
 [[package]]
 name = "shlex"
