@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use diesel::result::Error;
 
 use crate::ConnCache;
-use crate::models::{ActivityNature, ActivityTx, FullActivityTx, NewActivityTx};
+use crate::models::{ActivityNature, ActivityTx, FullActivityTx};
 use crate::schema::activities;
 
 #[derive(Clone, Queryable, Selectable, Insertable)]
@@ -16,7 +16,7 @@ pub struct NewActivity {
 #[derive(Queryable, Selectable, Insertable)]
 #[diesel(table_name = activities)]
 pub struct Activity {
-    id: i32,
+    pub id: i32,
     date: NaiveDateTime,
     pub activity_type: String,
 }
@@ -28,15 +28,8 @@ pub struct ActivityWithTxs {
 
 impl NewActivity {
     #[must_use]
-    pub fn new(activity_type: ActivityNature, txs: Vec<NewActivityTx>) -> Self {
+    pub fn new(activity_type: ActivityNature) -> Self {
         let now = Local::now().naive_local();
-
-        match activity_type {
-            ActivityNature::PositionSwap | ActivityNature::EditTx => {
-                assert!(txs.len() == 2);
-            }
-            _ => {}
-        }
 
         Self {
             date: now,
@@ -44,12 +37,12 @@ impl NewActivity {
         }
     }
 
-    pub fn insert(self, db_conn: &mut impl ConnCache) -> Result<Self, Error> {
+    pub fn insert(self, db_conn: &mut impl ConnCache) -> Result<Activity, Error> {
         use crate::schema::activities::dsl::activities;
 
         diesel::insert_into(activities)
             .values(self)
-            .returning(Self::as_returning())
+            .returning(Activity::as_returning())
             .get_result(db_conn.conn())
     }
 }

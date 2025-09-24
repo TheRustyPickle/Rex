@@ -10,7 +10,10 @@ use crate::fetcher::{
     ActivityView, ChartView, SearchView, SummaryView, TxViewGroup, get_activity_view,
     get_chart_view, get_search_txs, get_summary, get_txs,
 };
-use crate::modifier::{add_new_tx, add_new_tx_methods, delete_tx};
+use crate::modifier::{
+    activity_delete_tx, activity_edit_tx, activity_new_tx, activity_search_tx, add_new_tx,
+    add_new_tx_methods, delete_tx,
+};
 use crate::utils::month_name_to_num;
 
 #[must_use]
@@ -116,8 +119,9 @@ impl DbConn {
         self.conn.transaction::<_, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
-            let new_tags = add_new_tx(tx, tags, None, &mut db_conn)?;
+            let new_tags = add_new_tx(tx.clone(), tags, None, &mut db_conn)?;
 
+            activity_new_tx(&tx, tags, &mut db_conn)?;
             self.cache.new_tags(new_tags);
 
             Ok(())
@@ -131,6 +135,7 @@ impl DbConn {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
             delete_tx(tx, &mut db_conn)?;
+            activity_delete_tx(tx, &mut db_conn)?;
 
             Ok(())
         })?;
@@ -145,7 +150,9 @@ impl DbConn {
             let old_tx_id = old_tx.id;
             delete_tx(old_tx, &mut db_conn)?;
 
-            let new_tags = add_new_tx(new_tx, tags, Some(old_tx_id), &mut db_conn)?;
+            let new_tags = add_new_tx(new_tx.clone(), tags, Some(old_tx_id), &mut db_conn)?;
+
+            activity_edit_tx(old_tx, &new_tx, tags, &mut db_conn)?;
 
             self.cache.new_tags(new_tags);
 
@@ -213,7 +220,11 @@ impl DbConn {
         let result = self.conn.transaction::<SearchView, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
-            get_search_txs(search, &mut db_conn)
+            let search_view = get_search_txs(&search, &mut db_conn)?;
+
+            activity_search_tx(&search, &mut db_conn)?;
+
+            Ok(search_view)
         })?;
 
         Ok(result)
