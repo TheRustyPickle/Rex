@@ -197,6 +197,7 @@ pub struct Cent(i64);
 pub struct Dollar(f64);
 
 impl Cent {
+    #[must_use]
     pub fn new(value: i64) -> Self {
         Self(value)
     }
@@ -206,12 +207,14 @@ impl Cent {
         Dollar::new(self.0 as f64 / 100.0)
     }
 
+    #[must_use]
     pub fn value(&self) -> i64 {
         self.0
     }
 }
 
 impl Dollar {
+    #[must_use]
     pub fn new(value: f64) -> Self {
         Self(value)
     }
@@ -221,6 +224,7 @@ impl Dollar {
         self.0
     }
 
+    #[must_use]
     pub fn cent(&self) -> Cent {
         Cent::new((self.0 * 100.0) as i64)
     }

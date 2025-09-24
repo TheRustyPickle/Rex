@@ -78,6 +78,7 @@ impl NewActivityTx {
         }
     }
 
+    #[must_use]
     pub fn new_from_new_tx(tx: &NewTx, activity_num: i32) -> Self {
         let date = Some(tx.date.to_string());
 
@@ -102,10 +103,11 @@ impl NewActivityTx {
         }
     }
 
+    #[must_use]
     pub fn new_from_full_tx(tx: &FullTx, activity_num: i32) -> Self {
         let date = Some(tx.date.to_string());
 
-        let details = tx.details.as_ref().map(|a| a.to_string());
+        let details = tx.details.as_ref().map(std::string::ToString::to_string);
 
         let from_method = Some(tx.from_method.id);
         let to_method = tx.to_method.as_ref().map(|to_method| to_method.id);
@@ -127,6 +129,7 @@ impl NewActivityTx {
         }
     }
 
+    #[must_use]
     pub fn new_from_search_tx(tx: &NewSearch, activity_num: i32) -> Self {
         let date = if let Some(date) = tx.date.as_ref() {
             match date {
@@ -146,12 +149,12 @@ impl NewActivityTx {
 
         Self {
             date,
-            details: tx.details.map(|a| a.to_string()),
+            details: tx.details.map(std::string::ToString::to_string),
             from_method: tx.from_method,
             to_method: tx.to_method,
             amount: tx.amount.map(|a| a.extract().value()),
             amount_type: tx.amount.map(|a| a.to_type().into()),
-            tx_type: tx.tx_type.map(|a| a.to_string()),
+            tx_type: tx.tx_type.map(std::string::ToString::to_string),
             display_order: None,
             activity_num,
         }

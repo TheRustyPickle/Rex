@@ -307,7 +307,7 @@ pub fn summary_ui(
                     cell
                 });
                 Row::new(cells)
-                    .height(height as u16)
+                    .height(height)
                     .bottom_margin(0)
                     .style(Style::default().fg(TEXT))
             });
