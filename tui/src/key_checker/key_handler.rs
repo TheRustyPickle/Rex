@@ -837,12 +837,11 @@ impl<'a> InputKeyHandler<'a> {
             }
 
             let reload_stuff = self
-                .home_txs
-                .switch_tx_index(index, index - 1, self.migrated_conn)
+                .migrated_conn
+                .swap_tx_position(index, index - 1, self.home_txs)
                 .unwrap();
 
             if reload_stuff {
-                // TODO: Activity
                 *self.home_table = TableData::new(self.home_txs.tx_array());
                 self.home_down_till(index - 1);
                 self.reload_activity_table();
@@ -858,12 +857,11 @@ impl<'a> InputKeyHandler<'a> {
             }
 
             let reload_stuff = self
-                .home_txs
-                .switch_tx_index(index, index + 1, self.migrated_conn)
+                .migrated_conn
+                .swap_tx_position(index, index + 1, self.home_txs)
                 .unwrap();
 
             if reload_stuff {
-                // TODO: Activity
                 *self.home_table = TableData::new(self.home_txs.tx_array());
                 self.home_down_till(index + 1);
                 self.reload_activity_table();

@@ -104,7 +104,7 @@ impl NewActivityTx {
     }
 
     #[must_use]
-    pub fn new_from_full_tx(tx: &FullTx, activity_num: i32) -> Self {
+    pub fn new_from_full_tx(tx: &FullTx, set_display_order: bool, activity_num: i32) -> Self {
         let date = Some(tx.date.to_string());
 
         let details = tx.details.as_ref().map(std::string::ToString::to_string);
@@ -116,6 +116,12 @@ impl NewActivityTx {
         let amount_type = Some(AmountType::Exact.into());
         let tx_type = Some(tx.tx_type.to_string());
 
+        let display_order = if set_display_order {
+            Some(tx.display_order)
+        } else {
+            None
+        };
+
         Self {
             date,
             details,
@@ -124,7 +130,7 @@ impl NewActivityTx {
             amount,
             amount_type,
             tx_type,
-            display_order: None,
+            display_order,
             activity_num,
         }
     }

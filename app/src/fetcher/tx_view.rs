@@ -452,7 +452,7 @@ impl TxViewGroup {
         Ok(to_return)
     }
 
-    pub fn switch_tx_index(
+    pub(crate) fn switch_tx_index(
         &mut self,
         index_1: usize,
         index_2: usize,
@@ -462,7 +462,7 @@ impl TxViewGroup {
         let tx_2 = self.0.get(index_2).unwrap();
 
         // Can't switch index if not in the same date
-        if tx_1.tx.date != tx_2.tx.date {
+        if tx_1.tx.date.date() != tx_2.tx.date.date() {
             return Ok(false);
         }
 
