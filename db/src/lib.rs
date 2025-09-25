@@ -20,6 +20,7 @@ pub struct Cache {
     pub tags: HashMap<i32, Tag>,
     pub tx_methods: HashMap<i32, TxMethod>,
     pub txs: Option<HashMap<i32, Vec<FullTx>>>,
+    pub details: Vec<String>,
 }
 
 impl Cache {

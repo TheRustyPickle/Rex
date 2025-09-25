@@ -472,4 +472,22 @@ impl Tx {
             display_order: 0,
         }
     }
+
+    pub fn get_all_details(db_conn: &mut impl ConnCache) -> Result<Vec<String>, Error> {
+        use crate::schema::txs::dsl::{details, txs};
+
+        let result: Vec<Option<String>> = txs
+            .select(details)
+            .filter(details.is_not_null())
+            .load(db_conn.conn())?;
+
+        use std::collections::HashSet;
+
+        Ok(result
+            .into_iter()
+            .flatten()
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect())
+    }
 }

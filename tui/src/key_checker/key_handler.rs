@@ -1646,7 +1646,10 @@ impl InputKeyHandler<'_> {
             )
             .unwrap();
 
+        let old_table_position = self.activity_table.state.clone();
+
         *self.activity_table = TableData::new(self.activity_view.get_activity_table());
+        self.activity_table.state = old_table_position.clone();
     }
 
     /// Move the cursor for text fields to the correct position, if it's misplaced
@@ -1793,8 +1796,12 @@ impl InputKeyHandler<'_> {
 
     fn check_autofill(&mut self) {
         match self.page {
-            CurrentUi::AddTx => self.add_tx_data.check_autofill(self.add_tx_tab, self.conn),
-            CurrentUi::Search => self.search_data.check_autofill(self.search_tab, self.conn),
+            CurrentUi::AddTx => self
+                .add_tx_data
+                .check_autofill(self.add_tx_tab, self.migrated_conn),
+            CurrentUi::Search => self
+                .search_data
+                .check_autofill(self.search_tab, self.migrated_conn),
             _ => {}
         }
     }

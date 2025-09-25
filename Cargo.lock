@@ -54,6 +54,7 @@ dependencies = [
  "diesel",
  "log",
  "shared",
+ "strsim",
 ]
 
 [[package]]

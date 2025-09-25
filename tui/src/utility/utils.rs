@@ -87,35 +87,6 @@ pub fn get_all_tags(conn: &Connection) -> Vec<String> {
     sorted_tags
 }
 
-/// Returns all unique details from the db
-pub fn get_all_details(conn: &Connection) -> Vec<String> {
-    let mut query = conn
-        .prepare("SELECT details FROM tx_all")
-        .expect("could not prepare statement");
-
-    let mut details_data: HashSet<String> = HashSet::new();
-
-    if let Ok(rows) = query.query_map([], |row| {
-        let row_data: String = row.get(0).unwrap();
-        let split_text = row_data.split(',');
-        let final_data = split_text
-            .into_iter()
-            .map(|s| s.trim().to_string())
-            .collect::<Vec<String>>();
-        Ok(final_data)
-    }) {
-        for inner_data in rows.flatten() {
-            for x in inner_data {
-                details_data.insert(x);
-            }
-        }
-    }
-
-    let mut sorted_details = details_data.into_iter().collect::<Vec<String>>();
-    sorted_details.sort();
-    sorted_details
-}
-
 /// Enters raw mode so the TUI can render properly
 pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
     enable_raw_mode()?;
@@ -139,28 +110,27 @@ pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
 }
 
 // TODO: Add this back
-/// /// Checks if a db already exists or prompts to create a new one
-/// pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>> {
-///     if !verifying_path.exists() {
-///         let UserInputType::AddNewTxMethod(db_tx_methods) = get_user_tx_methods(false, None) else {
-///             return Err("Failed to get tx methods.".into());
-///         };
-///         println!("Creating New Database. It may take some time...");
-///
-///         let mut conn = Connection::open(verifying_path)?;
-///         let status = create_db(&db_tx_methods, &mut conn);
-///         conn.close().unwrap();
-///         match status {
-///             Ok(()) => start_timer("Database creation successful."),
-///             Err(e) => {
-///                 println!("Database creation failed. Try again. Error: {e}");
-///                 fs::remove_file("data.sqlite")?;
-///                 process::exit(1);
-///             }
-///         }
-///     }
-///     Ok(())
-/// }
+// pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>> {
+//     if !verifying_path.exists() {
+//         let UserInputType::AddNewTxMethod(db_tx_methods) = get_user_tx_methods(false, None) else {
+//             return Err("Failed to get tx methods.".into());
+//         };
+//         println!("Creating New Database. It may take some time...");
+//
+//         let mut conn = Connection::open(verifying_path)?;
+//         let status = create_db(&db_tx_methods, &mut conn);
+//         conn.close().unwrap();
+//         match status {
+//             Ok(()) => start_timer("Database creation successful."),
+//             Err(e) => {
+//                 println!("Database creation failed. Try again. Error: {e}");
+//                 fs::remove_file("data.sqlite")?;
+//                 process::exit(1);
+//             }
+//         }
+//     }
+//     Ok(())
+// }
 
 /// Returns a styled block for UI to use
 #[must_use]
