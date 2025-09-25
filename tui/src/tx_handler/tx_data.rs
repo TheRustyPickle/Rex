@@ -9,7 +9,7 @@ use crate::outputs::{
     CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, VerifyingOutput,
 };
 use crate::page_handler::{DateType, TxTab};
-use crate::utility::traits::{AutoFiller, DataVerifier, FieldStepper};
+use crate::utility::traits::{DataVerifier, FieldStepper};
 use crate::utility::{add_char_to, check_comparison};
 
 /// Contains all data for a Transaction to work
@@ -29,8 +29,6 @@ pub struct TxData {
 }
 
 impl DataVerifier for TxData {}
-
-impl AutoFiller for TxData {}
 
 impl FieldStepper for TxData {}
 
@@ -276,14 +274,14 @@ impl TxData {
         self.tx_status.push(data);
     }
 
-    pub fn check_autofill(&mut self, current_tab: &TxTab, conn: &Connection) {
+    pub fn check_autofill(&mut self, current_tab: &TxTab, conn: &mut DbConn) {
         self.autofill.clear();
 
         self.autofill = match current_tab {
-            TxTab::Details => self.autofill_details(&self.details, conn),
-            TxTab::FromMethod => self.autofill_tx_method(&self.from_method, conn),
-            TxTab::ToMethod => self.autofill_tx_method(&self.to_method, conn),
-            TxTab::Tags => self.autofill_tags(&self.tags, conn),
+            TxTab::Details => conn.autofiller().details(&self.details),
+            TxTab::FromMethod => conn.autofiller().tx_method(&self.from_method),
+            TxTab::ToMethod => conn.autofiller().tx_method(&self.to_method),
+            TxTab::Tags => conn.autofiller().tags(&self.tags),
             _ => String::new(),
         }
     }

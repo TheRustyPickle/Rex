@@ -1,7 +1,7 @@
 use anyhow::{Error, Result};
 use chrono::NaiveDate;
 pub use db::models::FetchNature;
-use db::models::{Balance, FullTx, NewSearch, NewTx, Tag, TxMethod};
+use db::models::{Balance, FullTx, NewSearch, NewTx, Tag, Tx, TxMethod};
 use db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
 use diesel::{Connection, SqliteConnection};
 use std::collections::HashMap;
@@ -10,6 +10,7 @@ use crate::modifier::{
     activity_delete_tx, activity_edit_tx, activity_new_tx, activity_search_tx,
     activity_swap_position, add_new_tx, add_new_tx_methods, delete_tx,
 };
+use crate::ui_helper::Autofiller;
 use crate::utils::month_name_to_num;
 use crate::views::{
     ActivityView, ChartView, SearchView, SummaryView, TxViewGroup, get_activity_view,
@@ -73,11 +74,13 @@ impl DbConn {
                 tags: HashMap::new(),
                 tx_methods: HashMap::new(),
                 txs: None,
+                details: Vec::new(),
             },
         };
 
         to_return.reload_methods();
         to_return.reload_tags();
+        to_return.reload_details();
 
         to_return
     }
@@ -91,6 +94,7 @@ impl DbConn {
                 tags: HashMap::new(),
                 tx_methods: HashMap::new(),
                 txs: None,
+                details: Vec::new(),
             },
         }
     }
@@ -113,6 +117,10 @@ impl DbConn {
             .collect();
 
         self.cache.tags = tags;
+    }
+
+    pub(crate) fn reload_details(&mut self) {
+        self.cache.details = Tx::get_all_details(self).unwrap()
     }
 
     pub fn add_new_tx(&mut self, tx: NewTx, tags: &str) -> Result<()> {
@@ -339,5 +347,10 @@ impl DbConn {
 
     pub fn get_final_balances(&mut self) -> Result<HashMap<i32, Balance>> {
         Ok(Balance::get_final_balance(self)?)
+    }
+
+    pub fn autofiller(&mut self) -> Autofiller<'_> {
+        let db_conn = MutDbConn::new(&mut self.conn, &self.cache);
+        Autofiller::new(db_conn)
     }
 }
