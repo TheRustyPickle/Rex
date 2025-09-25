@@ -341,8 +341,6 @@ fn migrate_tx(
         }
     }
 
-    // TODO: Add activity txs later
-
     let added_tx = new_tx.insert(db_conn)?;
 
     let mut tx_tags = Vec::new();
