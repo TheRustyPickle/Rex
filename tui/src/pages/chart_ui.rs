@@ -1,5 +1,5 @@
 use app::conn::DbConn;
-use app::fetcher::ChartView;
+use app::views::ChartView;
 use chrono::{Duration, naive::NaiveDate};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};

@@ -1,5 +1,5 @@
 use app::conn::{DbConn, FetchNature};
-use app::fetcher::SearchView;
+use app::views::SearchView;
 use crossterm::event::poll;
 use crossterm::event::{self, Event, KeyEventKind};
 use ratatui::Terminal;

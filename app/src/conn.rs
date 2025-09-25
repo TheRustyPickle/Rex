@@ -6,15 +6,15 @@ use db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
 use diesel::{Connection, SqliteConnection};
 use std::collections::HashMap;
 
-use crate::fetcher::{
-    ActivityView, ChartView, SearchView, SummaryView, TxViewGroup, get_activity_view,
-    get_chart_view, get_search_txs, get_summary, get_txs,
-};
 use crate::modifier::{
     activity_delete_tx, activity_edit_tx, activity_new_tx, activity_search_tx,
     activity_swap_position, add_new_tx, add_new_tx_methods, delete_tx,
 };
 use crate::utils::month_name_to_num;
+use crate::views::{
+    ActivityView, ChartView, SearchView, SummaryView, TxViewGroup, get_activity_view,
+    get_chart_view, get_search_txs, get_summary, get_txs,
+};
 
 #[must_use]
 pub fn get_conn(location: &str) -> DbConn {

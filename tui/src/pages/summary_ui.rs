@@ -1,5 +1,5 @@
 use app::conn::DbConn;
-use app::fetcher::FullSummary;
+use app::views::FullSummary;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
