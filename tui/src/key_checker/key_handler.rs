@@ -331,8 +331,6 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    // TODO: Refactor this function
-
     /// Adds new tx and reloads home and chart data
     pub fn add_tx(&mut self) {
         let status = self.add_tx_data.add_tx(self.home_txs, self.migrated_conn);
@@ -397,11 +395,6 @@ impl<'a> InputKeyHandler<'a> {
                 } else {
                     self.home_table.state.select(Some(index - 1));
                 }
-
-                // TODO: Activity log
-                // let activity_num =
-                //     add_new_activity(ActivityType::DeleteTX(Some(id_num)), self.conn);
-                // add_new_activity_tx(&tx_data, activity_num, self.conn);
             }
             Err(err) => {
                 *self.popup =
