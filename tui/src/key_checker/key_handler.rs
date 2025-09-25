@@ -1,5 +1,5 @@
 use app::conn::{DbConn, FetchNature};
-use app::fetcher::{ActivityView, ChartView, FullSummary, SearchView, SummaryView, TxViewGroup};
+use app::views::{ActivityView, ChartView, FullSummary, SearchView, SummaryView, TxViewGroup};
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
 use std::collections::HashMap;

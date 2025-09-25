@@ -1,4 +1,4 @@
-use app::fetcher::ActivityView;
+use app::views::ActivityView;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};

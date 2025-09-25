@@ -3,7 +3,7 @@ use db::models::FullTx;
 use shared::models::Cent;
 use std::collections::{HashMap, HashSet};
 
-use crate::fetcher::TxViewGroup;
+use crate::views::TxViewGroup;
 
 pub struct ChartView {
     txs: TxViewGroup,

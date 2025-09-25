@@ -5,11 +5,11 @@ use db::models::{FetchNature, FullTx, TxType};
 use shared::models::{Cent, Dollar};
 use std::collections::HashMap;
 
-use crate::fetcher::{
+use crate::utils::{get_percentages, month_year_to_unique};
+use crate::views::{
     LargestMomvement, LargestType, PeakMonthlyMovement, PeakType, SummaryLargest, SummaryMethods,
     SummaryNet, SummaryPeak,
 };
-use crate::utils::{get_percentages, month_year_to_unique};
 
 /// Contains `FullTx` to generate summary data. Will always contain the exact number of txs from
 /// the month and year (or all txs) the summary was generated with

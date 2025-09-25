@@ -1,6 +1,6 @@
 use app::conn::DbConn;
-use app::fetcher::{FullTx, PartialTx, SearchView, TxViewGroup};
 use app::modifier::{parse_search_fields, parse_tx_fields};
+use app::views::{FullTx, PartialTx, SearchView, TxViewGroup};
 use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::cmp::Ordering;

@@ -1,5 +1,5 @@
 use app::conn::DbConn;
-use app::fetcher::TxViewGroup;
+use app::views::TxViewGroup;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
