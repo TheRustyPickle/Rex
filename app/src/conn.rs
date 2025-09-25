@@ -11,8 +11,8 @@ use crate::fetcher::{
     get_chart_view, get_search_txs, get_summary, get_txs,
 };
 use crate::modifier::{
-    activity_delete_tx, activity_edit_tx, activity_new_tx, activity_search_tx, add_new_tx,
-    add_new_tx_methods, delete_tx,
+    activity_delete_tx, activity_edit_tx, activity_new_tx, activity_search_tx,
+    activity_swap_position, add_new_tx, add_new_tx_methods, delete_tx,
 };
 use crate::utils::month_name_to_num;
 
@@ -296,6 +296,28 @@ impl DbConn {
             let activity_view = get_activity_view(date, &mut db_conn)?;
 
             Ok(activity_view)
+        })?;
+
+        Ok(result)
+    }
+
+    pub fn swap_tx_position(
+        &mut self,
+        index_1: usize,
+        index_2: usize,
+        tx_view_group: &mut TxViewGroup,
+    ) -> Result<bool> {
+        let result = self.conn.transaction::<bool, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            let result = tx_view_group.switch_tx_index(index_1, index_2, &mut db_conn)?;
+
+            let tx_1 = tx_view_group.get_tx(index_1);
+            let tx_2 = tx_view_group.get_tx(index_2);
+
+            activity_swap_position(tx_1, tx_2, &mut db_conn)?;
+
+            Ok(result)
         })?;
 
         Ok(result)

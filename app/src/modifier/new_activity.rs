@@ -50,7 +50,7 @@ pub(crate) fn activity_delete_tx(tx: &FullTx, conn: &mut impl ConnCache) -> Resu
 
     let new_activity = NewActivity::new(activity_type).insert(conn)?;
 
-    let added_tx = NewActivityTx::new_from_full_tx(tx, new_activity.id).insert(conn)?;
+    let added_tx = NewActivityTx::new_from_full_tx(tx, false, new_activity.id).insert(conn)?;
 
     let mut tag_list = Vec::new();
 
@@ -76,7 +76,8 @@ pub(crate) fn activity_edit_tx(
 
     // New one always first!
     let new_tx_activity = NewActivityTx::new_from_new_tx(new_tx, new_activity.id).insert(conn)?;
-    let old_tx_activity = NewActivityTx::new_from_full_tx(old_tx, new_activity.id).insert(conn)?;
+    let old_tx_activity =
+        NewActivityTx::new_from_full_tx(old_tx, false, new_activity.id).insert(conn)?;
 
     let mut old_tag_list = Vec::new();
     let mut new_tag_list = Vec::new();
@@ -136,6 +137,40 @@ pub(crate) fn activity_search_tx(search_tx: &NewSearch, conn: &mut impl ConnCach
 
         ActivityTxTag::insert_batch(tx_tags, conn)?;
     }
+
+    Ok(())
+}
+
+pub(crate) fn activity_swap_position(
+    tx_1: &FullTx,
+    tx_2: &FullTx,
+    conn: &mut impl ConnCache,
+) -> Result<()> {
+    let activity_type = ActivityNature::PositionSwap;
+
+    let new_activity = NewActivity::new(activity_type).insert(conn)?;
+
+    let tx_1_activity_tx =
+        NewActivityTx::new_from_full_tx(tx_1, true, new_activity.id).insert(conn)?;
+
+    let tx_2_activity_tx =
+        NewActivityTx::new_from_full_tx(tx_2, true, new_activity.id).insert(conn)?;
+
+    let mut tag_list_tx_1 = Vec::new();
+    let mut tag_list_tx_2 = Vec::new();
+
+    for tag in &tx_1.tags {
+        let tag = ActivityTxTag::new(tx_1_activity_tx.id, tag.id);
+        tag_list_tx_1.push(tag);
+    }
+
+    for tag in &tx_2.tags {
+        let tag = ActivityTxTag::new(tx_2_activity_tx.id, tag.id);
+        tag_list_tx_2.push(tag);
+    }
+
+    ActivityTxTag::insert_batch(tag_list_tx_1, conn)?;
+    ActivityTxTag::insert_batch(tag_list_tx_2, conn)?;
 
     Ok(())
 }
