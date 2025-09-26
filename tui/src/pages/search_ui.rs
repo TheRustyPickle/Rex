@@ -1,3 +1,4 @@
+use app::ui_helper::DateType;
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Position};
 use ratatui::style::{Modifier, Style};
@@ -7,7 +8,7 @@ use thousands::Separable;
 
 use crate::outputs::TxType;
 use crate::page_handler::{
-    BACKGROUND, BLUE, DateType, GRAY, HEADER, RED, SELECTED, TEXT, TableData, TxTab,
+    BACKGROUND, BLUE, GRAY, HEADER, LogType, RED, SELECTED, TEXT, TableData, TxTab,
 };
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, main_block, styled_block};
@@ -150,23 +151,27 @@ pub fn search_ui(
     // Iter through the data in reverse mode because we want the latest status text
     // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
-        let (initial, rest) = i.split_once(':').unwrap();
-        if !i.contains("Accepted") && !i.contains("Nothing") && !i.contains("Search: Found") {
-            status_text.push(Line::from(vec![
-                Span::styled(
-                    initial,
-                    Style::default().fg(RED).add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(format!(":{rest}"), Style::default().fg(RED)),
-            ]));
-        } else {
-            status_text.push(Line::from(vec![
-                Span::styled(
-                    initial,
-                    Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(format!(":{rest}"), Style::default().fg(BLUE)),
-            ]));
+        let (initial, rest) = i.text.split_once(':').unwrap();
+
+        match i.log_type {
+            LogType::Info => {
+                status_text.push(Line::from(vec![
+                    Span::styled(
+                        initial,
+                        Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+                    ),
+                    Span::styled(format!(":{rest}"), Style::default().fg(BLUE)),
+                ]));
+            }
+            LogType::Error => {
+                status_text.push(Line::from(vec![
+                    Span::styled(
+                        initial,
+                        Style::default().fg(RED).add_modifier(Modifier::BOLD),
+                    ),
+                    Span::styled(format!(":{rest}"), Style::default().fg(RED)),
+                ]));
+            }
         }
     }
 
