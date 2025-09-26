@@ -282,6 +282,7 @@ impl TxData {
             TxTab::FromMethod => conn.autofiller().tx_method(&self.from_method),
             TxTab::ToMethod => conn.autofiller().tx_method(&self.to_method),
             TxTab::Tags => conn.autofiller().tags(&self.tags),
+            TxTab::TxType => conn.autofiller().tx_type(&self.tx_type),
             _ => String::new(),
         }
     }
@@ -291,6 +292,7 @@ impl TxData {
             TxTab::Details => self.details = self.autofill.to_string(),
             TxTab::FromMethod => self.from_method = self.autofill.to_string(),
             TxTab::ToMethod => self.to_method = self.autofill.to_string(),
+            TxTab::TxType => self.tx_type = self.autofill.to_string(),
             TxTab::Tags => {
                 let mut split_tags = self.tags.split(',').map(str::trim).collect::<Vec<&str>>();
 

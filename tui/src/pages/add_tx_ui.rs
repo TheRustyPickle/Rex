@@ -186,7 +186,7 @@ pub fn add_tx_ui(
 
     let amount_text = Line::from(format!("{} ", input_data[4]));
 
-    let tx_type_text = Line::from(format!("{} ", input_data[5]));
+    let mut tx_type_text = Line::from(format!("{} ", input_data[5]));
 
     let mut tags_text = Line::from(format!("{} ", input_data[6]));
 
@@ -211,7 +211,13 @@ pub fn add_tx_ui(
         }
         TxTab::Tags => {
             tags_text = Line::from(vec![
-                Span::from(format!("{} ", input_data[6])),
+                Span::from(format!("{} ", input_data[5])),
+                Span::styled(input_data[7], Style::default().fg(GRAY)),
+            ]);
+        }
+        TxTab::TxType => {
+            tx_type_text = Line::from(vec![
+                Span::from(format!("{} ", input_data[5])),
                 Span::styled(input_data[7], Style::default().fg(GRAY)),
             ]);
         }
