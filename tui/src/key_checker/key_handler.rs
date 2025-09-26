@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fmt::Write;
 
 use crate::outputs::TxType;
-use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
+use crate::outputs::{HandlingOutput, TxUpdateError};
 use crate::page_handler::{
     ActivityTab, ChartTab, CurrentUi, DeletionStatus, HomeTab, IndexedData, LogType, MONTHS,
     PopupState, SortingType, SummaryTab, TableData, TxTab,
@@ -1246,28 +1246,38 @@ impl InputKeyHandler<'_> {
     fn check_add_tx_type(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.add_tx_data.check_tx_type();
-                self.add_tx_data
-                    .add_tx_status(status.to_string(), LogType::Info);
+                let status = self.add_tx_data.check_tx_type(self.migrated_conn);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.add_tx_tab = TxTab::FromMethod;
                         self.go_correct_index();
                         self.reload_add_tx_balance_data();
+
+                        self.add_tx_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.add_tx_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Esc => {
-                let status = self.add_tx_data.check_tx_type();
-                self.add_tx_data
-                    .add_tx_status(status.to_string(), LogType::Info);
+                let status = self.add_tx_data.check_tx_type(self.migrated_conn);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.add_tx_tab = TxTab::Nothing;
                         self.reload_add_tx_balance_data();
+
+                        self.add_tx_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.add_tx_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Backspace => self.add_tx_data.edit_tx_type(None),
@@ -1417,7 +1427,7 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter | KeyCode::Esc => {
                 *self.add_tx_tab = TxTab::Nothing;
-                self.add_tx_data.check_tags();
+                self.add_tx_data.check_tags(self.migrated_conn);
             }
             KeyCode::Backspace => self.add_tx_data.edit_tags(None),
             KeyCode::Char(a) => self.add_tx_data.edit_tags(Some(a)),
@@ -1489,26 +1499,36 @@ impl InputKeyHandler<'_> {
     fn check_search_type(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.search_data.check_tx_type();
-                self.search_data
-                    .add_tx_status(status.to_string(), LogType::Info);
+                let status = self.search_data.check_tx_type(self.migrated_conn);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.search_tab = TxTab::FromMethod;
                         self.go_correct_index();
+
+                        self.add_tx_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.add_tx_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Esc => {
-                let status = self.search_data.check_tx_type();
-                self.search_data
-                    .add_tx_status(status.to_string(), LogType::Info);
+                let status = self.search_data.check_tx_type(self.migrated_conn);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.search_tab = TxTab::Nothing;
+
+                        self.add_tx_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.add_tx_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Backspace => self.search_data.edit_tx_type(None),
@@ -1654,14 +1674,19 @@ impl InputKeyHandler<'_> {
     fn check_search_tags(&mut self) {
         match self.key.code {
             KeyCode::Enter | KeyCode::Esc => {
-                let status = self.search_data.check_tags_forced(self.conn);
-                self.search_data
-                    .add_tx_status(status.to_string(), LogType::Info);
+                let status = self.search_data.check_tags_forced(self.migrated_conn);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.search_tab = TxTab::Nothing;
+
+                        self.search_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.search_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Backspace => self.search_data.edit_tags(None),
