@@ -325,21 +325,22 @@ impl TxData {
     }
 
     /// Checks the inputted From Method by the user upon pressing Enter/Esc for various error.
-    pub fn check_from_method(&mut self, conn: &Connection) -> VerifyingOutput {
+    pub fn check_from_method(&mut self, conn: &mut DbConn) -> Result<Output, VerifierError> {
         let mut current_method = self.from_method.clone();
 
-        let status = self.verify_tx_method(&mut current_method, conn);
+        let status = conn.verify().tx_method(&mut current_method);
 
         self.from_method = current_method;
         self.go_current_index(&TxTab::FromMethod);
+
         status
     }
 
     /// Checks the inputted To Method by the user upon pressing Enter/Esc for various error.
-    pub fn check_to_method(&mut self, conn: &Connection) -> VerifyingOutput {
+    pub fn check_to_method(&mut self, conn: &mut DbConn) -> Result<Output, VerifierError> {
         let mut current_method = self.to_method.clone();
 
-        let status = self.verify_tx_method(&mut current_method, conn);
+        let status = conn.verify().tx_method(&mut current_method);
 
         self.to_method = current_method;
         self.go_current_index(&TxTab::ToMethod);
