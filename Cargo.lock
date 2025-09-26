@@ -55,6 +55,7 @@ dependencies = [
  "log",
  "shared",
  "strsim",
+ "thiserror",
 ]
 
 [[package]]

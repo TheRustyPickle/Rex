@@ -1,5 +1,11 @@
 mod autofiller;
+mod outputs;
 mod shared;
+mod stepper;
+mod verifier;
 
 pub use autofiller::*;
-pub(crate) use shared::*;
+pub use outputs::*;
+pub use shared::*;
+pub use stepper::*;
+pub use verifier::*;

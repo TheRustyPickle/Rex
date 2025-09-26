@@ -1,8 +1,8 @@
+use app::ui_helper::DateType;
 use chrono::{Duration, NaiveDate};
 use rusqlite::Connection;
 
 use crate::outputs::{NAType, StepType, SteppingError, VerifyingOutput};
-use crate::page_handler::DateType;
 use crate::utility::traits::DataVerifier;
 use crate::utility::{get_all_tags, get_all_tx_methods};
 

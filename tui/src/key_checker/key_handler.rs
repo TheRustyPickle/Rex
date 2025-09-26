@@ -1,4 +1,5 @@
 use app::conn::{DbConn, FetchNature};
+use app::ui_helper::DateType;
 use app::views::{ActivityView, ChartView, FullSummary, SearchView, SummaryView, TxViewGroup};
 use crossterm::event::{KeyCode, KeyEvent};
 use rusqlite::Connection;
@@ -8,7 +9,7 @@ use std::fmt::Write;
 use crate::outputs::TxType;
 use crate::outputs::{HandlingOutput, TxUpdateError, VerifyingOutput};
 use crate::page_handler::{
-    ActivityTab, ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData, MONTHS,
+    ActivityTab, ChartTab, CurrentUi, DeletionStatus, HomeTab, IndexedData, LogType, MONTHS,
     PopupState, SortingType, SummaryTab, TableData, TxTab,
 };
 use crate::tx_handler::TxData;
@@ -192,8 +193,10 @@ impl<'a> InputKeyHandler<'a> {
     /// Moves the interface to Add Tx page
     pub fn go_add_tx(&mut self) {
         *self.page = CurrentUi::AddTx;
-        self.add_tx_data
-            .add_tx_status("Info: Entering Normal Transaction mode.".to_string());
+        self.add_tx_data.add_tx_status(
+            "Info: Entering Normal Transaction mode.".to_string(),
+            LogType::Info,
+        );
         self.reload_add_tx_balance_data();
         self.lerp_state.clear();
     }
@@ -308,24 +311,30 @@ impl<'a> InputKeyHandler<'a> {
 
     pub fn search_tx(&mut self) {
         if self.search_data.check_all_empty() {
-            self.search_data
-                .add_tx_status("Search: All fields cannot be empty".to_string());
+            self.search_data.add_tx_status(
+                "Search: All fields cannot be empty".to_string(),
+                LogType::Info,
+            );
         } else {
             let search_txs = self.search_data.get_search_tx(self.migrated_conn);
 
             if search_txs.is_empty() {
                 self.search_data.add_tx_status(
                     "Search: No transactions found with the provided input".to_string(),
+                    LogType::Info,
                 );
             } else {
                 *self.search_table = TableData::new(search_txs.tx_array());
                 *self.search_txs = search_txs;
 
                 self.search_table.state.select(Some(0));
-                self.search_data.add_tx_status(format!(
-                    "Search: Found {} Transactions",
-                    self.search_table.items.len()
-                ));
+                self.search_data.add_tx_status(
+                    format!(
+                        "Search: Found {} Transactions",
+                        self.search_table.items.len()
+                    ),
+                    LogType::Info,
+                );
             }
             self.reload_activity_table();
         }
@@ -347,7 +356,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.reset_search_data();
                 self.reload_activity_table();
             }
-            Err(e) => self.add_tx_data.add_tx_status(e),
+            Err(e) => self.add_tx_data.add_tx_status(e, LogType::Info),
         }
     }
 
@@ -360,6 +369,7 @@ impl<'a> InputKeyHandler<'a> {
             *self.page = CurrentUi::AddTx;
             self.add_tx_data.add_tx_status(
                 "Info: Entering Transaction edit mode. Press C to reset.".to_string(),
+                LogType::Info,
             );
             self.reload_add_tx_balance_data();
             self.lerp_state.clear();
@@ -1176,24 +1186,40 @@ impl InputKeyHandler<'_> {
     fn check_add_tx_date(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.add_tx_data.check_date(&DateType::Exact);
-                self.add_tx_data.add_tx_status(status.to_string());
+                let status = self
+                    .add_tx_data
+                    .check_date(&DateType::Exact, self.migrated_conn);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.add_tx_tab = TxTab::Details;
                         self.go_correct_index();
+
+                        self.add_tx_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.add_tx_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Esc => {
-                let status = self.add_tx_data.check_date(&DateType::Exact);
-                self.add_tx_data.add_tx_status(status.to_string());
+                let status = self
+                    .add_tx_data
+                    .check_date(&DateType::Exact, self.migrated_conn);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.add_tx_tab = TxTab::Nothing;
+
+                        self.add_tx_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.add_tx_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Backspace => self.add_tx_data.edit_date(None),
@@ -1221,7 +1247,8 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.add_tx_data.check_tx_type();
-                self.add_tx_data.add_tx_status(status.to_string());
+                self.add_tx_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::FromMethod;
@@ -1233,7 +1260,8 @@ impl InputKeyHandler<'_> {
             }
             KeyCode::Esc => {
                 let status = self.add_tx_data.check_tx_type();
-                self.add_tx_data.add_tx_status(status.to_string());
+                self.add_tx_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Nothing;
@@ -1253,7 +1281,8 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.add_tx_data.check_from_method(self.conn);
-                self.add_tx_data.add_tx_status(status.to_string());
+                self.add_tx_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         match self.add_tx_data.get_tx_type() {
@@ -1267,7 +1296,8 @@ impl InputKeyHandler<'_> {
             }
             KeyCode::Esc => {
                 let status = self.add_tx_data.check_from_method(self.conn);
-                self.add_tx_data.add_tx_status(status.to_string());
+                self.add_tx_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Nothing;
@@ -1287,7 +1317,8 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.add_tx_data.check_to_method(self.conn);
-                self.add_tx_data.add_tx_status(status.to_string());
+                self.add_tx_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Amount;
@@ -1299,7 +1330,8 @@ impl InputKeyHandler<'_> {
             }
             KeyCode::Esc => {
                 let status = self.add_tx_data.check_to_method(self.conn);
-                self.add_tx_data.add_tx_status(status.to_string());
+                self.add_tx_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Nothing;
@@ -1318,7 +1350,8 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.add_tx_data.check_amount(false, self.migrated_conn);
-                self.add_tx_data.add_tx_status(status.to_string());
+                self.add_tx_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Tags;
@@ -1330,7 +1363,8 @@ impl InputKeyHandler<'_> {
             }
             KeyCode::Esc => {
                 let status = self.add_tx_data.check_amount(false, self.migrated_conn);
-                self.add_tx_data.add_tx_status(status.to_string());
+                self.add_tx_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.add_tx_tab = TxTab::Nothing;
@@ -1362,24 +1396,40 @@ impl InputKeyHandler<'_> {
     fn check_search_date(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.search_data.check_date(self.search_date_type);
-                self.search_data.add_tx_status(status.to_string());
+                let status = self
+                    .search_data
+                    .check_date(self.search_date_type, self.migrated_conn);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.search_tab = TxTab::Details;
                         self.go_correct_index();
+
+                        self.add_tx_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.add_tx_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Esc => {
-                let status = self.search_data.check_date(self.search_date_type);
-                self.search_data.add_tx_status(status.to_string());
+                let status = self
+                    .search_data
+                    .check_date(self.search_date_type, self.migrated_conn);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.search_tab = TxTab::Nothing;
+
+                        self.add_tx_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.add_tx_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Backspace => self.search_data.edit_date(None),
@@ -1407,7 +1457,8 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.search_data.check_tx_type();
-                self.search_data.add_tx_status(status.to_string());
+                self.search_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.search_tab = TxTab::FromMethod;
@@ -1418,7 +1469,8 @@ impl InputKeyHandler<'_> {
             }
             KeyCode::Esc => {
                 let status = self.search_data.check_tx_type();
-                self.search_data.add_tx_status(status.to_string());
+                self.search_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.search_tab = TxTab::Nothing;
@@ -1437,7 +1489,8 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.search_data.check_from_method(self.conn);
-                self.search_data.add_tx_status(status.to_string());
+                self.search_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         match self.search_data.get_tx_type() {
@@ -1451,7 +1504,8 @@ impl InputKeyHandler<'_> {
             }
             KeyCode::Esc => {
                 let status = self.search_data.check_from_method(self.conn);
-                self.search_data.add_tx_status(status.to_string());
+                self.search_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.search_tab = TxTab::Nothing;
@@ -1470,7 +1524,8 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.search_data.check_to_method(self.conn);
-                self.search_data.add_tx_status(status.to_string());
+                self.search_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.search_tab = TxTab::Amount;
@@ -1481,7 +1536,8 @@ impl InputKeyHandler<'_> {
             }
             KeyCode::Esc => {
                 let status = self.search_data.check_to_method(self.conn);
-                self.search_data.add_tx_status(status.to_string());
+                self.search_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.search_tab = TxTab::Nothing;
@@ -1500,7 +1556,8 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.search_data.check_amount(true, self.migrated_conn);
-                self.search_data.add_tx_status(status.to_string());
+                self.search_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.search_tab = TxTab::Tags;
@@ -1511,7 +1568,8 @@ impl InputKeyHandler<'_> {
             }
             KeyCode::Esc => {
                 let status = self.search_data.check_amount(true, self.migrated_conn);
-                self.search_data.add_tx_status(status.to_string());
+                self.search_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.search_tab = TxTab::Nothing;
@@ -1530,7 +1588,8 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter | KeyCode::Esc => {
                 let status = self.search_data.check_tags_forced(self.conn);
-                self.search_data.add_tx_status(status.to_string());
+                self.search_data
+                    .add_tx_status(status.to_string(), LogType::Info);
                 match status {
                     VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
                         *self.search_tab = TxTab::Nothing;
@@ -1674,7 +1733,7 @@ impl InputKeyHandler<'_> {
         };
 
         if let Err(e) = status {
-            self.add_tx_data.add_tx_status(e.to_string());
+            self.add_tx_data.add_tx_status(e.to_string(), LogType::Info);
         }
     }
 
@@ -1690,7 +1749,7 @@ impl InputKeyHandler<'_> {
         };
 
         if let Err(e) = status {
-            self.add_tx_data.add_tx_status(e.to_string());
+            self.add_tx_data.add_tx_status(e.to_string(), LogType::Info);
         }
     }
 
@@ -1716,7 +1775,7 @@ impl InputKeyHandler<'_> {
         };
 
         if let Err(e) = status {
-            self.search_data.add_tx_status(e.to_string());
+            self.search_data.add_tx_status(e.to_string(), LogType::Info);
         }
     }
 
@@ -1740,7 +1799,7 @@ impl InputKeyHandler<'_> {
         };
 
         if let Err(e) = status {
-            self.search_data.add_tx_status(e.to_string());
+            self.search_data.add_tx_status(e.to_string(), LogType::Info);
         }
     }
 

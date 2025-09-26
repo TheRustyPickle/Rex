@@ -4,13 +4,13 @@ pub use db::models::FetchNature;
 use db::models::{Balance, FullTx, NewSearch, NewTx, Tag, Tx, TxMethod};
 use db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
 use diesel::{Connection, SqliteConnection};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::modifier::{
     activity_delete_tx, activity_edit_tx, activity_new_tx, activity_search_tx,
     activity_swap_position, add_new_tx, add_new_tx_methods, delete_tx,
 };
-use crate::ui_helper::Autofiller;
+use crate::ui_helper::{Autofiller, Verifier};
 use crate::utils::month_name_to_num;
 use crate::views::{
     ActivityView, ChartView, SearchView, SummaryView, TxViewGroup, get_activity_view,
@@ -35,6 +35,11 @@ pub struct MutDbConn<'a> {
 impl<'a> MutDbConn<'a> {
     pub fn new(conn: &'a mut SqliteConnection, cache: &'a Cache) -> Self {
         MutDbConn { conn, cache }
+    }
+
+    pub fn verifier(&mut self) -> Verifier<'_> {
+        let db_conn = MutDbConn::new(self.conn, self.cache);
+        Verifier::new(db_conn)
     }
 }
 
@@ -74,7 +79,7 @@ impl DbConn {
                 tags: HashMap::new(),
                 tx_methods: HashMap::new(),
                 txs: None,
-                details: Vec::new(),
+                details: HashSet::new(),
             },
         };
 
@@ -94,7 +99,7 @@ impl DbConn {
                 tags: HashMap::new(),
                 tx_methods: HashMap::new(),
                 txs: None,
-                details: Vec::new(),
+                details: HashSet::new(),
             },
         }
     }
@@ -120,7 +125,7 @@ impl DbConn {
     }
 
     pub(crate) fn reload_details(&mut self) {
-        self.cache.details = Tx::get_all_details(self).unwrap()
+        self.cache.details = Tx::get_all_details(self).unwrap().into_iter().collect()
     }
 
     pub fn add_new_tx(&mut self, tx: NewTx, tags: &str) -> Result<()> {
@@ -349,8 +354,13 @@ impl DbConn {
         Ok(Balance::get_final_balance(self)?)
     }
 
-    pub fn autofiller(&mut self) -> Autofiller<'_> {
+    pub fn autofill(&mut self) -> Autofiller<'_> {
         let db_conn = MutDbConn::new(&mut self.conn, &self.cache);
         Autofiller::new(db_conn)
+    }
+
+    pub fn verify(&mut self) -> Verifier<'_> {
+        let db_conn = MutDbConn::new(&mut self.conn, &self.cache);
+        Verifier::new(db_conn)
     }
 }
