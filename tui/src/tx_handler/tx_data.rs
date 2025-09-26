@@ -6,9 +6,7 @@ use chrono::prelude::Local;
 use rusqlite::Connection;
 use std::cmp::Ordering;
 
-use crate::outputs::{
-    CheckingError, ComparisonType, StepType, SteppingError, TxType, VerifyingOutput,
-};
+use crate::outputs::{CheckingError, ComparisonType, StepType, SteppingError, TxType};
 use crate::page_handler::{LogData, LogType, TxTab};
 use crate::utility::traits::{DataVerifier, FieldStepper};
 use crate::utility::{add_char_to, check_comparison};
@@ -386,10 +384,10 @@ impl TxData {
     }
 
     /// Checks the inputted Transaction Type by the user upon pressing Enter/Esc for various error.
-    pub fn check_tx_type(&mut self) -> VerifyingOutput {
+    pub fn check_tx_type(&mut self, conn: &mut DbConn) -> Result<Output, VerifierError> {
         let mut tx_type = self.tx_type.clone();
 
-        let status = self.verify_tx_type(&mut tx_type);
+        let status = conn.verify().tx_type(&mut tx_type);
 
         self.tx_type = tx_type;
         self.go_current_index(&TxTab::TxType);
@@ -397,20 +395,20 @@ impl TxData {
     }
 
     /// Checks the inputted tags to make sure it's properly separated by a comma
-    pub fn check_tags(&mut self) {
+    pub fn check_tags(&mut self, conn: &mut DbConn) {
         let mut tags = self.tags.clone();
 
-        self.verify_tags(&mut tags);
+        conn.verify().tags(&mut tags);
 
         self.tags = tags;
         self.go_current_index(&TxTab::Tags);
     }
 
     /// Checks the inputted tags to make sure it's properly separated by a comma
-    pub fn check_tags_forced(&mut self, conn: &Connection) -> VerifyingOutput {
+    pub fn check_tags_forced(&mut self, conn: &mut DbConn) -> Result<Output, VerifierError> {
         let mut tags = self.tags.clone();
 
-        let status = self.verify_tags_forced(&mut tags, conn);
+        let status = conn.verify().tags_forced(&mut tags);
 
         self.tags = tags;
         self.go_current_index(&TxTab::Tags);
