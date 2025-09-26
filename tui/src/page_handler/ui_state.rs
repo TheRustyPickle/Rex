@@ -430,22 +430,6 @@ impl DeletionStatus {
     }
 }
 
-pub enum DateType {
-    Exact,
-    Monthly,
-    Yearly,
-}
-
-impl DateType {
-    pub fn get_next(&mut self) -> Self {
-        match self {
-            DateType::Exact => DateType::Monthly,
-            DateType::Monthly => DateType::Yearly,
-            DateType::Yearly => DateType::Exact,
-        }
-    }
-}
-
 #[derive(PartialEq)]
 pub enum HomeRow {
     Balance,
@@ -513,5 +497,21 @@ impl ActivityTab {
             ActivityTab::Years => ActivityTab::Months,
             ActivityTab::Months => ActivityTab::List,
         }
+    }
+}
+
+pub enum LogType {
+    Info,
+    Error,
+}
+
+pub struct LogData {
+    pub text: String,
+    pub log_type: LogType,
+}
+
+impl LogData {
+    pub fn new(text: String, log_type: LogType) -> Self {
+        LogData { text, log_type }
     }
 }

@@ -7,7 +7,7 @@ use rusqlite::Connection;
 use thousands::Separable;
 
 use crate::outputs::TxType;
-use crate::page_handler::{BACKGROUND, BLUE, BOX, GRAY, HomeRow, RED, TEXT, TxTab};
+use crate::page_handler::{BACKGROUND, BLUE, BOX, GRAY, HomeRow, LogType, RED, TEXT, TxTab};
 use crate::pages::BALANCE_BOLD;
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, get_all_tx_methods, main_block, styled_block};
@@ -155,23 +155,27 @@ pub fn add_tx_ui(
     // Iter through the data in reverse mode because we want the latest status text
     // to be at the top which is the final value of the vector.
     for i in status_data.iter().rev() {
-        let (initial, rest) = i.split_once(':').unwrap();
-        if !i.contains("Accepted") && !i.contains("Nothing") {
-            status_text.push(Line::from(vec![
-                Span::styled(
-                    initial,
-                    Style::default().fg(RED).add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(format!(":{rest}"), Style::default().fg(RED)),
-            ]));
-        } else {
-            status_text.push(Line::from(vec![
-                Span::styled(
-                    initial,
-                    Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
-                ),
-                Span::styled(format!(":{rest}"), Style::default().fg(BLUE)),
-            ]));
+        let (initial, rest) = i.text.split_once(':').unwrap();
+
+        match i.log_type {
+            LogType::Info => {
+                status_text.push(Line::from(vec![
+                    Span::styled(
+                        initial,
+                        Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+                    ),
+                    Span::styled(format!(":{rest}"), Style::default().fg(BLUE)),
+                ]));
+            }
+            LogType::Error => {
+                status_text.push(Line::from(vec![
+                    Span::styled(
+                        initial,
+                        Style::default().fg(RED).add_modifier(Modifier::BOLD),
+                    ),
+                    Span::styled(format!(":{rest}"), Style::default().fg(RED)),
+                ]));
+            }
         }
     }
 

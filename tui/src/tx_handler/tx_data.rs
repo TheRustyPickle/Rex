@@ -1,5 +1,6 @@
 use app::conn::DbConn;
 use app::modifier::{parse_search_fields, parse_tx_fields};
+use app::ui_helper::{DateType, Output, VerifierError};
 use app::views::{FullTx, PartialTx, SearchView, TxViewGroup};
 use chrono::prelude::Local;
 use rusqlite::Connection;
@@ -8,7 +9,7 @@ use std::cmp::Ordering;
 use crate::outputs::{
     CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, VerifyingOutput,
 };
-use crate::page_handler::{DateType, TxTab};
+use crate::page_handler::{LogData, LogType, TxTab};
 use crate::utility::traits::{DataVerifier, FieldStepper};
 use crate::utility::{add_char_to, check_comparison};
 
@@ -21,7 +22,7 @@ pub struct TxData {
     pub amount: String,
     pub tx_type: String,
     pub tags: String,
-    pub tx_status: Vec<String>,
+    pub tx_status: Vec<LogData>,
     pub editing_tx: bool,
     pub id_num: i32,
     pub current_index: usize,
@@ -158,7 +159,7 @@ impl TxData {
     }
 
     #[must_use]
-    pub fn get_tx_status(&self) -> &Vec<String> {
+    pub fn get_tx_status(&self) -> &Vec<LogData> {
         &self.tx_status
     }
 
@@ -267,10 +268,12 @@ impl TxData {
     }
 
     /// Adds a value to tx status
-    pub fn add_tx_status(&mut self, data: String) {
+    pub fn add_tx_status(&mut self, text: String, log_type: LogType) {
         if self.tx_status.len() == 30 {
             self.tx_status.remove(0);
         }
+
+        let data = LogData::new(text, log_type);
         self.tx_status.push(data);
     }
 
@@ -278,11 +281,11 @@ impl TxData {
         self.autofill.clear();
 
         self.autofill = match current_tab {
-            TxTab::Details => conn.autofiller().details(&self.details),
-            TxTab::FromMethod => conn.autofiller().tx_method(&self.from_method),
-            TxTab::ToMethod => conn.autofiller().tx_method(&self.to_method),
-            TxTab::Tags => conn.autofiller().tags(&self.tags),
-            TxTab::TxType => conn.autofiller().tx_type(&self.tx_type),
+            TxTab::Details => conn.autofill().details(&self.details),
+            TxTab::FromMethod => conn.autofill().tx_method(&self.from_method),
+            TxTab::ToMethod => conn.autofill().tx_method(&self.to_method),
+            TxTab::Tags => conn.autofill().tags(&self.tags),
+            TxTab::TxType => conn.autofill().tx_type(&self.tx_type),
             _ => String::new(),
         }
     }
@@ -308,9 +311,13 @@ impl TxData {
     }
 
     /// Checks the inputted Date by the user upon pressing Enter/Esc for various error.
-    pub fn check_date(&mut self, date_type: &DateType) -> VerifyingOutput {
+    pub fn check_date(
+        &mut self,
+        date_type: &DateType,
+        conn: &mut DbConn,
+    ) -> Result<Output, VerifierError> {
         let mut user_date = self.date.clone();
-        let status = self.verify_date(&mut user_date, date_type);
+        let status = conn.verify().date(&mut user_date, date_type);
 
         self.date = user_date;
         self.go_current_index(&TxTab::Date);

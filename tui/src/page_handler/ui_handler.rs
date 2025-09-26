@@ -1,4 +1,5 @@
 use app::conn::{DbConn, FetchNature};
+use app::ui_helper::DateType;
 use app::views::SearchView;
 use crossterm::event::poll;
 use crossterm::event::{self, Event, KeyEventKind};
@@ -15,7 +16,7 @@ use crate::key_checker::{
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
-    ActivityTab, ChartTab, CurrentUi, DateType, DeletionStatus, HomeTab, IndexedData, PopupState,
+    ActivityTab, ChartTab, CurrentUi, DeletionStatus, HomeTab, IndexedData, PopupState,
     SortingType, SummaryTab, TableData, TxTab,
 };
 use crate::pages::{
