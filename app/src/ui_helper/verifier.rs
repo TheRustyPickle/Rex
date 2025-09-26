@@ -1,13 +1,21 @@
-use app::ui_helper::DateType;
-use chrono::naive::NaiveDate;
-use rusqlite::Connection;
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
-use crate::outputs::{AType, NAType, VerifyingOutput};
-use crate::utility::{get_all_tags, get_all_tx_methods, get_best_match};
+use chrono::NaiveDate;
+use db::ConnCache;
 
-pub trait DataVerifier {
+use crate::conn::MutDbConn;
+use crate::ui_helper::{DateType, Field, Output, VerifierError, get_best_match};
+
+pub struct Verifier<'a> {
+    conn: MutDbConn<'a>,
+}
+
+impl<'a> Verifier<'a> {
+    pub(crate) fn new(conn: MutDbConn<'a>) -> Self {
+        Self { conn }
+    }
+
     /// Checks if:
     ///
     /// - The inputted year is between 2022 to 2037.
@@ -23,20 +31,20 @@ pub trait DataVerifier {
     /// adding 0 if the beginning if the length is smaller than necessary
     /// or restores to the smallest or the largest date if date is beyond the
     /// accepted value.
-    fn verify_date(&self, user_date: &mut String, date_type: &DateType) -> VerifyingOutput {
-        // Cancel other verification if there is no text
+    pub fn date(
+        self,
+        user_date: &mut String,
+        date_type: &DateType,
+    ) -> Result<Output, VerifierError> {
         if user_date.is_empty() {
-            return VerifyingOutput::Nothing(AType::Date);
+            return Ok(Output::Nothing(Field::Date));
         }
+
         *user_date = user_date
             .chars()
             .filter(|c| c.is_numeric() || *c == '-')
             .collect();
 
-        // We will be splitting them into 3 parts to verify each part of the date
-        // 0 = year
-        // 1 = month
-        // 2 = day
         let split_date = user_date
             .split('-')
             .map(ToString::to_string)
@@ -47,61 +55,43 @@ pub trait DataVerifier {
             DateType::Exact => {
                 if split_date.len() != 3 {
                     *user_date = "2022-01-01".to_string();
-                    return VerifyingOutput::NotAccepted(NAType::InvalidDate);
+                    return Err(VerifierError::InvalidDate);
                 }
             }
             DateType::Monthly => {
                 if split_date.len() != 2 {
                     *user_date = "2022-01".to_string();
-                    return VerifyingOutput::NotAccepted(NAType::InvalidDate);
+                    return Err(VerifierError::InvalidDate);
                 }
             }
             DateType::Yearly => {
                 if split_date.len() != 1 {
                     *user_date = "2022".to_string();
-                    return VerifyingOutput::NotAccepted(NAType::InvalidDate);
+                    return Err(VerifierError::InvalidDate);
                 }
             }
         }
 
-        // Year is required for each date type so no need for option
-        let (int_year, int_month, int_day): (u16, Option<u16>, Option<u16>) = match date_type {
+        let (int_month, int_day): (Option<u16>, Option<u16>) = match date_type {
             DateType::Exact => {
-                let Ok(year) = split_date[0].parse() else {
-                    return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date));
-                };
-                let month = match split_date[1].parse() {
-                    Ok(v) => Some(v),
-                    Err(_) => {
-                        return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date));
-                    }
-                };
-                let day = match split_date[2].parse() {
-                    Ok(v) => Some(v),
-                    Err(_) => {
-                        return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date));
-                    }
-                };
-                (year, month, day)
+                let month = split_date[1]
+                    .parse()
+                    .map_err(|_| VerifierError::ParsingError(Field::Date))?;
+
+                let day = split_date[2]
+                    .parse()
+                    .map_err(|_| VerifierError::ParsingError(Field::Date))?;
+
+                (Some(month), Some(day))
             }
             DateType::Monthly => {
-                let Ok(year) = split_date[0].parse() else {
-                    return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date));
-                };
-                let month = match split_date[1].parse() {
-                    Ok(v) => Some(v),
-                    Err(_) => {
-                        return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date));
-                    }
-                };
-                (year, month, None)
+                let month = split_date[1]
+                    .parse()
+                    .map_err(|_| VerifierError::ParsingError(Field::Date))?;
+
+                (Some(month), None)
             }
-            DateType::Yearly => {
-                let Ok(year) = split_date[0].parse() else {
-                    return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Date));
-                };
-                (year, None, None)
-            }
+            DateType::Yearly => (None, None),
         };
 
         // Checks if the year part length is 4. If not 4, turn the year to 2022 + the other character entered by the user
@@ -131,8 +121,9 @@ pub trait DataVerifier {
                 },
                 Ordering::Equal => {}
             }
-            return VerifyingOutput::NotAccepted(NAType::InvalidYear);
+            return Err(VerifierError::InvalidYear);
         }
+
         // Checks if the month part length is 2. If not 2, turn the month to 0 + whatever month was entered + the other character entered by the user
         // and return the new date
         match date_type {
@@ -146,7 +137,7 @@ pub trait DataVerifier {
                         *user_date = format!("{}-12-{}", split_date[0], split_date[2]);
                     }
 
-                    return VerifyingOutput::NotAccepted(NAType::InvalidMonth);
+                    return Err(VerifierError::InvalidMonth);
                 }
             }
             DateType::Monthly => {
@@ -158,7 +149,7 @@ pub trait DataVerifier {
                         *user_date = format!("{}-12", split_date[0]);
                     }
 
-                    return VerifyingOutput::NotAccepted(NAType::InvalidMonth);
+                    return Err(VerifierError::InvalidMonth);
                 }
             }
             DateType::Yearly => {}
@@ -175,31 +166,8 @@ pub trait DataVerifier {
                     *user_date = format!("{}-{}-31", split_date[0], split_date[1]);
                 }
 
-                return VerifyingOutput::NotAccepted(NAType::InvalidDay);
+                return Err(VerifierError::InvalidDay);
             }
-        }
-
-        // Checks if the year value is between 2022 and 2037
-        if !(2022..=2037).contains(&int_year) {
-            if int_year < 2022 {
-                match date_type {
-                    DateType::Exact => {
-                        *user_date = format!("2022-{}-{}", split_date[1], split_date[2]);
-                    }
-                    DateType::Monthly => *user_date = format!("2022-{}", split_date[1]),
-                    DateType::Yearly => *user_date = "2022".to_string(),
-                }
-            } else if int_year > 2037 {
-                match date_type {
-                    DateType::Exact => {
-                        *user_date = format!("2037-{}-{}", split_date[1], split_date[2]);
-                    }
-                    DateType::Monthly => *user_date = format!("2037-{}", split_date[1]),
-                    DateType::Yearly => *user_date = "2037".to_string(),
-                }
-            }
-
-            return VerifyingOutput::NotAccepted(NAType::YearTooBig);
         }
 
         // Checks if the month value is between 1 and 12
@@ -213,7 +181,7 @@ pub trait DataVerifier {
                         *user_date = format!("{}-12-{}", split_date[0], split_date[2]);
                     }
 
-                    return VerifyingOutput::NotAccepted(NAType::MonthTooBig);
+                    return Err(VerifierError::MonthTooBig);
                 }
             }
             DateType::Monthly => {
@@ -225,7 +193,7 @@ pub trait DataVerifier {
                         *user_date = format!("{}-12", split_date[0]);
                     }
 
-                    return VerifyingOutput::NotAccepted(NAType::MonthTooBig);
+                    return Err(VerifierError::MonthTooBig);
                 }
             }
             DateType::Yearly => {}
@@ -241,21 +209,18 @@ pub trait DataVerifier {
                     *user_date = format!("{}-{}-31", split_date[0], split_date[1]);
                 }
 
-                return VerifyingOutput::NotAccepted(NAType::DayTooBig);
+                return Err(VerifierError::DayTooBig);
             }
         }
 
         // We will check if the date actually exists otherwise return error
         // Some months have more or less days than 31 so the date needs to be validated
         if let DateType::Exact = date_type {
-            let naive_date = NaiveDate::parse_from_str(user_date, "%Y-%m-%d");
-            match naive_date {
-                Ok(_) => {}
-                Err(_) => return VerifyingOutput::NotAccepted(NAType::NonExistingDate),
-            }
+            NaiveDate::parse_from_str(user_date, "%Y-%m-%d")
+                .map_err(|_| VerifierError::NonExistingDate)?;
         }
 
-        VerifyingOutput::Accepted(AType::Date)
+        Ok(Output::Accepted(Field::Date))
     }
 
     /// Checks if:
@@ -267,10 +232,10 @@ pub trait DataVerifier {
     /// - removes any extra spaces and non-numeric characters
     ///
     /// If the value is not float, tries to make it float ending with double zero
-    fn verify_amount(&self, user_amount: &mut String) -> VerifyingOutput {
+    pub fn amount(&self, user_amount: &mut String) -> Result<Output, VerifierError> {
         // Cancel all verification if the amount is empty
         if user_amount.is_empty() {
-            return VerifyingOutput::Nothing(AType::Amount);
+            return Ok(Output::Nothing(Field::Amount));
         }
 
         let calc_symbols = vec!['*', '/', '+', '-'];
@@ -283,7 +248,7 @@ pub trait DataVerifier {
         // Already checked if the initial amount is empty.
         // If it becomes empty after the filtering was done, there no number inside so return error
         if user_amount.is_empty() {
-            return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Amount));
+            return Err(VerifierError::ParsingError(Field::Amount));
         }
 
         // Check if any of the symbols are present
@@ -349,18 +314,14 @@ pub trait DataVerifier {
                             let first_num: f64 = match first_value.parse() {
                                 Ok(v) => v,
                                 Err(_) => {
-                                    return VerifyingOutput::NotAccepted(NAType::ParsingError(
-                                        AType::Amount,
-                                    ));
+                                    return Err(VerifierError::ParsingError(Field::Amount));
                                 }
                             };
 
                             let last_num: f64 = match last_value.parse() {
                                 Ok(v) => v,
                                 Err(_) => {
-                                    return VerifyingOutput::NotAccepted(NAType::ParsingError(
-                                        AType::Amount,
-                                    ));
+                                    return Err(VerifierError::ParsingError(Field::Amount));
                                 }
                             };
 
@@ -397,14 +358,13 @@ pub trait DataVerifier {
             *user_amount = format!("{user_amount}.00");
         }
 
-        let float_amount: f64 = match user_amount.parse() {
-            Ok(v) => v,
-            Err(_) => return VerifyingOutput::NotAccepted(NAType::ParsingError(AType::Amount)),
-        };
+        let float_amount: f64 = user_amount
+            .parse()
+            .map_err(|_| VerifierError::ParsingError(Field::Amount))?;
 
         if float_amount <= 0.0 {
             *user_amount = format!("{:.2}", (float_amount - (float_amount * 2.0)));
-            return VerifyingOutput::NotAccepted(NAType::AmountBelowZero);
+            return Err(VerifierError::AmountBelowZero);
         }
 
         // Checks if there is 2 number after the dot else add zero/s
@@ -429,7 +389,7 @@ pub trait DataVerifier {
             *user_amount = format!("{}.{}", &split_amount[0][..10], split_amount[1]);
         }
 
-        VerifyingOutput::Accepted(AType::Amount)
+        Ok(Output::Accepted(Field::Amount))
     }
 
     /// Checks if:
@@ -440,28 +400,37 @@ pub trait DataVerifier {
     ///
     /// If the Transaction is not found, matches each character with the available
     /// Transaction Methods and corrects to the best matching one.
-    fn verify_tx_method(&self, user_method: &mut String, conn: &Connection) -> VerifyingOutput {
+    pub fn tx_method(&self, user_method: &mut String) -> Result<Output, VerifierError> {
         // Get all currently added tx methods
-        let all_tx_methods = get_all_tx_methods(conn);
 
         *user_method = user_method.trim().to_string();
 
         // Cancel all verification if the text is empty
         if user_method.is_empty() {
-            return VerifyingOutput::Nothing(AType::TxMethod);
+            return Ok(Output::Nothing(Field::TxMethod));
         }
 
+        let all_tx_methods = self.conn.cache().get_methods();
+
         for method in &all_tx_methods {
-            if method.to_lowercase() == user_method.to_lowercase() {
-                *user_method = method.to_string();
-                return VerifyingOutput::Accepted(AType::TxMethod);
+            let method_name = &method.name;
+
+            if method_name.to_lowercase() == user_method.to_lowercase() {
+                *user_method = method_name.to_string();
+                return Ok(Output::Accepted(Field::Amount));
             }
         }
 
-        let best_match = get_best_match(user_method, &all_tx_methods);
+        let user_method_names = all_tx_methods
+            .iter()
+            .map(|m| m.name.clone())
+            .collect::<Vec<String>>();
+
+        let best_match = get_best_match(user_method, &user_method_names);
 
         *user_method = best_match;
-        VerifyingOutput::NotAccepted(NAType::InvalidTxMethod)
+
+        Err(VerifierError::InvalidTxMethod)
     }
 
     /// Checks if:
@@ -469,35 +438,36 @@ pub trait DataVerifier {
     /// - The transaction method starts with E, I, or T
     ///
     /// Auto expands E to Expense, I to Income and T to transfer.
-    fn verify_tx_type(&self, user_type: &mut String) -> VerifyingOutput {
+    pub fn tx_type(&self, user_type: &mut String) -> Result<Output, VerifierError> {
         *user_type = user_type.replace(' ', "");
 
         if user_type.is_empty() {
-            return VerifyingOutput::Nothing(AType::TxType);
+            return Ok(Output::Nothing(Field::TxType));
         }
         if user_type.to_lowercase().starts_with('e') {
             *user_type = "Expense".to_string();
-            VerifyingOutput::Accepted(AType::TxType)
         } else if user_type.to_lowercase().starts_with('i') {
             *user_type = "Income".to_string();
-            VerifyingOutput::Accepted(AType::TxType)
         } else if user_type.to_lowercase().starts_with('t') {
             *user_type = "Transfer".to_string();
-            VerifyingOutput::Accepted(AType::TxType)
         } else {
             *user_type = String::new();
-            VerifyingOutput::NotAccepted(NAType::InvalidTxType)
+            return Err(VerifierError::InvalidTxType);
         }
+
+        Ok(Output::Accepted(Field::TxType))
     }
 
     /// Checks if:
     ///
     /// - All tags inserted is unique and is properly separated by commas
-    fn verify_tags(&self, user_tag: &mut String) {
+    pub fn tags(&self, user_tag: &mut String) {
         let mut split_tags = user_tag.split(',').map(str::trim).collect::<Vec<&str>>();
         split_tags.retain(|s| !s.is_empty());
 
         let mut seen = HashSet::new();
+
+        // Vec for keeping the original order
         let mut unique = Vec::new();
 
         for item in split_tags {
@@ -513,11 +483,13 @@ pub trait DataVerifier {
     ///
     /// - All tags inserted is unique and is properly separated by commas
     /// - There is no non-existing tags
-    fn verify_tags_forced(&self, user_tag: &mut String, conn: &Connection) -> VerifyingOutput {
+    pub fn tags_forced(&self, user_tag: &mut String) -> Result<Output, VerifierError> {
         if user_tag.is_empty() {
-            return VerifyingOutput::Nothing(AType::Tags);
+            return Ok(Output::Nothing(Field::Tags));
         }
-        let all_tags = get_all_tags(conn);
+
+        let all_tags = self.conn.cache().get_tags_set();
+
         let mut split_tags = user_tag.split(',').map(str::trim).collect::<Vec<&str>>();
         split_tags.retain(|s| !s.is_empty());
 
@@ -532,16 +504,16 @@ pub trait DataVerifier {
 
         let old_tags_len = unique.len();
 
-        unique.retain(|&tag| all_tags.contains(&tag.to_owned()));
+        unique.retain(|&tag| all_tags.contains(tag));
 
         let new_tags_len = unique.len();
 
         *user_tag = unique.join(", ");
 
         if old_tags_len == new_tags_len {
-            VerifyingOutput::Accepted(AType::Tags)
+            Ok(Output::Accepted(Field::Tags))
         } else {
-            VerifyingOutput::NotAccepted(NAType::NonExistingTag)
+            Err(VerifierError::NonExistingTag)
         }
     }
 }

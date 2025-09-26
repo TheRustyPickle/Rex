@@ -481,13 +481,6 @@ impl Tx {
             .filter(details.is_not_null())
             .load(db_conn.conn())?;
 
-        use std::collections::HashSet;
-
-        Ok(result
-            .into_iter()
-            .flatten()
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect())
+        Ok(result.into_iter().flatten().collect())
     }
 }

@@ -16,3 +16,24 @@ pub(crate) fn get_best_match(data: &str, matching_set: &[String]) -> String {
     }
     best_match.to_string()
 }
+
+pub enum StepType {
+    StepUp,
+    StepDown,
+}
+
+pub enum DateType {
+    Exact,
+    Monthly,
+    Yearly,
+}
+
+impl DateType {
+    pub fn get_next(&mut self) -> Self {
+        match self {
+            DateType::Exact => DateType::Monthly,
+            DateType::Monthly => DateType::Yearly,
+            DateType::Yearly => DateType::Exact,
+        }
+    }
+}

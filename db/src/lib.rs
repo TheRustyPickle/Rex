@@ -4,7 +4,7 @@ mod schema;
 use anyhow::{Result, anyhow};
 use diesel::prelude::*;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::models::{FullTx, Tag, TxMethod};
 
@@ -20,7 +20,7 @@ pub struct Cache {
     pub tags: HashMap<i32, Tag>,
     pub tx_methods: HashMap<i32, TxMethod>,
     pub txs: Option<HashMap<i32, Vec<FullTx>>>,
-    pub details: Vec<String>,
+    pub details: HashSet<String>,
 }
 
 impl Cache {
@@ -78,6 +78,13 @@ impl Cache {
         let mut methods = self.tx_methods.values().collect::<Vec<&TxMethod>>();
         methods.sort_by_key(|value| value.position);
         methods
+    }
+
+    pub fn get_tags_set(&self) -> HashSet<String> {
+        self.tags
+            .values()
+            .map(|m| m.name.clone())
+            .collect::<HashSet<String>>()
     }
 }
 
