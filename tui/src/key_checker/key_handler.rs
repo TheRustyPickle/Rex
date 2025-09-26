@@ -1373,27 +1373,37 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.add_tx_data.check_amount(false, self.migrated_conn);
-                self.add_tx_data
-                    .add_tx_status(status.to_string(), LogType::Info);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.add_tx_tab = TxTab::Tags;
                         self.go_correct_index();
                         self.reload_add_tx_balance_data();
+
+                        self.add_tx_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.add_tx_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Esc => {
                 let status = self.add_tx_data.check_amount(false, self.migrated_conn);
-                self.add_tx_data
-                    .add_tx_status(status.to_string(), LogType::Info);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.add_tx_tab = TxTab::Nothing;
                         self.reload_add_tx_balance_data();
+
+                        self.add_tx_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.add_tx_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Backspace => self.add_tx_data.edit_amount(None),
@@ -1603,25 +1613,35 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.search_data.check_amount(true, self.migrated_conn);
-                self.search_data
-                    .add_tx_status(status.to_string(), LogType::Info);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.search_tab = TxTab::Tags;
                         self.go_correct_index();
+
+                        self.search_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.search_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Esc => {
                 let status = self.search_data.check_amount(true, self.migrated_conn);
-                self.search_data
-                    .add_tx_status(status.to_string(), LogType::Info);
+
                 match status {
-                    VerifyingOutput::Accepted(_) | VerifyingOutput::Nothing(_) => {
+                    Ok(data) => {
                         *self.search_tab = TxTab::Nothing;
+
+                        self.search_data
+                            .add_tx_status(data.to_string(), LogType::Info);
                     }
-                    VerifyingOutput::NotAccepted(_) => {}
+                    Err(e) => {
+                        self.search_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
                 }
             }
             KeyCode::Backspace => self.search_data.edit_amount(None),

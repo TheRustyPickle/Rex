@@ -7,7 +7,7 @@ use rusqlite::Connection;
 use std::cmp::Ordering;
 
 use crate::outputs::{
-    CheckingError, ComparisonType, NAType, StepType, SteppingError, TxType, VerifyingOutput,
+    CheckingError, ComparisonType, StepType, SteppingError, TxType, VerifyingOutput,
 };
 use crate::page_handler::{LogData, LogType, TxTab};
 use crate::utility::traits::{DataVerifier, FieldStepper};
@@ -348,10 +348,12 @@ impl TxData {
     }
 
     /// Checks the inputted Amount by the user upon pressing Enter/Esc for various error.
-    pub fn check_amount(&mut self, is_search: bool, conn: &mut DbConn) -> VerifyingOutput {
-        if let Err(e) = self.check_b_field(conn) {
-            return e;
-        }
+    pub fn check_amount(
+        &mut self,
+        is_search: bool,
+        conn: &mut DbConn,
+    ) -> Result<Output, VerifierError> {
+        self.check_b_field(conn)?;
 
         let mut comparison_symbol = None;
 
@@ -371,7 +373,7 @@ impl TxData {
             user_amount = user_amount.replace(symbol, "");
         }
 
-        let status = self.verify_amount(&mut user_amount);
+        let status = conn.verify().amount(&mut user_amount);
 
         if let Some(symbol) = comparison_symbol {
             user_amount = format!("{symbol}{user_amount}");
@@ -460,7 +462,7 @@ impl TxData {
     }
 
     /// Checks for b on amount field to replace with the balance of the tx method field
-    fn check_b_field(&mut self, conn: &mut DbConn) -> Result<(), VerifyingOutput> {
+    fn check_b_field(&mut self, conn: &mut DbConn) -> Result<(), VerifierError> {
         self.check_suffixes();
         let user_amount = self.amount.to_lowercase();
 
@@ -481,7 +483,7 @@ impl TxData {
                 }
             }
         } else if user_amount.contains('b') && self.from_method.is_empty() {
-            return Err(VerifyingOutput::NotAccepted(NAType::InvalidBValue));
+            return Err(VerifierError::InvalidBValue);
         }
         Ok(())
     }
