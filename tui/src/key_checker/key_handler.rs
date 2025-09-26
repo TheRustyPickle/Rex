@@ -687,6 +687,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Search => self.check_search_type(),
             _ => {}
         }
+        self.check_autofill();
     }
 
     /// Checks and verifies tags field

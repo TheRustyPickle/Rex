@@ -1,4 +1,5 @@
 use db::ConnCache;
+use db::models::TxType;
 
 use crate::{conn::MutDbConn, ui_helper::get_best_match};
 
@@ -33,6 +34,26 @@ impl<'a> Autofiller<'a> {
         } else {
             best_match
         }
+    }
+
+    pub fn tx_type(&self, user_input: &str) -> String {
+        let trimmed_input = user_input.trim().to_lowercase();
+
+        if trimmed_input.is_empty() {
+            return String::new();
+        }
+
+        let tx_type = if trimmed_input.starts_with("t") {
+            TxType::Transfer
+        } else if trimmed_input.starts_with("e") {
+            TxType::Expense
+        } else if trimmed_input.starts_with("i") {
+            TxType::Income
+        } else {
+            return String::new();
+        };
+
+        tx_type.to_string()
     }
 
     pub fn tags(&self, user_input: &str) -> String {
