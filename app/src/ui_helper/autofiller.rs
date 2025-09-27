@@ -15,6 +15,7 @@ impl<'a> Autofiller<'a> {
         Self { conn }
     }
 
+    #[must_use] 
     pub fn tx_method(self, user_input: &str) -> String {
         let methods = self
             .conn
@@ -39,6 +40,7 @@ impl<'a> Autofiller<'a> {
         }
     }
 
+    #[must_use] 
     pub fn tx_type(&self, user_input: &str) -> String {
         let trimmed_input = user_input.trim();
 
@@ -48,16 +50,16 @@ impl<'a> Autofiller<'a> {
             return String::new();
         }
 
-        let tx_type = if lowercase.starts_with("t") {
+        let tx_type = if lowercase.starts_with('t') {
             TxType::Transfer
-        } else if lowercase.starts_with("e") {
+        } else if lowercase.starts_with('e') {
             TxType::Expense
-        } else if lowercase.starts_with("i") {
+        } else if lowercase.starts_with('i') {
             TxType::Income
         } else {
             let tx_types = TX_TYPES
                 .iter()
-                .map(|s| s.to_string())
+                .map(|s| (*s).to_string())
                 .collect::<Vec<String>>();
 
             let best_match = get_best_match(user_input, &tx_types);
@@ -112,13 +114,14 @@ impl<'a> Autofiller<'a> {
         }
     }
 
+    #[must_use] 
     pub fn details(&self, user_input: &str) -> String {
         let details = self
             .conn
             .cache()
             .details
             .iter()
-            .map(|d| d.to_string())
+            .map(std::string::ToString::to_string)
             .collect::<Vec<String>>();
 
         let trimmed_input = user_input.trim();

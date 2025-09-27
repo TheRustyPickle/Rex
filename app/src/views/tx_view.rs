@@ -166,7 +166,7 @@ impl TxViewGroup {
                     .balance;
                 total_balance += balance;
 
-                let method_balance = balance as f64 / 100.0;
+                let method_balance = Cent::new(balance).dollar();
                 to_insert_balance.push(format!("{method_balance:.2}"));
             }
 

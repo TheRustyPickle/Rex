@@ -1443,6 +1443,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "shared",
  "simplelog",
  "thousands",
 ]

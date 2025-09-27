@@ -3,6 +3,7 @@ use app::modifier::{parse_search_fields, parse_tx_fields};
 use app::ui_helper::{DateType, Output, StepType, SteppingError, VerifierError};
 use app::views::{FullTx, PartialTx, SearchView, TxViewGroup};
 use chrono::prelude::Local;
+use shared::models::Cent;
 use std::cmp::Ordering;
 
 use crate::outputs::{CheckingError, ComparisonType, TxType};
@@ -465,8 +466,8 @@ impl TxData {
 
             for balance in final_balances.values() {
                 if balance.method_id == target_method.id {
-                    self.amount =
-                        user_amount.replace('b', &(balance.balance as f64 / 100.0).to_string());
+                    self.amount = user_amount
+                        .replace('b', &(Cent::new(balance.balance).dollar()).to_string());
                 }
             }
         } else if user_amount.contains('b') && self.from_method.is_empty() {

@@ -125,7 +125,7 @@ impl DbConn {
     }
 
     pub(crate) fn reload_details(&mut self) {
-        self.cache.details = Tx::get_all_details(self).unwrap().into_iter().collect()
+        self.cache.details = Tx::get_all_details(self).unwrap().into_iter().collect();
     }
 
     pub fn add_new_tx(&mut self, tx: NewTx, tags: &str) -> Result<()> {
@@ -346,6 +346,7 @@ impl DbConn {
         self.cache.get_methods()
     }
 
+    #[must_use] 
     pub fn get_tx_methods_cumulative(&self) -> Vec<String> {
         let mut methods: Vec<String> = self
             .get_tx_methods_sorted()
