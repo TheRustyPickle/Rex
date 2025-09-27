@@ -80,7 +80,7 @@ impl Cache {
         methods
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn get_tags_set(&self) -> HashSet<String> {
         self.tags
             .values()
@@ -88,7 +88,7 @@ impl Cache {
             .collect::<HashSet<String>>()
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn get_tags_sorted(&self) -> Vec<&Tag> {
         let mut tags = self.tags.values().collect::<Vec<&Tag>>();
         tags.sort_by_key(|value| &value.name);

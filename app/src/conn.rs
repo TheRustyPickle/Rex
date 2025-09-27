@@ -346,7 +346,7 @@ impl DbConn {
         self.cache.get_methods()
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn get_tx_methods_cumulative(&self) -> Vec<String> {
         let mut methods: Vec<String> = self
             .get_tx_methods_sorted()

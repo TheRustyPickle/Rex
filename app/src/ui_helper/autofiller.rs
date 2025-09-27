@@ -15,7 +15,7 @@ impl<'a> Autofiller<'a> {
         Self { conn }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn tx_method(self, user_input: &str) -> String {
         let methods = self
             .conn
@@ -40,7 +40,7 @@ impl<'a> Autofiller<'a> {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn tx_type(&self, user_input: &str) -> String {
         let trimmed_input = user_input.trim();
 
@@ -114,7 +114,7 @@ impl<'a> Autofiller<'a> {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn details(&self, user_input: &str) -> String {
         let details = self
             .conn
