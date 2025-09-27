@@ -7,7 +7,6 @@ use ratatui::Terminal;
 use ratatui::backend::Backend;
 use ratatui::layout::Constraint;
 use ratatui::style::Color;
-use rusqlite::Connection;
 use std::time::Duration;
 
 use crate::key_checker::{
@@ -39,8 +38,7 @@ pub const GRAY: Color = Color::Rgb(128, 128, 128);
 pub fn start_app<B: Backend>(
     terminal: &mut Terminal<B>,
     new_version_data: &Option<Vec<String>>,
-    conn: &mut Connection,
-    migrated_conn: &mut DbConn,
+    conn: &mut DbConn,
 ) -> Result<HandlingOutput, UiHandlingError> {
     // Setting up some default values. Let's go through all of them
 
@@ -56,7 +54,7 @@ pub fn start_app<B: Backend>(
     // Contains the chart page mode selection list that is indexed
     let mut chart_modes = IndexedData::new_modes();
     // Contains the chart page tx method selection list that is indexed
-    let mut chart_tx_methods = IndexedData::new_tx_methods_cumulative(migrated_conn);
+    let mut chart_tx_methods = IndexedData::new_tx_methods_cumulative(conn);
 
     // Contains the summary page month list that is indexed
     let mut summary_months = IndexedData::new_monthly_no_local();
@@ -75,15 +73,12 @@ pub fn start_app<B: Backend>(
     // How summary table will be sorted
     let mut summary_sort = SortingType::Tags;
 
-    conn.execute("PRAGMA foreign_keys = ON", [])
-        .expect("Could not enable foreign keys");
-
     // Stores all activity for a specific month of a year alongside the txs involved in an activity
 
     let mut search_txs = SearchView::new_empty();
 
     // Contains the tx views for that month and year. Used for home page data + balances
-    let mut home_txs = migrated_conn
+    let mut home_txs = conn
         .fetch_txs_with_str(
             home_months.get_selected_value(),
             home_years.get_selected_value(),
@@ -120,7 +115,7 @@ pub fn start_app<B: Backend>(
     let mut add_tx_data = TxData::new();
     // Holds the data that will be/are inserted into the Search page's input fields
     let mut search_data = TxData::new_empty();
-    let mut chart_view = migrated_conn
+    let mut chart_view = conn
         .get_chart_view_with_str(
             chart_months.get_selected_value(),
             chart_years.get_selected_value(),
@@ -130,7 +125,7 @@ pub fn start_app<B: Backend>(
     // Holds the popup data that will be/are inserted into the Popup page
     let mut popup_data = PopupData::new();
 
-    let mut summary_view = migrated_conn
+    let mut summary_view = conn
         .get_summary_with_str(
             summary_months.get_selected_value(),
             summary_years.get_selected_value(),
@@ -138,17 +133,17 @@ pub fn start_app<B: Backend>(
         )
         .unwrap();
 
-    let mut activity_view = migrated_conn
+    let mut activity_view = conn
         .get_activity_view_with_str(
             activity_months.get_selected_value(),
             activity_years.get_selected_value(),
         )
         .unwrap();
 
-    let mut full_summary = summary_view.generate_summary(None, migrated_conn);
+    let mut full_summary = summary_view.generate_summary(None, conn);
 
     // Data for the Summary Page's table
-    let mut summary_table = TableData::new(summary_view.tags_array(None, migrated_conn));
+    let mut summary_table = TableData::new(summary_view.tags_array(None, conn));
 
     // Data for the Search Page's table
     let mut search_table = TableData::new(Vec::new());
@@ -172,7 +167,7 @@ pub fn start_app<B: Backend>(
     let mut deletion_status: DeletionStatus = DeletionStatus::Yes;
 
     // Contains whether in the chart whether a tx method is activated or not
-    let mut chart_activated_methods = migrated_conn
+    let mut chart_activated_methods = conn
         .get_tx_methods_cumulative()
         .into_iter()
         .map(|s| (s, true))
@@ -185,7 +180,7 @@ pub fn start_app<B: Backend>(
     let mut add_tx_balance = Vec::new();
     // Home and add TX page balance section's column space
     let mut width_data = Vec::new();
-    let total_columns = migrated_conn.get_tx_methods().len() + 2;
+    let total_columns = conn.get_tx_methods().len() + 2;
     let width_percent = (100 / total_columns) as u16;
 
     // Save the % of space each column should take in the Balance section based on the total
@@ -218,7 +213,7 @@ pub fn start_app<B: Backend>(
                         &mut width_data,
                         &mut lerp_state,
                         &mut home_txs,
-                        migrated_conn,
+                        conn,
                     ),
 
                     CurrentUi::AddTx => add_tx_ui(
@@ -228,7 +223,7 @@ pub fn start_app<B: Backend>(
                         &add_tx_tab,
                         &mut width_data,
                         &mut lerp_state,
-                        migrated_conn,
+                        conn,
                     ),
 
                     CurrentUi::Initial => initial_ui(f, starter_index),
@@ -245,7 +240,7 @@ pub fn start_app<B: Backend>(
                         &chart_activated_methods,
                         &mut lerp_state,
                         &chart_view,
-                        migrated_conn,
+                        conn,
                     ),
 
                     CurrentUi::Summary => summary_ui(
@@ -259,7 +254,7 @@ pub fn start_app<B: Backend>(
                         &summary_sort,
                         &mut lerp_state,
                         &full_summary,
-                        migrated_conn,
+                        conn,
                     ),
                     CurrentUi::Search => search_ui(
                         f,
@@ -363,7 +358,7 @@ pub fn start_app<B: Backend>(
                 &mut popup_scroll_position,
                 &mut max_popup_scroll,
                 &mut lerp_state,
-                migrated_conn,
+                conn,
             );
 
             let status = match handler.page {

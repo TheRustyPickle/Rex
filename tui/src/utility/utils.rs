@@ -7,7 +7,6 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Tabs};
-use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
@@ -21,24 +20,6 @@ use crate::outputs::ComparisonType;
 use crate::page_handler::{BACKGROUND, BOX, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT};
 
 const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense", "Cancel"];
-
-/// Makes a call to the database to find out all the columns in the `balance_all` section
-/// so we can determine the number of TX Methods that has been added.
-/// Return example: `["source_1", "source_2", "source_3"]`
-pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
-    // Returns all transaction methods added to the database
-    let column_names = conn
-        .prepare("SELECT * FROM balance_all")
-        .expect("could not prepare statement");
-
-    let mut data: Vec<String> = column_names
-        .column_names()
-        .iter()
-        .map(ToString::to_string)
-        .collect();
-    data.remove(0);
-    data
-}
 
 /// Enters raw mode so the TUI can render properly
 pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
@@ -61,29 +42,6 @@ pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
     disable_raw_mode()?;
     Ok(())
 }
-
-// TODO: Add this back
-// pub fn check_n_create_db(verifying_path: &PathBuf) -> Result<(), Box<dyn Error>> {
-//     if !verifying_path.exists() {
-//         let UserInputType::AddNewTxMethod(db_tx_methods) = get_user_tx_methods(false, None) else {
-//             return Err("Failed to get tx methods.".into());
-//         };
-//         println!("Creating New Database. It may take some time...");
-//
-//         let mut conn = Connection::open(verifying_path)?;
-//         let status = create_db(&db_tx_methods, &mut conn);
-//         conn.close().unwrap();
-//         match status {
-//             Ok(()) => start_timer("Database creation successful."),
-//             Err(e) => {
-//                 println!("Database creation failed. Try again. Error: {e}");
-//                 fs::remove_file("data.sqlite")?;
-//                 process::exit(1);
-//             }
-//         }
-//     }
-//     Ok(())
-// }
 
 /// Returns a styled block for UI to use
 #[must_use]

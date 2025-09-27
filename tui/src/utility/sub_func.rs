@@ -1,4 +1,4 @@
-use rusqlite::Connection;
+use app::conn::DbConn;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::stdout;
@@ -7,12 +7,10 @@ use std::process::Command;
 
 use crate::outputs::TerminalExecutionError;
 use crate::page_handler::{ResetType, UserInputType};
-use crate::utility::{
-    check_restricted, clear_terminal, flush_output, get_all_tx_methods, take_input,
-};
+use crate::utility::{check_restricted, clear_terminal, flush_output, take_input};
 
 /// Prompts the user to select and option and start taking relevant inputs
-pub fn start_taking_input(conn: &Connection) -> UserInputType {
+pub fn start_taking_input(conn: &mut DbConn) -> UserInputType {
     let mut stdout = stdout();
     clear_terminal(&mut stdout);
 
@@ -48,7 +46,7 @@ pub fn start_taking_input(conn: &Connection) -> UserInputType {
 /// Once the collection is done sends to the database for adding the columns.
 /// This functions is both used when creating the initial db and when updating
 /// the database with new transaction methods.
-pub fn get_user_tx_methods(add_new_method: bool, conn: Option<&Connection>) -> UserInputType {
+pub fn get_user_tx_methods(add_new_method: bool, conn: Option<&mut DbConn>) -> UserInputType {
     let mut stdout = stdout();
 
     // This command clears up the terminal. This is added so the terminal doesn't get
@@ -64,8 +62,13 @@ pub fn get_user_tx_methods(add_new_method: bool, conn: Option<&Connection>) -> U
     // to get the existing columns to prevent duplicates/error.
     // This needs to be separated because if it's not adding new tx methods,
     // getting all tx methods will crash
-    if add_new_method {
-        current_tx_methods = get_all_tx_methods(conn.unwrap());
+    if add_new_method && let Some(conn) = conn {
+        current_tx_methods = conn
+            .get_tx_methods_sorted()
+            .iter()
+            .map(|m| m.name.clone())
+            .collect();
+
         for i in &current_tx_methods {
             method_line.push_str(&format!("\n- {i}"));
         }
@@ -166,13 +169,17 @@ Example input: Bank, Cash, PayPal.\n\nEnter Transaction Methods: "
 }
 
 /// Gets a new tx method name from the user to replace an existing method
-fn get_rename_data(conn: &Connection) -> UserInputType {
+fn get_rename_data(conn: &mut DbConn) -> UserInputType {
     let mut stdout = stdout();
 
     clear_terminal(&mut stdout);
     let mut rename_data = Vec::new();
 
-    let tx_methods = get_all_tx_methods(conn);
+    let tx_methods: Vec<String> = conn
+        .get_tx_methods_sorted()
+        .iter()
+        .map(|m| m.name.clone())
+        .collect();
 
     loop {
         let mut method_line =
@@ -265,13 +272,14 @@ Currently added Transaction Methods: \n"
 }
 
 /// Gets a new sequence of tx methods to reformat their location
-fn get_reposition_data(conn: &Connection) -> UserInputType {
+fn get_reposition_data(conn: &mut DbConn) -> UserInputType {
     let mut stdout = stdout();
 
     clear_terminal(&mut stdout);
     let mut reposition_data = Vec::new();
 
-    let tx_methods = get_all_tx_methods(conn);
+    let tx_methods = conn.get_tx_methods_sorted();
+    let tx_method_names: Vec<String> = tx_methods.iter().map(|m| m.name.clone()).collect();
 
     'outer_loop: loop {
         let mut method_line = "Select Transaction Method number sequence to proceed. Input 'Cancel' to cancel the operation.
@@ -281,7 +289,7 @@ Example input: 4 2 1 3, 3412
 Currently added Transaction Methods: \n".to_string();
 
         for (i, item) in tx_methods.iter().enumerate() {
-            method_line.push_str(&format!("\n{}. {}", i + 1, item));
+            method_line.push_str(&format!("\n{}. {}", i + 1, item.name));
         }
         println!("{method_line}");
         print!("\nEnter Transaction Methods sequence: ");
@@ -317,14 +325,14 @@ Currently added Transaction Methods: \n".to_string();
                     continue 'outer_loop;
                 }
 
-                if reposition_data.contains(&tx_methods[num as usize - 1]) {
+                if reposition_data.contains(&tx_methods[num as usize - 1].name) {
                     reposition_data.clear();
                     clear_terminal(&mut stdout);
                     println!("Cannot enter the same Transaction Method position twice.\n");
                     continue 'outer_loop;
                 }
 
-                reposition_data.push(tx_methods[num as usize - 1].to_string());
+                reposition_data.push(tx_methods[num as usize - 1].name.to_string());
             } else {
                 reposition_data.clear();
                 clear_terminal(&mut stdout);
@@ -333,7 +341,7 @@ Currently added Transaction Methods: \n".to_string();
             }
         }
 
-        if reposition_data == tx_methods {
+        if reposition_data == tx_method_names {
             reposition_data.clear();
             clear_terminal(&mut stdout);
             println!("No positions to change.\n");
