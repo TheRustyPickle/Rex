@@ -1,8 +1,7 @@
 use app::conn::{DbConn, FetchNature};
-use app::ui_helper::DateType;
+use app::ui_helper::{DateType, StepType};
 use app::views::{ActivityView, ChartView, FullSummary, SearchView, SummaryView, TxViewGroup};
 use crossterm::event::{KeyCode, KeyEvent};
-use rusqlite::Connection;
 use std::collections::HashMap;
 use std::fmt::Write;
 
@@ -13,7 +12,7 @@ use crate::page_handler::{
     PopupState, SortingType, SummaryTab, TableData, TxTab,
 };
 use crate::tx_handler::TxData;
-use crate::utility::{LerpState, get_all_tx_methods_cumulative, sort_table_data};
+use crate::utility::{LerpState, sort_table_data};
 
 /// Stores all the data that is required to handle
 /// every single possible keypress event from the
@@ -63,7 +62,6 @@ pub struct InputKeyHandler<'a> {
     popup_scroll_position: &'a mut usize,
     max_popup_scroll: &'a mut usize,
     lerp_state: &'a mut LerpState,
-    conn: &'a mut Connection,
     migrated_conn: &'a mut DbConn,
 }
 
@@ -112,7 +110,6 @@ impl<'a> InputKeyHandler<'a> {
         popup_scroll_position: &'a mut usize,
         max_popup_scroll: &'a mut usize,
         lerp_state: &'a mut LerpState,
-        conn: &'a mut Connection,
         migrated_conn: &'a mut DbConn,
     ) -> InputKeyHandler<'a> {
         let total_tags = migrated_conn.cache.tags.len();
@@ -161,7 +158,6 @@ impl<'a> InputKeyHandler<'a> {
             popup_scroll_position,
             max_popup_scroll,
             lerp_state,
-            conn,
             migrated_conn,
         }
     }
@@ -618,12 +614,13 @@ impl<'a> InputKeyHandler<'a> {
 
     /// Handles up arrow key press for multiple pages
     pub fn handle_up_arrow(&mut self) {
+        let step_type = StepType::StepUp;
         match self.page {
             CurrentUi::Home => self.do_home_up(),
-            CurrentUi::AddTx => self.do_add_tx_up(),
+            CurrentUi::AddTx => self.do_add_tx_step(step_type),
             CurrentUi::Summary => self.do_summary_up(),
             CurrentUi::Chart => self.do_chart_up(),
-            CurrentUi::Search => self.do_search_up(),
+            CurrentUi::Search => self.do_search_step(step_type),
             CurrentUi::Activity => self.do_activity_up(),
             CurrentUi::Initial => {}
         }
@@ -632,12 +629,13 @@ impl<'a> InputKeyHandler<'a> {
 
     /// Handles down arrow key press for multiple pages
     pub fn handle_down_arrow(&mut self) {
+        let step_type = StepType::StepDown;
         match self.page {
             CurrentUi::Home => self.do_home_down(),
-            CurrentUi::AddTx => self.do_add_tx_down(),
+            CurrentUi::AddTx => self.do_add_tx_step(step_type),
             CurrentUi::Summary => self.do_summary_down(),
             CurrentUi::Chart => self.do_chart_down(),
-            CurrentUi::Search => self.do_search_down(),
+            CurrentUi::Search => self.do_search_step(step_type),
             CurrentUi::Activity => self.do_activity_down(),
             CurrentUi::Initial => {}
         }
@@ -911,7 +909,7 @@ impl<'a> InputKeyHandler<'a> {
             && let ChartTab::TxMethods = self.chart_tab
         {
             let selected_index = self.chart_tx_methods.index;
-            let all_tx_methods = get_all_tx_methods_cumulative(self.conn);
+            let all_tx_methods = self.migrated_conn.get_tx_methods_cumulative();
 
             let selected_method = &all_tx_methods[selected_index];
             let activation_status = self
@@ -1813,14 +1811,23 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    fn do_add_tx_up(&mut self) {
+    fn do_add_tx_step(&mut self, step_type: StepType) {
         let status = match self.add_tx_tab {
-            TxTab::Date => self.add_tx_data.do_date_up(&DateType::Exact),
-            TxTab::FromMethod => self.add_tx_data.do_from_method_up(self.conn),
-            TxTab::ToMethod => self.add_tx_data.do_to_method_up(self.conn),
-            TxTab::Amount => self.add_tx_data.do_amount_up(false, self.migrated_conn),
-            TxTab::TxType => self.add_tx_data.do_tx_type_up(),
-            TxTab::Tags => self.add_tx_data.do_tags_up(self.conn),
+            TxTab::Date => {
+                self.add_tx_data
+                    .step_date(&DateType::Exact, step_type, self.migrated_conn)
+            }
+            TxTab::FromMethod => self
+                .add_tx_data
+                .step_from_method(step_type, self.migrated_conn),
+            TxTab::ToMethod => self
+                .add_tx_data
+                .step_to_method(step_type, self.migrated_conn),
+            TxTab::Amount => self
+                .add_tx_data
+                .step_amount(false, step_type, self.migrated_conn),
+            TxTab::TxType => self.add_tx_data.step_tx_type(step_type, self.migrated_conn),
+            TxTab::Tags => self.add_tx_data.step_tags(step_type, self.migrated_conn),
             _ => Ok(()),
         };
 
@@ -1829,30 +1836,24 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    fn do_add_tx_down(&mut self) {
-        let status = match self.add_tx_tab {
-            TxTab::Date => self.add_tx_data.do_date_down(&DateType::Exact),
-            TxTab::FromMethod => self.add_tx_data.do_from_method_down(self.conn),
-            TxTab::ToMethod => self.add_tx_data.do_to_method_down(self.conn),
-            TxTab::Amount => self.add_tx_data.do_amount_down(false, self.migrated_conn),
-            TxTab::TxType => self.add_tx_data.do_tx_type_down(),
-            TxTab::Tags => self.add_tx_data.do_tags_down(self.conn),
-            _ => Ok(()),
-        };
-
-        if let Err(e) = status {
-            self.add_tx_data.add_tx_status(e.to_string(), LogType::Info);
-        }
-    }
-
-    fn do_search_up(&mut self) {
+    fn do_search_step(&mut self, step_type: StepType) {
         let status = match self.search_tab {
-            TxTab::Date => self.search_data.do_date_up(self.search_date_type),
-            TxTab::FromMethod => self.search_data.do_from_method_up(self.conn),
-            TxTab::ToMethod => self.search_data.do_to_method_up(self.conn),
-            TxTab::Amount => self.search_data.do_amount_up(true, self.migrated_conn),
-            TxTab::TxType => self.search_data.do_tx_type_up(),
-            TxTab::Tags => self.search_data.do_tags_up(self.conn),
+            TxTab::Date => self.search_data.step_date(
+                self.search_date_type,
+                StepType::StepUp,
+                self.migrated_conn,
+            ),
+            TxTab::FromMethod => self
+                .search_data
+                .step_from_method(step_type, self.migrated_conn),
+            TxTab::ToMethod => self
+                .search_data
+                .step_to_method(step_type, self.migrated_conn),
+            TxTab::Amount => self
+                .search_data
+                .step_amount(false, step_type, self.migrated_conn),
+            TxTab::TxType => self.search_data.step_tx_type(step_type, self.migrated_conn),
+            TxTab::Tags => self.search_data.step_tags(step_type, self.migrated_conn),
             TxTab::Nothing => {
                 if self.search_table.state.selected() == Some(0) {
                     self.search_table
@@ -1860,30 +1861,6 @@ impl InputKeyHandler<'_> {
                         .select(Some(self.search_table.items.len() - 1));
                 } else if !self.search_txs.is_empty() {
                     self.search_table.previous();
-                }
-                Ok(())
-            }
-            TxTab::Details => Ok(()),
-        };
-
-        if let Err(e) = status {
-            self.search_data.add_tx_status(e.to_string(), LogType::Info);
-        }
-    }
-
-    fn do_search_down(&mut self) {
-        let status = match self.search_tab {
-            TxTab::Date => self.search_data.do_date_down(self.search_date_type),
-            TxTab::FromMethod => self.search_data.do_from_method_down(self.conn),
-            TxTab::ToMethod => self.search_data.do_to_method_down(self.conn),
-            TxTab::Amount => self.search_data.do_amount_down(true, self.migrated_conn),
-            TxTab::TxType => self.search_data.do_tx_type_down(),
-            TxTab::Tags => self.search_data.do_tags_down(self.conn),
-            TxTab::Nothing => {
-                if self.search_table.state.selected() == Some(self.search_table.items.len() - 1) {
-                    self.search_table.state.select(Some(0));
-                } else if !self.search_txs.is_empty() {
-                    self.search_table.next();
                 }
                 Ok(())
             }

@@ -1444,7 +1444,6 @@ dependencies = [
  "serde",
  "serde_json",
  "simplelog",
- "strsim",
  "thousands",
 ]
 

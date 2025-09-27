@@ -1,6 +1,5 @@
 mod lerp;
 mod sub_func;
-pub mod traits;
 mod utils;
 mod version_checker;
 

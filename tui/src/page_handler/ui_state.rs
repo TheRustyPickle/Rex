@@ -1,11 +1,9 @@
+use app::conn::DbConn;
 use chrono::Datelike;
 use chrono::prelude::Local;
 use ratatui::widgets::TableState;
-use rusqlite::Connection;
 use std::fmt::{self, Display, Result};
 use std::path::PathBuf;
-
-use crate::utility::get_all_tx_methods_cumulative;
 
 pub const MONTHS: [&str; 12] = [
     "January",
@@ -131,9 +129,9 @@ impl IndexedData {
         }
     }
 
-    pub fn new_tx_methods_cumulative(conn: &Connection) -> Self {
+    pub fn new_tx_methods_cumulative(conn: &mut DbConn) -> Self {
         IndexedData {
-            titles: get_all_tx_methods_cumulative(conn),
+            titles: conn.get_tx_methods_cumulative(),
             index: 0,
         }
     }

@@ -1,16 +1,16 @@
+use app::conn::DbConn;
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Position};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Cell, Paragraph, Row, Table};
-use rusqlite::Connection;
 use thousands::Separable;
 
 use crate::outputs::TxType;
 use crate::page_handler::{BACKGROUND, BLUE, BOX, GRAY, HomeRow, LogType, RED, TEXT, TxTab};
 use crate::pages::BALANCE_BOLD;
 use crate::tx_handler::TxData;
-use crate::utility::{LerpState, get_all_tx_methods, main_block, styled_block};
+use crate::utility::{LerpState, main_block, styled_block};
 
 /// The function draws the Add Transaction page of the interface.
 pub fn add_tx_ui(
@@ -20,9 +20,13 @@ pub fn add_tx_ui(
     add_tx_tab: &TxTab,
     width_data: &mut [Constraint],
     lerp_state: &mut LerpState,
-    conn: &Connection,
+    conn: &mut DbConn,
 ) {
-    let all_methods = get_all_tx_methods(conn);
+    let all_methods: Vec<String> = conn
+        .get_tx_methods_sorted()
+        .iter()
+        .map(|m| m.name.clone())
+        .collect();
     // Get the data to insert into the Status widget of this page
 
     let status_data = add_tx_data.get_tx_status();

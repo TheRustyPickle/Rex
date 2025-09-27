@@ -23,7 +23,7 @@ use crate::pages::{
     PopupData, activity_ui, add_tx_ui, chart_ui, home_ui, initial_ui, search_ui, summary_ui,
 };
 use crate::tx_handler::TxData;
-use crate::utility::{LerpState, get_all_tx_methods_cumulative};
+use crate::utility::LerpState;
 
 pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
 pub const TEXT: Color = Color::Rgb(153, 78, 236);
@@ -56,7 +56,7 @@ pub fn start_app<B: Backend>(
     // Contains the chart page mode selection list that is indexed
     let mut chart_modes = IndexedData::new_modes();
     // Contains the chart page tx method selection list that is indexed
-    let mut chart_tx_methods = IndexedData::new_tx_methods_cumulative(conn);
+    let mut chart_tx_methods = IndexedData::new_tx_methods_cumulative(migrated_conn);
 
     // Contains the summary page month list that is indexed
     let mut summary_months = IndexedData::new_monthly_no_local();
@@ -172,7 +172,8 @@ pub fn start_app<B: Backend>(
     let mut deletion_status: DeletionStatus = DeletionStatus::Yes;
 
     // Contains whether in the chart whether a tx method is activated or not
-    let mut chart_activated_methods = get_all_tx_methods_cumulative(conn)
+    let mut chart_activated_methods = migrated_conn
+        .get_tx_methods_cumulative()
         .into_iter()
         .map(|s| (s, true))
         .collect();
@@ -217,7 +218,6 @@ pub fn start_app<B: Backend>(
                         &mut width_data,
                         &mut lerp_state,
                         &mut home_txs,
-                        conn,
                         migrated_conn,
                     ),
 
@@ -228,7 +228,7 @@ pub fn start_app<B: Backend>(
                         &add_tx_tab,
                         &mut width_data,
                         &mut lerp_state,
-                        conn,
+                        migrated_conn,
                     ),
 
                     CurrentUi::Initial => initial_ui(f, starter_index),
@@ -363,7 +363,6 @@ pub fn start_app<B: Backend>(
                 &mut popup_scroll_position,
                 &mut max_popup_scroll,
                 &mut lerp_state,
-                conn,
                 migrated_conn,
             );
 

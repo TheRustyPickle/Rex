@@ -1,5 +1,4 @@
 use std::fmt;
-
 use thiserror::Error;
 
 pub enum Output {
@@ -58,4 +57,22 @@ pub enum VerifierError {
     InvalidBValue,
     #[error("Tags: Non-existing tags cannot be accepted")]
     NonExistingTag,
+}
+
+#[derive(Debug, Error)]
+pub enum SteppingError {
+    #[error("Date: Failed to step due to invalid date format")]
+    InvalidDate,
+    #[error("Tx Method: Failed to step as the tx method does not exists")]
+    InvalidTxMethod,
+    #[error("Amount: Failed to step due to invalid amount format")]
+    InvalidAmount,
+    #[error("Tx Type: Failed to step due to invalid tx type")]
+    InvalidTxType,
+    #[error("Tags: Failed to step as the tag does not exists")]
+    InvalidTags,
+    #[error("Amount: Failed to step value. Value of B cannot be determined")]
+    UnknownBValue,
+    #[error("{0}: Error acquired while validating input")]
+    ParsingError(Field),
 }

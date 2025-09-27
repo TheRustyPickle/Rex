@@ -4,13 +4,12 @@ use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Cell, Row, Table};
-use rusqlite::Connection;
 use thousands::Separable;
 
 use crate::page_handler::{
     BACKGROUND, BLUE, BOX, HEADER, HomeRow, HomeTab, IndexedData, RED, SELECTED, TEXT, TableData,
 };
-use crate::utility::{LerpState, create_tab, get_all_tx_methods, main_block, styled_block};
+use crate::utility::{LerpState, create_tab, main_block, styled_block};
 
 pub const BALANCE_BOLD: [&str; 7] = [
     "Balance",
@@ -32,10 +31,14 @@ pub fn home_ui(
     width_data: &mut [Constraint],
     lerp_state: &mut LerpState,
     view_group: &mut TxViewGroup,
-    conn: &Connection,
-    migrated_conn: &mut DbConn,
+    conn: &mut DbConn,
 ) {
-    let all_methods = get_all_tx_methods(conn);
+    let all_methods: Vec<String> = conn
+        .get_tx_methods_sorted()
+        .iter()
+        .map(|m| m.name.clone())
+        .collect();
+
     let size = f.area();
 
     // Used to highlight Changes on Balance section of Home Page
@@ -127,7 +130,7 @@ pub fn home_ui(
     .block(styled_block(&table_name));
 
     let balance_array = view_group
-        .balance_array(home_table.state.selected(), migrated_conn)
+        .balance_array(home_table.state.selected(), conn)
         .unwrap();
     // Go through all data of the Balance widget and style it as necessary
     let bal_data = balance_array.into_iter().map(|item| {
