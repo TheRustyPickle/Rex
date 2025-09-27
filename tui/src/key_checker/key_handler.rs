@@ -62,7 +62,7 @@ pub struct InputKeyHandler<'a> {
     popup_scroll_position: &'a mut usize,
     max_popup_scroll: &'a mut usize,
     lerp_state: &'a mut LerpState,
-    migrated_conn: &'a mut DbConn,
+    conn: &'a mut DbConn,
 }
 
 impl<'a> InputKeyHandler<'a> {
@@ -110,9 +110,9 @@ impl<'a> InputKeyHandler<'a> {
         popup_scroll_position: &'a mut usize,
         max_popup_scroll: &'a mut usize,
         lerp_state: &'a mut LerpState,
-        migrated_conn: &'a mut DbConn,
+        conn: &'a mut DbConn,
     ) -> InputKeyHandler<'a> {
-        let total_tags = migrated_conn.cache.tags.len();
+        let total_tags = conn.cache.tags.len();
         InputKeyHandler {
             key,
             page,
@@ -158,7 +158,7 @@ impl<'a> InputKeyHandler<'a> {
             popup_scroll_position,
             max_popup_scroll,
             lerp_state,
-            migrated_conn,
+            conn,
         }
     }
 
@@ -312,7 +312,7 @@ impl<'a> InputKeyHandler<'a> {
                 LogType::Info,
             );
         } else {
-            let search_txs = self.search_data.get_search_tx(self.migrated_conn);
+            let search_txs = self.search_data.get_search_tx(self.conn);
 
             if search_txs.is_empty() {
                 self.search_data.add_tx_status(
@@ -338,7 +338,7 @@ impl<'a> InputKeyHandler<'a> {
 
     /// Adds new tx and reloads home and chart data
     pub fn add_tx(&mut self) {
-        let status = self.add_tx_data.add_tx(self.home_txs, self.migrated_conn);
+        let status = self.add_tx_data.add_tx(self.home_txs, self.conn);
 
         match status {
             Ok(()) => {
@@ -379,7 +379,7 @@ impl<'a> InputKeyHandler<'a> {
         };
 
         let target_tx = self.home_txs.get_tx(index);
-        let result = self.migrated_conn.delete_tx(target_tx);
+        let result = self.conn.delete_tx(target_tx);
 
         match result {
             Ok(()) => {
@@ -814,7 +814,7 @@ impl<'a> InputKeyHandler<'a> {
         };
 
         let target_tx = self.search_txs.get_tx(index);
-        let result = self.migrated_conn.delete_tx(target_tx);
+        let result = self.conn.delete_tx(target_tx);
 
         match result {
             Ok(()) => {
@@ -839,7 +839,7 @@ impl<'a> InputKeyHandler<'a> {
             }
 
             let reload_stuff = self
-                .migrated_conn
+                .conn
                 .swap_tx_position(index, index - 1, self.home_txs)
                 .unwrap();
 
@@ -859,7 +859,7 @@ impl<'a> InputKeyHandler<'a> {
             }
 
             let reload_stuff = self
-                .migrated_conn
+                .conn
                 .swap_tx_position(index, index + 1, self.home_txs)
                 .unwrap();
 
@@ -909,7 +909,7 @@ impl<'a> InputKeyHandler<'a> {
             && let ChartTab::TxMethods = self.chart_tab
         {
             let selected_index = self.chart_tx_methods.index;
-            let all_tx_methods = self.migrated_conn.get_tx_methods_cumulative();
+            let all_tx_methods = self.conn.get_tx_methods_cumulative();
 
             let selected_method = &all_tx_methods[selected_index];
             let activation_status = self
@@ -1184,9 +1184,7 @@ impl InputKeyHandler<'_> {
     fn check_add_tx_date(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self
-                    .add_tx_data
-                    .check_date(&DateType::Exact, self.migrated_conn);
+                let status = self.add_tx_data.check_date(&DateType::Exact, self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1203,9 +1201,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             KeyCode::Esc => {
-                let status = self
-                    .add_tx_data
-                    .check_date(&DateType::Exact, self.migrated_conn);
+                let status = self.add_tx_data.check_date(&DateType::Exact, self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1244,7 +1240,7 @@ impl InputKeyHandler<'_> {
     fn check_add_tx_type(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.add_tx_data.check_tx_type(self.migrated_conn);
+                let status = self.add_tx_data.check_tx_type(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1262,7 +1258,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.add_tx_data.check_tx_type(self.migrated_conn);
+                let status = self.add_tx_data.check_tx_type(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1288,7 +1284,7 @@ impl InputKeyHandler<'_> {
     fn check_add_tx_from(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.add_tx_data.check_from_method(self.migrated_conn);
+                let status = self.add_tx_data.check_from_method(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1310,7 +1306,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.add_tx_data.check_from_method(self.migrated_conn);
+                let status = self.add_tx_data.check_from_method(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1337,7 +1333,7 @@ impl InputKeyHandler<'_> {
     fn check_add_tx_to(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.add_tx_data.check_to_method(self.migrated_conn);
+                let status = self.add_tx_data.check_to_method(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1355,7 +1351,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.add_tx_data.check_to_method(self.migrated_conn);
+                let status = self.add_tx_data.check_to_method(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1380,7 +1376,7 @@ impl InputKeyHandler<'_> {
     fn check_add_tx_amount(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.add_tx_data.check_amount(false, self.migrated_conn);
+                let status = self.add_tx_data.check_amount(false, self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1398,7 +1394,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.add_tx_data.check_amount(false, self.migrated_conn);
+                let status = self.add_tx_data.check_amount(false, self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1425,7 +1421,7 @@ impl InputKeyHandler<'_> {
         match self.key.code {
             KeyCode::Enter | KeyCode::Esc => {
                 *self.add_tx_tab = TxTab::Nothing;
-                self.add_tx_data.check_tags(self.migrated_conn);
+                self.add_tx_data.check_tags(self.conn);
             }
             KeyCode::Backspace => self.add_tx_data.edit_tags(None),
             KeyCode::Char(a) => self.add_tx_data.edit_tags(Some(a)),
@@ -1439,7 +1435,7 @@ impl InputKeyHandler<'_> {
             KeyCode::Enter => {
                 let status = self
                     .search_data
-                    .check_date(self.search_date_type, self.migrated_conn);
+                    .check_date(self.search_date_type, self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1458,7 +1454,7 @@ impl InputKeyHandler<'_> {
             KeyCode::Esc => {
                 let status = self
                     .search_data
-                    .check_date(self.search_date_type, self.migrated_conn);
+                    .check_date(self.search_date_type, self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1497,7 +1493,7 @@ impl InputKeyHandler<'_> {
     fn check_search_type(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.search_data.check_tx_type(self.migrated_conn);
+                let status = self.search_data.check_tx_type(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1514,7 +1510,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.search_data.check_tx_type(self.migrated_conn);
+                let status = self.search_data.check_tx_type(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1539,7 +1535,7 @@ impl InputKeyHandler<'_> {
     fn check_search_from(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.search_data.check_from_method(self.migrated_conn);
+                let status = self.search_data.check_from_method(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1560,7 +1556,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.search_data.check_from_method(self.migrated_conn);
+                let status = self.search_data.check_from_method(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1586,7 +1582,7 @@ impl InputKeyHandler<'_> {
     fn check_search_to(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.search_data.check_to_method(self.migrated_conn);
+                let status = self.search_data.check_to_method(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1604,7 +1600,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.search_data.check_to_method(self.migrated_conn);
+                let status = self.search_data.check_to_method(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1630,7 +1626,7 @@ impl InputKeyHandler<'_> {
     fn check_search_amount(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.search_data.check_amount(true, self.migrated_conn);
+                let status = self.search_data.check_amount(true, self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1647,7 +1643,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.search_data.check_amount(true, self.migrated_conn);
+                let status = self.search_data.check_amount(true, self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1672,7 +1668,7 @@ impl InputKeyHandler<'_> {
     fn check_search_tags(&mut self) {
         match self.key.code {
             KeyCode::Enter | KeyCode::Esc => {
-                let status = self.search_data.check_tags_forced(self.migrated_conn);
+                let status = self.search_data.check_tags_forced(self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1696,7 +1692,7 @@ impl InputKeyHandler<'_> {
     /// Reload Home page's table data by fetching from the DB
     fn reload_home_table(&mut self) {
         *self.home_txs = self
-            .migrated_conn
+            .conn
             .fetch_txs_with_str(
                 self.home_months.get_selected_value(),
                 self.home_years.get_selected_value(),
@@ -1716,7 +1712,7 @@ impl InputKeyHandler<'_> {
         };
 
         let summary_view = self
-            .migrated_conn
+            .conn
             .get_summary_with_str(
                 self.summary_months.get_selected_value(),
                 self.summary_years.get_selected_value(),
@@ -1732,30 +1728,29 @@ impl InputKeyHandler<'_> {
             && let Some(year) = previous_year
         {
             let last_summary_view = self
-                .migrated_conn
+                .conn
                 .get_summary_with_str(&month, &year, fetch_nature)
                 .unwrap();
 
-            let last_full_summary = last_summary_view.generate_summary(None, self.migrated_conn);
+            let last_full_summary = last_summary_view.generate_summary(None, self.conn);
 
             let mut summary_tags_table =
-                summary_view.tags_array(Some(&last_summary_view), self.migrated_conn);
+                summary_view.tags_array(Some(&last_summary_view), self.conn);
 
             summary_tags_table = sort_table_data(summary_tags_table, self.summary_sort);
 
             *self.summary_table = TableData::new(summary_tags_table);
 
-            *self.full_summary =
-                summary_view.generate_summary(Some(&last_full_summary), self.migrated_conn);
+            *self.full_summary = summary_view.generate_summary(Some(&last_full_summary), self.conn);
 
             *self.summary_view = summary_view;
         } else {
-            let mut summary_tags_table = summary_view.tags_array(None, self.migrated_conn);
+            let mut summary_tags_table = summary_view.tags_array(None, self.conn);
             summary_tags_table = sort_table_data(summary_tags_table, self.summary_sort);
 
             *self.summary_table = TableData::new(summary_tags_table);
 
-            *self.full_summary = summary_view.generate_summary(None, self.migrated_conn);
+            *self.full_summary = summary_view.generate_summary(None, self.conn);
 
             *self.summary_view = summary_view;
         }
@@ -1771,7 +1766,7 @@ impl InputKeyHandler<'_> {
         };
 
         *self.chart_view = self
-            .migrated_conn
+            .conn
             .get_chart_view_with_str(
                 self.chart_months.get_selected_value(),
                 self.chart_years.get_selected_value(),
@@ -1789,7 +1784,7 @@ impl InputKeyHandler<'_> {
     /// Reload activity data by fetching from the DB
     fn reload_activity_table(&mut self) {
         *self.activity_view = self
-            .migrated_conn
+            .conn
             .get_activity_view_with_str(
                 self.activity_months.get_selected_value(),
                 self.activity_years.get_selected_value(),
@@ -1813,21 +1808,14 @@ impl InputKeyHandler<'_> {
 
     fn do_add_tx_step(&mut self, step_type: StepType) {
         let status = match self.add_tx_tab {
-            TxTab::Date => {
-                self.add_tx_data
-                    .step_date(&DateType::Exact, step_type, self.migrated_conn)
-            }
-            TxTab::FromMethod => self
+            TxTab::Date => self
                 .add_tx_data
-                .step_from_method(step_type, self.migrated_conn),
-            TxTab::ToMethod => self
-                .add_tx_data
-                .step_to_method(step_type, self.migrated_conn),
-            TxTab::Amount => self
-                .add_tx_data
-                .step_amount(false, step_type, self.migrated_conn),
-            TxTab::TxType => self.add_tx_data.step_tx_type(step_type, self.migrated_conn),
-            TxTab::Tags => self.add_tx_data.step_tags(step_type, self.migrated_conn),
+                .step_date(&DateType::Exact, step_type, self.conn),
+            TxTab::FromMethod => self.add_tx_data.step_from_method(step_type, self.conn),
+            TxTab::ToMethod => self.add_tx_data.step_to_method(step_type, self.conn),
+            TxTab::Amount => self.add_tx_data.step_amount(false, step_type, self.conn),
+            TxTab::TxType => self.add_tx_data.step_tx_type(step_type, self.conn),
+            TxTab::Tags => self.add_tx_data.step_tags(step_type, self.conn),
             _ => Ok(()),
         };
 
@@ -1838,22 +1826,15 @@ impl InputKeyHandler<'_> {
 
     fn do_search_step(&mut self, step_type: StepType) {
         let status = match self.search_tab {
-            TxTab::Date => self.search_data.step_date(
-                self.search_date_type,
-                StepType::StepUp,
-                self.migrated_conn,
-            ),
-            TxTab::FromMethod => self
-                .search_data
-                .step_from_method(step_type, self.migrated_conn),
-            TxTab::ToMethod => self
-                .search_data
-                .step_to_method(step_type, self.migrated_conn),
-            TxTab::Amount => self
-                .search_data
-                .step_amount(false, step_type, self.migrated_conn),
-            TxTab::TxType => self.search_data.step_tx_type(step_type, self.migrated_conn),
-            TxTab::Tags => self.search_data.step_tags(step_type, self.migrated_conn),
+            TxTab::Date => {
+                self.search_data
+                    .step_date(self.search_date_type, StepType::StepUp, self.conn)
+            }
+            TxTab::FromMethod => self.search_data.step_from_method(step_type, self.conn),
+            TxTab::ToMethod => self.search_data.step_to_method(step_type, self.conn),
+            TxTab::Amount => self.search_data.step_amount(false, step_type, self.conn),
+            TxTab::TxType => self.search_data.step_tx_type(step_type, self.conn),
+            TxTab::Tags => self.search_data.step_tags(step_type, self.conn),
             TxTab::Nothing => {
                 if self.search_table.state.selected() == Some(0) {
                     self.search_table
@@ -1925,12 +1906,8 @@ impl InputKeyHandler<'_> {
 
     fn check_autofill(&mut self) {
         match self.page {
-            CurrentUi::AddTx => self
-                .add_tx_data
-                .check_autofill(self.add_tx_tab, self.migrated_conn),
-            CurrentUi::Search => self
-                .search_data
-                .check_autofill(self.search_tab, self.migrated_conn),
+            CurrentUi::AddTx => self.add_tx_data.check_autofill(self.add_tx_tab, self.conn),
+            CurrentUi::Search => self.search_data.check_autofill(self.search_tab, self.conn),
             _ => {}
         }
     }
@@ -1948,7 +1925,7 @@ impl InputKeyHandler<'_> {
         *self.add_tx_balance = self.add_tx_data.generate_balance_section(
             self.home_txs,
             current_table_index,
-            self.migrated_conn,
+            self.conn,
         );
     }
 
