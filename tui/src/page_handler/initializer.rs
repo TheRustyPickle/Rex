@@ -1,3 +1,4 @@
+use app::conn::get_conn;
 use atty::Stream;
 use rusqlite::Connection;
 use std::env::set_current_dir;
@@ -24,8 +25,6 @@ pub fn initialize_app(
     migrated_db_path: &Path,
     original_dir: &PathBuf,
 ) -> Result<(), Box<dyn Error>> {
-    use app::conn::get_conn;
-
     let new_version = check_version();
 
     let new_version_available = new_version.unwrap_or_default();
@@ -65,17 +64,12 @@ pub fn initialize_app(
 
     loop {
         let mut terminal = enter_tui_interface()?;
-        let result = start_app(
-            &mut terminal,
-            &new_version_available,
-            &mut conn,
-            &mut migrated_conn,
-        );
+        let result = start_app(&mut terminal, &new_version_available, &mut migrated_conn);
         exit_tui_interface()?;
 
         match result {
             Ok(output) => match output {
-                HandlingOutput::TakeUserInput => match start_taking_input(&conn) {
+                HandlingOutput::TakeUserInput => match start_taking_input(&mut migrated_conn) {
                     UserInputType::AddNewTxMethod(tx_methods) => {
                         let status = add_new_tx_methods(&tx_methods, &mut conn);
                         match status {
