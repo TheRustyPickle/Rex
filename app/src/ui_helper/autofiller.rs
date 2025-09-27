@@ -40,17 +40,19 @@ impl<'a> Autofiller<'a> {
     }
 
     pub fn tx_type(&self, user_input: &str) -> String {
-        let trimmed_input = user_input.trim().to_lowercase();
+        let trimmed_input = user_input.trim();
+
+        let lowercase = trimmed_input.to_lowercase();
 
         if trimmed_input.is_empty() {
             return String::new();
         }
 
-        let tx_type = if trimmed_input.starts_with("t") {
+        let tx_type = if lowercase.starts_with("t") {
             TxType::Transfer
-        } else if trimmed_input.starts_with("e") {
+        } else if lowercase.starts_with("e") {
             TxType::Expense
-        } else if trimmed_input.starts_with("i") {
+        } else if lowercase.starts_with("i") {
             TxType::Income
         } else {
             let tx_types = TX_TYPES
@@ -69,7 +71,13 @@ impl<'a> Autofiller<'a> {
             return to_return;
         };
 
-        tx_type.to_string()
+        let to_return = tx_type.to_string();
+
+        if to_return == trimmed_input {
+            String::new()
+        } else {
+            to_return
+        }
     }
 
     pub fn tags(&self, user_input: &str) -> String {
