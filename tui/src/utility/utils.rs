@@ -9,14 +9,13 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Tabs};
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::{Read, Result as ioResult, Stdout, Write, stdout};
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
-use strsim::normalized_levenshtein;
 
 use crate::outputs::ComparisonType;
 use crate::page_handler::{BACKGROUND, BOX, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT};
@@ -39,52 +38,6 @@ pub fn get_all_tx_methods(conn: &Connection) -> Vec<String> {
         .collect();
     data.remove(0);
     data
-}
-
-pub fn get_all_tx_methods_cumulative(conn: &Connection) -> Vec<String> {
-    // Returns all transaction methods added to the database
-    let column_names = conn
-        .prepare("SELECT * FROM balance_all")
-        .expect("could not prepare statement");
-
-    let mut data: Vec<String> = column_names
-        .column_names()
-        .iter()
-        .map(ToString::to_string)
-        .collect();
-    data.remove(0);
-    data.push("Cumulative".to_string());
-    data
-}
-
-/// Returns all unique tags from the db
-pub fn get_all_tags(conn: &Connection) -> Vec<String> {
-    let mut query = conn
-        .prepare("SELECT tags FROM tx_all")
-        .expect("could not prepare statement");
-
-    let mut tags_data: HashSet<String> = HashSet::new();
-
-    if let Ok(rows) = query.query_map([], |row| {
-        let row_data: String = row.get(0).unwrap();
-        let split_tags = row_data.split(',');
-        let final_data = split_tags
-            .into_iter()
-            .map(|s| s.trim().to_string())
-            .collect::<Vec<String>>();
-        Ok(final_data)
-    }) {
-        for inner_data in rows.flatten() {
-            for x in inner_data {
-                tags_data.insert(x);
-            }
-        }
-    }
-
-    let mut sorted_tags = tags_data.into_iter().collect::<Vec<String>>();
-    sorted_tags.sort();
-
-    sorted_tags
 }
 
 /// Enters raw mode so the TUI can render properly
@@ -300,23 +253,6 @@ pub fn parse_github_body(body: &str) -> String {
     let body = body.replace('\r', "");
     let end_point = body.find("## Changes").unwrap();
     format!("\n{}\n", &body[..end_point].trim())
-}
-
-/// Uses Levenshtein algorithm to get the best match of a string in a vec of strings
-#[must_use]
-pub fn get_best_match(data: &str, matching_set: &[String]) -> String {
-    let mut best_match = &matching_set[0];
-    let mut best_score = -1.0;
-
-    for x in matching_set {
-        let new_score = normalized_levenshtein(&x.to_lowercase(), &data.to_lowercase());
-
-        if new_score > best_score {
-            best_match = x;
-            best_score = new_score;
-        }
-    }
-    best_match.to_string()
 }
 
 /// Used for sorting summary table data

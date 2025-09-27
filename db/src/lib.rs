@@ -86,6 +86,12 @@ impl Cache {
             .map(|m| m.name.clone())
             .collect::<HashSet<String>>()
     }
+
+    pub fn get_tags_sorted(&self) -> Vec<&Tag> {
+        let mut tags = self.tags.values().collect::<Vec<&Tag>>();
+        tags.sort_by_key(|value| &value.name);
+        tags
+    }
 }
 
 #[must_use]

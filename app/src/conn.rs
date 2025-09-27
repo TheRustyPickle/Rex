@@ -10,7 +10,7 @@ use crate::modifier::{
     activity_delete_tx, activity_edit_tx, activity_new_tx, activity_search_tx,
     activity_swap_position, add_new_tx, add_new_tx_methods, delete_tx,
 };
-use crate::ui_helper::{Autofiller, Verifier};
+use crate::ui_helper::{Autofiller, Stepper, Verifier};
 use crate::utils::month_name_to_num;
 use crate::views::{
     ActivityView, ChartView, SearchView, SummaryView, TxViewGroup, get_activity_view,
@@ -37,7 +37,7 @@ impl<'a> MutDbConn<'a> {
         MutDbConn { conn, cache }
     }
 
-    pub fn verifier(&mut self) -> Verifier<'_> {
+    pub fn verify(&mut self) -> Verifier<'_> {
         let db_conn = MutDbConn::new(self.conn, self.cache);
         Verifier::new(db_conn)
     }
@@ -346,6 +346,17 @@ impl DbConn {
         self.cache.get_methods()
     }
 
+    pub fn get_tx_methods_cumulative(&self) -> Vec<String> {
+        let mut methods: Vec<String> = self
+            .get_tx_methods_sorted()
+            .iter()
+            .map(|m| m.name.clone())
+            .collect();
+
+        methods.push("Cumulative".to_string());
+        methods
+    }
+
     pub fn get_tx_method_by_name(&mut self, name: &str) -> Result<&TxMethod> {
         self.cache.get_method_by_name(name)
     }
@@ -362,5 +373,10 @@ impl DbConn {
     pub fn verify(&mut self) -> Verifier<'_> {
         let db_conn = MutDbConn::new(&mut self.conn, &self.cache);
         Verifier::new(db_conn)
+    }
+
+    pub fn step(&mut self) -> Stepper<'_> {
+        let db_conn = MutDbConn::new(&mut self.conn, &self.cache);
+        Stepper::new(db_conn)
     }
 }

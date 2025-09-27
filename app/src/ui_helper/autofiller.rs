@@ -8,7 +8,7 @@ pub struct Autofiller<'a> {
     conn: MutDbConn<'a>,
 }
 
-const TX_TYPES: [&str; 3] = ["Income", "Expense", "Transfer"];
+pub(crate) const TX_TYPES: [&str; 3] = ["Income", "Expense", "Transfer"];
 
 impl<'a> Autofiller<'a> {
     pub(crate) fn new(conn: MutDbConn<'a>) -> Self {

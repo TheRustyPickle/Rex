@@ -1,17 +1,16 @@
 use app::conn::DbConn;
 use app::modifier::{parse_search_fields, parse_tx_fields};
-use app::ui_helper::{DateType, Output, VerifierError};
+use app::ui_helper::{DateType, Output, StepType, SteppingError, VerifierError};
 use app::views::{FullTx, PartialTx, SearchView, TxViewGroup};
 use chrono::prelude::Local;
-use rusqlite::Connection;
 use std::cmp::Ordering;
 
-use crate::outputs::{CheckingError, ComparisonType, StepType, SteppingError, TxType};
+use crate::outputs::{CheckingError, ComparisonType, TxType};
 use crate::page_handler::{LogData, LogType, TxTab};
-use crate::utility::traits::{DataVerifier, FieldStepper};
 use crate::utility::{add_char_to, check_comparison};
 
 /// Contains all data for a Transaction to work
+#[derive(Default)]
 pub struct TxData {
     pub date: String,
     pub details: String,
@@ -25,16 +24,6 @@ pub struct TxData {
     pub id_num: i32,
     pub current_index: usize,
     pub autofill: String,
-}
-
-impl DataVerifier for TxData {}
-
-impl FieldStepper for TxData {}
-
-impl Default for TxData {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl TxData {
@@ -628,11 +617,16 @@ impl TxData {
         self.current_index = self.get_data_len(current_tab);
     }
 
-    /// Steps up Date value by one
-    pub fn do_date_up(&mut self, date_type: &DateType) -> Result<(), SteppingError> {
+    /// Steps Date value by one
+    pub fn step_date(
+        &mut self,
+        date_type: &DateType,
+        step_type: StepType,
+        conn: &mut DbConn,
+    ) -> Result<(), SteppingError> {
         let mut user_date = self.date.clone();
 
-        let step_status = self.step_date(&mut user_date, StepType::StepUp, date_type);
+        let step_status = conn.step().date(&mut user_date, step_type, date_type);
         self.date = user_date;
 
         // Reload index to the final point as some data just got added/changed
@@ -640,23 +634,15 @@ impl TxData {
         step_status
     }
 
-    /// Steps down Date value by one
-    pub fn do_date_down(&mut self, date_type: &DateType) -> Result<(), SteppingError> {
-        let mut user_date = self.date.clone();
-
-        let step_status = self.step_date(&mut user_date, StepType::StepDown, date_type);
-        self.date = user_date;
-
-        // Reload index to the final point as some data just got added/changed
-        self.go_current_index(&TxTab::Date);
-        step_status
-    }
-
-    /// Steps up From Method value by one
-    pub fn do_from_method_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+    /// Steps From Method value by one
+    pub fn step_from_method(
+        &mut self,
+        step_type: StepType,
+        conn: &mut DbConn,
+    ) -> Result<(), SteppingError> {
         let mut user_method = self.from_method.clone();
 
-        let step_status = self.step_tx_method(&mut user_method, StepType::StepUp, conn);
+        let step_status = conn.step().tx_method(&mut user_method, step_type);
         self.from_method = user_method;
 
         // Reload index to the final point as some data just got added/changed
@@ -664,23 +650,15 @@ impl TxData {
         step_status
     }
 
-    /// Steps down From Method value by one
-    pub fn do_from_method_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let mut user_method = self.from_method.clone();
-
-        let step_status = self.step_tx_method(&mut user_method, StepType::StepDown, conn);
-        self.from_method = user_method;
-
-        // Reload index to the final point as some data just got added/changed
-        self.go_current_index(&TxTab::FromMethod);
-        step_status
-    }
-
-    /// Steps up To Value value by one
-    pub fn do_to_method_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+    /// Steps To Value value by one
+    pub fn step_to_method(
+        &mut self,
+        step_type: StepType,
+        conn: &mut DbConn,
+    ) -> Result<(), SteppingError> {
         let mut user_method = self.to_method.clone();
 
-        let step_status = self.step_tx_method(&mut user_method, StepType::StepUp, conn);
+        let step_status = conn.step().tx_method(&mut user_method, step_type);
         self.to_method = user_method;
 
         // Reload index to the final point as some data just got added/changed
@@ -688,23 +666,15 @@ impl TxData {
         step_status
     }
 
-    /// Steps down To Method value by one
-    pub fn do_to_method_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let mut user_method = self.to_method.clone();
-
-        let step_status = self.step_tx_method(&mut user_method, StepType::StepDown, conn);
-        self.to_method = user_method;
-
-        // Reload index to the final point as some data just got added/changed
-        self.go_current_index(&TxTab::ToMethod);
-        step_status
-    }
-
-    /// Steps up Tx Type value by one
-    pub fn do_tx_type_up(&mut self) -> Result<(), SteppingError> {
+    /// Steps Tx Type value by one
+    pub fn step_tx_type(
+        &mut self,
+        step_type: StepType,
+        conn: &mut DbConn,
+    ) -> Result<(), SteppingError> {
         let mut user_type = self.tx_type.clone();
 
-        let step_status = self.step_tx_type(&mut user_type, StepType::StepUp);
+        let step_status = conn.step().tx_type(&mut user_type, step_type);
         self.tx_type = user_type;
 
         // Reload index to the final point as some data just got added/changed
@@ -712,22 +682,11 @@ impl TxData {
         step_status
     }
 
-    /// Steps down Tx Type value by one
-    pub fn do_tx_type_down(&mut self) -> Result<(), SteppingError> {
-        let mut user_type = self.tx_type.clone();
-
-        let step_status = self.step_tx_type(&mut user_type, StepType::StepDown);
-        self.tx_type = user_type;
-
-        // Reload index to the final point as some data just got added/changed
-        self.go_current_index(&TxTab::TxType);
-        step_status
-    }
-
-    /// Steps up Amount value by one
-    pub fn do_amount_up(
+    /// Steps Amount value by one
+    pub fn step_amount(
         &mut self,
         is_search: bool,
+        step_type: StepType,
         conn: &mut DbConn,
     ) -> Result<(), SteppingError> {
         if self.check_b_field(conn).is_err() {
@@ -752,48 +711,7 @@ impl TxData {
             user_amount = user_amount.replace(symbol, "");
         }
 
-        let step_status = self.step_amount(&mut user_amount, StepType::StepUp);
-
-        if let Some(symbol) = comparison_symbol {
-            user_amount = format!("{symbol}{user_amount}");
-        }
-
-        self.amount = user_amount;
-
-        // Reload index to the final point as some data just got added/changed
-        self.go_current_index(&TxTab::Amount);
-        step_status
-    }
-
-    /// Steps down Amount value by one
-    pub fn do_amount_down(
-        &mut self,
-        is_search: bool,
-        conn: &mut DbConn,
-    ) -> Result<(), SteppingError> {
-        if self.check_b_field(conn).is_err() {
-            return Err(SteppingError::UnknownBValue);
-        }
-
-        let mut comparison_symbol = None;
-
-        let mut user_amount = self.amount.clone();
-
-        if is_search {
-            match check_comparison(&user_amount) {
-                ComparisonType::Equal => comparison_symbol = None,
-                ComparisonType::BiggerThan => comparison_symbol = Some(">"),
-                ComparisonType::SmallerThan => comparison_symbol = Some("<"),
-                ComparisonType::EqualOrBigger => comparison_symbol = Some(">="),
-                ComparisonType::EqualOrSmaller => comparison_symbol = Some("<="),
-            }
-        }
-
-        if let Some(symbol) = comparison_symbol {
-            user_amount = user_amount.replace(symbol, "");
-        }
-
-        let step_status = self.step_amount(&mut user_amount, StepType::StepDown);
+        let step_status = conn.step().amount(&mut user_amount, step_type);
 
         if let Some(symbol) = comparison_symbol {
             user_amount = format!("{symbol}{user_amount}");
@@ -807,22 +725,14 @@ impl TxData {
     }
 
     /// Steps up Tags value by one
-    pub fn do_tags_up(&mut self, conn: &Connection) -> Result<(), SteppingError> {
+    pub fn step_tags(
+        &mut self,
+        step_type: StepType,
+        conn: &mut DbConn,
+    ) -> Result<(), SteppingError> {
         let mut user_tag = self.tags.clone();
 
-        let status = self.step_tags(&mut user_tag, &self.autofill, StepType::StepUp, conn);
-        self.tags = user_tag;
-
-        // Reload index to the final point as some data just got added/changed
-        self.go_current_index(&TxTab::Tags);
-        status
-    }
-
-    /// Steps down Tags value by one
-    pub fn do_tags_down(&mut self, conn: &Connection) -> Result<(), SteppingError> {
-        let mut user_tag = self.tags.clone();
-
-        let status = self.step_tags(&mut user_tag, &self.autofill, StepType::StepDown, conn);
+        let status = conn.step().tag(&mut user_tag, step_type);
         self.tags = user_tag;
 
         // Reload index to the final point as some data just got added/changed
