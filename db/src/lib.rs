@@ -39,6 +39,12 @@ impl Cache {
             .ok_or_else(|| anyhow!("method '{}' not found", name))
     }
 
+    pub fn get_method_by_name_mut(&mut self, name: &str) -> Result<&mut TxMethod> {
+        let method = self.get_method_by_name(name)?.id;
+
+        Ok(self.tx_methods.get_mut(&method).unwrap())
+    }
+
     pub fn get_tag_id(&self, name: &str) -> Result<i32> {
         self.tags
             .values()

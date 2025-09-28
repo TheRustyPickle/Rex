@@ -1,4 +1,3 @@
-use rusqlite::Error as sqlError;
 use std::error::Error;
 use std::fmt::{self, Display, Result};
 use std::io::Error as ioError;
@@ -51,8 +50,8 @@ impl Display for CheckingError {
 impl Error for CheckingError {}
 
 pub enum TxUpdateError {
-    Add(sqlError),
-    Edit(sqlError),
+    Add(String),
+    Edit(String),
     Delete(String),
 }
 

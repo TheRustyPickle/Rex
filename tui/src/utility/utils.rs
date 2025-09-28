@@ -1,4 +1,6 @@
 use anyhow::Result;
+use app::conn::{DbConn, get_conn_old};
+use app::migration::start_migration;
 use crossterm::execute;
 use crossterm::terminal::{
     Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
@@ -12,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{Read, Stdout, Write, stdout};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
@@ -432,6 +434,14 @@ pub fn migrate_config(original_db_path: &PathBuf) -> Result<()> {
 
     let mut file = File::create(target_dir)?;
     serde_json::to_writer(&mut file, &config)?;
+
+    Ok(())
+}
+
+pub fn migrate_to_new_schema(old_conn_path: &Path, new_conn: &mut DbConn) -> Result<()> {
+    let old_conn = get_conn_old(old_conn_path.to_string_lossy().as_ref());
+
+    start_migration(old_conn, new_conn).unwrap();
 
     Ok(())
 }
