@@ -1,4 +1,3 @@
-mod db;
 mod key_checker;
 mod outputs;
 mod page_handler;
@@ -40,6 +39,7 @@ fn main() {
         };
 
         let mut migrated_path = working_path.clone();
+        // TODO: rename
         migrated_path.push("v2.sqlite");
 
         working_path.push("test.sqlite");

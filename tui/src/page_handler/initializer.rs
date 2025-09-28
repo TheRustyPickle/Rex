@@ -1,7 +1,6 @@
 use anyhow::Result;
 use app::conn::get_conn;
 use atty::Stream;
-use rusqlite::Connection;
 use std::env::set_current_dir;
 use std::fs::{self, File};
 use std::io::prelude::*;
@@ -9,13 +8,12 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process;
 
-use crate::db::{add_new_tx_methods, migrate_to_new_schema, rename_column, reposition_column};
 use crate::outputs::HandlingOutput;
 use crate::page_handler::{ResetType, UserInputType, start_app};
 use crate::utility::{Config, check_version, migrate_config};
 use crate::utility::{
-    enter_tui_interface, exit_tui_interface, save_backup_db, start_taking_input, start_terminal,
-    start_timer,
+    enter_tui_interface, exit_tui_interface, migrate_to_new_schema, save_backup_db,
+    start_taking_input, start_terminal, start_timer,
 };
 
 /// Initialize the TUI loop
@@ -68,10 +66,10 @@ pub fn initialize_app(
     let migration_required = !migrated_db_path.exists();
 
     let mut migrated_conn = get_conn(migrated_db_path.to_string_lossy().as_ref());
-    let mut conn = Connection::open(&db_path)?;
 
-    if migration_required && let Err(e) = migrate_to_new_schema(&mut conn, &mut migrated_conn) {
+    if migration_required && let Err(e) = migrate_to_new_schema(&db_path, &mut migrated_conn) {
         println!("Failed to migrate to new schema. Error: {e:?}");
+        fs::remove_file(migrated_db_path)?;
         process::exit(1);
     };
 
@@ -84,7 +82,8 @@ pub fn initialize_app(
             Ok(output) => match output {
                 HandlingOutput::TakeUserInput => match start_taking_input(&mut migrated_conn) {
                     UserInputType::AddNewTxMethod(tx_methods) => {
-                        let status = add_new_tx_methods(&tx_methods, &mut conn);
+                        let status = migrated_conn.add_new_methods(&tx_methods);
+
                         match status {
                             Ok(()) => start_timer("Added Transaction Methods Successfully."),
                             Err(e) => {
@@ -99,7 +98,7 @@ pub fn initialize_app(
                         let old_name = &rename_data[0];
                         let new_name = &rename_data[1];
 
-                        let status = rename_column(old_name, new_name, &mut conn);
+                        let status = migrated_conn.rename_tx_method(old_name, new_name);
 
                         match status {
                             Ok(()) => start_timer("Tx Method renamed successfully."),
@@ -110,7 +109,7 @@ pub fn initialize_app(
                         }
                     }
                     UserInputType::RepositionTxMethod(tx_methods) => {
-                        let status = reposition_column(&tx_methods, &mut conn);
+                        let status = migrated_conn.set_new_tx_method_positions(&tx_methods);
 
                         match status {
                             Ok(()) => start_timer("Transaction Method repositioned successfully."),

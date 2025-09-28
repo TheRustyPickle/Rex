@@ -61,4 +61,26 @@ impl TxMethod {
             .filter(tx_method_name.eq(name))
             .first(db_conn.conn())
     }
+
+    pub fn rename(
+        t_id: i32,
+        new_name: &str,
+        db_conn: &mut impl ConnCache,
+    ) -> Result<TxMethod, Error> {
+        use crate::schema::tx_methods::dsl::*;
+
+        diesel::update(tx_methods.filter(id.eq(t_id)))
+            .set(name.eq(new_name))
+            .returning(TxMethod::as_returning())
+            .get_result(db_conn.conn())
+    }
+
+    pub fn set_new_position(&self, db_conn: &mut impl ConnCache) -> Result<TxMethod, Error> {
+        use crate::schema::tx_methods::dsl::*;
+
+        diesel::update(tx_methods.filter(id.eq(self.id)))
+            .set(position.eq(self.position))
+            .returning(TxMethod::as_returning())
+            .get_result(db_conn.conn())
+    }
 }

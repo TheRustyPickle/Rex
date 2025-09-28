@@ -336,6 +336,49 @@ impl DbConn {
         Ok(result)
     }
 
+    pub fn rename_tx_method(&mut self, old_name: &str, new_name: &str) -> Result<()> {
+        let id = self.conn.transaction::<i32, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            let target_method = db_conn.cache().get_method_by_name(old_name)?.id;
+
+            TxMethod::rename(target_method, new_name, &mut db_conn)?;
+
+            Ok(target_method)
+        })?;
+
+        let method = self.cache.tx_methods.get_mut(&id).unwrap();
+        method.name = new_name.to_string();
+
+        Ok(())
+    }
+
+    pub fn set_new_tx_method_positions(&mut self, new_format: &[String]) -> Result<()> {
+        let mut new_method_positions = Vec::new();
+
+        for (ongoing_position, method) in new_format.iter().enumerate() {
+            let mut target_method = self.cache.get_method_by_name(method)?.clone();
+            target_method.position = ongoing_position as i32;
+
+            new_method_positions.push(target_method);
+        }
+
+        self.conn.transaction::<_, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            for method in &new_method_positions {
+                method.set_new_position(&mut db_conn)?;
+            }
+
+            Ok(())
+        })?;
+
+        self.cache.tx_methods.clear();
+        self.cache.new_tx_methods(new_method_positions);
+
+        Ok(())
+    }
+
     #[must_use]
     pub fn get_tx_methods(&self) -> &HashMap<i32, TxMethod> {
         &self.cache.tx_methods
