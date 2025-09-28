@@ -4,34 +4,50 @@ use atty::Stream;
 use std::env::set_current_dir;
 use std::fs::{self, File};
 use std::io::prelude::*;
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process;
 
 use crate::outputs::HandlingOutput;
 use crate::page_handler::{ResetType, UserInputType, start_app};
 use crate::utility::{Config, check_version, migrate_config};
 use crate::utility::{
-    enter_tui_interface, exit_tui_interface, migrate_to_new_schema, save_backup_db,
-    start_taking_input, start_terminal, start_timer,
+    enter_tui_interface, exit_tui_interface, migrate_to_new_schema, start_taking_input,
+    start_terminal, start_timer,
 };
 
 /// Initialize the TUI loop
 pub fn initialize_app(
-    original_db_path: &PathBuf,
+    old_db_path: &PathBuf,
     migrated_db_path: &Path,
     original_dir: &PathBuf,
 ) -> Result<()> {
+    let result = migrate_to_new_schema(old_db_path, migrated_db_path.to_string_lossy().as_ref());
+
+    match result {
+        Ok(result) => {
+            if result {
+                println!("Restart required after migration. Exiting");
+                process::exit(0);
+            }
+        }
+        Err(e) => {
+            println!("Failed to migrate to new schema. Error: {e:?}");
+            fs::remove_file(migrated_db_path)?;
+            process::exit(1);
+        }
+    }
+
     let new_version = check_version();
 
-    if let Err(e) = migrate_config(original_db_path) {
+    if let Err(e) = migrate_config(old_db_path) {
         println!("Failed to migrate config. Error: {e:?}");
         process::exit(1);
     };
 
-    let mut config = Config::get_config(original_db_path)?;
+    let mut config = Config::get_config(&migrated_db_path.to_path_buf())?;
 
     let new_version_available = new_version.unwrap_or_default();
+
     // If is not terminal, try to start a terminal otherwise create an error.txt file with the error message
     if !atty::is(Stream::Stdout) && !start_terminal(original_dir.to_str().unwrap()) {
         let mut error_location = PathBuf::from(&original_dir);
@@ -45,33 +61,23 @@ pub fn initialize_app(
         process::exit(1);
     }
 
-    let mut original_db_changed = false;
-
-    // If the location was changed/JSON file found, change the db directory.
-    let db_path = if let Some(mut location) = config.new_location.clone() {
+    let new_db_path = if let Some(mut location) = config.new_location.clone() {
         let result = set_current_dir(&location);
 
         if let Err(e) = result {
-            println!("Failed to set the new path. Using the original path instead. Error: {e}");
-            original_db_path.clone()
+            println!(
+                "Failed to set the new path. Does the path exists? Exiting program. Error: {e}"
+            );
+            process::exit(1);
         } else {
-            original_db_changed = true;
-            location.push("data.sqlite");
-            location
+            location.push("rex.sqlite");
+            location.to_path_buf()
         }
     } else {
-        original_db_path.clone()
+        migrated_db_path.to_path_buf()
     };
 
-    let migration_required = !migrated_db_path.exists();
-
-    let mut migrated_conn = get_conn(migrated_db_path.to_string_lossy().as_ref());
-
-    if migration_required && let Err(e) = migrate_to_new_schema(&db_path, &mut migrated_conn) {
-        println!("Failed to migrate to new schema. Error: {e:?}");
-        fs::remove_file(migrated_db_path)?;
-        process::exit(1);
-    };
+    let mut migrated_conn = get_conn(new_db_path.to_string_lossy().as_ref());
 
     loop {
         let mut terminal = enter_tui_interface()?;
@@ -126,7 +132,7 @@ pub fn initialize_app(
                         config.set_new_location(target_path.clone())?;
 
                         target_path.push("data.sqlite");
-                        let file_copy_status = fs::copy(&db_path, target_path);
+                        let file_copy_status = fs::copy(&new_db_path, target_path);
 
                         match file_copy_status {
                             Ok(_) => {
@@ -174,7 +180,8 @@ pub fn initialize_app(
                     UserInputType::InvalidInput => unreachable!(),
                 },
                 HandlingOutput::QuitUi => {
-                    save_backup_db(&db_path, original_db_path, original_db_changed);
+                    drop(migrated_conn);
+                    config.save_backup(&new_db_path.to_path_buf());
                     break;
                 }
                 HandlingOutput::PrintNewUpdate => println!(
