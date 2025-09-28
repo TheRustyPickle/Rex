@@ -1,3 +1,4 @@
+use anyhow::Result;
 use crossterm::execute;
 use crossterm::terminal::{
     Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
@@ -9,10 +10,9 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Tabs};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::error::Error;
 use std::fs::{self, File};
-use std::io::{Read, Result as ioResult, Stdout, Write, stdout};
-use std::path::{Path, PathBuf};
+use std::io::{Read, Stdout, Write, stdout};
+use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 
@@ -22,7 +22,7 @@ use crate::page_handler::{BACKGROUND, BOX, HIGHLIGHTED, IndexedData, RED, Sortin
 const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense", "Cancel"];
 
 /// Enters raw mode so the TUI can render properly
-pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<dyn Error>> {
+pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>> {
     enable_raw_mode()?;
     let mut stdout = stdout();
     execute!(stdout, EnterAlternateScreen)?;
@@ -32,7 +32,7 @@ pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>, Box<d
 }
 
 /// Exits raw mode so the terminal starts working normally
-pub fn exit_tui_interface() -> Result<(), Box<dyn Error>> {
+pub fn exit_tui_interface() -> Result<()> {
     let stdout = stdout();
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
@@ -283,59 +283,8 @@ struct BackupPaths {
     locations: Vec<String>,
 }
 
-/// Checks if location.json exists and returns a path if it exists
-#[must_use]
-pub fn is_location_changed(working_dir: &PathBuf) -> Option<PathBuf> {
-    let mut json_path = working_dir.to_owned();
-    json_path.pop();
-    json_path.push("location.json");
-
-    if json_path.exists() {
-        let mut file = File::open(json_path).unwrap();
-        let mut file_content = String::new();
-        file.read_to_string(&mut file_content).unwrap();
-        let location_info: LocationInfo = serde_json::from_str(&file_content).unwrap();
-        Some(PathBuf::from(location_info.location))
-    } else {
-        None
-    }
-}
-
-/// Creates a location.json file to store the new app data location
-pub fn create_change_location_file(working_dir: &PathBuf, new_path: &Path) {
-    let mut target_dir = working_dir.to_owned();
-    target_dir.pop();
-
-    let location = LocationInfo {
-        location: new_path.to_str().unwrap().to_string(),
-    };
-
-    target_dir.push("location.json");
-
-    let mut file = File::create(target_dir).unwrap();
-
-    serde_json::to_writer(&mut file, &location).unwrap();
-}
-
-/// Create a `backup_paths.json` file to store the location of where backup db will be located
-pub fn create_backup_location_file(original_db_path: &PathBuf, backup_paths: Vec<PathBuf>) {
-    let mut target_dir = original_db_path.to_owned();
-    target_dir.pop();
-
-    let backup = BackupPaths {
-        locations: backup_paths
-            .into_iter()
-            .map(|path| path.to_str().unwrap().to_owned())
-            .collect(),
-    };
-
-    target_dir.push("backup_paths.json");
-    let mut file = File::create(target_dir).unwrap();
-    serde_json::to_writer(&mut file, &backup).unwrap();
-}
-
 /// Copies the latest DB to the backup location specified in `backend_paths.json`
-pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
+pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf, original_path_changed: bool) {
     let mut json_path = original_db_path.to_owned();
     json_path.pop();
 
@@ -366,32 +315,123 @@ pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf) {
             continue;
         }
     }
+
+    if original_path_changed && let Err(e) = fs::copy(db_path, original_db_path) {
+        println!(
+            "Failed to copy DB to original path {}. Error: {e:?}",
+            original_db_path.to_string_lossy()
+        );
+    }
 }
 
-/// Deletes `backup_paths.json` which contains all locations where backup DB is located.
-pub fn delete_backup_db(original_db_path: &PathBuf) -> ioResult<()> {
-    let mut json_path = original_db_path.to_owned();
-    json_path.pop();
-
-    json_path.push("backup_paths.json");
-
-    if !json_path.exists() {
-        return Ok(());
-    }
-
-    fs::remove_file(json_path)
+#[derive(Serialize, Deserialize)]
+pub struct Config {
+    #[serde(skip)]
+    config_location: PathBuf,
+    pub backup_db_path: Option<Vec<PathBuf>>,
+    pub new_location: Option<PathBuf>,
 }
 
-/// Deletes `locations.json` file which stores alternative location information of the DB.
-pub fn delete_location_change(original_db_path: &PathBuf) -> ioResult<()> {
-    let mut json_path = original_db_path.to_owned();
-    json_path.pop();
+impl Config {
+    pub fn get_config(original_db_path: &PathBuf) -> Result<Self> {
+        let mut target_dir = original_db_path.to_owned();
+        target_dir.pop();
 
-    json_path.push("location.json");
+        target_dir.push("rex.json");
 
-    if !json_path.exists() {
-        return Ok(());
+        if !target_dir.exists() {
+            return Ok(Config {
+                backup_db_path: None,
+                new_location: None,
+                config_location: target_dir,
+            });
+        }
+
+        let mut file = File::open(target_dir).unwrap();
+        let mut file_content = String::new();
+        file.read_to_string(&mut file_content).unwrap();
+        Ok(serde_json::from_str(&file_content)?)
     }
 
-    fs::remove_file(json_path)
+    pub fn save_config(&self) -> Result<()> {
+        let mut file = File::create(&self.config_location).unwrap();
+        serde_json::to_writer(&mut file, self).unwrap();
+        Ok(())
+    }
+
+    pub fn reset_new_location(&mut self) -> Result<()> {
+        self.new_location = None;
+        self.save_config()
+    }
+
+    pub fn reset_backup_db_path(&mut self) -> Result<()> {
+        self.backup_db_path = None;
+        self.save_config()
+    }
+
+    pub fn set_backup_db_path(&mut self, backup_db_path: Vec<PathBuf>) -> Result<()> {
+        self.backup_db_path = Some(backup_db_path);
+        self.save_config()
+    }
+
+    pub fn set_new_location(&mut self, new_location: PathBuf) -> Result<()> {
+        self.new_location = Some(new_location);
+        self.save_config()
+    }
+}
+
+pub fn migrate_config(original_db_path: &PathBuf) -> Result<()> {
+    let mut config = Config {
+        backup_db_path: None,
+        new_location: None,
+        config_location: PathBuf::new(),
+    };
+
+    let mut backup_path = original_db_path.to_owned();
+    backup_path.pop();
+
+    backup_path.push("backup_paths.json");
+
+    if backup_path.exists() {
+        let mut file = File::open(&backup_path)?;
+        let mut file_content = String::new();
+        file.read_to_string(&mut file_content)?;
+        let location_info: BackupPaths = serde_json::from_str(&file_content)?;
+
+        config.backup_db_path = Some(
+            location_info
+                .locations
+                .into_iter()
+                .map(PathBuf::from)
+                .collect(),
+        );
+
+        fs::remove_file(backup_path)?;
+    }
+
+    let mut location_path = original_db_path.to_owned();
+    location_path.pop();
+
+    location_path.push("location.json");
+
+    if location_path.exists() {
+        let mut file = File::open(&location_path)?;
+        let mut file_content = String::new();
+        file.read_to_string(&mut file_content)?;
+        let location_info: LocationInfo = serde_json::from_str(&file_content)?;
+
+        config.new_location = Some(PathBuf::from(location_info.location));
+
+        fs::remove_file(location_path)?;
+    }
+
+    let mut target_dir = original_db_path.to_owned();
+    target_dir.pop();
+
+    target_dir.push("rex.json");
+
+    let mut file = File::create(target_dir)?;
+    serde_json::to_writer(&mut file, &config)?;
+
+    Ok(())
 }

@@ -1,8 +1,8 @@
+use anyhow::Result;
 use app::conn::get_conn;
 use atty::Stream;
 use rusqlite::Connection;
 use std::env::set_current_dir;
-use std::error::Error;
 use std::fs::{self, File};
 use std::io::prelude::*;
 use std::path::Path;
@@ -12,11 +12,10 @@ use std::process;
 use crate::db::{add_new_tx_methods, migrate_to_new_schema, rename_column, reposition_column};
 use crate::outputs::HandlingOutput;
 use crate::page_handler::{ResetType, UserInputType, start_app};
-use crate::utility::check_version;
+use crate::utility::{Config, check_version, migrate_config};
 use crate::utility::{
-    create_backup_location_file, create_change_location_file, delete_backup_db,
-    delete_location_change, enter_tui_interface, exit_tui_interface, is_location_changed,
-    save_backup_db, start_taking_input, start_terminal, start_timer,
+    enter_tui_interface, exit_tui_interface, save_backup_db, start_taking_input, start_terminal,
+    start_timer,
 };
 
 /// Initialize the TUI loop
@@ -24,8 +23,15 @@ pub fn initialize_app(
     original_db_path: &PathBuf,
     migrated_db_path: &Path,
     original_dir: &PathBuf,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<()> {
     let new_version = check_version();
+
+    if let Err(e) = migrate_config(original_db_path) {
+        println!("Failed to migrate config. Error: {e:?}");
+        process::exit(1);
+    };
+
+    let mut config = Config::get_config(original_db_path)?;
 
     let new_version_available = new_version.unwrap_or_default();
     // If is not terminal, try to start a terminal otherwise create an error.txt file with the error message
@@ -41,14 +47,20 @@ pub fn initialize_app(
         process::exit(1);
     }
 
+    let mut original_db_changed = false;
+
     // If the location was changed/JSON file found, change the db directory.
-    let db_path = if let Some(mut location) = is_location_changed(original_db_path) {
-        let Ok(()) = set_current_dir(&location) else {
-            println!("Failed to set the new path. Exiting program...");
-            std::process::exit(1);
-        };
-        location.push("data.sqlite");
-        location
+    let db_path = if let Some(mut location) = config.new_location.clone() {
+        let result = set_current_dir(&location);
+
+        if let Err(e) = result {
+            println!("Failed to set the new path. Using the original path instead. Error: {e}");
+            original_db_path.clone()
+        } else {
+            original_db_changed = true;
+            location.push("data.sqlite");
+            location
+        }
     } else {
         original_db_path.clone()
     };
@@ -58,9 +70,10 @@ pub fn initialize_app(
     let mut migrated_conn = get_conn(migrated_db_path.to_string_lossy().as_ref());
     let mut conn = Connection::open(&db_path)?;
 
-    if migration_required {
-        migrate_to_new_schema(&mut conn, &mut migrated_conn).unwrap();
-    }
+    if migration_required && let Err(e) = migrate_to_new_schema(&mut conn, &mut migrated_conn) {
+        println!("Failed to migrate to new schema. Error: {e:?}");
+        process::exit(1);
+    };
 
     loop {
         let mut terminal = enter_tui_interface()?;
@@ -111,7 +124,7 @@ pub fn initialize_app(
                         start_timer("Operation Cancelled.");
                     }
                     UserInputType::SetNewLocation(mut target_path) => {
-                        create_change_location_file(&db_path, &target_path);
+                        config.set_new_location(target_path.clone())?;
 
                         target_path.push("data.sqlite");
                         let file_copy_status = fs::copy(&db_path, target_path);
@@ -130,12 +143,12 @@ pub fn initialize_app(
                         }
                     }
                     UserInputType::BackupDBPath(paths) => {
-                        create_backup_location_file(original_db_path, paths);
+                        config.set_backup_db_path(paths)?;
 
                         start_timer("Backup DB path locations set successfully.");
                     }
                     UserInputType::ResetData(reset_type) => match reset_type {
-                        ResetType::NewLocation => match delete_location_change(original_db_path) {
+                        ResetType::NewLocation => match config.reset_new_location() {
                             Ok(()) => {
                                 start_timer(
                                     "New location data removed successfully. The app must be restarted for it to take effect. It will exit after this.",
@@ -149,7 +162,7 @@ pub fn initialize_app(
                                 start_timer("");
                             }
                         },
-                        ResetType::BackupDB => match delete_backup_db(original_db_path) {
+                        ResetType::BackupDB => match config.reset_backup_db_path() {
                             Ok(()) => start_timer("Backup DB Path removed successfully."),
                             Err(e) => {
                                 println!(
@@ -162,7 +175,7 @@ pub fn initialize_app(
                     UserInputType::InvalidInput => unreachable!(),
                 },
                 HandlingOutput::QuitUi => {
-                    save_backup_db(&db_path, original_db_path);
+                    save_backup_db(&db_path, original_db_path, original_db_changed);
                     break;
                 }
                 HandlingOutput::PrintNewUpdate => println!(
