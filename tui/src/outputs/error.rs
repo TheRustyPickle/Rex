@@ -2,30 +2,6 @@ use rusqlite::Error as sqlError;
 use std::error::Error;
 use std::fmt::{self, Display, Result};
 use std::io::Error as ioError;
-use std::process::Output;
-
-#[derive(Debug)]
-pub enum TerminalExecutionError {
-    NotFound(Output),
-    ExecutionFailed(ioError),
-}
-
-impl Display for TerminalExecutionError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
-        match self {
-            TerminalExecutionError::NotFound(output) => write!(
-                f,
-                "Error while trying to run any console/terminal. Use a terminal/console to run the app. Output:\n\n{output:?}",
-            ),
-            TerminalExecutionError::ExecutionFailed(error) => write!(
-                f,
-                "Error while processing commands. Use a terminal/console to run the app. Output: {error}",
-            ),
-        }
-    }
-}
-
-impl Error for TerminalExecutionError {}
 
 #[derive(Debug)]
 pub enum UiHandlingError {

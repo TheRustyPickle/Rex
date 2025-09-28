@@ -5,7 +5,6 @@ use std::io::stdout;
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::outputs::TerminalExecutionError;
 use crate::page_handler::{ResetType, UserInputType};
 use crate::utility::{check_restricted, clear_terminal, flush_output, take_input};
 
@@ -497,15 +496,12 @@ Windows: C:\\data\\save\\, C:\\backup\\save\\, C:\\folder\\app\\";
 
 /// Tries to open terminal/cmd and run this app
 /// Currently supports windows cmd, konsole, gnome-terminal, kgx (also known as gnome-console)
-pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> {
+pub fn start_terminal(original_dir: &str) -> bool {
+    let mut all_terminals = HashMap::new();
+
     if cfg!(target_os = "windows") {
-        Command::new("cmd.exe")
-            .arg("start")
-            .arg("rex")
-            .output()
-            .map_err(TerminalExecutionError::ExecutionFailed)?;
+        all_terminals.insert("cmd.exe", vec!["start".to_string(), "rex".to_string()]);
     } else {
-        let mut all_terminals = HashMap::new();
         let gnome_dir = format!("--working-directory={original_dir}");
 
         all_terminals.insert(
@@ -533,27 +529,19 @@ pub fn start_terminal(original_dir: &str) -> Result<(), TerminalExecutionError> 
             "kgx",
             vec![gnome_dir, "-e".to_string(), "./rex".to_string()],
         );
+    }
 
-        let mut terminal_opened = false;
-        let mut result = None;
+    let mut terminal_opened = false;
 
-        for (key, value) in all_terminals {
-            let status = Command::new(key).args(value).output();
-            match status {
-                Ok(out) => {
-                    if out.stderr.len() > 2 {
-                        result = Some(TerminalExecutionError::NotFound(out));
-                    } else {
-                        terminal_opened = true;
-                        break;
-                    }
-                }
-                Err(err) => result = Some(TerminalExecutionError::ExecutionFailed(err)),
-            }
-        }
-        if !terminal_opened {
-            return Err(result.unwrap());
+    for (key, value) in all_terminals {
+        let status = Command::new(key).args(value).output();
+        if let Ok(out) = status
+            && !out.stderr.len() > 2
+        {
+            terminal_opened = true;
+            break;
         }
     }
-    Ok(())
+
+    terminal_opened
 }
