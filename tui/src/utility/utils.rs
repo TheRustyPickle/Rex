@@ -1,5 +1,5 @@
 use anyhow::Result;
-use app::conn::{DbConn, get_conn_old};
+use app::conn::{get_conn, get_conn_old};
 use app::migration::start_migration;
 use crossterm::execute;
 use crossterm::terminal::{
@@ -285,47 +285,6 @@ struct BackupPaths {
     locations: Vec<String>,
 }
 
-/// Copies the latest DB to the backup location specified in `backend_paths.json`
-pub fn save_backup_db(db_path: &PathBuf, original_db_path: &PathBuf, original_path_changed: bool) {
-    let mut json_path = original_db_path.to_owned();
-    json_path.pop();
-
-    json_path.push("backup_paths.json");
-
-    if !json_path.exists() {
-        return;
-    }
-
-    let mut file = File::open(json_path).unwrap();
-    let mut file_content = String::new();
-    file.read_to_string(&mut file_content).unwrap();
-    let location_info: BackupPaths = serde_json::from_str(&file_content).unwrap();
-
-    for path in location_info.locations {
-        let mut target_path = PathBuf::from(path);
-
-        if !target_path.exists() {
-            println!("Failed to find path {}", target_path.to_string_lossy());
-            continue;
-        }
-        target_path.push("data.sqlite");
-        if let Err(e) = fs::copy(db_path, &target_path) {
-            println!(
-                "Failed to copy DB to backup path {}. Error: {e:?}",
-                target_path.to_string_lossy()
-            );
-            continue;
-        }
-    }
-
-    if original_path_changed && let Err(e) = fs::copy(db_path, original_db_path) {
-        println!(
-            "Failed to copy DB to original path {}. Error: {e:?}",
-            original_db_path.to_string_lossy()
-        );
-    }
-}
-
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     #[serde(skip)]
@@ -349,10 +308,13 @@ impl Config {
             });
         }
 
-        let mut file = File::open(target_dir).unwrap();
+        let mut file = File::open(&target_dir).unwrap();
         let mut file_content = String::new();
         file.read_to_string(&mut file_content).unwrap();
-        Ok(serde_json::from_str(&file_content)?)
+        let mut config: Config = serde_json::from_str(&file_content)?;
+
+        config.config_location = target_dir;
+        Ok(config)
     }
 
     pub fn save_config(&self) -> Result<()> {
@@ -377,22 +339,76 @@ impl Config {
     }
 
     pub fn set_new_location(&mut self, new_location: PathBuf) -> Result<()> {
+        let mut og_db_path = self.config_location.clone();
+        og_db_path.pop();
+
+        og_db_path.push("rex.sqlite");
+
+        let mut new_db_path = new_location.clone();
+        new_db_path.push("rex.sqlite");
+
+        fs::copy(og_db_path, new_db_path)?;
+
         self.new_location = Some(new_location);
         self.save_config()
     }
+
+    pub fn save_backup(&self, db_path: &PathBuf) {
+        let mut original_db_path = self.config_location.clone();
+        original_db_path.pop();
+
+        original_db_path.push("rex.sqlite");
+
+        if let Some(paths) = &self.backup_db_path {
+            for path in paths {
+                let mut target_path = path.clone();
+                if !target_path.exists() {
+                    println!("Failed to find path {}", target_path.to_string_lossy());
+                    continue;
+                }
+                target_path.push("rex.sqlite");
+
+                if let Err(e) = fs::copy(db_path, &target_path) {
+                    println!(
+                        "Failed to copy DB to backup path {}. Error: {e:?}",
+                        target_path.to_string_lossy()
+                    );
+                    continue;
+                }
+            }
+        }
+
+        if &original_db_path != db_path
+            && let Err(e) = fs::copy(db_path, &original_db_path)
+        {
+            println!(
+                "Failed to copy DB to original path {}. Error: {e:?}",
+                original_db_path.to_string_lossy()
+            );
+        }
+    }
 }
 
-pub fn migrate_config(original_db_path: &PathBuf) -> Result<()> {
+pub fn migrate_config(config_path: &PathBuf) -> Result<()> {
     let mut config = Config {
         backup_db_path: None,
         new_location: None,
         config_location: PathBuf::new(),
     };
 
-    let mut backup_path = original_db_path.to_owned();
+    let mut backup_path = config_path.to_owned();
     backup_path.pop();
 
     backup_path.push("backup_paths.json");
+
+    let mut location_path = config_path.to_owned();
+    location_path.pop();
+
+    location_path.push("location.json");
+
+    if !backup_path.exists() && !location_path.exists() {
+        return Ok(());
+    }
 
     if backup_path.exists() {
         let mut file = File::open(&backup_path)?;
@@ -411,11 +427,6 @@ pub fn migrate_config(original_db_path: &PathBuf) -> Result<()> {
         fs::remove_file(backup_path)?;
     }
 
-    let mut location_path = original_db_path.to_owned();
-    location_path.pop();
-
-    location_path.push("location.json");
-
     if location_path.exists() {
         let mut file = File::open(&location_path)?;
         let mut file_content = String::new();
@@ -425,9 +436,19 @@ pub fn migrate_config(original_db_path: &PathBuf) -> Result<()> {
         config.new_location = Some(PathBuf::from(location_info.location));
 
         fs::remove_file(location_path)?;
+
+        let mut og_db_path = config_path.to_owned();
+        og_db_path.pop();
+
+        og_db_path.push("rex.sqlite");
+
+        let mut new_db_path = config.new_location.clone().unwrap();
+        new_db_path.push("rex.sqlite");
+
+        fs::copy(og_db_path, new_db_path)?;
     }
 
-    let mut target_dir = original_db_path.to_owned();
+    let mut target_dir = config_path.to_owned();
     target_dir.pop();
 
     target_dir.push("rex.json");
@@ -438,10 +459,15 @@ pub fn migrate_config(original_db_path: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-pub fn migrate_to_new_schema(old_conn_path: &Path, new_conn: &mut DbConn) -> Result<()> {
+pub fn migrate_to_new_schema(old_conn_path: &Path, new_conn: &str) -> Result<bool> {
     let old_conn = get_conn_old(old_conn_path.to_string_lossy().as_ref());
 
-    start_migration(old_conn, new_conn).unwrap();
+    if PathBuf::from(new_conn).exists() {
+        return Ok(false);
+    }
 
-    Ok(())
+    let mut new_conn = get_conn(new_conn);
+
+    start_migration(old_conn, &mut new_conn).unwrap();
+    Ok(true)
 }
