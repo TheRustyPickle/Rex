@@ -219,7 +219,7 @@ pub fn add_tx_ui(
         }
         TxTab::Tags => {
             tags_text = Line::from(vec![
-                Span::from(format!("{} ", input_data[5])),
+                Span::from(format!("{} ", input_data[6])),
                 Span::styled(input_data[7], Style::default().fg(GRAY)),
             ]);
         }
