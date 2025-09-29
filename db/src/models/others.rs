@@ -16,6 +16,7 @@ pub enum FetchNature {
     All,
 }
 
+#[derive(Clone, Copy)]
 pub enum DateNature {
     Exact(NaiveDateTime),
     ByMonth {
@@ -41,11 +42,11 @@ impl AmountNature {
     #[must_use]
     pub fn extract(&self) -> Cent {
         let i = match self {
-            AmountNature::Exact(i) => i,
-            AmountNature::MoreThan(i) => i,
-            AmountNature::MoreThanEqual(i) => i,
-            AmountNature::LessThan(i) => i,
-            AmountNature::LessThanEqual(i) => i,
+            AmountNature::Exact(i)
+            | AmountNature::MoreThan(i)
+            | AmountNature::MoreThanEqual(i)
+            | AmountNature::LessThan(i)
+            | AmountNature::LessThanEqual(i) => i,
         };
 
         *i
@@ -87,6 +88,7 @@ impl Display for AmountNature {
     }
 }
 
+#[derive(Copy, Clone)]
 pub enum AmountType {
     Exact,
     MoreThan,

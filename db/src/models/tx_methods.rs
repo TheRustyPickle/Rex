@@ -67,7 +67,7 @@ impl TxMethod {
         new_name: &str,
         db_conn: &mut impl ConnCache,
     ) -> Result<TxMethod, Error> {
-        use crate::schema::tx_methods::dsl::*;
+        use crate::schema::tx_methods::dsl::{id, name, tx_methods};
 
         diesel::update(tx_methods.filter(id.eq(t_id)))
             .set(name.eq(new_name))
@@ -76,7 +76,7 @@ impl TxMethod {
     }
 
     pub fn set_new_position(&self, db_conn: &mut impl ConnCache) -> Result<TxMethod, Error> {
-        use crate::schema::tx_methods::dsl::*;
+        use crate::schema::tx_methods::dsl::{id, position, tx_methods};
 
         diesel::update(tx_methods.filter(id.eq(self.id)))
             .set(position.eq(self.position))

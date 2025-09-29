@@ -98,17 +98,17 @@ pub(crate) fn add_new_tx(
             let tx_tag = TxTag::new(added_tx.id, tag_id);
             tx_tags.push(tx_tag);
             continue;
-        } else {
-            let tag_data = NewTag::new(&tag)
-                .insert(db_conn)
-                .context("Failed on new tag")?;
-
-            new_tags.push(tag_data.clone());
-
-            let tx_tag = TxTag::new(added_tx.id, tag_data.id);
-
-            tx_tags.push(tx_tag);
         }
+
+        let tag_data = NewTag::new(&tag)
+            .insert(db_conn)
+            .context("Failed on new tag")?;
+
+        new_tags.push(tag_data.clone());
+
+        let tx_tag = TxTag::new(added_tx.id, tag_data.id);
+
+        tx_tags.push(tx_tag);
     }
 
     TxTag::insert_batch(tx_tags, db_conn)?;

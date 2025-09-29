@@ -17,11 +17,13 @@ pub(crate) fn get_best_match(data: &str, matching_set: &[String]) -> String {
     best_match.to_string()
 }
 
+#[derive(Copy, Clone)]
 pub enum StepType {
     StepUp,
     StepDown,
 }
 
+#[derive(Copy, Clone)]
 pub enum DateType {
     Exact,
     Monthly,
