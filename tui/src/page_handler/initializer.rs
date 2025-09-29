@@ -55,7 +55,7 @@ pub fn initialize_app(
     if let Err(e) = migrate_config(old_db_path) {
         println!("Failed to migrate config. Error: {e:?}");
         process::exit(1);
-    };
+    }
 
     let mut config = Config::get_config(&migrated_db_path.to_path_buf())?;
 
@@ -71,7 +71,7 @@ pub fn initialize_app(
             process::exit(1);
         } else {
             location.push("rex.sqlite");
-            location.to_path_buf()
+            location.clone()
         }
     } else {
         migrated_db_path.to_path_buf()
@@ -181,7 +181,7 @@ pub fn initialize_app(
                 },
                 HandlingOutput::QuitUi => {
                     drop(migrated_conn);
-                    config.save_backup(&new_db_path.to_path_buf());
+                    config.save_backup(&new_db_path.clone());
                     break;
                 }
                 HandlingOutput::PrintNewUpdate => println!(

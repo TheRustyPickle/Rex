@@ -18,7 +18,7 @@ pub fn search_ui(
     search_data: &TxData,
     search_tab: &TxTab,
     search_table: &mut TableData,
-    date_type: &DateType,
+    date_type: DateType,
     lerp_state: &mut LerpState,
 ) {
     // Get the data to insert into the Status widget of this page

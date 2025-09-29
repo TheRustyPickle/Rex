@@ -288,7 +288,7 @@ struct BackupPaths {
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     #[serde(skip)]
-    config_location: PathBuf,
+    location: PathBuf,
     pub backup_db_path: Option<Vec<PathBuf>>,
     pub new_location: Option<PathBuf>,
 }
@@ -304,22 +304,22 @@ impl Config {
             return Ok(Config {
                 backup_db_path: None,
                 new_location: None,
-                config_location: target_dir,
+                location: target_dir,
             });
         }
 
-        let mut file = File::open(&target_dir).unwrap();
+        let mut file = File::open(&target_dir)?;
         let mut file_content = String::new();
-        file.read_to_string(&mut file_content).unwrap();
+        file.read_to_string(&mut file_content)?;
         let mut config: Config = serde_json::from_str(&file_content)?;
 
-        config.config_location = target_dir;
+        config.location = target_dir;
         Ok(config)
     }
 
     pub fn save_config(&self) -> Result<()> {
-        let mut file = File::create(&self.config_location).unwrap();
-        serde_json::to_writer(&mut file, self).unwrap();
+        let mut file = File::create(&self.location)?;
+        serde_json::to_writer(&mut file, self)?;
         Ok(())
     }
 
@@ -339,7 +339,7 @@ impl Config {
     }
 
     pub fn set_new_location(&mut self, new_location: PathBuf) -> Result<()> {
-        let mut og_db_path = self.config_location.clone();
+        let mut og_db_path = self.location.clone();
         og_db_path.pop();
 
         og_db_path.push("rex.sqlite");
@@ -354,7 +354,7 @@ impl Config {
     }
 
     pub fn save_backup(&self, db_path: &PathBuf) {
-        let mut original_db_path = self.config_location.clone();
+        let mut original_db_path = self.location.clone();
         original_db_path.pop();
 
         original_db_path.push("rex.sqlite");
@@ -373,7 +373,6 @@ impl Config {
                         "Failed to copy DB to backup path {}. Error: {e:?}",
                         target_path.to_string_lossy()
                     );
-                    continue;
                 }
             }
         }
@@ -393,7 +392,7 @@ pub fn migrate_config(config_path: &PathBuf) -> Result<()> {
     let mut config = Config {
         backup_db_path: None,
         new_location: None,
-        config_location: PathBuf::new(),
+        location: PathBuf::new(),
     };
 
     let mut backup_path = config_path.to_owned();
@@ -468,6 +467,6 @@ pub fn migrate_to_new_schema(old_conn_path: &Path, new_conn: &str) -> Result<boo
 
     let mut new_conn = get_conn(new_conn);
 
-    start_migration(old_conn, &mut new_conn).unwrap();
+    start_migration(old_conn, &mut new_conn)?;
     Ok(true)
 }

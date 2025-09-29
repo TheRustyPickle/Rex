@@ -59,10 +59,8 @@ impl<'a> NewSearch<'a> {
                 DateNature::ByMonth {
                     start_date,
                     end_date,
-                } => {
-                    query = query.filter(date.between(start_date, end_date));
                 }
-                DateNature::ByYear {
+                | DateNature::ByYear {
                     start_date,
                     end_date,
                 } => {

@@ -89,8 +89,8 @@ impl Balance {
             .select(Self::as_select())
             .load(db_conn.conn())?;
 
-        let mut balance_map =
-            HashMap::from_iter(balance_list.into_iter().map(|b| (b.method_id, b)));
+        let mut balance_map: HashMap<i32, Self> =
+            balance_list.into_iter().map(|b| (b.method_id, b)).collect();
 
         if balance_map.len() == db_conn.cache().tx_methods.len() {
             return Ok(balance_map);
@@ -270,7 +270,7 @@ impl Balance {
             "Final balances are not set for all transaction methods"
         );
 
-        let balance_map = HashMap::from_iter(balance_list.into_iter().map(|b| (b.method_id, b)));
+        let balance_map = balance_list.into_iter().map(|b| (b.method_id, b)).collect();
 
         Ok(balance_map)
     }

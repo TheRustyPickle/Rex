@@ -306,7 +306,7 @@ impl SummaryView {
                     if biggest_earning.amount < tx.amount {
                         biggest_earning.amount = tx.amount;
                         biggest_earning.date = tx.date.date();
-                        biggest_earning.method = tx.from_method.name.clone();
+                        biggest_earning.method.clone_from(&tx.from_method.name);
                     }
 
                     last_peak_earning.amount += tx.amount;
@@ -322,7 +322,7 @@ impl SummaryView {
                     if biggest_expense.amount < tx.amount {
                         biggest_expense.amount = tx.amount;
                         biggest_expense.date = tx.date.date();
-                        biggest_expense.method = tx.from_method.name.clone();
+                        biggest_expense.method.clone_from(&tx.from_method.name);
                     }
 
                     last_peak_expense.amount += tx.amount;

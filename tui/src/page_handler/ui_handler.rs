@@ -261,7 +261,7 @@ pub fn start_app<B: Backend>(
                         &search_data,
                         &search_tab,
                         &mut search_table,
-                        &search_date_type,
+                        search_date_type,
                         &mut lerp_state,
                     ),
                     CurrentUi::Activity => activity_ui(
