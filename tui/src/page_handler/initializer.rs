@@ -21,6 +21,19 @@ pub fn initialize_app(
     migrated_db_path: &Path,
     original_dir: &PathBuf,
 ) -> Result<()> {
+    // If is not terminal, try to start a terminal otherwise create an error.txt file with the error message
+    if !atty::is(Stream::Stdout) && !start_terminal(original_dir.to_str().unwrap()) {
+        let mut error_location = PathBuf::from(&original_dir);
+        error_location.push("Error.txt");
+
+        let mut open = File::create(error_location)?;
+        let to_write =
+            "Failed to start a terminal. Please open one manually by executing the binary"
+                .to_string();
+        open.write_all(to_write.as_bytes())?;
+        process::exit(1);
+    }
+
     let result = migrate_to_new_schema(old_db_path, migrated_db_path.to_string_lossy().as_ref());
 
     match result {
@@ -47,19 +60,6 @@ pub fn initialize_app(
     let mut config = Config::get_config(&migrated_db_path.to_path_buf())?;
 
     let new_version_available = new_version.unwrap_or_default();
-
-    // If is not terminal, try to start a terminal otherwise create an error.txt file with the error message
-    if !atty::is(Stream::Stdout) && !start_terminal(original_dir.to_str().unwrap()) {
-        let mut error_location = PathBuf::from(&original_dir);
-        error_location.push("Error.txt");
-
-        let mut open = File::create(error_location)?;
-        let to_write =
-            "Failed to start a terminal. Please open one manually by executing the binary"
-                .to_string();
-        open.write_all(to_write.as_bytes())?;
-        process::exit(1);
-    }
 
     let new_db_path = if let Some(mut location) = config.new_location.clone() {
         let result = set_current_dir(&location);
