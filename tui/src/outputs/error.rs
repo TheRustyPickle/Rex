@@ -1,50 +1,29 @@
 use std::error::Error;
-use std::fmt::{self, Display, Result};
 use std::io::Error as ioError;
+use strum_macros::Display;
 
-#[derive(Debug)]
+#[derive(Debug, Display)]
 pub enum UiHandlingError {
+    #[strum(to_string = "Error while trying to draw widgets. Error: {0}")]
     DrawingError(ioError),
+    #[strum(to_string = "Error while polling for keyboard input. {0}")]
     PollingError(ioError),
-}
-
-impl Display for UiHandlingError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
-        match self {
-            UiHandlingError::DrawingError(err) => {
-                write!(f, "Error while trying to draw widgets. Error: {err}",)
-            }
-            UiHandlingError::PollingError(err) => {
-                write!(f, "Error while polling for keyboard input. {err}")
-            }
-        }
-    }
 }
 
 impl Error for UiHandlingError {}
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Display)]
 pub enum CheckingError {
+    #[strum(to_string = "Date: Date cannot be empty")]
     EmptyDate,
+    #[strum(to_string = "Tx Method: TX Method cannot be empty")]
     EmptyMethod,
+    #[strum(to_string = "Amount: Amount cannot be empty")]
     EmptyAmount,
+    #[strum(to_string = "Tx Type: Transaction Type cannot be empty")]
     EmptyTxType,
+    #[strum(to_string = "Tx Method: From and To methods cannot be the same for Transfer")]
     SameTxMethod,
-}
-
-impl Display for CheckingError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
-        match self {
-            CheckingError::EmptyDate => write!(f, "Date: Date cannot be empty"),
-            CheckingError::EmptyMethod => write!(f, "Tx Method: TX Method cannot be empty"),
-            CheckingError::EmptyAmount => write!(f, "Amount: Amount cannot be empty"),
-            CheckingError::EmptyTxType => write!(f, "Tx Type: Transaction Type cannot be empty"),
-            CheckingError::SameTxMethod => write!(
-                f,
-                "Tx Method: From and To methods cannot be the same for Transfer"
-            ),
-        }
-    }
 }
 
 impl Error for CheckingError {}

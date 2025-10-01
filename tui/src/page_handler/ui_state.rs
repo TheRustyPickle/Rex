@@ -2,8 +2,8 @@ use app::conn::DbConn;
 use chrono::Datelike;
 use chrono::prelude::Local;
 use ratatui::widgets::TableState;
-use std::fmt::{self, Display, Result};
 use std::path::PathBuf;
+use strum_macros::Display;
 
 pub const MONTHS: [&str; 12] = [
     "January",
@@ -399,29 +399,22 @@ impl SortingType {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Display)]
 pub enum HomeRow {
+    #[strum(to_string = "Balance")]
     Balance,
+    #[strum(to_string = "Changes")]
     Changes,
+    #[strum(to_string = "Income")]
     Income,
+    #[strum(to_string = "Expense")]
     Expense,
+    #[strum(to_string = "DailyIncome")]
     DailyIncome,
+    #[strum(to_string = "DailyExpense")]
     DailyExpense,
+    #[strum(to_string = "TopRow")]
     TopRow,
-}
-
-impl Display for HomeRow {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result {
-        match self {
-            HomeRow::Balance => write!(f, "Balance"),
-            HomeRow::Changes => write!(f, "Changes"),
-            HomeRow::Income => write!(f, "Income"),
-            HomeRow::Expense => write!(f, "Expense"),
-            HomeRow::DailyIncome => write!(f, "DailyIncome"),
-            HomeRow::DailyExpense => write!(f, "DailyExpense"),
-            HomeRow::TopRow => write!(f, "TopRow"),
-        }
-    }
 }
 
 impl HomeRow {
