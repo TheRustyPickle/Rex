@@ -158,22 +158,22 @@ Esc: Stop editing a field";
     let help_1 = Paragraph::new(first_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Page Keys"))
-        .wrap(Wrap::default());
+        .wrap(Wrap { trim: true });
 
     let help_2 = Paragraph::new(second_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Other Keys"))
-        .wrap(Wrap::default());
+        .wrap(Wrap { trim: true });
 
     let help_3 = Paragraph::new(third_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Home Page Keys"))
-        .wrap(Wrap::default());
+        .wrap(Wrap { trim: true });
 
     let help_4 = Paragraph::new(fourth_text)
         .style(Style::default().bg(BACKGROUND).fg(TEXT))
         .block(styled_block("Transaction Field Keys"))
-        .wrap(Wrap::default());
+        .wrap(Wrap { trim: true });
 
     f.render_widget(paragraph, chunks[0]);
     f.render_widget(paragraph_2, chunks[1]);

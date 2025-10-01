@@ -2,11 +2,11 @@ use crossterm::event::KeyCode;
 
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
-use crate::page_handler::PopupState;
+use crate::pages::PopupType;
 
 pub fn activity_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
-    match handler.popup {
-        PopupState::Nothing => match handler.key.code {
+    match handler.popup_status {
+        PopupType::Nothing => match handler.key.code {
             KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
             KeyCode::Char('f') => handler.go_home(),
             KeyCode::Char('a') => handler.go_add_tx(),
@@ -21,9 +21,9 @@ pub fn activity_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Down => handler.handle_down_arrow(),
             _ => {}
         },
-        PopupState::ActivityHelp => match handler.key.code {
-            KeyCode::Up => handler.popup_scroll_up(),
-            KeyCode::Down => handler.popup_scroll_down(),
+        PopupType::Info(_) => match handler.key.code {
+            KeyCode::Up => handler.popup_up(),
+            KeyCode::Down => handler.popup_down(),
             _ => handler.do_empty_popup(),
         },
         _ => handler.do_empty_popup(),

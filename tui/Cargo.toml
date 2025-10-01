@@ -35,6 +35,8 @@ thousands = "0.2.0"
 semver = "1.0.26"
 ratatui = "0.29.0"
 serde_json = "1.0.142"
+strum = "0.27"
+strum_macros = "0.27"
 
 log = "0.4.27"
 simplelog = "0.12.2"
