@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use anyhow::{Result, anyhow};
 use chrono::{Days, Local, Months, NaiveDate, NaiveTime};
 use db::ConnCache;
