@@ -129,7 +129,9 @@ impl PopupType {
     }
 
     pub fn new_choice_deletion() -> Self {
-        let choices: Vec<ChoiceDetails> = DeletionChoices::iter().map(|c| c.to_choice()).collect();
+        let choices: Vec<ChoiceDetails> = DeletionChoices::iter()
+            .map(DeletionChoices::to_choice)
+            .collect();
 
         let table_items = choices.iter().map(|c| vec![c.text.clone()]).collect();
         let mut table_data = TableData::new(table_items);
