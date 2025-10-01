@@ -216,21 +216,6 @@ pub enum CurrentUi {
     Activity,
 }
 
-/// Indicates which pop up is currently on and is being shown in the screen
-pub enum PopupState {
-    NewUpdate(Vec<String>),
-    HomeHelp,
-    AddTxHelp,
-    ChartHelp,
-    SummaryHelp,
-    SearchHelp,
-    ActivityHelp,
-    DeleteFailed(String),
-    TxDeletion,
-    ShowDetails(String),
-    Nothing,
-}
-
 pub enum ChartTab {
     ModeSelection,
     Years,
@@ -410,20 +395,6 @@ impl SortingType {
             SortingType::Tags => SortingType::Income,
             SortingType::Income => SortingType::Expense,
             SortingType::Expense => SortingType::Tags,
-        }
-    }
-}
-
-pub enum DeletionStatus {
-    Yes,
-    No,
-}
-
-impl DeletionStatus {
-    pub fn get_next(&mut self) -> Self {
-        match self {
-            DeletionStatus::Yes => DeletionStatus::No,
-            DeletionStatus::No => DeletionStatus::Yes,
         }
     }
 }

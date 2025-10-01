@@ -2,12 +2,12 @@ use crossterm::event::KeyCode;
 
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
-use crate::page_handler::PopupState;
+use crate::pages::PopupType;
 
 /// Tracks the keys of the Chart page and calls relevant function based on it
 pub fn chart_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
-    match handler.popup {
-        PopupState::Nothing => match handler.key.code {
+    match handler.popup_status {
+        PopupType::Nothing => match handler.key.code {
             KeyCode::Char('a') => handler.go_add_tx(),
             KeyCode::Char('z') => handler.go_summary(),
             KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
@@ -24,9 +24,9 @@ pub fn chart_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Char(' ') => handler.switch_chart_tx_method_activation(),
             _ => {}
         },
-        PopupState::ChartHelp => match handler.key.code {
-            KeyCode::Up => handler.popup_scroll_up(),
-            KeyCode::Down => handler.popup_scroll_down(),
+        PopupType::Info(_) => match handler.key.code {
+            KeyCode::Up => handler.popup_up(),
+            KeyCode::Down => handler.popup_down(),
             _ => handler.do_empty_popup(),
         },
         _ => handler.do_empty_popup(),

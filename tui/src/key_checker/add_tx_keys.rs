@@ -2,13 +2,14 @@ use crossterm::event::KeyCode;
 
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
-use crate::page_handler::{PopupState, TxTab};
+use crate::page_handler::TxTab;
+use crate::pages::PopupType;
 
 /// Tracks the keys of the Add Tx page and calls relevant function based on it
 pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
-    match handler.popup {
+    match handler.popup_status {
         // We don't want to move this interface while the popup is on
-        PopupState::Nothing => match handler.add_tx_tab {
+        PopupType::Nothing => match handler.add_tx_tab {
             TxTab::Nothing => match handler.key.code {
                 KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
                 KeyCode::Char('f') => handler.go_home(),
@@ -44,9 +45,9 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 },
             },
         },
-        PopupState::AddTxHelp => match handler.key.code {
-            KeyCode::Up => handler.popup_scroll_up(),
-            KeyCode::Down => handler.popup_scroll_down(),
+        PopupType::Info(_) => match handler.key.code {
+            KeyCode::Up => handler.popup_up(),
+            KeyCode::Down => handler.popup_down(),
             _ => handler.do_empty_popup(),
         },
         _ => handler.do_empty_popup(),

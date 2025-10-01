@@ -1,10 +1,3 @@
-use ratatui::Frame;
-
-use crate::{
-    page_handler::{DeletionStatus, PopupState},
-    pages::{create_deletion_popup, create_popup},
-};
-
 pub const F: &str = "F: Home Page";
 pub const A: &str = "A: Add Transaction Page";
 pub const R: &str = "R: Chart Page";
@@ -15,71 +8,19 @@ pub const Q: &str = "Q: Quit";
 pub const H: &str = "H: Show help";
 pub const V: &str = "V: Show selected transaction details";
 
-/// Stores data to create a new popup
-pub struct PopupData<'a> {
-    title: &'a str,
-}
-
-impl<'a> PopupData<'a> {
-    pub fn new() -> Self {
-        PopupData { title: "" }
-    }
-
-    pub fn set_title(&mut self, title: &'a str) {
-        self.title = title;
-    }
-
-    pub fn create_popup(
-        &mut self,
-        f: &mut Frame,
-        popup_type: &PopupState,
-        deletion_status: &DeletionStatus,
-        popup_scroll_position: usize,
-        max_popup_scroll: &mut usize,
-    ) {
-        let status = match popup_type {
-            PopupState::NewUpdate(data) => self.get_new_update_text(data),
-            PopupState::HomeHelp => self.get_home_help_text(),
-            PopupState::AddTxHelp => self.get_add_tx_help_text(),
-            PopupState::ChartHelp => self.get_chart_help_text(),
-            PopupState::SummaryHelp => self.get_summary_help_text(),
-            PopupState::DeleteFailed(err) => self.get_delete_failed_text(err),
-            PopupState::SearchHelp => self.get_search_help_text(),
-            PopupState::ActivityHelp => self.get_activity_help_text(),
-            PopupState::ShowDetails(details) => {
-                self.get_transaction_details_text(details.to_string())
-            }
-            PopupState::Nothing | PopupState::TxDeletion => String::new(),
-        };
-
-        if let PopupState::TxDeletion = popup_type {
-            create_deletion_popup(f, deletion_status);
-        } else if !status.is_empty() {
-            let new_line_count = status.split('\n').count();
-            *max_popup_scroll = if new_line_count > 5 {
-                new_line_count - 2
-            } else {
-                new_line_count
-            };
-            create_popup(f, self.title, &status, popup_scroll_position);
-        }
-    }
-
-    fn get_new_update_text(&mut self, data: &[String]) -> String {
-        self.set_title("New Update");
-        format!(
-            "New version {} is now available\n
+pub fn new_update_text(data: &[String]) -> String {
+    format!(
+        "New version {} is now available\n
 Updates:
 {}
 Enter: Redirect to the new version",
-            data[0], data[1]
-        )
-    }
+        data[0], data[1]
+    )
+}
 
-    fn get_add_tx_help_text(&mut self) -> String {
-        self.set_title("Help");
-        format!(
-            "This page is for adding new transactions. Following are the supported keys here. \
+pub fn add_tx_help_text() -> String {
+    format!(
+        "This page is for adding new transactions. Following are the supported keys here. \
 On Transfer transaction there will be one additional field pushing Tags to the key 7.
 
 1: Date         Example: 2022-05-12, YYYY-MM-DD
@@ -115,13 +56,12 @@ Example amount: 100 + b, b + b, 5 * b, 1.2k + 1m
 {H}
 {Q}
 "
-        )
-    }
+    )
+}
 
-    fn get_chart_help_text(&mut self) -> String {
-        self.set_title("Help");
-        format!(
-            "This page shows the movement of balances within the selected period of time
+pub fn chart_help_text() -> String {
+    format!(
+        "This page shows the movement of balances within the selected period of time
         
 Following are the supported keys here
 
@@ -140,13 +80,12 @@ Arrow Left/Right: Move value of the widget
 {H}
 {Q}
 "
-        )
-    }
+    )
+}
 
-    fn get_summary_help_text(&mut self) -> String {
-        self.set_title("Help");
-        format!(
-            "This page shows various information based on all transactions \
+pub fn summary_help_text() -> String {
+    format!(
+        "This page shows various information based on all transactions \
             and is for tracking incomes and expenses based on tags \
             Transfer Transaction are not shown here
 
@@ -166,12 +105,12 @@ Arrow Left/Right: Move value of the widget
 {H}
 {Q}
 "
-        )
-    }
+    )
+}
 
-    fn get_home_help_text(&mut self) -> String {
-        self.set_title("Help");
-        format!("This is the Home page where all txs added so far, the balances and the changes are shown
+pub fn home_help_text() -> String {
+    format!(
+        "This is the Home page where all txs added so far, the balances and the changes are shown
 
 J: Take user input for various actions
 E: Edit the selected transaction on the table
@@ -192,18 +131,13 @@ Swapping transaction location will only work if they are on the same date.
 {W}
 {H}
 {Q}
-")
-    }
+"
+    )
+}
 
-    fn get_delete_failed_text(&mut self, err: &str) -> String {
-        self.set_title("Delete Failed");
-        err.to_string()
-    }
-
-    fn get_search_help_text(&mut self) -> String {
-        self.set_title("Help");
-        format!(
-            "This page is for searching transactions. \
+pub fn search_help_text() -> String {
+    format!(
+        "This page is for searching transactions. \
             On Transfer transaction there will be one additional field pushing Tags to the key 7.
 
 1: Date         Example: 2022-05-12, YYYY-MM-DD
@@ -250,13 +184,12 @@ Example amount : <1000, >=10000
 {H}
 {Q}
 "
-        )
-    }
+    )
+}
 
-    fn get_activity_help_text(&mut self) -> String {
-        self.set_title("Help");
-        format!(
-            "This page shows the activities recorded in the selected period of time. \
+pub fn activity_help_text() -> String {
+    format!(
+        "This page shows the activities recorded in the selected period of time. \
             The bottom widget will show affected transaction details by an activity.
 
 Following are the supported keys here
@@ -274,11 +207,5 @@ Arrow Left/Right: Move value of the widget
 {H}
 {Q}
 "
-        )
-    }
-
-    fn get_transaction_details_text(&mut self, details: String) -> String {
-        self.set_title("Transaction Details");
-        details
-    }
+    )
 }

@@ -15,11 +15,12 @@ use crate::key_checker::{
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
-    ActivityTab, ChartTab, CurrentUi, DeletionStatus, HomeTab, IndexedData, PopupState,
-    SortingType, SummaryTab, TableData, TxTab,
+    ActivityTab, ChartTab, CurrentUi, HomeTab, IndexedData, SortingType, SummaryTab, TableData,
+    TxTab,
 };
 use crate::pages::{
-    PopupData, activity_ui, add_tx_ui, chart_ui, home_ui, initial_ui, search_ui, summary_ui,
+    InfoPopupState, PopupType, activity_ui, add_tx_ui, chart_ui, home_ui, initial_ui, search_ui,
+    summary_ui,
 };
 use crate::tx_handler::TxData;
 use crate::utility::LerpState;
@@ -91,11 +92,13 @@ pub fn start_app<B: Backend>(
 
     // The page which is currently selected. Default is the initial page
     let mut page = CurrentUi::Initial;
+
     // stores current popup status
-    let mut popup_state = if let Some(data) = new_version_data {
-        PopupState::NewUpdate(data.to_owned())
+    let mut popup_status = if let Some(data) = new_version_data {
+        let state = InfoPopupState::NewUpdate(data.to_owned());
+        PopupType::new_info(state)
     } else {
-        PopupState::Nothing
+        PopupType::Nothing
     };
 
     // Stores the current selected widget on Add Transaction page
@@ -122,8 +125,6 @@ pub fn start_app<B: Backend>(
             FetchNature::Monthly,
         )
         .unwrap();
-    // Holds the popup data that will be/are inserted into the Popup page
-    let mut popup_data = PopupData::new();
 
     let mut summary_view = conn
         .get_summary_with_str(
@@ -163,18 +164,12 @@ pub fn start_app<B: Backend>(
     // Whether the summary is in hidden mode
     let mut summary_hidden_mode = false;
 
-    // The initial popup when deleting tx will start on Yes value
-    let mut deletion_status: DeletionStatus = DeletionStatus::Yes;
-
     // Contains whether in the chart whether a tx method is activated or not
     let mut chart_activated_methods = conn
         .get_tx_methods_cumulative()
         .into_iter()
         .map(|s| (s, true))
         .collect();
-
-    let mut popup_scroll_position = 0;
-    let mut max_popup_scroll = 0;
 
     // Home and Add TX Page balance data
     let mut add_tx_balance = Vec::new();
@@ -274,13 +269,8 @@ pub fn start_app<B: Backend>(
                         &mut lerp_state,
                     ),
                 }
-                popup_data.create_popup(
-                    f,
-                    &popup_state,
-                    &deletion_status,
-                    popup_scroll_position,
-                    &mut max_popup_scroll,
-                );
+
+                popup_status.show_ui(f);
             })
             .map_err(UiHandlingError::DrawingError)?;
 
@@ -318,7 +308,7 @@ pub fn start_app<B: Backend>(
                 key,
                 &mut page,
                 &mut add_tx_balance,
-                &mut popup_state,
+                &mut popup_status,
                 &mut add_tx_tab,
                 &mut chart_tab,
                 &mut summary_tab,
@@ -353,10 +343,7 @@ pub fn start_app<B: Backend>(
                 &mut chart_hidden_mode,
                 &mut chart_hidden_legends,
                 &mut summary_hidden_mode,
-                &mut deletion_status,
                 &mut chart_activated_methods,
-                &mut popup_scroll_position,
-                &mut max_popup_scroll,
                 &mut lerp_state,
                 conn,
             );

@@ -2,13 +2,14 @@ use crossterm::event::KeyCode;
 
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
-use crate::page_handler::{PopupState, TxTab};
+use crate::page_handler::TxTab;
+use crate::pages::PopupType;
 
 /// Tracks the keys of the Add Tx page and calls relevant function based on it
 pub fn search_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
-    match handler.popup {
+    match handler.popup_status {
         // We don't want to move this interface while the popup is on
-        PopupState::Nothing => match handler.search_tab {
+        PopupType::Nothing => match handler.search_tab {
             TxTab::Nothing => match handler.key.code {
                 KeyCode::Char('a') => handler.go_add_tx(),
                 KeyCode::Char('r') => handler.go_chart(),
@@ -49,16 +50,12 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 },
             },
         },
-        PopupState::TxDeletion => match handler.key.code {
-            KeyCode::Left | KeyCode::Right | KeyCode::Enter => handler.handle_deletion_popup(),
-            _ => {}
-        },
-        PopupState::SearchHelp => match handler.key.code {
-            KeyCode::Up => handler.popup_scroll_up(),
-            KeyCode::Down => handler.popup_scroll_down(),
+        PopupType::Info(_) | PopupType::Choice(_) => match handler.key.code {
+            KeyCode::Up => handler.popup_up(),
+            KeyCode::Down => handler.popup_down(),
+            KeyCode::Enter | KeyCode::Esc => handler.handle_deletion_popup(),
             _ => handler.do_empty_popup(),
         },
-        _ => handler.do_empty_popup(),
     }
 
     None

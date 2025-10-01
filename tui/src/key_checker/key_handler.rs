@@ -5,12 +5,13 @@ use crossterm::event::{KeyCode, KeyEvent};
 use std::collections::HashMap;
 use std::fmt::Write;
 
+use crate::outputs::HandlingOutput;
 use crate::outputs::TxType;
-use crate::outputs::{HandlingOutput, TxUpdateError};
 use crate::page_handler::{
-    ActivityTab, ChartTab, CurrentUi, DeletionStatus, HomeTab, IndexedData, LogType, MONTHS,
-    PopupState, SortingType, SummaryTab, TableData, TxTab,
+    ActivityTab, ChartTab, CurrentUi, HomeTab, IndexedData, LogType, MONTHS, SortingType,
+    SummaryTab, TableData, TxTab,
 };
+use crate::pages::{DeletionChoices, InfoPopupState, PopupType};
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, sort_table_data};
 
@@ -21,7 +22,7 @@ pub struct InputKeyHandler<'a> {
     pub key: KeyEvent,
     pub page: &'a mut CurrentUi,
     add_tx_balance: &'a mut Vec<Vec<String>>,
-    pub popup: &'a mut PopupState,
+    pub popup_status: &'a mut PopupType,
     pub add_tx_tab: &'a mut TxTab,
     chart_tab: &'a mut ChartTab,
     summary_tab: &'a mut SummaryTab,
@@ -57,10 +58,7 @@ pub struct InputKeyHandler<'a> {
     chart_hidden_mode: &'a mut bool,
     chart_hidden_legends: &'a mut bool,
     summary_hidden_mode: &'a mut bool,
-    deletion_status: &'a mut DeletionStatus,
     chart_activated_methods: &'a mut HashMap<String, bool>,
-    popup_scroll_position: &'a mut usize,
-    max_popup_scroll: &'a mut usize,
     lerp_state: &'a mut LerpState,
     conn: &'a mut DbConn,
 }
@@ -70,7 +68,7 @@ impl<'a> InputKeyHandler<'a> {
         key: KeyEvent,
         page: &'a mut CurrentUi,
         add_tx_balance: &'a mut Vec<Vec<String>>,
-        popup: &'a mut PopupState,
+        popup_status: &'a mut PopupType,
         add_tx_tab: &'a mut TxTab,
         chart_tab: &'a mut ChartTab,
         summary_tab: &'a mut SummaryTab,
@@ -105,10 +103,7 @@ impl<'a> InputKeyHandler<'a> {
         chart_hidden_mode: &'a mut bool,
         chart_hidden_legends: &'a mut bool,
         summary_hidden_mode: &'a mut bool,
-        deletion_status: &'a mut DeletionStatus,
         chart_activated_methods: &'a mut HashMap<String, bool>,
-        popup_scroll_position: &'a mut usize,
-        max_popup_scroll: &'a mut usize,
         lerp_state: &'a mut LerpState,
         conn: &'a mut DbConn,
     ) -> InputKeyHandler<'a> {
@@ -117,7 +112,7 @@ impl<'a> InputKeyHandler<'a> {
             key,
             page,
             add_tx_balance,
-            popup,
+            popup_status,
             add_tx_tab,
             chart_tab,
             summary_tab,
@@ -153,10 +148,7 @@ impl<'a> InputKeyHandler<'a> {
             chart_hidden_mode,
             chart_hidden_legends,
             summary_hidden_mode,
-            deletion_status,
             chart_activated_methods,
-            popup_scroll_position,
-            max_popup_scroll,
             lerp_state,
             conn,
         }
@@ -233,15 +225,17 @@ impl<'a> InputKeyHandler<'a> {
 
     /// Turns on help popup
     pub fn do_help_popup(&mut self) {
-        match self.page {
-            CurrentUi::Home => *self.popup = PopupState::HomeHelp,
-            CurrentUi::AddTx => *self.popup = PopupState::AddTxHelp,
-            CurrentUi::Chart => *self.popup = PopupState::ChartHelp,
-            CurrentUi::Summary => *self.popup = PopupState::SummaryHelp,
-            CurrentUi::Search => *self.popup = PopupState::SearchHelp,
-            CurrentUi::Activity => *self.popup = PopupState::ActivityHelp,
-            CurrentUi::Initial => {}
-        }
+        let popup_state = match self.page {
+            CurrentUi::Home => InfoPopupState::HomeHelp,
+            CurrentUi::AddTx => InfoPopupState::AddTxHelp,
+            CurrentUi::Chart => InfoPopupState::ChartHelp,
+            CurrentUi::Summary => InfoPopupState::SummaryHelp,
+            CurrentUi::Search => InfoPopupState::SearchHelp,
+            CurrentUi::Activity => InfoPopupState::ActivityHelp,
+            CurrentUi::Initial => unreachable!(),
+        };
+
+        *self.popup_status = PopupType::new_info(popup_state);
     }
 
     /// Turns on deletion confirmation popup
@@ -249,12 +243,12 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::Home => {
                 if self.home_table.state.selected().is_some() {
-                    *self.popup = PopupState::TxDeletion;
+                    *self.popup_status = PopupType::new_choice_deletion();
                 }
             }
             CurrentUi::Search => {
                 if self.search_table.state.selected().is_some() {
-                    *self.popup = PopupState::TxDeletion;
+                    *self.popup_status = PopupType::new_choice_deletion();
                 }
             }
             _ => {}
@@ -263,8 +257,7 @@ impl<'a> InputKeyHandler<'a> {
 
     /// Removes pop up status
     pub fn do_empty_popup(&mut self) {
-        *self.popup = PopupState::Nothing;
-        self.reload_popup_scroll_position();
+        *self.popup_status = PopupType::Nothing;
     }
 
     /// Hides/shows chart top widgets
@@ -293,16 +286,13 @@ impl<'a> InputKeyHandler<'a> {
 
     /// Handles Enter key press if there is a new update and the update popup is on
     pub fn handle_update_popup(&mut self) -> Result<(), HandlingOutput> {
+        *self.popup_status = PopupType::Nothing;
+
         if self.key.code == KeyCode::Enter {
-            // If there is a new version, Enter will try to open the default browser with this link
             open::that("https://github.com/TheRustyPickle/Rex/releases/latest")
                 .map_err(|_| HandlingOutput::PrintNewUpdate)?;
-            *self.popup = PopupState::Nothing;
-            Ok(())
-        } else {
-            *self.popup = PopupState::Nothing;
-            Ok(())
         }
+        Ok(())
     }
 
     pub fn search_tx(&mut self) {
@@ -403,8 +393,8 @@ impl<'a> InputKeyHandler<'a> {
                 }
             }
             Err(err) => {
-                *self.popup =
-                    PopupState::DeleteFailed(TxUpdateError::Delete(err.to_string()).to_string());
+                let status = InfoPopupState::Error(err.to_string());
+                *self.popup_status = PopupType::new_info(status);
             }
         }
     }
@@ -768,23 +758,29 @@ impl<'a> InputKeyHandler<'a> {
     /// Handle key press when deletion popup is turned on
     pub fn handle_deletion_popup(&mut self) {
         match self.key.code {
-            KeyCode::Left | KeyCode::Right => {
-                *self.deletion_status = self.deletion_status.get_next();
+            KeyCode::Enter => {
+                let choice = self.popup_status.get_deletion_choice();
+
+                if let Some(choice) = choice {
+                    match choice {
+                        DeletionChoices::Yes => match self.page {
+                            CurrentUi::Home => {
+                                self.home_delete_tx();
+                                *self.popup_status = PopupType::Nothing;
+                            }
+                            CurrentUi::Search => {
+                                self.search_delete_tx();
+                                *self.popup_status = PopupType::Nothing;
+                            }
+                            _ => {}
+                        },
+                        DeletionChoices::No => *self.popup_status = PopupType::Nothing,
+                    }
+                }
             }
-            KeyCode::Enter => match self.deletion_status {
-                DeletionStatus::Yes => match self.page {
-                    CurrentUi::Home => {
-                        self.home_delete_tx();
-                        *self.popup = PopupState::Nothing;
-                    }
-                    CurrentUi::Search => {
-                        self.search_delete_tx();
-                        *self.popup = PopupState::Nothing;
-                    }
-                    _ => {}
-                },
-                DeletionStatus::No => *self.popup = PopupState::Nothing,
-            },
+            KeyCode::Esc => {
+                *self.popup_status = PopupType::Nothing;
+            }
             _ => {}
         }
     }
@@ -825,8 +821,8 @@ impl<'a> InputKeyHandler<'a> {
                 self.reset_search_data();
             }
             Err(err) => {
-                *self.popup =
-                    PopupState::DeleteFailed(TxUpdateError::Delete(err.to_string()).to_string());
+                let status = InfoPopupState::Error(err.to_string());
+                *self.popup_status = PopupType::new_info(status);
             }
         }
     }
@@ -877,7 +873,8 @@ impl<'a> InputKeyHandler<'a> {
             let selected_tx = self.home_txs.get_tx(index);
             let tx_details = selected_tx.details.clone().unwrap_or_default();
 
-            *self.popup = PopupState::ShowDetails(tx_details);
+            let status = InfoPopupState::ShowDetails(tx_details);
+            *self.popup_status = PopupType::new_info(status);
         }
     }
 
@@ -900,7 +897,8 @@ impl<'a> InputKeyHandler<'a> {
                 let tx_details = &activity_txs[0].details.clone().unwrap_or_default();
                 write!(&mut popup_text, "Transaction 1: {tx_details}").unwrap();
             }
-            *self.popup = PopupState::ShowDetails(popup_text);
+            let status = InfoPopupState::ShowDetails(popup_text);
+            *self.popup_status = PopupType::new_info(status);
         }
     }
 
@@ -921,20 +919,12 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    pub fn popup_scroll_up(&mut self) {
-        if *self.popup_scroll_position != 0 {
-            *self.popup_scroll_position -= 1;
-        } else {
-            *self.popup_scroll_position = *self.max_popup_scroll;
-        }
+    pub fn popup_up(&mut self) {
+        self.popup_status.previous();
     }
 
-    pub fn popup_scroll_down(&mut self) {
-        if self.popup_scroll_position < self.max_popup_scroll {
-            *self.popup_scroll_position += 1;
-        } else {
-            *self.popup_scroll_position = 0;
-        }
+    pub fn popup_down(&mut self) {
+        self.popup_status.next();
     }
 }
 
@@ -1910,12 +1900,6 @@ impl InputKeyHandler<'_> {
             CurrentUi::Search => self.search_data.check_autofill(self.search_tab, self.conn),
             _ => {}
         }
-    }
-
-    /// Reset scroll position to 0
-    fn reload_popup_scroll_position(&mut self) {
-        *self.popup_scroll_position = 0;
-        *self.max_popup_scroll = 0;
     }
 
     /// Update add tx page balance section data that is being shown on the UI

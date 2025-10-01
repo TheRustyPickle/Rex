@@ -2,12 +2,12 @@ use crossterm::event::KeyCode;
 
 use crate::key_checker::InputKeyHandler;
 use crate::outputs::HandlingOutput;
-use crate::page_handler::PopupState;
+use crate::pages::PopupType;
 
 /// Tracks the keys of the Homepage and calls relevant function based on it
 pub fn home_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
-    match handler.popup {
-        PopupState::Nothing => match handler.key.code {
+    match handler.popup_status {
+        PopupType::Nothing => match handler.key.code {
             KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
             KeyCode::Char('a') => handler.go_add_tx(),
             KeyCode::Char('r') => handler.go_chart(),
@@ -27,16 +27,12 @@ pub fn home_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
             KeyCode::Down => handler.handle_down_arrow(),
             _ => {}
         },
-        PopupState::TxDeletion => match handler.key.code {
-            KeyCode::Left | KeyCode::Right | KeyCode::Enter => handler.handle_deletion_popup(),
-            _ => {}
-        },
-        PopupState::HomeHelp => match handler.key.code {
-            KeyCode::Up => handler.popup_scroll_up(),
-            KeyCode::Down => handler.popup_scroll_down(),
+        PopupType::Info(_) | PopupType::Choice(_) => match handler.key.code {
+            KeyCode::Up => handler.popup_up(),
+            KeyCode::Down => handler.popup_down(),
+            KeyCode::Enter | KeyCode::Esc => handler.handle_deletion_popup(),
             _ => handler.do_empty_popup(),
         },
-        _ => handler.do_empty_popup(),
     }
     None
 }
