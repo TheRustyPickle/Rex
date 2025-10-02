@@ -1,9 +1,7 @@
 use anyhow::{Result, anyhow};
-use std::{
-    fs::{self, File},
-    io::Read,
-    path::PathBuf,
-};
+use std::fs::{self, File};
+use std::io::Read;
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
