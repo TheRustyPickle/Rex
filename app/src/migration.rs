@@ -231,7 +231,7 @@ pub fn start_migration(mut old_db_conn: DbConn, db_conn: &mut DbConn) -> Result<
             + (end_date.month() as i32 - start_date.month() as i32)
             + 1;
 
-        let mut ongoing_date = start_date;
+        let mut ongoing_date = start_date - Months::new(1);
 
         while ongoing_date <= end_date {
             db_conn.fetch_txs_with_date(ongoing_date, FetchNature::Monthly)?;
