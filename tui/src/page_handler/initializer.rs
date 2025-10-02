@@ -7,12 +7,12 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process;
 
+use crate::config::{Config, migrate_config};
 use crate::outputs::HandlingOutput;
 use crate::page_handler::{ResetType, UserInputType, start_app};
-use crate::utility::{Config, check_version, migrate_config};
 use crate::utility::{
-    enter_tui_interface, exit_tui_interface, migrate_to_new_schema, start_taking_input,
-    start_terminal, start_timer,
+    check_version, enter_tui_interface, exit_tui_interface, migrate_to_new_schema,
+    start_taking_input, start_terminal, start_timer,
 };
 
 /// Initialize the TUI loop
@@ -34,7 +34,8 @@ pub fn initialize_app(
         process::exit(1);
     }
 
-    let result = migrate_to_new_schema(old_db_path, migrated_db_path.to_string_lossy().as_ref());
+    let result =
+        migrate_to_new_schema(old_db_path, migrated_db_path.display().to_string().as_str());
 
     match result {
         Ok(result) => {
@@ -77,7 +78,7 @@ pub fn initialize_app(
         migrated_db_path.to_path_buf()
     };
 
-    let mut migrated_conn = get_conn(new_db_path.to_string_lossy().as_ref());
+    let mut migrated_conn = get_conn(new_db_path.display().to_string().as_str());
 
     loop {
         let mut terminal = enter_tui_interface()?;
@@ -129,7 +130,11 @@ pub fn initialize_app(
                         start_timer("Operation Cancelled.");
                     }
                     UserInputType::SetNewLocation(mut target_path) => {
-                        config.set_new_location(target_path.clone())?;
+                        if let Err(e) = config.set_new_location(target_path.clone()) {
+                            println!("Error while setting new location. Error: {e:?}");
+                            start_timer("");
+                            continue;
+                        };
 
                         target_path.push("data.sqlite");
                         let file_copy_status = fs::copy(&new_db_path, target_path);
@@ -148,7 +153,11 @@ pub fn initialize_app(
                         }
                     }
                     UserInputType::BackupDBPath(paths) => {
-                        config.set_backup_db_path(paths)?;
+                        if let Err(e) = config.set_backup_db_path(paths) {
+                            println!("Error while setting backup DB path. Error: {e:?}");
+                            start_timer("");
+                            continue;
+                        };
 
                         start_timer("Backup DB path locations set successfully.");
                     }
