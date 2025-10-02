@@ -130,7 +130,11 @@ pub fn initialize_app(
                         start_timer("Operation Cancelled.");
                     }
                     UserInputType::SetNewLocation(mut target_path) => {
-                        config.set_new_location(target_path.clone())?;
+                        if let Err(e) = config.set_new_location(target_path.clone()) {
+                            println!("Error while setting new location. Error: {e:?}");
+                            start_timer("");
+                            continue;
+                        };
 
                         target_path.push("data.sqlite");
                         let file_copy_status = fs::copy(&new_db_path, target_path);
@@ -149,7 +153,11 @@ pub fn initialize_app(
                         }
                     }
                     UserInputType::BackupDBPath(paths) => {
-                        config.set_backup_db_path(paths)?;
+                        if let Err(e) = config.set_backup_db_path(paths) {
+                            println!("Error while setting backup DB path. Error: {e:?}");
+                            start_timer("");
+                            continue;
+                        };
 
                         start_timer("Backup DB path locations set successfully.");
                     }
