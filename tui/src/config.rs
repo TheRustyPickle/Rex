@@ -73,9 +73,6 @@ impl Config {
 
         backup_db_path.retain(|a| a != &original_db_path);
 
-        log::info!("Backup paths: {:#?}", backup_db_path);
-        log::info!("Original path: {:#?}", original_db_path);
-
         if backup_db_path.is_empty() {
             return Err(anyhow!(
                 "After filtering out invalid locations, backup path is empty"
@@ -89,9 +86,6 @@ impl Config {
     pub fn set_new_location(&mut self, new_location: PathBuf) -> Result<()> {
         let mut original_db_path = self.location.clone();
         original_db_path.pop();
-
-        log::info!("Backup paths: {:#?}", new_location);
-        log::info!("Original path: {:#?}", original_db_path);
 
         if let Some(ref backups) = self.backup_db_path
             && backups.iter().any(|p| p == &new_location)
