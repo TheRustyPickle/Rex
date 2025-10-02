@@ -7,7 +7,7 @@ pub(crate) fn get_best_match(data: &str, matching_set: &[String]) -> String {
     let mut best_score = -1.0;
 
     for x in matching_set {
-        let new_score = normalized_levenshtein(x, data);
+        let new_score = normalized_levenshtein(&x.to_lowercase(), &data.to_lowercase());
 
         if new_score > best_score {
             best_match = x;
