@@ -1,5 +1,6 @@
 /target
-data.sqlite
+*.sqlite
 .vscode
 .fleet
 todo.txt
+*.log
