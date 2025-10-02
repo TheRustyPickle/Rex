@@ -198,9 +198,6 @@ impl<'a> InputKeyHandler<'a> {
     /// Moves the interface to Summary page
     pub fn go_summary(&mut self) {
         *self.page = CurrentUi::Summary;
-        self.summary_modes.set_index_zero();
-        self.summary_months.set_index_zero();
-        self.summary_years.set_index_zero();
         *self.summary_tab = SummaryTab::ModeSelection;
         *self.summary_hidden_mode = false;
         self.reload_summary();
@@ -210,9 +207,6 @@ impl<'a> InputKeyHandler<'a> {
     /// Moves the interface to Chart page
     pub fn go_chart(&mut self) {
         *self.page = CurrentUi::Chart;
-        self.chart_modes.set_index_zero();
-        self.chart_years.set_index_zero();
-        self.chart_months.set_index_zero();
         *self.chart_tab = ChartTab::ModeSelection;
         *self.chart_hidden_mode = false;
         self.lerp_state.clear();
