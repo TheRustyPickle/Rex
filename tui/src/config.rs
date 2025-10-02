@@ -67,15 +67,18 @@ impl Config {
         let mut original_db_path = self.location.clone();
         original_db_path.pop();
 
-        original_db_path.push("rex.sqlite");
-
         if let Some(path) = self.new_location.as_ref() {
-            backup_db_path.retain(|a| a != path || a != &original_db_path);
+            backup_db_path.retain(|a| a != path);
         }
+
+        backup_db_path.retain(|a| a != &original_db_path);
+
+        log::info!("Backup paths: {:#?}", backup_db_path);
+        log::info!("Original path: {:#?}", original_db_path);
 
         if backup_db_path.is_empty() {
             return Err(anyhow!(
-                "After filtering out new location, backup path is empty"
+                "After filtering out invalid locations, backup path is empty"
             ));
         }
 
@@ -87,15 +90,21 @@ impl Config {
         let mut original_db_path = self.location.clone();
         original_db_path.pop();
 
-        original_db_path.push("rex.sqlite");
+        log::info!("Backup paths: {:#?}", new_location);
+        log::info!("Original path: {:#?}", original_db_path);
 
         if let Some(ref backups) = self.backup_db_path
-            && backups
-                .iter()
-                .any(|p| p == &new_location || p == &original_db_path)
+            && backups.iter().any(|p| p == &new_location)
         {
             return Err(anyhow!(
-                "New location conflicts with existing backup path or original db location: {}",
+                "New location conflicts with existing backup path location: {}",
+                new_location.display()
+            ));
+        }
+
+        if new_location == original_db_path {
+            return Err(anyhow!(
+                "New location conflicts with original db location: {}",
                 new_location.display()
             ));
         }
