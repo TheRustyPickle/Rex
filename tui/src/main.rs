@@ -1,5 +1,5 @@
-mod key_checker;
 mod config;
+mod key_checker;
 mod outputs;
 mod page_handler;
 mod pages;
