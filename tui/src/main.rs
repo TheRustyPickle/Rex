@@ -1,4 +1,5 @@
 mod key_checker;
+mod config;
 mod outputs;
 mod page_handler;
 mod pages;
