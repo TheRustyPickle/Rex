@@ -34,7 +34,7 @@ impl<'a> Verifier<'a> {
     pub fn date(
         self,
         user_date: &mut String,
-        date_type: &DateType,
+        date_type: DateType,
     ) -> Result<Output, VerifierError> {
         if user_date.is_empty() {
             return Ok(Output::Nothing(Field::Date));

@@ -1,3 +1,4 @@
+use anyhow::Result as AResult;
 use app::conn::DbConn;
 use app::modifier::{parse_search_fields, parse_tx_fields};
 use app::ui_helper::{DateType, Output, StepType, SteppingError, VerifierError};
@@ -199,14 +200,8 @@ impl TxData {
     }
 
     /// Takes all data and adds it as a transaction
-    pub fn add_tx(
-        &mut self,
-        tx_view: &TxViewGroup,
-        migrated_conn: &mut DbConn,
-    ) -> Result<(), String> {
-        if let Some(output) = self.check_all_fields() {
-            return Err(output.to_string());
-        }
+    pub fn add_tx(&mut self, tx_view: &TxViewGroup, migrated_conn: &mut DbConn) -> AResult<()> {
+        self.check_all_fields()?;
 
         let editing_tx = self.editing_tx;
         let parsed_tx = parse_tx_fields(
@@ -217,29 +212,23 @@ impl TxData {
             &self.amount,
             &self.tx_type,
             migrated_conn,
-        )
-        .unwrap();
+        )?;
 
-        // TODO: Handle activity txs
-        // TODO: Handle error properly
         if editing_tx {
             let old_tx_id = self.id_num;
             let old_tx = if let Some(tx) = tx_view.get_tx_by_id(old_tx_id) {
                 tx
             } else {
-                &migrated_conn.fetch_tx_with_id(old_tx_id).unwrap()
+                &migrated_conn.fetch_tx_with_id(old_tx_id)?
             };
-            migrated_conn
-                .edit_tx(old_tx, parsed_tx, &self.tags)
-                .map_err(|e| e.to_string())
+
+            migrated_conn.edit_tx(old_tx, parsed_tx, &self.tags)
         } else {
-            migrated_conn
-                .add_new_tx(parsed_tx, &self.tags)
-                .map_err(|e| e.to_string())
+            migrated_conn.add_new_tx(parsed_tx, &self.tags)
         }
     }
 
-    pub fn get_search_tx(&self, migrated_conn: &mut DbConn) -> SearchView {
+    pub fn get_search_tx(&self, migrated_conn: &mut DbConn) -> AResult<SearchView> {
         let new_search = parse_search_fields(
             &self.date,
             &self.details,
@@ -249,10 +238,9 @@ impl TxData {
             &self.tx_type,
             &self.tags,
             migrated_conn,
-        )
-        .unwrap();
+        )?;
 
-        migrated_conn.search_txs(new_search).unwrap()
+        migrated_conn.search_txs(new_search)
     }
 
     /// Adds a value to tx status
@@ -301,7 +289,7 @@ impl TxData {
     /// Checks the inputted Date by the user upon pressing Enter/Esc for various error.
     pub fn check_date(
         &mut self,
-        date_type: &DateType,
+        date_type: DateType,
         conn: &mut DbConn,
     ) -> Result<Output, VerifierError> {
         let mut user_date = self.date.clone();
@@ -406,27 +394,27 @@ impl TxData {
     }
 
     /// Checks all field and verifies anything important is not empty
-    pub fn check_all_fields(&mut self) -> Option<CheckingError> {
+    pub fn check_all_fields(&mut self) -> Result<(), CheckingError> {
         if self.date.is_empty() {
-            return Some(CheckingError::EmptyDate);
+            return Err(CheckingError::EmptyDate);
         } else if self.from_method.is_empty() && self.tx_type != "Transfer" {
-            return Some(CheckingError::EmptyMethod);
+            return Err(CheckingError::EmptyMethod);
         } else if self.amount.is_empty() {
-            return Some(CheckingError::EmptyAmount);
+            return Err(CheckingError::EmptyAmount);
         } else if self.tx_type.is_empty() {
-            return Some(CheckingError::EmptyTxType);
+            return Err(CheckingError::EmptyTxType);
         } else if self.tx_type == "Transfer" && self.from_method == self.to_method {
-            return Some(CheckingError::SameTxMethod);
+            return Err(CheckingError::SameTxMethod);
         } else if self.tx_type == "Transfer"
             && (self.from_method.is_empty() || self.to_method.is_empty())
         {
-            return Some(CheckingError::EmptyMethod);
+            return Err(CheckingError::EmptyMethod);
         }
         // Empty tags in a tx becomes as unknown
         if self.tags.is_empty() {
             self.tags = "Unknown".to_string();
         }
-        None
+        Ok(())
     }
 
     #[must_use]
@@ -456,11 +444,13 @@ impl TxData {
 
         // 'b' represents the current balance of the original tx method
         if user_amount.contains('b') && !self.from_method.is_empty() {
-            let final_balances = conn.get_final_balances().unwrap();
+            let final_balances = conn
+                .get_final_balances()
+                .map_err(|e| VerifierError::Others(e.to_string()))?;
 
             let target_method = conn
                 .get_tx_method_by_name(self.from_method.as_str())
-                .unwrap();
+                .map_err(|e| VerifierError::Others(e.to_string()))?;
 
             // Get all the method's final balance, loop through the balances and match the tx method name
 
@@ -621,7 +611,7 @@ impl TxData {
     /// Steps Date value by one
     pub fn step_date(
         &mut self,
-        date_type: &DateType,
+        date_type: DateType,
         step_type: StepType,
         conn: &mut DbConn,
     ) -> Result<(), SteppingError> {
@@ -767,7 +757,7 @@ impl TxData {
         tx_view: &TxViewGroup,
         index: Option<usize>,
         migrated_conn: &mut DbConn,
-    ) -> Vec<Vec<String>> {
+    ) -> AResult<Vec<Vec<String>>> {
         if self.generation_fields_exists() {
             let partial_tx = PartialTx {
                 from_method: &self.from_method,
@@ -776,13 +766,9 @@ impl TxData {
                 tx_type: &self.tx_type,
             };
 
-            tx_view
-                .add_tx_balance_array(index, Some(partial_tx), migrated_conn)
-                .unwrap()
+            tx_view.add_tx_balance_array(index, Some(partial_tx), migrated_conn)
         } else {
-            tx_view
-                .add_tx_balance_array(index, None, migrated_conn)
-                .unwrap()
+            tx_view.add_tx_balance_array(index, None, migrated_conn)
         }
     }
 }

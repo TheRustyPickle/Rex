@@ -1,3 +1,4 @@
+use anyhow::{Result, anyhow};
 use app::conn::{DbConn, FetchNature};
 use app::ui_helper::{DateType, StepType};
 use app::views::{ActivityView, ChartView, FullSummary, SearchView, SummaryView, TxViewGroup};
@@ -179,14 +180,16 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     /// Moves the interface to Add Tx page
-    pub fn go_add_tx(&mut self) {
+    pub fn go_add_tx(&mut self) -> Result<()> {
         *self.page = CurrentUi::AddTx;
         self.add_tx_data.add_tx_status(
             "Info: Entering Normal Transaction mode.".to_string(),
             LogType::Info,
         );
-        self.reload_add_tx_balance_data();
+        self.reload_add_tx_balance_data()?;
         self.lerp_state.clear();
+
+        Ok(())
     }
 
     /// Moves the interface to Search page
@@ -196,12 +199,14 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     /// Moves the interface to Summary page
-    pub fn go_summary(&mut self) {
+    pub fn go_summary(&mut self) -> Result<()> {
         *self.page = CurrentUi::Summary;
         *self.summary_tab = SummaryTab::ModeSelection;
         *self.summary_hidden_mode = false;
-        self.reload_summary();
+        self.reload_summary()?;
         self.lerp_state.clear();
+
+        Ok(())
     }
 
     /// Moves the interface to Chart page
@@ -289,14 +294,14 @@ impl<'a> InputKeyHandler<'a> {
         Ok(())
     }
 
-    pub fn search_tx(&mut self) {
+    pub fn search_tx(&mut self) -> Result<()> {
         if self.search_data.check_all_empty() {
             self.search_data.add_tx_status(
                 "Search: All fields cannot be empty".to_string(),
                 LogType::Info,
             );
         } else {
-            let search_txs = self.search_data.get_search_tx(self.conn);
+            let search_txs = self.search_data.get_search_tx(self.conn)?;
 
             if search_txs.is_empty() {
                 self.search_data.add_tx_status(
@@ -316,12 +321,13 @@ impl<'a> InputKeyHandler<'a> {
                     LogType::Info,
                 );
             }
-            self.reload_activity_table();
+            self.reload_activity_table()?;
         }
+        Ok(())
     }
 
     /// Adds new tx and reloads home and chart data
-    pub fn add_tx(&mut self) {
+    pub fn add_tx(&mut self) -> Result<()> {
         let status = self.add_tx_data.add_tx(self.home_txs, self.conn);
 
         match status {
@@ -330,19 +336,21 @@ impl<'a> InputKeyHandler<'a> {
                 self.go_home_reset();
                 // We just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
                 *self.home_tab = HomeTab::Months;
-                self.reload_home_table();
-                self.reload_chart_data();
-                self.reload_summary();
+                self.reload_home_table()?;
+                self.reload_chart_data()?;
+                self.reload_summary()?;
                 self.reset_search_data();
-                self.reload_activity_table();
+                self.reload_activity_table()?;
             }
-            Err(e) => self.add_tx_data.add_tx_status(e, LogType::Info),
+            Err(e) => self.add_tx_data.add_tx_status(e.to_string(), LogType::Info),
         }
+
+        Ok(())
     }
 
     /// Based on transaction Selected, opens Add Tx page and
     /// allocates the data of the tx to the input boxes
-    pub fn home_edit_tx(&mut self) {
+    pub fn home_edit_tx(&mut self) -> Result<()> {
         if let Some(index) = self.home_table.state.selected() {
             let target_tx = self.home_txs.get_tx(index);
             *self.add_tx_data = TxData::from_full_tx(target_tx, true);
@@ -351,49 +359,45 @@ impl<'a> InputKeyHandler<'a> {
                 "Info: Entering Transaction edit mode. Press C to reset.".to_string(),
                 LogType::Info,
             );
-            self.reload_add_tx_balance_data();
+            self.reload_add_tx_balance_data()?;
             self.lerp_state.clear();
         }
+
+        Ok(())
     }
 
     /// Deletes the selected transaction and reloads pages
-    pub fn home_delete_tx(&mut self) {
+    pub fn home_delete_tx(&mut self) -> Result<()> {
         let Some(index) = self.home_table.state.selected() else {
-            return;
+            return Ok(());
         };
 
         let target_tx = self.home_txs.get_tx(index);
-        let result = self.conn.delete_tx(target_tx);
+        self.conn.delete_tx(target_tx)?;
 
-        match result {
-            Ok(()) => {
-                // INFO: maybe can reduce fetches by directly deleted from tx list?
-                // TODO: Update cache?
+        // INFO: maybe can reduce fetches by directly deleted from tx list?
+        // TODO: Update cache?
 
-                // Transaction deleted so reload the data again
-                self.reload_home_table();
-                self.reload_chart_data();
-                self.reload_summary();
-                self.reset_search_data();
-                self.reload_activity_table();
-                *self.add_tx_data = TxData::new();
-                self.reload_add_tx_balance_data();
+        // Transaction deleted so reload the data again
+        self.reload_home_table()?;
+        self.reload_chart_data()?;
+        self.reload_summary()?;
+        self.reset_search_data();
+        self.reload_activity_table()?;
+        *self.add_tx_data = TxData::new();
+        self.reload_add_tx_balance_data()?;
 
-                if index == 0 {
-                    self.home_table.state.select(None);
-                    *self.home_tab = HomeTab::Months;
-                } else {
-                    self.home_table.state.select(Some(index - 1));
-                }
-            }
-            Err(err) => {
-                let status = InfoPopupState::Error(err.to_string());
-                *self.popup_status = PopupType::new_info(status);
-            }
+        if index == 0 {
+            self.home_table.state.select(None);
+            *self.home_tab = HomeTab::Months;
+        } else {
+            self.home_table.state.select(Some(index - 1));
         }
+
+        Ok(())
     }
 
-    /// Handles all number key presses and selects relevant input field
+    /// Handles all number keypresses and selects relevant input field
     pub fn handle_number_press(&mut self) {
         match self.page {
             CurrentUi::AddTx => match self.add_tx_data.get_tx_type() {
@@ -445,17 +449,17 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     /// Handles left arrow key press for multiple pages
-    pub fn handle_left_arrow(&mut self) {
+    pub fn handle_left_arrow(&mut self) -> Result<()> {
         match self.page {
             CurrentUi::Home => match self.home_tab {
                 HomeTab::Months => {
                     self.home_months.previous();
-                    self.reload_home_table();
+                    self.reload_home_table()?;
                 }
                 HomeTab::Years => {
                     self.home_years.previous();
                     self.home_months.set_index_zero();
-                    self.reload_home_table();
+                    self.reload_home_table()?;
                 }
                 HomeTab::Table => {}
             },
@@ -467,18 +471,18 @@ impl<'a> InputKeyHandler<'a> {
                         ChartTab::ModeSelection => {
                             self.chart_modes.previous();
                             self.lerp_state.clear();
-                            self.reload_chart_data();
+                            self.reload_chart_data()?;
                         }
                         ChartTab::Years => {
                             self.chart_years.previous();
                             self.lerp_state.clear();
                             self.chart_months.set_index_zero();
-                            self.reload_chart_data();
+                            self.reload_chart_data()?;
                         }
                         ChartTab::Months => {
                             self.chart_months.previous();
                             self.lerp_state.clear();
-                            self.reload_chart_data();
+                            self.reload_chart_data()?;
                         }
                         ChartTab::TxMethods => {
                             self.chart_tx_methods.previous();
@@ -491,16 +495,16 @@ impl<'a> InputKeyHandler<'a> {
                     match self.summary_tab {
                         SummaryTab::ModeSelection => {
                             self.summary_modes.previous();
-                            self.reload_summary();
+                            self.reload_summary()?;
                         }
                         SummaryTab::Years => {
                             self.summary_months.set_index_zero();
                             self.summary_years.previous();
-                            self.reload_summary();
+                            self.reload_summary()?;
                         }
                         SummaryTab::Months => {
                             self.summary_months.previous();
-                            self.reload_summary();
+                            self.reload_summary()?;
                         }
                         SummaryTab::Table => {}
                     }
@@ -510,30 +514,32 @@ impl<'a> InputKeyHandler<'a> {
                 ActivityTab::Years => {
                     self.activity_months.set_index_zero();
                     self.activity_years.previous();
-                    self.reload_activity_table();
+                    self.reload_activity_table()?;
                 }
                 ActivityTab::Months => {
                     self.activity_months.previous();
-                    self.reload_activity_table();
+                    self.reload_activity_table()?;
                 }
                 ActivityTab::List => {}
             },
             CurrentUi::Initial => {}
         }
+
+        Ok(())
     }
 
     /// Handles right arrow key press for multiple pages
-    pub fn handle_right_arrow(&mut self) {
+    pub fn handle_right_arrow(&mut self) -> Result<()> {
         match self.page {
             CurrentUi::Home => match self.home_tab {
                 HomeTab::Months => {
                     self.home_months.next();
-                    self.reload_home_table();
+                    self.reload_home_table()?;
                 }
                 HomeTab::Years => {
                     self.home_years.next();
                     self.home_months.set_index_zero();
-                    self.reload_home_table();
+                    self.reload_home_table()?;
                 }
                 HomeTab::Table => {}
             },
@@ -545,18 +551,18 @@ impl<'a> InputKeyHandler<'a> {
                         ChartTab::ModeSelection => {
                             self.lerp_state.clear();
                             self.chart_modes.next();
-                            self.reload_chart_data();
+                            self.reload_chart_data()?;
                         }
                         ChartTab::Years => {
                             self.lerp_state.clear();
                             self.chart_years.next();
                             self.chart_months.set_index_zero();
-                            self.reload_chart_data();
+                            self.reload_chart_data()?;
                         }
                         ChartTab::Months => {
                             self.lerp_state.clear();
                             self.chart_months.next();
-                            self.reload_chart_data();
+                            self.reload_chart_data()?;
                         }
                         ChartTab::TxMethods => {
                             self.chart_tx_methods.next();
@@ -567,16 +573,16 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Summary => match self.summary_tab {
                 SummaryTab::ModeSelection => {
                     self.summary_modes.next();
-                    self.reload_summary();
+                    self.reload_summary()?;
                 }
                 SummaryTab::Years => {
                     self.summary_months.set_index_zero();
                     self.summary_years.next();
-                    self.reload_summary();
+                    self.reload_summary()?;
                 }
                 SummaryTab::Months => {
                     self.summary_months.next();
-                    self.reload_summary();
+                    self.reload_summary()?;
                 }
                 SummaryTab::Table => {}
             },
@@ -584,16 +590,18 @@ impl<'a> InputKeyHandler<'a> {
                 ActivityTab::Years => {
                     self.activity_months.set_index_zero();
                     self.activity_years.next();
-                    self.reload_activity_table();
+                    self.reload_activity_table()?;
                 }
                 ActivityTab::Months => {
                     self.activity_months.next();
-                    self.reload_activity_table();
+                    self.reload_activity_table()?;
                 }
                 ActivityTab::List => {}
             },
             CurrentUi::Initial => {}
         }
+
+        Ok(())
     }
 
     /// Handles up arrow key press for multiple pages
@@ -646,11 +654,11 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     /// Checks and verifies tx method field
-    pub fn handle_tx_method(&mut self) {
+    pub fn handle_tx_method(&mut self) -> Result<()> {
         match self.page {
             CurrentUi::AddTx => match self.add_tx_tab {
-                TxTab::FromMethod => self.check_add_tx_from(),
-                TxTab::ToMethod => self.check_add_tx_to(),
+                TxTab::FromMethod => self.check_add_tx_from()?,
+                TxTab::ToMethod => self.check_add_tx_to()?,
                 _ => {}
             },
             CurrentUi::Search => match self.search_tab {
@@ -661,25 +669,31 @@ impl<'a> InputKeyHandler<'a> {
             _ => {}
         }
         self.check_autofill();
+
+        Ok(())
     }
 
     /// Checks and verifies amount field
-    pub fn handle_amount(&mut self) {
+    pub fn handle_amount(&mut self) -> Result<()> {
         match self.page {
-            CurrentUi::AddTx => self.check_add_tx_amount(),
-            CurrentUi::Search => self.check_search_amount(),
+            CurrentUi::AddTx => self.check_add_tx_amount()?,
+            CurrentUi::Search => self.check_search_amount()?,
             _ => {}
         }
+
+        Ok(())
     }
 
     // Checks and verifies tx type field
-    pub fn handle_tx_type(&mut self) {
+    pub fn handle_tx_type(&mut self) -> Result<()> {
         match self.page {
-            CurrentUi::AddTx => self.check_add_tx_type(),
+            CurrentUi::AddTx => self.check_add_tx_type()?,
             CurrentUi::Search => self.check_search_type(),
             _ => {}
         }
         self.check_autofill();
+
+        Ok(())
     }
 
     /// Checks and verifies tags field
@@ -693,11 +707,11 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     /// Resets all input boxes on Add Tx and Transfer page
-    pub fn clear_input(&mut self) {
+    pub fn clear_input(&mut self) -> Result<()> {
         match self.page {
             CurrentUi::AddTx => {
                 *self.add_tx_data = TxData::new();
-                self.reload_add_tx_balance_data();
+                self.reload_add_tx_balance_data()?;
             }
             CurrentUi::Search => {
                 *self.search_data = TxData::new_empty();
@@ -705,6 +719,8 @@ impl<'a> InputKeyHandler<'a> {
             }
             _ => {}
         }
+
+        Ok(())
     }
 
     /// Takes the auto fill value and adds it to the relevant field
@@ -737,7 +753,7 @@ impl<'a> InputKeyHandler<'a> {
 
     /// If Enter is pressed on Summary page while a tag is selected
     /// go to search page and search for it
-    pub fn search_tag(&mut self) {
+    pub fn search_tag(&mut self) -> Result<()> {
         if let SummaryTab::Table = self.summary_tab
             && let Some(index) = self.summary_table.state.selected()
         {
@@ -745,38 +761,36 @@ impl<'a> InputKeyHandler<'a> {
             let search_param = TxData::custom("", "", "", "", "", "", tag_name, 0);
             *self.search_data = search_param;
             self.go_search();
-            self.search_tx();
+            self.search_tx()?;
         }
+
+        Ok(())
     }
 
     /// Handle key press when deletion popup is turned on
-    pub fn handle_deletion_popup(&mut self) {
-        match self.key.code {
-            KeyCode::Enter => {
-                let choice = self.popup_status.get_deletion_choice();
+    pub fn handle_deletion_popup(&mut self) -> Result<()> {
+        if self.key.code == KeyCode::Enter {
+            let choice = self.popup_status.get_deletion_choice();
 
-                if let Some(choice) = choice {
-                    match choice {
-                        DeletionChoices::Yes => match self.page {
-                            CurrentUi::Home => {
-                                self.home_delete_tx();
-                                *self.popup_status = PopupType::Nothing;
-                            }
-                            CurrentUi::Search => {
-                                self.search_delete_tx();
-                                *self.popup_status = PopupType::Nothing;
-                            }
-                            _ => {}
-                        },
-                        DeletionChoices::No => *self.popup_status = PopupType::Nothing,
-                    }
+            if let Some(choice) = choice {
+                match choice {
+                    DeletionChoices::Yes => match self.page {
+                        CurrentUi::Home => {
+                            self.home_delete_tx()?;
+                            *self.popup_status = PopupType::Nothing;
+                        }
+                        CurrentUi::Search => {
+                            self.search_delete_tx()?;
+                            *self.popup_status = PopupType::Nothing;
+                        }
+                        _ => {}
+                    },
+                    DeletionChoices::No => *self.popup_status = PopupType::Nothing,
                 }
             }
-            KeyCode::Esc => {
-                *self.popup_status = PopupType::Nothing;
-            }
-            _ => {}
         }
+
+        Ok(())
     }
 
     /// Cycles through available date types
@@ -786,79 +800,76 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     /// Start editing tx from a search result
-    pub fn search_edit_tx(&mut self) {
+    pub fn search_edit_tx(&mut self) -> Result<()> {
         if let Some(a) = self.search_table.state.selected() {
             let target_tx = &self.search_txs.get_tx(a);
 
             *self.page = CurrentUi::AddTx;
             *self.add_tx_data = TxData::from_full_tx(target_tx, true);
 
-            self.reload_add_tx_balance_data();
+            self.reload_add_tx_balance_data()?;
         }
+
+        Ok(())
     }
 
     /// Delete a transaction from search page
-    pub fn search_delete_tx(&mut self) {
+    pub fn search_delete_tx(&mut self) -> Result<()> {
         let Some(index) = self.search_table.state.selected() else {
-            return;
+            return Ok(());
         };
 
         let target_tx = self.search_txs.get_tx(index);
-        let result = self.conn.delete_tx(target_tx);
+        self.conn.delete_tx(target_tx)?;
 
-        match result {
-            Ok(()) => {
-                // Transaction deleted so reload the data again
-                self.reload_home_table();
-                self.reload_chart_data();
-                self.reload_summary();
-                self.reset_search_data();
-            }
-            Err(err) => {
-                let status = InfoPopupState::Error(err.to_string());
-                *self.popup_status = PopupType::new_info(status);
-            }
-        }
+        // Transaction deleted so reload the data again
+        self.reload_home_table()?;
+        self.reload_chart_data()?;
+        self.reload_summary()?;
+        self.reset_search_data();
+
+        Ok(())
     }
 
-    pub fn switch_tx_position_up(&mut self) {
+    pub fn switch_tx_position_up(&mut self) -> Result<()> {
         if let Some(index) = self.home_table.state.selected() {
             // Don't do anything if there is 2 or less items or is selecting the first index which can't be moved up
             if self.home_table.items.len() <= 2 || index == 0 {
-                return;
+                return Ok(());
             }
 
             let reload_stuff = self
                 .conn
-                .swap_tx_position(index, index - 1, self.home_txs)
-                .unwrap();
+                .swap_tx_position(index, index - 1, self.home_txs)?;
 
             if reload_stuff {
                 *self.home_table = TableData::new(self.home_txs.tx_array());
                 self.home_down_till(index - 1);
-                self.reload_activity_table();
+                self.reload_activity_table()?;
             }
         }
+
+        Ok(())
     }
 
-    pub fn switch_tx_position_down(&mut self) {
+    pub fn switch_tx_position_down(&mut self) -> Result<()> {
         if let Some(index) = self.home_table.state.selected() {
             // Don't do anything if there is 1 or less items or is selecting the last index which can't be moved up
             if self.home_table.items.len() <= 2 || index == self.home_table.items.len() - 1 {
-                return;
+                return Ok(());
             }
 
             let reload_stuff = self
                 .conn
-                .swap_tx_position(index, index + 1, self.home_txs)
-                .unwrap();
+                .swap_tx_position(index, index + 1, self.home_txs)?;
 
             if reload_stuff {
                 *self.home_table = TableData::new(self.home_txs.tx_array());
                 self.home_down_till(index + 1);
-                self.reload_activity_table();
+                self.reload_activity_table()?;
             }
         }
+        Ok(())
     }
 
     /// Opens a popup that shows the details of the selected transaction on the Homepage
@@ -873,7 +884,7 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     /// Opens a popup that shows the details of the selected activity tx details on the Activity page
-    pub fn show_activity_tx_details(&mut self) {
+    pub fn show_activity_tx_details(&mut self) -> Result<()> {
         if let Some(index) = self.activity_table.state.selected() {
             let activity_txs = self.activity_view.get_activity_txs(index);
 
@@ -882,35 +893,45 @@ impl<'a> InputKeyHandler<'a> {
             if activity_txs.len() == 2 {
                 for (index, tx) in activity_txs.into_iter().enumerate() {
                     let tx_details = tx.details.clone().unwrap_or_default();
-                    write!(&mut popup_text, "Transaction {}: {tx_details}", index + 1).unwrap();
+                    write!(&mut popup_text, "Transaction {}: {tx_details}", index + 1)?;
                     if index == 0 {
                         popup_text += "\n\n";
                     }
                 }
             } else {
                 let tx_details = &activity_txs[0].details.clone().unwrap_or_default();
-                write!(&mut popup_text, "Transaction 1: {tx_details}").unwrap();
+                write!(&mut popup_text, "Transaction 1: {tx_details}")?;
             }
             let status = InfoPopupState::ShowDetails(popup_text);
             *self.popup_status = PopupType::new_info(status);
         }
+
+        Ok(())
     }
 
-    pub fn switch_chart_tx_method_activation(&mut self) {
+    pub fn switch_chart_tx_method_activation(&mut self) -> Result<()> {
         if !*self.chart_hidden_mode
             && let ChartTab::TxMethods = self.chart_tab
         {
             let selected_index = self.chart_tx_methods.index;
             let all_tx_methods = self.conn.get_tx_methods_cumulative();
 
-            let selected_method = &all_tx_methods[selected_index];
+            let selected_method = all_tx_methods.get(selected_index).ok_or(anyhow!(
+                "No method found at {selected_index} on {all_tx_methods:?}"
+            ))?;
+
             let activation_status = self
                 .chart_activated_methods
                 .get_mut(selected_method)
-                .unwrap();
+                .ok_or(anyhow!(
+                    "Method {selected_method} not found int eh chart activted methods list"
+                ))?;
+
             *activation_status = !*activation_status;
             self.lerp_state.clear();
         }
+
+        Ok(())
     }
 
     pub fn popup_up(&mut self) {
@@ -1168,7 +1189,7 @@ impl InputKeyHandler<'_> {
     fn check_add_tx_date(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
-                let status = self.add_tx_data.check_date(&DateType::Exact, self.conn);
+                let status = self.add_tx_data.check_date(DateType::Exact, self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1185,7 +1206,7 @@ impl InputKeyHandler<'_> {
                 }
             }
             KeyCode::Esc => {
-                let status = self.add_tx_data.check_date(&DateType::Exact, self.conn);
+                let status = self.add_tx_data.check_date(DateType::Exact, self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1221,7 +1242,7 @@ impl InputKeyHandler<'_> {
     }
 
     /// Handle key inputs for the Tx Type field on the Add Tx page
-    fn check_add_tx_type(&mut self) {
+    fn check_add_tx_type(&mut self) -> Result<()> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.add_tx_data.check_tx_type(self.conn);
@@ -1230,7 +1251,7 @@ impl InputKeyHandler<'_> {
                     Ok(data) => {
                         *self.add_tx_tab = TxTab::FromMethod;
                         self.go_correct_index();
-                        self.reload_add_tx_balance_data();
+                        self.reload_add_tx_balance_data()?;
 
                         self.add_tx_data
                             .add_tx_status(data.to_string(), LogType::Info);
@@ -1247,7 +1268,7 @@ impl InputKeyHandler<'_> {
                 match status {
                     Ok(data) => {
                         *self.add_tx_tab = TxTab::Nothing;
-                        self.reload_add_tx_balance_data();
+                        self.reload_add_tx_balance_data()?;
 
                         self.add_tx_data
                             .add_tx_status(data.to_string(), LogType::Info);
@@ -1262,10 +1283,12 @@ impl InputKeyHandler<'_> {
             KeyCode::Char(a) => self.add_tx_data.edit_tx_type(Some(a)),
             _ => {}
         }
+
+        Ok(())
     }
 
     /// Handle key inputs for the From Method field on the Add Tx page
-    fn check_add_tx_from(&mut self) {
+    fn check_add_tx_from(&mut self) -> Result<()> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.add_tx_data.check_from_method(self.conn);
@@ -1276,7 +1299,7 @@ impl InputKeyHandler<'_> {
                             TxType::IncomeExpense => *self.add_tx_tab = TxTab::Amount,
                             TxType::Transfer => *self.add_tx_tab = TxTab::ToMethod,
                         }
-                        self.reload_add_tx_balance_data();
+                        self.reload_add_tx_balance_data()?;
                         self.go_correct_index();
 
                         self.add_tx_data
@@ -1295,7 +1318,7 @@ impl InputKeyHandler<'_> {
                 match status {
                     Ok(data) => {
                         *self.add_tx_tab = TxTab::Nothing;
-                        self.reload_add_tx_balance_data();
+                        self.reload_add_tx_balance_data()?;
 
                         self.add_tx_data
                             .add_tx_status(data.to_string(), LogType::Info);
@@ -1311,10 +1334,12 @@ impl InputKeyHandler<'_> {
             KeyCode::Char(a) => self.add_tx_data.edit_from_method(Some(a)),
             _ => {}
         }
+
+        Ok(())
     }
 
     /// Handle key inputs for the To Method field on the Add Tx page
-    fn check_add_tx_to(&mut self) {
+    fn check_add_tx_to(&mut self) -> Result<()> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.add_tx_data.check_to_method(self.conn);
@@ -1323,7 +1348,7 @@ impl InputKeyHandler<'_> {
                     Ok(data) => {
                         *self.add_tx_tab = TxTab::Amount;
                         self.go_correct_index();
-                        self.reload_add_tx_balance_data();
+                        self.reload_add_tx_balance_data()?;
 
                         self.add_tx_data
                             .add_tx_status(data.to_string(), LogType::Info);
@@ -1340,7 +1365,7 @@ impl InputKeyHandler<'_> {
                 match status {
                     Ok(data) => {
                         *self.add_tx_tab = TxTab::Nothing;
-                        self.reload_add_tx_balance_data();
+                        self.reload_add_tx_balance_data()?;
 
                         self.add_tx_data
                             .add_tx_status(data.to_string(), LogType::Info);
@@ -1355,9 +1380,11 @@ impl InputKeyHandler<'_> {
             KeyCode::Char(a) => self.add_tx_data.edit_to_method(Some(a)),
             _ => {}
         }
+
+        Ok(())
     }
     /// Handle key inputs for the Amount field on the Add Tx page
-    fn check_add_tx_amount(&mut self) {
+    fn check_add_tx_amount(&mut self) -> Result<()> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.add_tx_data.check_amount(false, self.conn);
@@ -1366,7 +1393,7 @@ impl InputKeyHandler<'_> {
                     Ok(data) => {
                         *self.add_tx_tab = TxTab::Tags;
                         self.go_correct_index();
-                        self.reload_add_tx_balance_data();
+                        self.reload_add_tx_balance_data()?;
 
                         self.add_tx_data
                             .add_tx_status(data.to_string(), LogType::Info);
@@ -1383,7 +1410,7 @@ impl InputKeyHandler<'_> {
                 match status {
                     Ok(data) => {
                         *self.add_tx_tab = TxTab::Nothing;
-                        self.reload_add_tx_balance_data();
+                        self.reload_add_tx_balance_data()?;
 
                         self.add_tx_data
                             .add_tx_status(data.to_string(), LogType::Info);
@@ -1398,6 +1425,8 @@ impl InputKeyHandler<'_> {
             KeyCode::Char(a) => self.add_tx_data.edit_amount(Some(a)),
             _ => {}
         }
+
+        Ok(())
     }
 
     /// Handle key inputs for the Tag field on the Add Tx page
@@ -1419,7 +1448,7 @@ impl InputKeyHandler<'_> {
             KeyCode::Enter => {
                 let status = self
                     .search_data
-                    .check_date(self.search_date_type, self.conn);
+                    .check_date(*self.search_date_type, self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1438,7 +1467,7 @@ impl InputKeyHandler<'_> {
             KeyCode::Esc => {
                 let status = self
                     .search_data
-                    .check_date(self.search_date_type, self.conn);
+                    .check_date(*self.search_date_type, self.conn);
 
                 match status {
                     Ok(data) => {
@@ -1607,7 +1636,7 @@ impl InputKeyHandler<'_> {
     }
 
     /// Handle key inputs for the amount field on the Search page
-    fn check_search_amount(&mut self) {
+    fn check_search_amount(&mut self) -> Result<()> {
         match self.key.code {
             KeyCode::Enter => {
                 let status = self.search_data.check_amount(true, self.conn);
@@ -1646,6 +1675,8 @@ impl InputKeyHandler<'_> {
             KeyCode::Char(a) => self.search_data.edit_amount(Some(a)),
             _ => {}
         }
+
+        Ok(())
     }
 
     /// Handle key inputs for the Tag field on the Search page
@@ -1674,20 +1705,20 @@ impl InputKeyHandler<'_> {
     }
 
     /// Reload Home page's table data by fetching from the DB
-    fn reload_home_table(&mut self) {
-        *self.home_txs = self
-            .conn
-            .fetch_txs_with_str(
-                self.home_months.get_selected_value(),
-                self.home_years.get_selected_value(),
-                FetchNature::Monthly,
-            )
-            .unwrap();
+    fn reload_home_table(&mut self) -> Result<()> {
+        *self.home_txs = self.conn.fetch_txs_with_str(
+            self.home_months.get_selected_value(),
+            self.home_years.get_selected_value(),
+            FetchNature::Monthly,
+        )?;
+
         *self.home_table = TableData::new(self.home_txs.tx_array());
+
+        Ok(())
     }
 
     /// Reset summary table data by recreating it from gathered Summary Data
-    fn reload_summary(&mut self) {
+    fn reload_summary(&mut self) -> Result<()> {
         let fetch_nature = match self.summary_modes.index {
             0 => FetchNature::Monthly,
             1 => FetchNature::Yearly,
@@ -1695,14 +1726,11 @@ impl InputKeyHandler<'_> {
             _ => panic!("Invalid summary mode"),
         };
 
-        let summary_view = self
-            .conn
-            .get_summary_with_str(
-                self.summary_months.get_selected_value(),
-                self.summary_years.get_selected_value(),
-                fetch_nature,
-            )
-            .unwrap();
+        let summary_view = self.conn.get_summary_with_str(
+            self.summary_months.get_selected_value(),
+            self.summary_years.get_selected_value(),
+            fetch_nature,
+        )?;
 
         *self.summary_sort = SortingType::Tags;
 
@@ -1713,8 +1741,7 @@ impl InputKeyHandler<'_> {
         {
             let last_summary_view = self
                 .conn
-                .get_summary_with_str(&month, &year, fetch_nature)
-                .unwrap();
+                .get_summary_with_str(&month, &year, fetch_nature)?;
 
             let last_full_summary = last_summary_view.generate_summary(None, self.conn);
 
@@ -1738,10 +1765,12 @@ impl InputKeyHandler<'_> {
 
             *self.summary_view = summary_view;
         }
+
+        Ok(())
     }
 
     /// Reload chart data by fetching from the DB
-    fn reload_chart_data(&mut self) {
+    fn reload_chart_data(&mut self) -> Result<()> {
         let fetch_nature = match self.chart_modes.index {
             0 => FetchNature::Monthly,
             1 => FetchNature::Yearly,
@@ -1749,14 +1778,13 @@ impl InputKeyHandler<'_> {
             _ => panic!("Invalid chart mode"),
         };
 
-        *self.chart_view = self
-            .conn
-            .get_chart_view_with_str(
-                self.chart_months.get_selected_value(),
-                self.chart_years.get_selected_value(),
-                fetch_nature,
-            )
-            .unwrap();
+        *self.chart_view = self.conn.get_chart_view_with_str(
+            self.chart_months.get_selected_value(),
+            self.chart_years.get_selected_value(),
+            fetch_nature,
+        )?;
+
+        Ok(())
     }
 
     /// Reset all currently shown search related data
@@ -1766,19 +1794,18 @@ impl InputKeyHandler<'_> {
     }
 
     /// Reload activity data by fetching from the DB
-    fn reload_activity_table(&mut self) {
-        *self.activity_view = self
-            .conn
-            .get_activity_view_with_str(
-                self.activity_months.get_selected_value(),
-                self.activity_years.get_selected_value(),
-            )
-            .unwrap();
+    fn reload_activity_table(&mut self) -> Result<()> {
+        *self.activity_view = self.conn.get_activity_view_with_str(
+            self.activity_months.get_selected_value(),
+            self.activity_years.get_selected_value(),
+        )?;
 
         let old_table_position = self.activity_table.state.clone();
 
         *self.activity_table = TableData::new(self.activity_view.get_activity_table());
         self.activity_table.state = old_table_position.clone();
+
+        Ok(())
     }
 
     /// Move the cursor for text fields to the correct position, if it's misplaced
@@ -1794,7 +1821,7 @@ impl InputKeyHandler<'_> {
         let status = match self.add_tx_tab {
             TxTab::Date => self
                 .add_tx_data
-                .step_date(&DateType::Exact, step_type, self.conn),
+                .step_date(DateType::Exact, step_type, self.conn),
             TxTab::FromMethod => self.add_tx_data.step_from_method(step_type, self.conn),
             TxTab::ToMethod => self.add_tx_data.step_to_method(step_type, self.conn),
             TxTab::Amount => self.add_tx_data.step_amount(false, step_type, self.conn),
@@ -1812,7 +1839,7 @@ impl InputKeyHandler<'_> {
         let status = match self.search_tab {
             TxTab::Date => {
                 self.search_data
-                    .step_date(self.search_date_type, StepType::StepUp, self.conn)
+                    .step_date(*self.search_date_type, StepType::StepUp, self.conn)
             }
             TxTab::FromMethod => self.search_data.step_from_method(step_type, self.conn),
             TxTab::ToMethod => self.search_data.step_to_method(step_type, self.conn),
@@ -1897,14 +1924,16 @@ impl InputKeyHandler<'_> {
     }
 
     /// Update add tx page balance section data that is being shown on the UI
-    fn reload_add_tx_balance_data(&mut self) {
+    fn reload_add_tx_balance_data(&mut self) -> Result<()> {
         let current_table_index = self.home_table.state.selected();
 
         *self.add_tx_balance = self.add_tx_data.generate_balance_section(
             self.home_txs,
             current_table_index,
             self.conn,
-        );
+        )?;
+
+        Ok(())
     }
 
     fn home_down_till(&mut self, index: usize) {
