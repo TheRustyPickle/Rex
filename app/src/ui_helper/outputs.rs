@@ -57,6 +57,8 @@ pub enum VerifierError {
     InvalidBValue,
     #[error("Tags: Non-existing tags cannot be accepted")]
     NonExistingTag,
+    #[error("Others: Something went wrong while verifying input. Error: {0}")]
+    Others(String),
 }
 
 #[derive(Debug, Error)]

@@ -5,9 +5,9 @@ use strum_macros::Display;
 #[derive(Debug, Display)]
 pub enum UiHandlingError {
     #[strum(to_string = "Error while trying to draw widgets. Error: {0}")]
-    DrawingError(ioError),
+    Drawing(ioError),
     #[strum(to_string = "Error while polling for keyboard input. {0}")]
-    PollingError(ioError),
+    Polling(ioError),
 }
 
 impl Error for UiHandlingError {}

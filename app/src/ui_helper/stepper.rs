@@ -19,7 +19,7 @@ impl<'a> Stepper<'a> {
         mut self,
         user_date: &mut String,
         step_type: StepType,
-        date_type: &DateType,
+        date_type: DateType,
     ) -> Result<(), SteppingError> {
         let verify_status = self.conn.verify().date(user_date, date_type);
 
