@@ -381,13 +381,41 @@ impl TxViewGroup {
         for method in sorted_methods {
             let method_id = method.id;
 
-            let mut method_balance = if let Some(index) = index {
-                let target_tx = &self.0[index];
+            let mut method_balance = if let Some(mut index) = index {
+                if index == 0 {
+                    let target_tx = &self.0[index];
 
-                let balance = *target_tx.balance.get(&method_id).unwrap();
-                total_balance += balance;
+                    let mut balance = *target_tx.balance.get(&method_id).unwrap();
+                    let amount = target_tx.tx.amount;
 
-                balance
+                    match target_tx.tx.tx_type {
+                        TxType::Income => balance -= amount,
+                        TxType::Expense => balance += amount,
+                        TxType::Transfer => {
+                            if method_id == target_tx.tx.from_method.id {
+                                balance += amount;
+                            }
+                            if let Some(to_method_id) = &target_tx.tx.to_method
+                                && method_id == to_method_id.id
+                            {
+                                balance -= amount;
+                            }
+                        }
+                    }
+
+                    total_balance += balance;
+
+                    balance
+                } else {
+                    index = index.saturating_sub(1);
+
+                    let target_tx = &self.0[index];
+
+                    let balance = *target_tx.balance.get(&method_id).unwrap();
+                    total_balance += balance;
+
+                    balance
+                }
             } else {
                 let balance = final_balance
                     .as_ref()
