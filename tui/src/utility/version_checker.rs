@@ -1,4 +1,4 @@
-use reqwest::Error;
+use anyhow::Result;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -12,8 +12,8 @@ struct GithubRelease {
 }
 
 /// Uses GitHub API to get the latest release version number to check if the current version matches with it.
-pub fn check_version() -> Result<Option<Vec<String>>, Error> {
-    let current_version = Version::parse(env!("CARGO_PKG_VERSION")).unwrap();
+pub fn check_version() -> Result<Option<Vec<String>>> {
+    let current_version = Version::parse(env!("CARGO_PKG_VERSION"))?;
 
     let client = reqwest::blocking::Client::builder()
         .user_agent("Rex")
@@ -26,7 +26,7 @@ pub fn check_version() -> Result<Option<Vec<String>>, Error> {
         .send()?
         .json()?;
 
-    let github_version = Version::parse(&caller.name.replace('v', "")).unwrap();
+    let github_version = Version::parse(&caller.name.replace('v', ""))?;
 
     if github_version > current_version {
         let updates = parse_github_body(&caller.body);
