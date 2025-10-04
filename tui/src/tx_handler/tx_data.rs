@@ -26,6 +26,7 @@ pub struct TxData {
     pub id_num: i32,
     pub current_index: usize,
     pub autofill: String,
+    pub from_search: bool,
 }
 
 impl TxData {
@@ -48,6 +49,7 @@ impl TxData {
             id_num: 0,
             current_index: 0,
             autofill: String::new(),
+            from_search: false,
         }
     }
 
@@ -66,11 +68,12 @@ impl TxData {
             id_num: 0,
             current_index: 0,
             autofill: String::new(),
+            from_search: false,
         }
     }
 
     #[must_use]
-    pub fn from_full_tx(tx: &FullTx, edit: bool) -> Self {
+    pub fn from_full_tx(tx: &FullTx, edit: bool, from_search: bool) -> Self {
         Self {
             date: tx.date.format("%Y-%m-%d").to_string(),
             details: tx.details.clone().unwrap_or_default(),
@@ -90,6 +93,7 @@ impl TxData {
             id_num: tx.id,
             current_index: 0,
             autofill: String::new(),
+            from_search,
         }
     }
 
@@ -129,6 +133,7 @@ impl TxData {
             id_num,
             current_index: 0,
             autofill: String::new(),
+            from_search: true,
         }
     }
 
