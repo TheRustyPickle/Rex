@@ -353,7 +353,7 @@ impl<'a> InputKeyHandler<'a> {
     pub fn home_edit_tx(&mut self) -> Result<()> {
         if let Some(index) = self.home_table.state.selected() {
             let target_tx = self.home_txs.get_tx(index);
-            *self.add_tx_data = TxData::from_full_tx(target_tx, true);
+            *self.add_tx_data = TxData::from_full_tx(target_tx, true, false);
             *self.page = CurrentUi::AddTx;
             self.add_tx_data.add_tx_status(
                 "Info: Entering Transaction edit mode. Press C to reset.".to_string(),
@@ -805,8 +805,7 @@ impl<'a> InputKeyHandler<'a> {
             let target_tx = &self.search_txs.get_tx(a);
 
             *self.page = CurrentUi::AddTx;
-            *self.add_tx_data = TxData::from_full_tx(target_tx, true);
-
+            *self.add_tx_data = TxData::from_full_tx(target_tx, true, true);
             self.reload_add_tx_balance_data()?;
         }
 
@@ -1847,12 +1846,17 @@ impl InputKeyHandler<'_> {
             TxTab::TxType => self.search_data.step_tx_type(step_type, self.conn),
             TxTab::Tags => self.search_data.step_tags(step_type, self.conn),
             TxTab::Nothing => {
-                if self.search_table.state.selected() == Some(0) {
-                    self.search_table
-                        .state
-                        .select(Some(self.search_table.items.len() - 1));
-                } else if !self.search_txs.is_empty() {
-                    self.search_table.previous();
+                match step_type {
+                    StepType::StepUp => {
+                        if !self.search_table.items.is_empty() {
+                            self.search_table.previous();
+                        }
+                    }
+                    StepType::StepDown => {
+                        if !self.search_table.items.is_empty() {
+                            self.search_table.next();
+                        }
+                    }
                 }
                 Ok(())
             }
@@ -1925,7 +1929,17 @@ impl InputKeyHandler<'_> {
 
     /// Update add tx page balance section data that is being shown on the UI
     fn reload_add_tx_balance_data(&mut self) -> Result<()> {
-        let current_table_index = self.home_table.state.selected();
+        let is_editing_tx = self.add_tx_data.editing_tx;
+
+        let mut current_table_index = if is_editing_tx {
+            self.home_table.state.selected()
+        } else {
+            None
+        };
+
+        if self.add_tx_data.from_search {
+            current_table_index = None;
+        }
 
         *self.add_tx_balance = self.add_tx_data.generate_balance_section(
             self.home_txs,
