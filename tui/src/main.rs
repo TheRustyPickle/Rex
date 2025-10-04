@@ -42,9 +42,9 @@ fn main() {
         let mut migrated_path = working_path.clone();
         migrated_path.push("rex.sqlite");
 
-        // TODO: rename
         working_path.push("data.sqlite");
-        if initialize_app(&working_path, &migrated_path, &original_dir).is_err() {
+        if let Err(e) = initialize_app(&working_path, &migrated_path, &original_dir) {
+            println!("Failed to initialize app. Error: {e:?}");
             std::process::exit(1);
         }
     } else {

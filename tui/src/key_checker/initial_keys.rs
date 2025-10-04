@@ -1,3 +1,4 @@
+use anyhow::Result;
 use crossterm::event::KeyCode;
 
 use crate::key_checker::InputKeyHandler;
@@ -5,10 +6,10 @@ use crate::outputs::HandlingOutput;
 use crate::pages::PopupType;
 
 /// Tracks the keys of the Initial page and calls relevant function based on it
-pub fn initial_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
+pub fn initial_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutput>> {
     match handler.popup_status {
         PopupType::Nothing => match handler.key.code {
-            KeyCode::Char('q') => return Some(HandlingOutput::QuitUi),
+            KeyCode::Char('q') => return Ok(Some(HandlingOutput::QuitUi)),
             _ => handler.go_home(),
         },
         PopupType::Info(info) => {
@@ -16,7 +17,7 @@ pub fn initial_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
                 match handler.key.code {
                     KeyCode::Enter => {
                         if let Err(e) = handler.handle_update_popup() {
-                            return Some(e);
+                            return Ok(Some(e));
                         }
                     }
                     KeyCode::Up => handler.popup_up(),
@@ -27,5 +28,5 @@ pub fn initial_keys(handler: &mut InputKeyHandler) -> Option<HandlingOutput> {
         }
         _ => handler.do_empty_popup(),
     }
-    None
+    Ok(None)
 }

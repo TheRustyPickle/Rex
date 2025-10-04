@@ -1,8 +1,7 @@
 use app::conn::{DbConn, FetchNature};
 use app::ui_helper::DateType;
 use app::views::SearchView;
-use crossterm::event::poll;
-use crossterm::event::{self, Event, KeyEventKind};
+use crossterm::event::{self, Event, KeyEventKind, poll};
 use ratatui::Terminal;
 use ratatui::backend::Backend;
 use ratatui::layout::Constraint;
@@ -272,13 +271,13 @@ pub fn start_app<B: Backend>(
 
                 popup_status.show_ui(f);
             })
-            .map_err(UiHandlingError::DrawingError)?;
+            .map_err(UiHandlingError::Drawing)?;
 
         // Based on the UI status, either start polling for key press or continue the loop
         match page {
             CurrentUi::Initial => {
                 // Initial page will loop indefinitely to animate the text
-                if !poll(Duration::from_millis(40)).map_err(UiHandlingError::PollingError)? {
+                if !poll(Duration::from_millis(40)).map_err(UiHandlingError::Polling)? {
                     starter_index = (starter_index + 1) % 27;
                     continue;
                 }
@@ -291,7 +290,7 @@ pub fn start_app<B: Backend>(
             | CurrentUi::Activity => {
                 // If at least 1 lerp is in progress and no key press detected, continue the loop
                 if lerp_state.has_active_lerps()
-                    && !poll(Duration::from_millis(2)).map_err(UiHandlingError::PollingError)?
+                    && !poll(Duration::from_millis(2)).map_err(UiHandlingError::Polling)?
                 {
                     continue;
                 }
@@ -299,7 +298,7 @@ pub fn start_app<B: Backend>(
         }
 
         // If not inside one of the duration polling, wait for key press
-        if let Event::Key(key) = event::read().map_err(UiHandlingError::PollingError)? {
+        if let Event::Key(key) = event::read().map_err(UiHandlingError::Polling)? {
             if key.kind != KeyEventKind::Press {
                 continue;
             }
@@ -358,10 +357,16 @@ pub fn start_app<B: Backend>(
                 CurrentUi::Activity => activity_keys(&mut handler),
             };
 
-            // If there is a status it means it needs to be handled outside the UI
-            // Example quitting or J press for user inputs
-            if let Some(output) = status {
-                return Ok(output);
+            match status {
+                Ok(output) => {
+                    if let Some(output) = output {
+                        return Ok(output);
+                    }
+                }
+                Err(e) => {
+                    let state = InfoPopupState::Error(e.to_string());
+                    popup_status = PopupType::new_info(state);
+                }
             }
         }
     }

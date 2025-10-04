@@ -51,7 +51,7 @@ pub fn initialize_app(
         }
     }
 
-    let new_version = check_version();
+    let new_version = check_version()?;
 
     if let Err(e) = migrate_config(old_db_path) {
         println!("Failed to migrate config. Error: {e:?}");
@@ -59,8 +59,6 @@ pub fn initialize_app(
     }
 
     let mut config = Config::get_config(&migrated_db_path.to_path_buf())?;
-
-    let new_version_available = new_version.unwrap_or_default();
 
     let new_db_path = if let Some(mut location) = config.new_location.clone() {
         let result = set_current_dir(&location);
@@ -82,7 +80,7 @@ pub fn initialize_app(
 
     loop {
         let mut terminal = enter_tui_interface()?;
-        let result = start_app(&mut terminal, &new_version_available, &mut migrated_conn);
+        let result = start_app(&mut terminal, &new_version, &mut migrated_conn);
         exit_tui_interface()?;
 
         match result {
@@ -134,7 +132,7 @@ pub fn initialize_app(
                             println!("Error while setting new location. Error: {e:?}");
                             start_timer("");
                             continue;
-                        };
+                        }
 
                         target_path.push("data.sqlite");
                         let file_copy_status = fs::copy(&new_db_path, target_path);
@@ -157,7 +155,7 @@ pub fn initialize_app(
                             println!("Error while setting backup DB path. Error: {e:?}");
                             start_timer("");
                             continue;
-                        };
+                        }
 
                         start_timer("Backup DB path locations set successfully.");
                     }
