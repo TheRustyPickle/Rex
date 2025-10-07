@@ -237,6 +237,18 @@ impl<'a> InputKeyHandler<'a> {
         *self.popup_status = PopupType::new_info(popup_state);
     }
 
+    pub fn do_popup_help_popup(&mut self) {
+        match self.popup_status {
+            PopupType::Info(_) | PopupType::Nothing => {
+                self.do_empty_popup();
+            }
+            PopupType::Choice(_) => {
+                let status = InfoPopupState::ChoiceHelp;
+                *self.popup_status = PopupType::new_info(status);
+            }
+        }
+    }
+
     /// Turns on deletion confirmation popup
     pub fn do_deletion_popup(&mut self) {
         match self.page {

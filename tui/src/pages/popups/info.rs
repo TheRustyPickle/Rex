@@ -9,7 +9,7 @@ use ratatui::widgets::{
 use crate::page_handler::{BACKGROUND, RED, TEXT};
 use crate::pages::{
     InfoPopup, InfoPopupState, activity_help_text, add_tx_help_text, chart_help_text,
-    home_help_text, new_update_text, search_help_text, summary_help_text,
+    delete_tx_help, home_help_text, new_update_text, search_help_text, summary_help_text,
 };
 use crate::utility::{centered_rect, create_bolded_text, main_block};
 
@@ -54,6 +54,11 @@ impl InfoPopup {
                 message = details.to_string();
 
                 x_value = 40;
+                y_value = 20;
+            }
+            InfoPopupState::ChoiceHelp => {
+                message = delete_tx_help();
+
                 y_value = 20;
             }
         }
