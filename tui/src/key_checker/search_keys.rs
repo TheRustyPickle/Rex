@@ -54,9 +54,11 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutpu
         PopupType::Info(_) | PopupType::Choice(_) => match handler.key.code {
             KeyCode::Up => handler.popup_up(),
             KeyCode::Down => handler.popup_down(),
-            KeyCode::Enter => handler.handle_deletion_popup()?,
+            KeyCode::Enter => handler.handle_choice_popup_selection()?,
             _ => handler.do_empty_popup(),
         },
+
+        _ => unreachable!(),
     }
 
     Ok(None)

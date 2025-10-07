@@ -212,6 +212,16 @@ Arrow Left/Right: Move value of the widget
 
 pub fn delete_tx_help() -> String {
     "Arrow Up/Down: Change Choice
-Enter: Select the highlighted choice"
+Enter: Select the highlighted choice
+Any other key: Cancel the operation"
+        .to_string()
+}
+
+pub fn reposition_help() -> String {
+    "Arrow Up/Down: Change Choice
+Enter: Confirm the operation when confirmation option is selected
+, (comma): Move the selected transaction method up
+. (dot): Move the selected transaction method down
+Any other key: Cancel the operation"
         .to_string()
 }

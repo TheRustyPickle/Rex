@@ -12,7 +12,7 @@ use crate::page_handler::{
     ActivityTab, ChartTab, CurrentUi, HomeTab, IndexedData, LogType, MONTHS, SortingType,
     SummaryTab, TableData, TxTab,
 };
-use crate::pages::{DeletionChoices, InfoPopupState, PopupType};
+use crate::pages::{ChoicePopupState, ConfigChoices, DeletionChoices, InfoPopupState, PopupType};
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, sort_table_data};
 
@@ -246,7 +246,16 @@ impl<'a> InputKeyHandler<'a> {
                 let status = InfoPopupState::ChoiceHelp;
                 *self.popup_status = PopupType::new_info(status);
             }
+            PopupType::Reposition(_) => {
+                let status = InfoPopupState::RepositionHelp;
+                *self.popup_status = PopupType::new_info(status);
+            }
+            PopupType::Input | PopupType::InputReposition => todo!(),
         }
+    }
+
+    pub fn do_config_popup(&mut self) {
+        *self.popup_status = PopupType::new_choice_config();
     }
 
     /// Turns on deletion confirmation popup
@@ -779,12 +788,17 @@ impl<'a> InputKeyHandler<'a> {
         Ok(())
     }
 
-    /// Handle key press when deletion popup is turned on
-    pub fn handle_deletion_popup(&mut self) -> Result<()> {
-        if self.key.code == KeyCode::Enter {
-            let choice = self.popup_status.get_deletion_choice();
+    pub fn handle_choice_popup_selection(&mut self) -> Result<()> {
+        let PopupType::Choice(choice) = self.popup_status else {
+            return Ok(());
+        };
 
-            if let Some(choice) = choice {
+        match choice.showing {
+            ChoicePopupState::Delete => {
+                let Some(choice) = self.popup_status.get_deletion_choice() else {
+                    return Err(anyhow!("Popup choice should not have been None"));
+                };
+
                 match choice {
                     DeletionChoices::Yes => match self.page {
                         CurrentUi::Home => {
@@ -800,9 +814,61 @@ impl<'a> InputKeyHandler<'a> {
                     DeletionChoices::No => *self.popup_status = PopupType::Nothing,
                 }
             }
+            ChoicePopupState::Config => {
+                let Some(choice) = self.popup_status.get_config_choice() else {
+                    return Err(anyhow!("Popup choice should not have been None"));
+                };
+
+                match choice {
+                    ConfigChoices::RepositionTxMethod => {
+                        *self.popup_status = PopupType::new_reposition(self.conn)?;
+                    }
+                    _ => todo!(),
+                }
+            }
         }
 
         Ok(())
+    }
+
+    pub fn handle_reposition_popup_selection(&mut self) -> Result<()> {
+        let PopupType::Reposition(reposition) = self.popup_status else {
+            return Ok(());
+        };
+
+        if reposition.reposition_selected {
+            return Ok(());
+        }
+
+        let new_tx_method_positions: Vec<String> = reposition
+            .reposition_table
+            .items
+            .iter()
+            .map(|i| i[0].clone())
+            .collect();
+
+        self.conn
+            .set_new_tx_method_positions(&new_tx_method_positions)?;
+
+        *self.popup_status = PopupType::Nothing;
+
+        self.go_home_reset();
+        *self.home_tab = HomeTab::Months;
+        self.reload_home_table()?;
+        self.reload_chart_data()?;
+        self.reload_summary()?;
+        self.reset_search_data();
+        self.reload_activity_table()?;
+
+        Ok(())
+    }
+
+    pub fn popup_move_up(&mut self) {
+        self.popup_status.move_up();
+    }
+
+    pub fn popup_move_down(&mut self) {
+        self.popup_status.move_down();
     }
 
     /// Cycles through available date types
@@ -1794,6 +1860,8 @@ impl InputKeyHandler<'_> {
             self.chart_years.get_selected_value(),
             fetch_nature,
         )?;
+
+        *self.chart_tx_methods = IndexedData::new_tx_methods_cumulative(self.conn);
 
         Ok(())
     }

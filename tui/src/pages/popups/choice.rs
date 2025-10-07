@@ -5,17 +5,44 @@ use ratatui::text::{Span, Text};
 use ratatui::widgets::{BorderType, Borders, Clear, Paragraph, Row, Table, Wrap};
 
 use crate::page_handler::{BACKGROUND, BOX, TEXT};
-use crate::pages::ChoicePopup;
+use crate::pages::{ChoicePopup, ChoicePopupState};
 use crate::utility::{centered_rect, main_block, styled_block};
 
 impl ChoicePopup {
     pub fn show_ui(&mut self, f: &mut Frame) {
         let size = f.area();
         let x_value = 40;
-        let y_value = 10;
+        let mut y_value = 10;
 
-        let title = "Transaction Deletion";
-        let message = "Are you sure you want to delete this transaction?";
+        let title;
+        let message;
+
+        let constraints;
+
+        match self.showing {
+            ChoicePopupState::Delete => {
+                title = "Transaction Deletion";
+                message = "Are you sure you want to delete this transaction?";
+
+                constraints = vec![
+                    Constraint::Min(1),
+                    Constraint::Length(1),
+                    Constraint::Length(4),
+                ];
+            }
+            ChoicePopupState::Config => {
+                title = "Configuration";
+                message = "Select an option to configure";
+
+                y_value = 20;
+
+                constraints = vec![
+                    Constraint::Length(4),
+                    Constraint::Min(1),
+                    Constraint::Length(7),
+                ]
+            }
+        }
 
         let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
 
@@ -31,11 +58,7 @@ impl ChoicePopup {
         let new_chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(1)
-            .constraints([
-                Constraint::Min(1),
-                Constraint::Length(1),
-                Constraint::Length(4),
-            ])
+            .constraints(constraints)
             .split(area);
 
         f.render_widget(Clear, area);
@@ -54,7 +77,7 @@ impl ChoicePopup {
 
         let mut table = Table::new(rows, [Constraint::Percentage(100)])
             .highlight_symbol(">> ")
-            .block(styled_block("Confirmation: H for help"))
+            .block(styled_block("H for help"))
             .style(Style::default().fg(BOX));
 
         let selected_index = self.table.state.selected().unwrap();
