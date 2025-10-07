@@ -1,3 +1,5 @@
+use anyhow::{Result, anyhow};
+use app::conn::DbConn;
 use ratatui::Frame;
 use ratatui::style::Color;
 use strum::IntoEnumIterator;
@@ -5,22 +7,47 @@ use strum_macros::{Display, EnumIter, FromRepr};
 
 use crate::page_handler::{BLUE, RED, TableData};
 
+pub enum PopupType {
+    Info(InfoPopup),
+    Choice(ChoicePopup),
+    Reposition(RepositionPopup),
+    Input,
+    InputReposition,
+    Nothing,
+}
+
+#[derive(Clone)]
+pub enum InfoPopupState {
+    NewUpdate(Vec<String>),
+    HomeHelp,
+    AddTxHelp,
+    ChartHelp,
+    SummaryHelp,
+    SearchHelp,
+    ActivityHelp,
+    ChoiceHelp,
+    RepositionHelp,
+    Error(String),
+    ShowDetails(String),
+}
+
 pub struct InfoPopup {
     pub scroll_position: usize,
     pub max_scroll: usize,
     pub showing: InfoPopupState,
 }
 
-impl InfoPopup {
-    pub fn is_new_update(&self) -> bool {
-        let new_update = matches!(self.showing, InfoPopupState::NewUpdate(_));
-        new_update
-    }
-}
-
 pub struct ChoicePopup {
     pub table: TableData,
     pub choices: Vec<ChoiceDetails>,
+    pub showing: ChoicePopupState,
+}
+
+pub struct RepositionPopup {
+    pub reposition_table: TableData,
+    pub reposition_contents: Vec<String>,
+    pub confirm_table: TableData,
+    pub reposition_selected: bool,
 }
 
 pub struct ChoiceDetails {
@@ -34,6 +61,33 @@ pub enum DeletionChoices {
     Yes,
     #[strum(to_string = "No")]
     No,
+}
+
+#[derive(Copy, Clone)]
+pub enum ChoicePopupState {
+    Delete,
+    Config,
+}
+
+#[derive(EnumIter, Display, FromRepr, Copy, Clone)]
+pub enum ConfigChoices {
+    #[strum(to_string = "Add new Transaction Method")]
+    AddNewTxMethod,
+    #[strum(to_string = "Rename a Transaction Method")]
+    RenameTxMethod,
+    #[strum(to_string = "Reposition Transaction Methods")]
+    RepositionTxMethod,
+    #[strum(to_string = "Set a new location for app data")]
+    NewLocation,
+    #[strum(to_string = "Set backup paths for app data")]
+    BackupPaths,
+}
+
+impl InfoPopup {
+    pub fn is_new_update(&self) -> bool {
+        let new_update = matches!(self.showing, InfoPopupState::NewUpdate(_));
+        new_update
+    }
 }
 
 impl DeletionChoices {
@@ -51,25 +105,13 @@ impl DeletionChoices {
     }
 }
 
-pub enum PopupType {
-    Info(InfoPopup),
-    Choice(ChoicePopup),
-    Nothing,
-}
-
-/// Indicates which pop up is currently on and is being shown in the screen
-#[derive(Clone)]
-pub enum InfoPopupState {
-    NewUpdate(Vec<String>),
-    HomeHelp,
-    AddTxHelp,
-    ChartHelp,
-    SummaryHelp,
-    SearchHelp,
-    ActivityHelp,
-    ChoiceHelp,
-    Error(String),
-    ShowDetails(String),
+impl ConfigChoices {
+    fn to_choice(self) -> ChoiceDetails {
+        ChoiceDetails {
+            text: self.to_string(),
+            color: BLUE,
+        }
+    }
 }
 
 impl PopupType {
@@ -77,6 +119,8 @@ impl PopupType {
         match self {
             PopupType::Info(info) => info.show_ui(f),
             PopupType::Choice(choice) => choice.show_ui(f),
+            PopupType::Reposition(reposition) => reposition.show_ui(f),
+            PopupType::Input | PopupType::InputReposition => todo!(),
             PopupType::Nothing => {}
         }
     }
@@ -105,6 +149,23 @@ impl PopupType {
             PopupType::Choice(choice) => {
                 choice.table.next();
             }
+            PopupType::Input | PopupType::InputReposition => todo!(),
+            PopupType::Reposition(reposition) => {
+                if reposition.reposition_selected {
+                    let max_index = reposition.reposition_contents.len() - 1;
+
+                    if reposition.reposition_table.state.selected().unwrap() == max_index {
+                        reposition.reposition_selected = false;
+                        reposition.confirm_table.state.select(Some(0));
+                    } else {
+                        reposition.reposition_table.next();
+                    }
+                } else {
+                    reposition.confirm_table.state.select(None);
+                    reposition.reposition_table.state.select(Some(0));
+                    reposition.reposition_selected = true;
+                }
+            }
             PopupType::Nothing => {}
         }
     }
@@ -125,7 +186,98 @@ impl PopupType {
             PopupType::Choice(choice) => {
                 choice.table.previous();
             }
+            PopupType::Input | PopupType::InputReposition => todo!(),
+            PopupType::Reposition(reposition) => {
+                if reposition.reposition_selected {
+                    if reposition.reposition_table.state.selected().unwrap() == 0 {
+                        reposition.reposition_selected = false;
+                        reposition.confirm_table.state.select(Some(0));
+                    } else {
+                        reposition.reposition_table.previous();
+                    }
+                } else {
+                    let max_index = reposition.reposition_contents.len() - 1;
+
+                    reposition.confirm_table.state.select(None);
+                    reposition.reposition_table.state.select(Some(max_index));
+                    reposition.reposition_selected = true;
+                }
+            }
             PopupType::Nothing => {}
+        }
+    }
+
+    pub fn move_down(&mut self) {
+        match self {
+            PopupType::Reposition(reposition) => {
+                if !reposition.reposition_selected {
+                    return;
+                }
+
+                let max_index = reposition.reposition_contents.len() - 1;
+
+                let selected_index = reposition.reposition_table.state.selected().unwrap();
+
+                if selected_index == max_index {
+                    return;
+                }
+
+                reposition
+                    .reposition_contents
+                    .swap(selected_index, selected_index + 1);
+
+                let table_items = reposition
+                    .reposition_contents
+                    .iter()
+                    .map(|c| vec![c.clone()])
+                    .collect();
+                let table_data = TableData::new(table_items);
+
+                reposition.reposition_table = table_data;
+
+                reposition
+                    .reposition_table
+                    .state
+                    .select(Some(selected_index + 1));
+            }
+            PopupType::Info(_) | PopupType::Choice(_) => {}
+            _ => {}
+        }
+    }
+
+    pub fn move_up(&mut self) {
+        match self {
+            PopupType::Reposition(reposition) => {
+                if !reposition.reposition_selected {
+                    return;
+                }
+
+                let selected_index = reposition.reposition_table.state.selected().unwrap();
+
+                if selected_index == 0 {
+                    return;
+                }
+
+                reposition
+                    .reposition_contents
+                    .swap(selected_index, selected_index - 1);
+
+                let table_items = reposition
+                    .reposition_contents
+                    .iter()
+                    .map(|c| vec![c.clone()])
+                    .collect();
+                let table_data = TableData::new(table_items);
+
+                reposition.reposition_table = table_data;
+
+                reposition
+                    .reposition_table
+                    .state
+                    .select(Some(selected_index - 1));
+            }
+            PopupType::Info(_) | PopupType::Choice(_) => {}
+            _ => {}
         }
     }
 
@@ -141,6 +293,7 @@ impl PopupType {
         PopupType::Choice(ChoicePopup {
             table: table_data,
             choices,
+            showing: ChoicePopupState::Delete,
         })
     }
 
@@ -151,5 +304,58 @@ impl PopupType {
             }
             _ => None,
         }
+    }
+
+    pub fn new_choice_config() -> Self {
+        let choices: Vec<ChoiceDetails> = ConfigChoices::iter()
+            .map(ConfigChoices::to_choice)
+            .collect();
+
+        let table_items = choices.iter().map(|c| vec![c.text.clone()]).collect();
+        let mut table_data = TableData::new(table_items);
+        table_data.state.select(Some(0));
+
+        PopupType::Choice(ChoicePopup {
+            table: table_data,
+            choices,
+            showing: ChoicePopupState::Config,
+        })
+    }
+
+    pub fn get_config_choice(&self) -> Option<ConfigChoices> {
+        match self {
+            PopupType::Choice(choice) => {
+                ConfigChoices::from_repr(choice.table.state.selected().unwrap())
+            }
+            _ => None,
+        }
+    }
+
+    pub fn new_reposition(conn: &mut DbConn) -> Result<Self> {
+        let tx_methods = conn.get_tx_methods_sorted();
+
+        if tx_methods.len() == 1 {
+            return Err(anyhow!(
+                "Needs at least 2 transaction methods to exist for repositioning"
+            ));
+        }
+
+        let table_contents: Vec<String> = tx_methods.iter().map(|m| m.name.clone()).collect();
+
+        let table_items = table_contents.iter().map(|c| vec![c.clone()]).collect();
+        let mut table_data = TableData::new(table_items);
+        table_data.state.select(Some(0));
+
+        let confirmation_content = vec![vec!["Confirm".to_string()]];
+        let confirmation_table_data = TableData::new(confirmation_content);
+
+        let reposition_popup = RepositionPopup {
+            reposition_table: table_data,
+            reposition_contents: table_contents,
+            confirm_table: confirmation_table_data,
+            reposition_selected: true,
+        };
+
+        Ok(PopupType::Reposition(reposition_popup))
     }
 }
