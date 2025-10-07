@@ -67,6 +67,7 @@ pub enum InfoPopupState {
     SummaryHelp,
     SearchHelp,
     ActivityHelp,
+    ChoiceHelp,
     Error(String),
     ShowDetails(String),
 }

@@ -32,6 +32,7 @@ pub fn home_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutput>
             KeyCode::Up => handler.popup_up(),
             KeyCode::Down => handler.popup_down(),
             KeyCode::Enter => handler.handle_deletion_popup()?,
+            KeyCode::Char('h') => handler.do_popup_help_popup(),
             _ => handler.do_empty_popup(),
         },
     }

@@ -54,9 +54,7 @@ impl ChoicePopup {
 
         let mut table = Table::new(rows, [Constraint::Percentage(100)])
             .highlight_symbol(">> ")
-            .block(styled_block(
-                "Confirmation: Scroll with Arrow keys and Enter to confirm",
-            ))
+            .block(styled_block("Confirmation: H for help"))
             .style(Style::default().fg(BOX));
 
         let selected_index = self.table.state.selected().unwrap();

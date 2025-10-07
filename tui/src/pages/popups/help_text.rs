@@ -209,3 +209,9 @@ Arrow Left/Right: Move value of the widget
 "
     )
 }
+
+pub fn delete_tx_help() -> String {
+    "Arrow Up/Down: Change Choice
+Enter: Select the highlighted choice"
+        .to_string()
+}
