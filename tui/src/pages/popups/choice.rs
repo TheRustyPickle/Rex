@@ -40,7 +40,7 @@ impl ChoicePopup {
                     Constraint::Length(4),
                     Constraint::Min(1),
                     Constraint::Length(7),
-                ]
+                ];
             }
         }
 

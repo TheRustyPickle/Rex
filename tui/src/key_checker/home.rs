@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crossterm::event::KeyCode;
 
-use crate::key_checker::InputKeyHandler;
+use crate::key_checker::{InputKeyHandler, popup_keys};
 use crate::outputs::HandlingOutput;
 use crate::pages::PopupType;
 
@@ -29,24 +29,7 @@ pub fn home_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutput>
             KeyCode::Down => handler.handle_down_arrow(),
             _ => {}
         },
-        PopupType::Info(_) | PopupType::Choice(_) => match handler.key.code {
-            KeyCode::Up => handler.popup_up(),
-            KeyCode::Down => handler.popup_down(),
-            KeyCode::Enter => handler.handle_choice_popup_selection()?,
-            KeyCode::Char('h') => handler.do_popup_help_popup(),
-            _ => handler.do_empty_popup(),
-        },
-
-        PopupType::Reposition(_) => match handler.key.code {
-            KeyCode::Up => handler.popup_up(),
-            KeyCode::Down => handler.popup_down(),
-            KeyCode::Enter => handler.handle_reposition_popup_selection()?,
-            KeyCode::Char('h') => handler.do_popup_help_popup(),
-            KeyCode::Char(',') => handler.popup_move_up(),
-            KeyCode::Char('.') => handler.popup_move_down(),
-            _ => handler.do_empty_popup(),
-        },
-        PopupType::Input | PopupType::InputReposition => todo!(),
+        _ => return popup_keys(handler),
     }
     Ok(None)
 }
