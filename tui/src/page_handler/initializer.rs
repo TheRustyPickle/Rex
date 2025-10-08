@@ -80,7 +80,7 @@ pub fn initialize_app(
 
     loop {
         let mut terminal = enter_tui_interface()?;
-        let result = start_app(&mut terminal, &new_version, &mut migrated_conn);
+        let result = start_app(&mut terminal, &new_version, &mut config, &mut migrated_conn);
         exit_tui_interface()?;
 
         match result {

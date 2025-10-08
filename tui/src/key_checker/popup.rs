@@ -24,6 +24,13 @@ pub fn popup_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutput
             KeyCode::Char('.') => handler.popup_move_down(),
             _ => handler.do_empty_popup(),
         },
+        PopupType::NewPaths(_) => match handler.key.code {
+            KeyCode::Up => handler.popup_up(),
+            KeyCode::Down => handler.popup_down(),
+            KeyCode::Enter => return handler.handle_new_path_popup_selection(),
+            KeyCode::Char('h') => handler.do_popup_help_popup(),
+            _ => handler.do_empty_popup(),
+        },
         PopupType::Input | PopupType::InputReposition => todo!(),
         PopupType::Nothing => unreachable!(),
     }

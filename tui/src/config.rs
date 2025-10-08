@@ -18,7 +18,7 @@ struct BackupPaths {
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     #[serde(skip)]
-    location: PathBuf,
+    pub location: PathBuf,
     pub backup_db_path: Option<Vec<PathBuf>>,
     pub new_location: Option<PathBuf>,
 }

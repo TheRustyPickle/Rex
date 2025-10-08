@@ -6,13 +6,16 @@ use crossterm::event::{KeyCode, KeyEvent};
 use std::collections::HashMap;
 use std::fmt::Write;
 
+use crate::config::Config;
 use crate::outputs::HandlingOutput;
 use crate::outputs::TxType;
 use crate::page_handler::{
     ActivityTab, ChartTab, CurrentUi, HomeTab, IndexedData, LogType, MONTHS, SortingType,
     SummaryTab, TableData, TxTab,
 };
-use crate::pages::{ChoicePopupState, ConfigChoices, DeletionChoices, InfoPopupState, PopupType};
+use crate::pages::{
+    ChoicePopupState, ConfigChoices, DeletionChoices, InfoPopupState, NewPathChoices, PopupType,
+};
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, sort_table_data};
 
@@ -61,6 +64,7 @@ pub struct InputKeyHandler<'a> {
     summary_hidden_mode: &'a mut bool,
     chart_activated_methods: &'a mut HashMap<String, bool>,
     lerp_state: &'a mut LerpState,
+    config: &'a mut Config,
     conn: &'a mut DbConn,
 }
 
@@ -106,6 +110,7 @@ impl<'a> InputKeyHandler<'a> {
         summary_hidden_mode: &'a mut bool,
         chart_activated_methods: &'a mut HashMap<String, bool>,
         lerp_state: &'a mut LerpState,
+        config: &'a mut Config,
         conn: &'a mut DbConn,
     ) -> InputKeyHandler<'a> {
         let total_tags = conn.cache.tags.len();
@@ -151,6 +156,7 @@ impl<'a> InputKeyHandler<'a> {
             summary_hidden_mode,
             chart_activated_methods,
             lerp_state,
+            config,
             conn,
         }
     }
@@ -242,7 +248,7 @@ impl<'a> InputKeyHandler<'a> {
             PopupType::Info(_) | PopupType::Nothing => {
                 self.do_empty_popup();
             }
-            PopupType::Choice(_) => {
+            PopupType::Choice(_) | PopupType::NewPaths(_) => {
                 let status = InfoPopupState::ChoiceHelp;
                 *self.popup_status = PopupType::new_info(status);
             }
@@ -823,6 +829,12 @@ impl<'a> InputKeyHandler<'a> {
                     ConfigChoices::RepositionTxMethod => {
                         *self.popup_status = PopupType::new_reposition(self.conn)?;
                     }
+                    ConfigChoices::BackupPaths => {
+                        *self.popup_status = PopupType::new_path(false, self.config);
+                    }
+                    ConfigChoices::NewLocation => {
+                        *self.popup_status = PopupType::new_path(true, self.config);
+                    }
                     _ => todo!(),
                 }
             }
@@ -861,6 +873,49 @@ impl<'a> InputKeyHandler<'a> {
         self.reload_activity_table()?;
 
         Ok(())
+    }
+
+    pub fn handle_new_path_popup_selection(&mut self) -> Result<Option<HandlingOutput>> {
+        let Some(choice) = self.popup_status.get_new_path_choice() else {
+            return Err(anyhow!("Popup choice should not have been None"));
+        };
+
+        let PopupType::NewPaths(new_paths) = self.popup_status else {
+            return Ok(None);
+        };
+        let is_new_location = new_paths.new_location;
+
+        match choice {
+            NewPathChoices::Confirm => {
+                if new_paths.paths.is_empty() {
+                    *self.popup_status = PopupType::Nothing;
+
+                    if is_new_location {
+                        self.config.reset_new_location()?;
+                    } else {
+                        self.config.reset_backup_db_path()?;
+                    }
+
+                    return Ok(None);
+                }
+
+                self.popup_status.confirm_paths(self.config)?;
+
+                if is_new_location {
+                    return Ok(Some(HandlingOutput::QuitUi));
+                }
+
+                *self.popup_status = PopupType::Nothing;
+            }
+            NewPathChoices::SelectNewPath => {
+                self.popup_status.add_new_path(self.config);
+            }
+            NewPathChoices::ClearAll => {
+                self.popup_status.clear_paths();
+            }
+        }
+
+        Ok(None)
     }
 
     pub fn popup_move_up(&mut self) {

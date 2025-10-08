@@ -2,9 +2,12 @@ use anyhow::{Result, anyhow};
 use app::conn::DbConn;
 use ratatui::Frame;
 use ratatui::style::Color;
+use rfd::FileDialog;
+use std::path::PathBuf;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, FromRepr};
 
+use crate::config::Config;
 use crate::page_handler::{BLUE, RED, TableData};
 
 pub enum PopupType {
@@ -13,6 +16,7 @@ pub enum PopupType {
     Reposition(RepositionPopup),
     Input,
     InputReposition,
+    NewPaths(NewPathsPopup),
     Nothing,
 }
 
@@ -50,6 +54,12 @@ pub struct RepositionPopup {
     pub reposition_selected: bool,
 }
 
+pub struct NewPathsPopup {
+    pub new_location: bool,
+    pub paths: Vec<PathBuf>,
+    pub table: TableData,
+}
+
 pub struct ChoiceDetails {
     pub text: String,
     pub color: Color,
@@ -67,6 +77,16 @@ pub enum DeletionChoices {
 pub enum ChoicePopupState {
     Delete,
     Config,
+}
+
+#[derive(EnumIter, Display, FromRepr, Copy, Clone)]
+pub enum NewPathChoices {
+    #[strum(to_string = "Select new path")]
+    SelectNewPath,
+    #[strum(to_string = "Clear path(s)")]
+    ClearAll,
+    #[strum(to_string = "Confirm")]
+    Confirm,
 }
 
 #[derive(EnumIter, Display, FromRepr, Copy, Clone)]
@@ -120,6 +140,7 @@ impl PopupType {
             PopupType::Info(info) => info.show_ui(f),
             PopupType::Choice(choice) => choice.show_ui(f),
             PopupType::Reposition(reposition) => reposition.show_ui(f),
+            PopupType::NewPaths(new_paths) => new_paths.show_ui(f),
             PopupType::Input | PopupType::InputReposition => todo!(),
             PopupType::Nothing => {}
         }
@@ -148,6 +169,9 @@ impl PopupType {
             }
             PopupType::Choice(choice) => {
                 choice.table.next();
+            }
+            PopupType::NewPaths(new_paths) => {
+                new_paths.table.next();
             }
             PopupType::Input | PopupType::InputReposition => todo!(),
             PopupType::Reposition(reposition) => {
@@ -185,6 +209,9 @@ impl PopupType {
             }
             PopupType::Choice(choice) => {
                 choice.table.previous();
+            }
+            PopupType::NewPaths(new_paths) => {
+                new_paths.table.previous();
             }
             PopupType::Input | PopupType::InputReposition => todo!(),
             PopupType::Reposition(reposition) => {
@@ -357,5 +384,88 @@ impl PopupType {
         };
 
         Ok(PopupType::Reposition(reposition_popup))
+    }
+
+    pub fn new_path(new_location: bool, config: &Config) -> Self {
+        let choices: Vec<Vec<String>> = NewPathChoices::iter()
+            .map(|c| vec![c.to_string()])
+            .collect();
+
+        let mut table_data = TableData::new(choices);
+        table_data.state.select(Some(0));
+
+        let paths = if new_location {
+            if let Some(path) = &config.new_location {
+                vec![path.clone()]
+            } else {
+                vec![]
+            }
+        } else if let Some(paths) = &config.backup_db_path {
+            paths.clone()
+        } else {
+            vec![]
+        };
+
+        let popup = NewPathsPopup {
+            new_location,
+            table: table_data,
+            paths,
+        };
+
+        Self::NewPaths(popup)
+    }
+
+    pub fn get_new_path_choice(&self) -> Option<NewPathChoices> {
+        match self {
+            PopupType::NewPaths(new_paths) => {
+                NewPathChoices::from_repr(new_paths.table.state.selected().unwrap())
+            }
+            _ => None,
+        }
+    }
+
+    pub fn add_new_path(&mut self, config: &Config) {
+        let PopupType::NewPaths(new_paths) = self else {
+            return;
+        };
+
+        let new_path = FileDialog::new().set_directory("~/").pick_folder();
+        let Some(path) = new_path else {
+            return;
+        };
+
+        let mut default_path = config.location.clone();
+        default_path.pop();
+
+        if path == default_path {
+            return;
+        }
+
+        if new_paths.new_location {
+            new_paths.paths = vec![path];
+        } else if !new_paths.paths.contains(&path) {
+            new_paths.paths.push(path);
+        }
+    }
+
+    pub fn clear_paths(&mut self) {
+        let PopupType::NewPaths(new_paths) = self else {
+            return;
+        };
+        new_paths.paths.clear();
+    }
+
+    pub fn confirm_paths(&self, config: &mut Config) -> Result<()> {
+        let PopupType::NewPaths(new_paths) = self else {
+            return Err(anyhow!(
+                "Should not have been called for this kind of popup"
+            ));
+        };
+
+        if new_paths.new_location {
+            config.set_new_location(new_paths.paths[0].clone())
+        } else {
+            config.set_backup_db_path(new_paths.paths.clone())
+        }
     }
 }
