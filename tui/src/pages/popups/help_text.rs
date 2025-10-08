@@ -210,7 +210,7 @@ Arrow Left/Right: Move value of the widget
     )
 }
 
-pub fn delete_tx_help() -> String {
+pub fn choice_help() -> String {
     "Arrow Up/Down: Change Choice
 Enter: Select the highlighted choice
 Any other key: Cancel the operation"

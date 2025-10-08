@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crossterm::event::KeyCode;
 
-use crate::key_checker::{popup_keys, InputKeyHandler};
+use crate::key_checker::{InputKeyHandler, popup_keys};
 use crate::outputs::HandlingOutput;
 use crate::pages::PopupType;
 

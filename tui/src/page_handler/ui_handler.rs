@@ -8,6 +8,7 @@ use ratatui::layout::Constraint;
 use ratatui::style::Color;
 use std::time::Duration;
 
+use crate::config::Config;
 use crate::key_checker::{
     InputKeyHandler, activity_keys, add_tx_keys, chart_keys, home_keys, initial_keys, search_keys,
     summary_keys,
@@ -38,6 +39,7 @@ pub const GRAY: Color = Color::Rgb(128, 128, 128);
 pub fn start_app<B: Backend>(
     terminal: &mut Terminal<B>,
     new_version_data: &Option<Vec<String>>,
+    config: &mut Config,
     conn: &mut DbConn,
 ) -> Result<HandlingOutput, UiHandlingError> {
     // Setting up some default values. Let's go through all of them
@@ -344,6 +346,7 @@ pub fn start_app<B: Backend>(
                 &mut summary_hidden_mode,
                 &mut chart_activated_methods,
                 &mut lerp_state,
+                config,
                 conn,
             );
 
