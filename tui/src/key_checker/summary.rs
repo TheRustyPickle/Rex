@@ -11,6 +11,7 @@ pub fn summary_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutp
         PopupType::Nothing => match handler.key.code {
             KeyCode::Char('a') => handler.go_add_tx()?,
             KeyCode::Char('r') => handler.go_chart(),
+            KeyCode::Char('j') => handler.do_config_popup(),
             KeyCode::Char('q') => return Ok(Some(HandlingOutput::QuitUi)),
             KeyCode::Char('f') => handler.go_home(),
             KeyCode::Char('w') => handler.go_search(),

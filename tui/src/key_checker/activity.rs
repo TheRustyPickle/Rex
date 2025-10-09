@@ -11,6 +11,7 @@ pub fn activity_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOut
             KeyCode::Char('q') => return Ok(Some(HandlingOutput::QuitUi)),
             KeyCode::Char('f') => handler.go_home(),
             KeyCode::Char('a') => handler.go_add_tx()?,
+            KeyCode::Char('j') => handler.do_config_popup(),
             KeyCode::Char('r') => handler.go_chart(),
             KeyCode::Char('h') => handler.do_help_popup(),
             KeyCode::Char('z') => handler.go_summary()?,
