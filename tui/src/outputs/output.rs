@@ -1,6 +1,5 @@
 pub enum HandlingOutput {
     QuitUi,
-    TakeUserInput,
     PrintNewUpdate,
 }
 

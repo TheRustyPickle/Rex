@@ -6,13 +6,17 @@ use crossterm::event::{KeyCode, KeyEvent};
 use std::collections::HashMap;
 use std::fmt::Write;
 
+use crate::config::Config;
 use crate::outputs::HandlingOutput;
 use crate::outputs::TxType;
 use crate::page_handler::{
     ActivityTab, ChartTab, CurrentUi, HomeTab, IndexedData, LogType, MONTHS, SortingType,
     SummaryTab, TableData, TxTab,
 };
-use crate::pages::{DeletionChoices, InfoPopupState, PopupType};
+use crate::pages::{
+    ChoicePopupState, ConfigChoices, DeletionChoices, InfoPopupState, MovementDirection,
+    NewPathChoices, PopupType,
+};
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, sort_table_data};
 
@@ -61,6 +65,7 @@ pub struct InputKeyHandler<'a> {
     summary_hidden_mode: &'a mut bool,
     chart_activated_methods: &'a mut HashMap<String, bool>,
     lerp_state: &'a mut LerpState,
+    config: &'a mut Config,
     conn: &'a mut DbConn,
 }
 
@@ -106,6 +111,7 @@ impl<'a> InputKeyHandler<'a> {
         summary_hidden_mode: &'a mut bool,
         chart_activated_methods: &'a mut HashMap<String, bool>,
         lerp_state: &'a mut LerpState,
+        config: &'a mut Config,
         conn: &'a mut DbConn,
     ) -> InputKeyHandler<'a> {
         let total_tags = conn.cache.tags.len();
@@ -151,6 +157,7 @@ impl<'a> InputKeyHandler<'a> {
             summary_hidden_mode,
             chart_activated_methods,
             lerp_state,
+            config,
             conn,
         }
     }
@@ -235,6 +242,27 @@ impl<'a> InputKeyHandler<'a> {
         };
 
         *self.popup_status = PopupType::new_info(popup_state);
+    }
+
+    pub fn do_popup_help_popup(&mut self) {
+        match self.popup_status {
+            PopupType::Info(_) | PopupType::Nothing => {
+                self.do_empty_popup();
+            }
+            PopupType::Choice(_) | PopupType::NewPaths(_) => {
+                let status = InfoPopupState::ChoiceHelp;
+                *self.popup_status = PopupType::new_info(status);
+            }
+            PopupType::Reposition(_) => {
+                let status = InfoPopupState::RepositionHelp;
+                *self.popup_status = PopupType::new_info(status);
+            }
+            PopupType::Input(_) => unreachable!(),
+        }
+    }
+
+    pub fn do_config_popup(&mut self) {
+        *self.popup_status = PopupType::new_choice_config();
     }
 
     /// Turns on deletion confirmation popup
@@ -767,12 +795,18 @@ impl<'a> InputKeyHandler<'a> {
         Ok(())
     }
 
-    /// Handle key press when deletion popup is turned on
-    pub fn handle_deletion_popup(&mut self) -> Result<()> {
-        if self.key.code == KeyCode::Enter {
-            let choice = self.popup_status.get_deletion_choice();
+    pub fn handle_choice_popup_selection(&mut self) -> Result<()> {
+        let PopupType::Choice(choice) = self.popup_status else {
+            self.do_empty_popup();
+            return Ok(());
+        };
 
-            if let Some(choice) = choice {
+        match choice.showing {
+            ChoicePopupState::Delete => {
+                let Some(choice) = self.popup_status.get_deletion_choice() else {
+                    return Err(anyhow!("Popup choice should not have been None"));
+                };
+
                 match choice {
                     DeletionChoices::Yes => match self.page {
                         CurrentUi::Home => {
@@ -788,9 +822,150 @@ impl<'a> InputKeyHandler<'a> {
                     DeletionChoices::No => *self.popup_status = PopupType::Nothing,
                 }
             }
+            ChoicePopupState::Config | ChoicePopupState::ConfigForced => {
+                let Some(choice) = self.popup_status.get_config_choice() else {
+                    return Err(anyhow!("Popup choice should not have been None"));
+                };
+
+                match choice {
+                    ConfigChoices::RepositionTxMethod => {
+                        *self.popup_status = PopupType::new_reposition(self.conn)?;
+                    }
+                    ConfigChoices::BackupPaths => {
+                        *self.popup_status = PopupType::new_path(false, self.config);
+                    }
+                    ConfigChoices::NewLocation => {
+                        *self.popup_status = PopupType::new_path(true, self.config);
+                    }
+                    ConfigChoices::RenameTxMethod => {
+                        *self.popup_status = PopupType::new_choice_methods(self.conn)?;
+                    }
+                    ConfigChoices::AddNewTxMethod => {
+                        *self.popup_status = PopupType::new_input(None);
+                    }
+                }
+            }
+            ChoicePopupState::TxMethods => {
+                let Some(choice) = self.popup_status.get_choice_method() else {
+                    return Err(anyhow!("Popup choice should not have been None"));
+                };
+
+                *self.popup_status = PopupType::new_input(Some(choice));
+            }
         }
 
         Ok(())
+    }
+
+    pub fn handle_reposition_popup_selection(&mut self) -> Result<()> {
+        let PopupType::Reposition(reposition) = self.popup_status else {
+            return Ok(());
+        };
+
+        if reposition.reposition_selected {
+            return Ok(());
+        }
+
+        let new_tx_method_positions: Vec<String> = reposition
+            .reposition_table
+            .items
+            .iter()
+            .map(|i| i[0].clone())
+            .collect();
+
+        self.conn
+            .set_new_tx_method_positions(&new_tx_method_positions)?;
+
+        *self.popup_status = PopupType::Nothing;
+
+        self.go_home_reset();
+        *self.home_tab = HomeTab::Months;
+        self.reload_home_table()?;
+        self.reload_chart_data()?;
+        self.reload_summary()?;
+        self.reset_search_data();
+        self.reload_activity_table()?;
+
+        Ok(())
+    }
+
+    pub fn handle_new_path_popup_selection(&mut self) -> Result<Option<HandlingOutput>> {
+        let Some(choice) = self.popup_status.get_new_path_choice() else {
+            return Err(anyhow!("Popup choice should not have been None"));
+        };
+
+        let PopupType::NewPaths(new_paths) = self.popup_status else {
+            return Ok(None);
+        };
+        let is_new_location = new_paths.new_location;
+
+        match choice {
+            NewPathChoices::Confirm => {
+                if new_paths.paths.is_empty() {
+                    *self.popup_status = PopupType::Nothing;
+
+                    if is_new_location {
+                        self.config.reset_new_location()?;
+                    } else {
+                        self.config.reset_backup_db_path()?;
+                    }
+
+                    return Ok(None);
+                }
+
+                self.popup_status.confirm_paths(self.config)?;
+
+                if is_new_location {
+                    return Ok(Some(HandlingOutput::QuitUi));
+                }
+
+                *self.popup_status = PopupType::Nothing;
+            }
+            NewPathChoices::SelectNewPath => {
+                self.popup_status.add_new_path(self.config);
+            }
+            NewPathChoices::ClearAll => {
+                self.popup_status.clear_paths();
+            }
+        }
+
+        Ok(None)
+    }
+
+    pub fn handle_popup_input(&mut self) -> Result<()> {
+        match self.key.code {
+            KeyCode::Enter => {
+                let completed = self.popup_status.accept_input(self.conn)?;
+
+                if completed {
+                    *self.popup_status = PopupType::Nothing;
+
+                    self.go_home_reset();
+                    *self.home_tab = HomeTab::Months;
+                    self.reload_home_table()?;
+                    self.reload_chart_data()?;
+                    self.reload_summary()?;
+                    self.reset_search_data();
+                    self.reload_activity_table()?;
+                }
+            }
+            KeyCode::Esc => self.do_empty_popup(),
+            KeyCode::Backspace => self.popup_status.input_char(None, self.conn),
+            KeyCode::Char(a) => self.popup_status.input_char(Some(a), self.conn),
+            KeyCode::Left => self.popup_status.move_cursor(MovementDirection::Left),
+            KeyCode::Right => self.popup_status.move_cursor(MovementDirection::Right),
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    pub fn popup_move_up(&mut self) {
+        self.popup_status.move_up();
+    }
+
+    pub fn popup_move_down(&mut self) {
+        self.popup_status.move_down();
     }
 
     /// Cycles through available date types
@@ -1782,6 +1957,14 @@ impl InputKeyHandler<'_> {
             self.chart_years.get_selected_value(),
             fetch_nature,
         )?;
+
+        *self.chart_tx_methods = IndexedData::new_tx_methods_cumulative(self.conn);
+        *self.chart_activated_methods = self
+            .conn
+            .get_tx_methods_cumulative()
+            .into_iter()
+            .map(|s| (s, true))
+            .collect();
 
         Ok(())
     }

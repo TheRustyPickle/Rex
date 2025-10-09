@@ -1,6 +1,6 @@
 [package]
 name = "rex-tui"
-version = "0.1.21"
+version = "0.2.0"
 edition = "2024"
 authors = ["TheRustyPickle <rusty.pickle94@gmail.com>"]
 readme = "README.md"
@@ -37,9 +37,7 @@ ratatui = "0.29.0"
 serde_json = "1.0.142"
 strum = "0.27"
 strum_macros = "0.27"
-
-log = "0.4.27"
-simplelog = "0.12.2"
+rfd = "0.15.4"
 
 [lints.clippy]
 too_many_arguments = { level = "allow" }

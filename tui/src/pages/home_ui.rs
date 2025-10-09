@@ -28,7 +28,6 @@ pub fn home_ui(
     years: &IndexedData,
     home_table: &mut TableData,
     current_tab: &HomeTab,
-    width_data: &mut [Constraint],
     lerp_state: &mut LerpState,
     view_group: &mut TxViewGroup,
     conn: &mut DbConn,
@@ -38,6 +37,14 @@ pub fn home_ui(
         .iter()
         .map(|m| m.name.clone())
         .collect();
+
+    let mut width_data = Vec::new();
+    let total_columns = all_methods.len() + 2;
+    let width_percent = (100 / total_columns) as u16;
+
+    for _ in 0..total_columns {
+        width_data.push(Constraint::Percentage(width_percent));
+    }
 
     let size = f.area();
 

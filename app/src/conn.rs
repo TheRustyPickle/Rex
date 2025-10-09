@@ -401,6 +401,11 @@ impl DbConn {
         methods
     }
 
+    #[must_use]
+    pub fn is_tx_method_empty(&self) -> bool {
+        self.cache.tx_methods.is_empty()
+    }
+
     pub fn get_tx_method_by_name(&mut self, name: &str) -> Result<&TxMethod> {
         self.cache.get_method_by_name(name)
     }
