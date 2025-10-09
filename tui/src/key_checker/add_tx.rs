@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crossterm::event::KeyCode;
 
-use crate::key_checker::InputKeyHandler;
+use crate::key_checker::{InputKeyHandler, popup_keys};
 use crate::outputs::HandlingOutput;
 use crate::page_handler::TxTab;
 use crate::pages::PopupType;
@@ -15,6 +15,7 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutpu
                 KeyCode::Char('q') => return Ok(Some(HandlingOutput::QuitUi)),
                 KeyCode::Char('f') => handler.go_home(),
                 KeyCode::Char('r') => handler.go_chart(),
+                KeyCode::Char('j') => handler.do_config_popup(),
                 KeyCode::Char('z') => handler.go_summary()?,
                 KeyCode::Char('h') => handler.do_help_popup(),
                 KeyCode::Char('s') => handler.add_tx()?,
@@ -46,12 +47,7 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutpu
                 },
             },
         },
-        PopupType::Info(_) => match handler.key.code {
-            KeyCode::Up => handler.popup_up(),
-            KeyCode::Down => handler.popup_down(),
-            _ => handler.do_empty_popup(),
-        },
-        _ => handler.do_empty_popup(),
+        _ => return popup_keys(handler),
     }
 
     Ok(None)

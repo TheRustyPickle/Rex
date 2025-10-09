@@ -3,13 +3,13 @@ use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Span, Text};
 use ratatui::widgets::{
-    Borders, Clear, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, Wrap,
+    BorderType, Borders, Clear, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, Wrap,
 };
 
 use crate::page_handler::{BACKGROUND, RED, TEXT};
 use crate::pages::{
-    InfoPopup, InfoPopupState, activity_help_text, add_tx_help_text, chart_help_text,
-    home_help_text, new_update_text, search_help_text, summary_help_text,
+    InfoPopup, InfoPopupState, activity_help_text, add_tx_help_text, chart_help_text, choice_help,
+    home_help_text, new_update_text, reposition_help, search_help_text, summary_help_text,
 };
 use crate::utility::{centered_rect, create_bolded_text, main_block};
 
@@ -56,6 +56,16 @@ impl InfoPopup {
                 x_value = 40;
                 y_value = 20;
             }
+            InfoPopupState::ChoiceHelp => {
+                message = choice_help();
+
+                y_value = 20;
+            }
+            InfoPopupState::RepositionHelp => {
+                message = reposition_help();
+
+                y_value = 20;
+            }
         }
 
         if !message.is_empty() && self.max_scroll == 0 {
@@ -75,7 +85,10 @@ impl InfoPopup {
 
         let area = centered_rect(x_value, y_value, size);
 
-        let block = main_block().title(title).borders(Borders::ALL);
+        let block = main_block()
+            .title(title)
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded);
 
         let new_chunks = Layout::default()
             .direction(Direction::Vertical)

@@ -7,19 +7,11 @@ mod tx_handler;
 mod utility;
 
 use dirs::data_local_dir;
-use log::LevelFilter;
 use page_handler::initialize_app;
-use simplelog::{Config, WriteLogger};
 use std::env::{current_dir, set_current_dir};
-use std::fs::{self, File};
+use std::fs;
 
 fn main() {
-    let _ = WriteLogger::init(
-        LevelFilter::Info,
-        Config::default(),
-        File::create("logs.log").unwrap(),
-    );
-
     if let Some(dir) = data_local_dir() {
         // The path where the application was opened initially
         let original_dir = current_dir().unwrap();

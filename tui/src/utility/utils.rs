@@ -3,7 +3,7 @@ use app::conn::{get_conn, get_conn_old};
 use app::migration::start_migration;
 use crossterm::execute;
 use crossterm::terminal::{
-    Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
+    EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
 };
 use ratatui::Terminal;
 use ratatui::backend::CrosstermBackend;
@@ -12,15 +12,22 @@ use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Tabs};
 use std::collections::HashMap;
-use std::io::{Stdout, Write, stdout};
+use std::io::{Stdout, stdout};
 use std::path::{Path, PathBuf};
-use std::thread;
-use std::time::Duration;
 
 use crate::outputs::ComparisonType;
 use crate::page_handler::{BACKGROUND, BOX, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT};
 
-const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense", "Cancel"];
+pub const RESTRICTED: [&str; 8] = [
+    "Total",
+    "Balance",
+    "Changes",
+    "Income",
+    "Expense",
+    "Cancel",
+    "Daily Income",
+    "Daily Expense",
+];
 
 /// Enters raw mode so the TUI can render properly
 pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>> {
@@ -153,57 +160,6 @@ pub fn create_tab_activation<'a>(
         .highlight_style(Style::default())
 }
 
-/// Does the 5 second timer after input taking ends
-pub fn start_timer<T: std::fmt::Display>(input: T) {
-    let stdout = std::io::stdout();
-    let mut handle = stdout.lock();
-    for i in (1..6).rev() {
-        write!(handle, "\r{input} Restarting in {i} seconds").unwrap();
-        handle.flush().unwrap();
-        thread::sleep(Duration::from_millis(1000));
-    }
-    println!("\n");
-}
-
-/// Takes a user input and returns the trimmed input as String
-#[must_use]
-pub fn take_input() -> String {
-    let mut input = String::new();
-    std::io::stdin().read_line(&mut input).unwrap();
-    input.trim().to_string()
-}
-
-/// Clears the terminal of all text
-pub fn clear_terminal(stdout: &mut Stdout) {
-    execute!(stdout, Clear(ClearType::FromCursorUp)).unwrap();
-}
-
-/// Flushes output to the terminal
-pub fn flush_output(stdout: &Stdout) {
-    let mut handle = stdout.lock();
-    handle.flush().unwrap();
-}
-
-/// Checks if the input is a restricted word or inside a given vector
-#[must_use]
-pub fn check_restricted(item: &str, restricted: Option<&Vec<String>>) -> bool {
-    if let Some(restricted_words) = restricted {
-        for restricted_item in restricted_words {
-            if restricted_item.to_lowercase() == item.to_lowercase() {
-                return true;
-            }
-        }
-    } else {
-        for &restricted_item in &RESTRICTED {
-            if restricted_item.to_lowercase() == item.to_lowercase() {
-                return true;
-            }
-        }
-    }
-
-    false
-}
-
 /// Parse GitHub release information for popup menu
 #[must_use]
 pub fn parse_github_body(body: &str) -> String {
@@ -275,6 +231,10 @@ pub fn check_comparison(input: &str) -> ComparisonType {
 }
 
 pub fn migrate_to_new_schema(old_conn_path: &Path, new_conn: &str) -> Result<bool> {
+    if !old_conn_path.exists() {
+        return Ok(false);
+    }
+
     let old_conn = get_conn_old(old_conn_path.to_string_lossy().as_ref());
 
     if PathBuf::from(new_conn).exists() {

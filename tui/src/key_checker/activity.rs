@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crossterm::event::KeyCode;
 
-use crate::key_checker::InputKeyHandler;
+use crate::key_checker::{InputKeyHandler, popup_keys};
 use crate::outputs::HandlingOutput;
 use crate::pages::PopupType;
 
@@ -11,6 +11,7 @@ pub fn activity_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOut
             KeyCode::Char('q') => return Ok(Some(HandlingOutput::QuitUi)),
             KeyCode::Char('f') => handler.go_home(),
             KeyCode::Char('a') => handler.go_add_tx()?,
+            KeyCode::Char('j') => handler.do_config_popup(),
             KeyCode::Char('r') => handler.go_chart(),
             KeyCode::Char('h') => handler.do_help_popup(),
             KeyCode::Char('z') => handler.go_summary()?,
@@ -22,12 +23,7 @@ pub fn activity_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOut
             KeyCode::Down => handler.handle_down_arrow(),
             _ => {}
         },
-        PopupType::Info(_) => match handler.key.code {
-            KeyCode::Up => handler.popup_up(),
-            KeyCode::Down => handler.popup_down(),
-            _ => handler.do_empty_popup(),
-        },
-        _ => handler.do_empty_popup(),
+        _ => return popup_keys(handler),
     }
 
     Ok(None)
