@@ -14,7 +14,8 @@ use crate::page_handler::{
     SummaryTab, TableData, TxTab,
 };
 use crate::pages::{
-    ChoicePopupState, ConfigChoices, DeletionChoices, InfoPopupState, NewPathChoices, PopupType,
+    ChoicePopupState, ConfigChoices, DeletionChoices, InfoPopupState, MovementDirection,
+    NewPathChoices, PopupType,
 };
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, sort_table_data};
@@ -256,7 +257,7 @@ impl<'a> InputKeyHandler<'a> {
                 let status = InfoPopupState::RepositionHelp;
                 *self.popup_status = PopupType::new_info(status);
             }
-            PopupType::Input | PopupType::InputReposition => todo!(),
+            PopupType::Input(_) => unreachable!(),
         }
     }
 
@@ -796,6 +797,7 @@ impl<'a> InputKeyHandler<'a> {
 
     pub fn handle_choice_popup_selection(&mut self) -> Result<()> {
         let PopupType::Choice(choice) = self.popup_status else {
+            self.do_empty_popup();
             return Ok(());
         };
 
@@ -835,8 +837,18 @@ impl<'a> InputKeyHandler<'a> {
                     ConfigChoices::NewLocation => {
                         *self.popup_status = PopupType::new_path(true, self.config);
                     }
+                    ConfigChoices::RenameTxMethod => {
+                        *self.popup_status = PopupType::new_choice_methods(self.conn);
+                    }
                     _ => todo!(),
                 }
+            }
+            ChoicePopupState::TxMethods => {
+                let Some(choice) = self.popup_status.get_choice_method() else {
+                    return Err(anyhow!("Popup choice should not have been None"));
+                };
+
+                *self.popup_status = PopupType::new_input(choice);
             }
         }
 
@@ -916,6 +928,34 @@ impl<'a> InputKeyHandler<'a> {
         }
 
         Ok(None)
+    }
+
+    pub fn handle_popup_input(&mut self) -> Result<()> {
+        match self.key.code {
+            KeyCode::Enter => {
+                let completed = self.popup_status.accept_input(self.conn)?;
+
+                if completed {
+                    *self.popup_status = PopupType::Nothing;
+
+                    self.go_home_reset();
+                    *self.home_tab = HomeTab::Months;
+                    self.reload_home_table()?;
+                    self.reload_chart_data()?;
+                    self.reload_summary()?;
+                    self.reset_search_data();
+                    self.reload_activity_table()?;
+                }
+            }
+            KeyCode::Esc => self.do_empty_popup(),
+            KeyCode::Backspace => self.popup_status.input_char(None, self.conn),
+            KeyCode::Char(a) => self.popup_status.input_char(Some(a), self.conn),
+            KeyCode::Left => self.popup_status.move_cursor(MovementDirection::Left),
+            KeyCode::Right => self.popup_status.move_cursor(MovementDirection::Right),
+            _ => {}
+        }
+
+        Ok(())
     }
 
     pub fn popup_move_up(&mut self) {

@@ -9,13 +9,13 @@ use strum_macros::{Display, EnumIter, FromRepr};
 
 use crate::config::Config;
 use crate::page_handler::{BLUE, RED, TableData};
+use crate::utility::{RESTRICTED, add_char_to};
 
 pub enum PopupType {
     Info(InfoPopup),
     Choice(ChoicePopup),
     Reposition(RepositionPopup),
-    Input,
-    InputReposition,
+    Input(InputPopup),
     NewPaths(NewPathsPopup),
     Nothing,
 }
@@ -60,9 +60,21 @@ pub struct NewPathsPopup {
     pub table: TableData,
 }
 
+pub struct InputPopup {
+    pub text: String,
+    pub cursor_position: usize,
+    pub status: String,
+    pub modifying_method: String,
+}
+
 pub struct ChoiceDetails {
     pub text: String,
     pub color: Color,
+}
+
+pub enum MovementDirection {
+    Left,
+    Right,
 }
 
 #[derive(EnumIter, Display, FromRepr, Copy, Clone)]
@@ -77,6 +89,7 @@ pub enum DeletionChoices {
 pub enum ChoicePopupState {
     Delete,
     Config,
+    TxMethods,
 }
 
 #[derive(EnumIter, Display, FromRepr, Copy, Clone)]
@@ -141,7 +154,7 @@ impl PopupType {
             PopupType::Choice(choice) => choice.show_ui(f),
             PopupType::Reposition(reposition) => reposition.show_ui(f),
             PopupType::NewPaths(new_paths) => new_paths.show_ui(f),
-            PopupType::Input | PopupType::InputReposition => todo!(),
+            PopupType::Input(input) => input.show_ui(f),
             PopupType::Nothing => {}
         }
     }
@@ -173,7 +186,6 @@ impl PopupType {
             PopupType::NewPaths(new_paths) => {
                 new_paths.table.next();
             }
-            PopupType::Input | PopupType::InputReposition => todo!(),
             PopupType::Reposition(reposition) => {
                 if reposition.reposition_selected {
                     let max_index = reposition.reposition_contents.len() - 1;
@@ -190,7 +202,7 @@ impl PopupType {
                     reposition.reposition_selected = true;
                 }
             }
-            PopupType::Nothing => {}
+            PopupType::Input(_) | PopupType::Nothing => unreachable!(),
         }
     }
 
@@ -213,7 +225,6 @@ impl PopupType {
             PopupType::NewPaths(new_paths) => {
                 new_paths.table.previous();
             }
-            PopupType::Input | PopupType::InputReposition => todo!(),
             PopupType::Reposition(reposition) => {
                 if reposition.reposition_selected {
                     if reposition.reposition_table.state.selected().unwrap() == 0 {
@@ -230,7 +241,7 @@ impl PopupType {
                     reposition.reposition_selected = true;
                 }
             }
-            PopupType::Nothing => {}
+            PopupType::Input(_) | PopupType::Nothing => unreachable!(),
         }
     }
 
@@ -466,6 +477,102 @@ impl PopupType {
             config.set_new_location(new_paths.paths[0].clone())
         } else {
             config.set_backup_db_path(new_paths.paths.clone())
+        }
+    }
+
+    pub fn new_choice_methods(conn: &mut DbConn) -> Self {
+        let tx_methods = conn.get_tx_methods_sorted();
+
+        let choices = tx_methods
+            .iter()
+            .map(|c| ChoiceDetails {
+                text: c.name.clone(),
+                color: BLUE,
+            })
+            .collect();
+
+        let table = tx_methods.iter().map(|m| vec![m.name.clone()]).collect();
+        let mut table_data = TableData::new(table);
+        table_data.state.select(Some(0));
+
+        PopupType::Choice(ChoicePopup {
+            table: table_data,
+            choices,
+            showing: ChoicePopupState::TxMethods,
+        })
+    }
+
+    pub fn get_choice_method(&self) -> Option<String> {
+        match self {
+            PopupType::Choice(choice) => {
+                let selected = choice.table.state.selected().unwrap();
+                Some(choice.choices[selected].text.clone())
+            }
+            _ => None,
+        }
+    }
+
+    pub fn new_input(modifying: String) -> Self {
+        PopupType::Input(InputPopup {
+            text: String::new(),
+            cursor_position: 0,
+            status: String::from("All good"),
+            modifying_method: modifying,
+        })
+    }
+
+    pub fn input_char(&mut self, char: Option<char>, conn: &mut DbConn) {
+        if let PopupType::Input(input) = self {
+            add_char_to(char, &mut input.cursor_position, &mut input.text);
+
+            let tx_methods = conn.get_tx_methods_sorted();
+
+            if tx_methods.iter().any(|m| m.name == input.text) {
+                input.status = String::from("Cannot use existing method name");
+            } else if RESTRICTED.iter().any(|m| m == &input.text) {
+                input.status = String::from("Cannot use this text as method name");
+            } else {
+                input.status = String::from("All good");
+            }
+        }
+    }
+
+    pub fn accept_input(&mut self, conn: &mut DbConn) -> Result<bool> {
+        if let PopupType::Input(input) = self {
+            let tx_methods = conn.get_tx_methods_sorted();
+
+            if tx_methods.iter().any(|m| m.name == input.text) {
+                input.status = String::from("Cannot use existing method name");
+                return Ok(false);
+            }
+
+            if RESTRICTED.iter().any(|m| m == &input.text) {
+                input.status = String::from("Cannot use this text as method name");
+                return Ok(false);
+            }
+
+            conn.rename_tx_method(&input.modifying_method, &input.text)?;
+
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    pub fn move_cursor(&mut self, direction: MovementDirection) {
+        if let PopupType::Input(input) = self {
+            match direction {
+                MovementDirection::Left => {
+                    if input.cursor_position > 0 {
+                        input.cursor_position -= 1;
+                    }
+                }
+                MovementDirection::Right => {
+                    if input.cursor_position < input.text.len() {
+                        input.cursor_position += 1;
+                    }
+                }
+            }
         }
     }
 }

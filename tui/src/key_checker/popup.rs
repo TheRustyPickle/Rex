@@ -31,7 +31,7 @@ pub fn popup_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutput
             KeyCode::Char('h') => handler.do_popup_help_popup(),
             _ => handler.do_empty_popup(),
         },
-        PopupType::Input | PopupType::InputReposition => todo!(),
+        PopupType::Input(_) => handler.handle_popup_input()?,
         PopupType::Nothing => unreachable!(),
     }
     Ok(None)
