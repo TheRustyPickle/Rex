@@ -42,6 +42,18 @@ impl ChoicePopup {
                     Constraint::Length(7),
                 ];
             }
+            ChoicePopupState::TxMethods => {
+                title = "Rename Method";
+                message = "Select a method to rename";
+
+                y_value = 20;
+
+                constraints = vec![
+                    Constraint::Length(4),
+                    Constraint::Min(1),
+                    Constraint::Length((self.table.items.len() + 2) as u16),
+                ];
+            }
         }
 
         let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));

@@ -20,7 +20,16 @@ use std::time::Duration;
 use crate::outputs::ComparisonType;
 use crate::page_handler::{BACKGROUND, BOX, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT};
 
-const RESTRICTED: [&str; 6] = ["Total", "Balance", "Changes", "Income", "Expense", "Cancel"];
+pub const RESTRICTED: [&str; 8] = [
+    "Total",
+    "Balance",
+    "Changes",
+    "Income",
+    "Expense",
+    "Cancel",
+    "Daily Income",
+    "Daily Expense",
+];
 
 /// Enters raw mode so the TUI can render properly
 pub fn enter_tui_interface() -> Result<Terminal<CrosstermBackend<Stdout>>> {
