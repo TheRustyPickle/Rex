@@ -44,7 +44,6 @@ pub fn start_app<B: Backend>(
     // Setting up some default values. Let's go through all of them
 
     // Contains the homepage month list that is indexed
-
     let mut home_months = IndexedData::new_monthly();
     // Contains the homepage year list that is indexed
     let mut home_years = IndexedData::new_yearly();
@@ -74,8 +73,7 @@ pub fn start_app<B: Backend>(
     // How summary table will be sorted
     let mut summary_sort = SortingType::Tags;
 
-    // Stores all activity for a specific month of a year alongside the txs involved in an activity
-
+    // An empty search view, contains relevant data to create the search UI
     let mut search_txs = SearchView::new_empty();
 
     // Contains the tx views for that month and year. Used for home page data + balances
@@ -87,13 +85,13 @@ pub fn start_app<B: Backend>(
         )
         .unwrap();
 
-    // Home tx data but in vector form with index tracking
+    // Home tx data but in vector form with index tracking. Used for creating the table in the ui
     let mut home_table = TableData::new(home_txs.tx_array());
 
     // The page which is currently selected. Default is the initial page
     let mut page = CurrentUi::Initial;
 
-    // stores current popup status
+    // Stores current popup status. if a new version is available, show popup
     let mut popup_status = if let Some(data) = new_version_data {
         let state = InfoPopupState::NewUpdate(data.to_owned());
         PopupType::new_info(state)
@@ -118,6 +116,8 @@ pub fn start_app<B: Backend>(
     let mut add_tx_data = TxData::new();
     // Holds the data that will be/are inserted into the Search page's input fields
     let mut search_data = TxData::new_empty();
+
+    // Chart view contains tx list to create the chart.
     let mut chart_view = conn
         .get_chart_view_with_str(
             chart_months.get_selected_value(),
@@ -126,6 +126,7 @@ pub fn start_app<B: Backend>(
         )
         .unwrap();
 
+    // Summary view contains tx list to create the summary.
     let mut summary_view = conn
         .get_summary_with_str(
             summary_months.get_selected_value(),
@@ -134,6 +135,7 @@ pub fn start_app<B: Backend>(
         )
         .unwrap();
 
+    // Activity view contains tx list to create the activity.
     let mut activity_view = conn
         .get_activity_view_with_str(
             activity_months.get_selected_value(),
@@ -141,6 +143,7 @@ pub fn start_app<B: Backend>(
         )
         .unwrap();
 
+    // The generated summary
     let mut full_summary = summary_view.generate_summary(None, conn);
 
     // Data for the Summary Page's table
@@ -164,14 +167,14 @@ pub fn start_app<B: Backend>(
     // Whether the summary is in hidden mode
     let mut summary_hidden_mode = false;
 
-    // Contains whether in the chart whether a tx method is activated or not
+    // Map of which tx methods are activated in the chart
     let mut chart_activated_methods = conn
         .get_tx_methods_cumulative()
         .into_iter()
         .map(|s| (s, true))
         .collect();
 
-    // Home and Add TX Page balance data
+    // The generated balance section on the Add tx UI
     let mut add_tx_balance = Vec::new();
     // Home and add TX page balance section's column space
 
@@ -180,12 +183,12 @@ pub fn start_app<B: Backend>(
     // How it work:
     // Default value from above -> Goes to an interface page and render -> Wait for an event key press.
     //
-    // If no key press is detected in certain position it will start the next iteration -> interface -> Key check
-    // Otherwise it will poll for key press and locks the position
+    // Based on whether there is any active lerp, the UI will continue to render until all lerp ends
     //
-    // If key press is detected, send most of the &mut values to InputKeyHandler -> Gets mutated based on keypress
+    // If key press is detected, send most of the mutable values to InputKeyHandler -> Gets mutated based on keypress
     // -> loop ends -> start from beginning -> Send the new mutated values to the interface -> Keep up
     loop {
+        // If tx method list is empty, forcefully ask to create a new tx method
         if conn.is_tx_method_empty()
             && let PopupType::Nothing = popup_status
         {
@@ -293,7 +296,7 @@ pub fn start_app<B: Backend>(
             }
         }
 
-        // If not inside one of the duration polling, wait for key press
+        // Wait for key press
         if let Event::Key(key) = event::read().map_err(UiHandlingError::Polling)? {
             if key.kind != KeyEventKind::Press {
                 continue;
