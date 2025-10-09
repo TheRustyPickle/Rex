@@ -12,7 +12,7 @@ impl RepositionPopup {
     pub fn show_ui(&mut self, f: &mut Frame) {
         let size = f.area();
         let x_value = 40;
-        let y_value = 50;
+        let y_value = 20;
 
         let title = "Reposition Tx Methods";
 

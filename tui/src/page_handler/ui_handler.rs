@@ -4,7 +4,6 @@ use app::views::SearchView;
 use crossterm::event::{self, Event, KeyEventKind, poll};
 use ratatui::Terminal;
 use ratatui::backend::Backend;
-use ratatui::layout::Constraint;
 use ratatui::style::Color;
 use std::time::Duration;
 
@@ -175,15 +174,6 @@ pub fn start_app<B: Backend>(
     // Home and Add TX Page balance data
     let mut add_tx_balance = Vec::new();
     // Home and add TX page balance section's column space
-    let mut width_data = Vec::new();
-    let total_columns = conn.get_tx_methods().len() + 2;
-    let width_percent = (100 / total_columns) as u16;
-
-    // Save the % of space each column should take in the Balance section based on the total
-    // transaction methods/columns available
-    for _ in 0..total_columns {
-        width_data.push(Constraint::Percentage(width_percent));
-    }
 
     let mut lerp_state = LerpState::new(1.0);
 
@@ -193,9 +183,15 @@ pub fn start_app<B: Backend>(
     // If no key press is detected in certain position it will start the next iteration -> interface -> Key check
     // Otherwise it will poll for key press and locks the position
     //
-    // If key press is detected, send most of the &mut values to InputKeyHandler -> Gets mutated based on key press
+    // If key press is detected, send most of the &mut values to InputKeyHandler -> Gets mutated based on keypress
     // -> loop ends -> start from beginning -> Send the new mutated values to the interface -> Keep up
     loop {
+        if conn.is_tx_method_empty()
+            && let PopupType::Nothing = popup_status
+        {
+            popup_status = PopupType::new_choice_config_forced();
+        };
+
         // Passing out relevant data to the UI function
         terminal
             .draw(|f| {
@@ -206,7 +202,6 @@ pub fn start_app<B: Backend>(
                         &home_years,
                         &mut home_table,
                         &home_tab,
-                        &mut width_data,
                         &mut lerp_state,
                         &mut home_txs,
                         conn,
@@ -217,7 +212,6 @@ pub fn start_app<B: Backend>(
                         &mut add_tx_balance,
                         &add_tx_data,
                         &add_tx_tab,
-                        &mut width_data,
                         &mut lerp_state,
                         conn,
                     ),

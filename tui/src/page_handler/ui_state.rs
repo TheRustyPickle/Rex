@@ -2,7 +2,6 @@ use app::conn::DbConn;
 use chrono::Datelike;
 use chrono::prelude::Local;
 use ratatui::widgets::TableState;
-use std::path::PathBuf;
 use strum_macros::Display;
 
 pub const MONTHS: [&str; 12] = [
@@ -348,37 +347,6 @@ impl SummaryTab {
             SummaryTab::Table => SummaryTab::ModeSelection,
             SummaryTab::Years => SummaryTab::Years,
             SummaryTab::Months => SummaryTab::Months,
-        }
-    }
-}
-
-pub enum UserInputType {
-    AddNewTxMethod(Vec<String>),
-    RenameTxMethod(Vec<String>),
-    RepositionTxMethod(Vec<String>),
-    SetNewLocation(PathBuf),
-    CancelledOperation,
-    ResetData(ResetType),
-    BackupDBPath(Vec<PathBuf>),
-    InvalidInput,
-}
-
-pub enum ResetType {
-    NewLocation,
-    BackupDB,
-}
-
-impl UserInputType {
-    #[must_use]
-    pub fn from_string(input: &str) -> Self {
-        match input {
-            "1" => UserInputType::AddNewTxMethod(Vec::new()),
-            "2" => UserInputType::RenameTxMethod(Vec::new()),
-            "3" => UserInputType::RepositionTxMethod(Vec::new()),
-            "4" => UserInputType::SetNewLocation(PathBuf::new()),
-            "5" => UserInputType::BackupDBPath(Vec::new()),
-            "cancel" => UserInputType::CancelledOperation,
-            _ => UserInputType::InvalidInput,
         }
     }
 }

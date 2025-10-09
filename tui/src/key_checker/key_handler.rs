@@ -822,7 +822,7 @@ impl<'a> InputKeyHandler<'a> {
                     DeletionChoices::No => *self.popup_status = PopupType::Nothing,
                 }
             }
-            ChoicePopupState::Config => {
+            ChoicePopupState::Config | ChoicePopupState::ConfigForced => {
                 let Some(choice) = self.popup_status.get_config_choice() else {
                     return Err(anyhow!("Popup choice should not have been None"));
                 };
@@ -838,9 +838,11 @@ impl<'a> InputKeyHandler<'a> {
                         *self.popup_status = PopupType::new_path(true, self.config);
                     }
                     ConfigChoices::RenameTxMethod => {
-                        *self.popup_status = PopupType::new_choice_methods(self.conn);
+                        *self.popup_status = PopupType::new_choice_methods(self.conn)?;
                     }
-                    _ => todo!(),
+                    ConfigChoices::AddNewTxMethod => {
+                        *self.popup_status = PopupType::new_input(None);
+                    }
                 }
             }
             ChoicePopupState::TxMethods => {
@@ -848,7 +850,7 @@ impl<'a> InputKeyHandler<'a> {
                     return Err(anyhow!("Popup choice should not have been None"));
                 };
 
-                *self.popup_status = PopupType::new_input(choice);
+                *self.popup_status = PopupType::new_input(Some(choice));
             }
         }
 
@@ -1957,6 +1959,12 @@ impl InputKeyHandler<'_> {
         )?;
 
         *self.chart_tx_methods = IndexedData::new_tx_methods_cumulative(self.conn);
+        *self.chart_activated_methods = self
+            .conn
+            .get_tx_methods_cumulative()
+            .into_iter()
+            .map(|s| (s, true))
+            .collect();
 
         Ok(())
     }

@@ -18,7 +18,6 @@ pub fn add_tx_ui(
     balance: &mut [Vec<String>],
     add_tx_data: &TxData,
     add_tx_tab: &TxTab,
-    width_data: &mut [Constraint],
     lerp_state: &mut LerpState,
     conn: &mut DbConn,
 ) {
@@ -28,6 +27,14 @@ pub fn add_tx_ui(
         .map(|m| m.name.clone())
         .collect();
     // Get the data to insert into the Status widget of this page
+
+    let mut width_data = Vec::new();
+    let total_columns = all_methods.len() + 2;
+    let width_percent = (100 / total_columns) as u16;
+
+    for _ in 0..total_columns {
+        width_data.push(Constraint::Percentage(width_percent));
+    }
 
     let status_data = add_tx_data.get_tx_status();
     // Contains date, details, from method, to method, amount, tx type, tags.
