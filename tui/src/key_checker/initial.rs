@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crossterm::event::KeyCode;
 
-use crate::key_checker::InputKeyHandler;
+use crate::key_checker::{InputKeyHandler, popup_keys};
 use crate::outputs::HandlingOutput;
 use crate::pages::PopupType;
 
@@ -12,21 +12,12 @@ pub fn initial_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutp
             KeyCode::Char('q') => return Ok(Some(HandlingOutput::QuitUi)),
             _ => handler.go_home(),
         },
-        PopupType::Info(info) => {
-            if info.is_new_update() {
-                match handler.key.code {
-                    KeyCode::Enter => {
-                        if let Err(e) = handler.handle_update_popup() {
-                            return Ok(Some(e));
-                        }
-                    }
-                    KeyCode::Up => handler.popup_up(),
-                    KeyCode::Down => handler.popup_down(),
-                    _ => handler.do_empty_popup(),
-                }
-            }
+        _ => {
+            if let KeyCode::Char('q') = handler.key.code {
+                return Ok(Some(HandlingOutput::QuitUi));
+            };
+            return popup_keys(handler);
         }
-        _ => handler.do_empty_popup(),
     }
     Ok(None)
 }

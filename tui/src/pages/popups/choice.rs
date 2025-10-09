@@ -42,6 +42,18 @@ impl ChoicePopup {
                     Constraint::Length(7),
                 ];
             }
+            ChoicePopupState::ConfigForced => {
+                title = "Configuration";
+                message = "Please add at least 1 Transaction Method to get started. Example Transaction Method: Bank, Cash, Paypal";
+
+                y_value = 20;
+
+                constraints = vec![
+                    Constraint::Length(4),
+                    Constraint::Min(1),
+                    Constraint::Length(7),
+                ];
+            }
             ChoicePopupState::TxMethods => {
                 title = "Rename Method";
                 message = "Select a method to rename";

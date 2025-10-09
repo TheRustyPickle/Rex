@@ -7,14 +7,35 @@ use crate::pages::PopupType;
 
 pub fn popup_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutput>> {
     match handler.popup_status {
-        PopupType::Info(_) | PopupType::Choice(_) => match handler.key.code {
+        PopupType::Choice(_) => match handler.key.code {
             KeyCode::Up => handler.popup_up(),
             KeyCode::Down => handler.popup_down(),
             KeyCode::Enter => handler.handle_choice_popup_selection()?,
             KeyCode::Char('h') => handler.do_popup_help_popup(),
             _ => handler.do_empty_popup(),
         },
-
+        PopupType::Info(info) => {
+            if info.is_new_update() {
+                match handler.key.code {
+                    KeyCode::Enter => {
+                        if let Err(e) = handler.handle_update_popup() {
+                            return Ok(Some(e));
+                        }
+                    }
+                    KeyCode::Up => handler.popup_up(),
+                    KeyCode::Down => handler.popup_down(),
+                    _ => handler.do_empty_popup(),
+                }
+            } else {
+                match handler.key.code {
+                    KeyCode::Up => handler.popup_up(),
+                    KeyCode::Down => handler.popup_down(),
+                    KeyCode::Enter => handler.handle_choice_popup_selection()?,
+                    KeyCode::Char('h') => handler.do_popup_help_popup(),
+                    _ => handler.do_empty_popup(),
+                }
+            }
+        }
         PopupType::Reposition(_) => match handler.key.code {
             KeyCode::Up => handler.popup_up(),
             KeyCode::Down => handler.popup_down(),

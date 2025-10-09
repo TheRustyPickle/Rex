@@ -64,7 +64,7 @@ pub struct InputPopup {
     pub text: String,
     pub cursor_position: usize,
     pub status: String,
-    pub modifying_method: String,
+    pub modifying_method: Option<String>,
 }
 
 pub struct ChoiceDetails {
@@ -90,6 +90,7 @@ pub enum ChoicePopupState {
     Delete,
     Config,
     TxMethods,
+    ConfigForced,
 }
 
 #[derive(EnumIter, Display, FromRepr, Copy, Clone)]
@@ -360,6 +361,20 @@ impl PopupType {
         })
     }
 
+    pub fn new_choice_config_forced() -> Self {
+        let choices = vec![ConfigChoices::AddNewTxMethod.to_choice()];
+
+        let table_items = choices.iter().map(|c| vec![c.text.clone()]).collect();
+        let mut table_data = TableData::new(table_items);
+        table_data.state.select(Some(0));
+
+        PopupType::Choice(ChoicePopup {
+            table: table_data,
+            choices,
+            showing: ChoicePopupState::ConfigForced,
+        })
+    }
+
     pub fn get_config_choice(&self) -> Option<ConfigChoices> {
         match self {
             PopupType::Choice(choice) => {
@@ -372,7 +387,7 @@ impl PopupType {
     pub fn new_reposition(conn: &mut DbConn) -> Result<Self> {
         let tx_methods = conn.get_tx_methods_sorted();
 
-        if tx_methods.len() == 1 {
+        if tx_methods.len() <= 1 {
             return Err(anyhow!(
                 "Needs at least 2 transaction methods to exist for repositioning"
             ));
@@ -480,8 +495,14 @@ impl PopupType {
         }
     }
 
-    pub fn new_choice_methods(conn: &mut DbConn) -> Self {
+    pub fn new_choice_methods(conn: &mut DbConn) -> Result<Self> {
         let tx_methods = conn.get_tx_methods_sorted();
+
+        if tx_methods.len() <= 1 {
+            return Err(anyhow!(
+                "There needs to be at least 1 transaction method existing for this option"
+            ));
+        }
 
         let choices = tx_methods
             .iter()
@@ -495,11 +516,11 @@ impl PopupType {
         let mut table_data = TableData::new(table);
         table_data.state.select(Some(0));
 
-        PopupType::Choice(ChoicePopup {
+        Ok(PopupType::Choice(ChoicePopup {
             table: table_data,
             choices,
             showing: ChoicePopupState::TxMethods,
-        })
+        }))
     }
 
     pub fn get_choice_method(&self) -> Option<String> {
@@ -512,7 +533,7 @@ impl PopupType {
         }
     }
 
-    pub fn new_input(modifying: String) -> Self {
+    pub fn new_input(modifying: Option<String>) -> Self {
         PopupType::Input(InputPopup {
             text: String::new(),
             cursor_position: 0,
@@ -551,7 +572,11 @@ impl PopupType {
                 return Ok(false);
             }
 
-            conn.rename_tx_method(&input.modifying_method, &input.text)?;
+            if let Some(modifying) = &input.modifying_method {
+                conn.rename_tx_method(modifying, &input.text)?;
+            } else {
+                conn.add_new_methods(&vec![input.text.to_string()])?;
+            }
 
             Ok(true)
         } else {

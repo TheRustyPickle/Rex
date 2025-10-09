@@ -7,6 +7,7 @@ pub const W: &str = "W: Search Page";
 pub const Q: &str = "Q: Quit";
 pub const H: &str = "H: Show help";
 pub const V: &str = "V: Show selected transaction details";
+pub const J: &str = "J: Configuration";
 
 pub fn new_update_text(data: &[String]) -> String {
     format!(
@@ -54,6 +55,7 @@ Example amount: 100 + b, b + b, 5 * b, 1.2k + 1m
 {Y}
 {W}
 {H}
+{J}
 {Q}
 "
     )
@@ -78,6 +80,7 @@ Arrow Left/Right: Move value of the widget
 {Y}
 {W}
 {H}
+{J}
 {Q}
 "
     )
@@ -103,6 +106,7 @@ Arrow Left/Right: Move value of the widget
 {Y}
 {W}
 {H}
+{J}
 {Q}
 "
     )
@@ -130,6 +134,7 @@ Swapping transaction location will only work if they are on the same date.
 {Y}
 {W}
 {H}
+{J}
 {Q}
 "
     )
@@ -182,6 +187,7 @@ Example amount : <1000, >=10000
 {Z}
 {Y}
 {H}
+{J}
 {Q}
 "
     )
@@ -205,6 +211,7 @@ Arrow Left/Right: Move value of the widget
 {Z}
 {W}
 {H}
+{J}
 {Q}
 "
     )
