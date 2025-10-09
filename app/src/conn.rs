@@ -401,6 +401,7 @@ impl DbConn {
         methods
     }
 
+    #[must_use]
     pub fn is_tx_method_empty(&self) -> bool {
         self.cache.tx_methods.is_empty()
     }
