@@ -15,6 +15,7 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutpu
                 KeyCode::Char('q') => return Ok(Some(HandlingOutput::QuitUi)),
                 KeyCode::Char('f') => handler.go_home(),
                 KeyCode::Char('r') => handler.go_chart(),
+                KeyCode::Char('j') => handler.do_config_popup(),
                 KeyCode::Char('z') => handler.go_summary()?,
                 KeyCode::Char('h') => handler.do_help_popup(),
                 KeyCode::Char('s') => handler.add_tx()?,
