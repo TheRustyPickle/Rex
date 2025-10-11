@@ -1,6 +1,4 @@
 use anyhow::Result;
-use app::conn::{get_conn, get_conn_old};
-use app::migration::start_migration;
 use crossterm::execute;
 use crossterm::terminal::{
     EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
@@ -11,6 +9,8 @@ use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Tabs};
+use rex_app::conn::{get_conn, get_conn_old};
+use rex_app::migration::start_migration;
 use std::collections::HashMap;
 use std::io::{Stdout, stdout};
 use std::path::{Path, PathBuf};

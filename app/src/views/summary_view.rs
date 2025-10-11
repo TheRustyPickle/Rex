@@ -1,8 +1,8 @@
 use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
-use db::ConnCache;
-use db::models::{FetchNature, FullTx, TxType};
-use shared::models::{Cent, Dollar};
+use rex_db::ConnCache;
+use rex_db::models::{FetchNature, FullTx, TxType};
+use rex_shared::models::{Cent, Dollar};
 use std::collections::HashMap;
 
 use crate::utils::{get_percentages, month_year_to_unique};

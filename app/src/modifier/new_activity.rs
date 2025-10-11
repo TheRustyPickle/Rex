@@ -1,6 +1,6 @@
 use anyhow::{Result, anyhow};
-use db::ConnCache;
-use db::models::{
+use rex_db::ConnCache;
+use rex_db::models::{
     ActivityNature, ActivityTxTag, FullTx, NewActivity, NewActivityTx, NewSearch, NewTx, Tag,
 };
 

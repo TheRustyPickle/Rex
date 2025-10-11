@@ -1,8 +1,8 @@
 use anyhow::Result;
 use chrono::NaiveDate;
-use db::ConnCache;
-pub use db::models::FullActivityTx;
-use db::models::{Activity, ActivityNature, ActivityWithTxs};
+use rex_db::ConnCache;
+pub use rex_db::models::FullActivityTx;
+use rex_db::models::{Activity, ActivityNature, ActivityWithTxs};
 
 pub struct ActivityView(Vec<ActivityWithTxs>);
 

@@ -1,8 +1,8 @@
 use anyhow::{Result, anyhow};
 use chrono::{Days, Local, Months, NaiveDate, NaiveTime};
-use db::ConnCache;
-use db::models::{Balance, DateNature, FetchNature, NewSearch, NewTx, Tx, TxType};
-use shared::models::Dollar;
+use rex_db::ConnCache;
+use rex_db::models::{Balance, DateNature, FetchNature, NewSearch, NewTx, Tx, TxType};
+use rex_shared::models::Dollar;
 
 use crate::utils::parse_amount_nature_cent;
 

@@ -1,9 +1,9 @@
-use app::ui_helper::DateType;
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Position};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Cell, Paragraph, Row, Table};
+use rex_app::ui_helper::DateType;
 use thousands::Separable;
 
 use crate::outputs::TxType;

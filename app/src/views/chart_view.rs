@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
-use db::models::FullTx;
-use shared::models::Cent;
+use rex_db::models::FullTx;
+use rex_shared::models::Cent;
 use std::collections::{HashMap, HashSet};
 
 use crate::views::TxViewGroup;
