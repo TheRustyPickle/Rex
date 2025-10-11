@@ -6,13 +6,17 @@ use ratatui::widgets::{BorderType, Borders, Clear, Row, Table};
 
 use crate::page_handler::{BLUE, BOX, TEXT};
 use crate::pages::RepositionPopup;
-use crate::utility::{centered_rect, main_block, styled_block};
+use crate::utility::{centered_rect_exact, main_block, styled_block};
 
 impl RepositionPopup {
     pub fn show_ui(&mut self, f: &mut Frame) {
         let size = f.area();
         let x_value = 40;
-        let y_value = 20;
+        let mut y_value = self.reposition_table.items.len() as u16 + 4 + 3;
+
+        if y_value > 20 {
+            y_value = 20;
+        }
 
         let title = "Reposition Tx Methods";
 
@@ -23,7 +27,7 @@ impl RepositionPopup {
             .title(title)
             .borders(Borders::ALL);
 
-        let area = centered_rect(x_value, y_value, size);
+        let area = centered_rect_exact(x_value, y_value, size);
 
         let new_chunks = Layout::default()
             .direction(Direction::Vertical)

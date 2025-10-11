@@ -11,13 +11,13 @@ use crate::pages::{
     InfoPopup, InfoPopupState, activity_help_text, add_tx_help_text, chart_help_text, choice_help,
     home_help_text, new_update_text, reposition_help, search_help_text, summary_help_text,
 };
-use crate::utility::{centered_rect, create_bolded_text, main_block};
+use crate::utility::{centered_rect_exact, create_bolded_text, main_block};
 
 impl InfoPopup {
     pub fn show_ui(&mut self, f: &mut Frame) {
         let size = f.area();
-        let mut x_value = 60;
-        let mut y_value = 60;
+        let mut x_value = 80;
+        let mut y_value = 30;
 
         let mut title = "Help";
         let message;
@@ -83,7 +83,7 @@ impl InfoPopup {
 
         let text = create_bolded_text(&message);
 
-        let area = centered_rect(x_value, y_value, size);
+        let area = centered_rect_exact(x_value, y_value, size);
 
         let block = main_block()
             .title(title)
