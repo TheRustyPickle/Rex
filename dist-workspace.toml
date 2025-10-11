@@ -18,3 +18,9 @@ targets = [
 ]
 # Whether dist should create a Github Release or use an existing draft
 create-release = false
+
+[dist.dependencies.apt]
+pkg-config = "*"
+libwayland-dev = "*"
+libxkbcommon-dev = "*"
+libegl1-mesa-dev = "*"
