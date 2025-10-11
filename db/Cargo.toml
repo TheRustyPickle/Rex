@@ -1,12 +1,18 @@
 [package]
-name = "db"
+name = "rex-db"
 version = "0.1.0"
 edition = "2024"
+description = """
+Rex database models using diesel
+"""
+homepage = "https://github.com/TheRustyPickle/Rex"
+repository = "https://github.com/TheRustyPickle/Rex"
+license = "MIT"
 
 [dependencies]
-shared.workspace = true
-libsqlite3-sys = { version = "0.35.0", features = ["bundled"] }
+shared = { package = "rex-shared", version = "0.1.0" }
 diesel.workspace = true
 chrono.workspace = true
-diesel_migrations = "2.2.0"
 anyhow.workspace = true
+diesel_migrations = "2.3.0"
+libsqlite3-sys = { version = "0.35.0", features = ["bundled"] }

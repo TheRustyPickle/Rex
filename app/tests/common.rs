@@ -1,4 +1,4 @@
-use app::conn::{DbConn, get_conn};
+use rex_app::conn::{DbConn, get_conn};
 use std::fs;
 
 #[must_use]
