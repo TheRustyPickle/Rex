@@ -6,12 +6,12 @@ use ratatui::widgets::{BorderType, Borders, Clear, Paragraph, Row, Table, Wrap};
 
 use crate::page_handler::{BACKGROUND, BOX, TEXT};
 use crate::pages::{ChoicePopup, ChoicePopupState};
-use crate::utility::{centered_rect, main_block, styled_block};
+use crate::utility::{centered_rect_exact, main_block, styled_block};
 
 impl ChoicePopup {
     pub fn show_ui(&mut self, f: &mut Frame) {
         let size = f.area();
-        let x_value = 40;
+        let mut x_value = 40;
         let mut y_value = 10;
 
         let title;
@@ -34,7 +34,7 @@ impl ChoicePopup {
                 title = "Configuration";
                 message = "Select an option to configure";
 
-                y_value = 20;
+                y_value = 12;
 
                 constraints = vec![
                     Constraint::Length(4),
@@ -46,23 +46,28 @@ impl ChoicePopup {
                 title = "Configuration";
                 message = "Please add at least 1 Transaction Method to get started. Example Transaction Method: Bank, Cash, Paypal";
 
-                y_value = 20;
+                y_value = 10;
+                x_value = 60;
 
                 constraints = vec![
                     Constraint::Length(4),
                     Constraint::Min(1),
-                    Constraint::Length(7),
+                    Constraint::Length(3),
                 ];
             }
             ChoicePopupState::TxMethods => {
                 title = "Rename Method";
                 message = "Select a method to rename";
 
-                y_value = 20;
+                y_value = 5 + self.table.items.len() as u16 + 2;
+
+                if y_value > 20 {
+                    y_value = 20;
+                }
 
                 constraints = vec![
                     Constraint::Length(4),
-                    Constraint::Min(1),
+                    Constraint::Length(1),
                     Constraint::Length((self.table.items.len() + 2) as u16),
                 ];
             }
@@ -77,7 +82,7 @@ impl ChoicePopup {
             .title(title)
             .borders(Borders::ALL);
 
-        let area = centered_rect(x_value, y_value, size);
+        let area = centered_rect_exact(x_value, y_value, size);
 
         let new_chunks = Layout::default()
             .direction(Direction::Vertical)
