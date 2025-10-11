@@ -113,11 +113,11 @@ pub fn parse_search_fields<'a>(
                 let year = split_date[0].parse::<i32>()?;
 
                 let start_date = NaiveDate::from_ymd_opt(year, 1, 1)
-                    .ok_or_else(|| anyhow!("{} is an invalid year", year))?
+                    .ok_or_else(|| anyhow!("{year} is an invalid year"))?
                     .and_time(NaiveTime::MIN);
 
                 let end_date = NaiveDate::from_ymd_opt(year + 1, 1, 1)
-                    .ok_or_else(|| anyhow!("{} is an invalid year", year))?
+                    .ok_or_else(|| anyhow!("{year} is an invalid year"))?
                     .and_time(NaiveTime::MIN);
 
                 Some(DateNature::ByYear {

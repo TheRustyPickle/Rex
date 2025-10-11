@@ -47,8 +47,8 @@ impl NewPathsPopup {
 
         let mut path_text = String::new();
 
-        for path in self.paths.iter() {
-            writeln!(path_text, "{}", path.display()).unwrap()
+        for path in &self.paths {
+            writeln!(path_text, "{}", path.display()).unwrap();
         }
 
         let path_list = Paragraph::new(Text::from(path_text))
