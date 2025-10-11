@@ -7,13 +7,13 @@ use std::fmt::Write;
 
 use crate::page_handler::{BACKGROUND, BLUE, BOX, TEXT};
 use crate::pages::NewPathsPopup;
-use crate::utility::{centered_rect, main_block, styled_block};
+use crate::utility::{centered_rect_exact, main_block, styled_block};
 
 impl NewPathsPopup {
     pub fn show_ui(&mut self, f: &mut Frame) {
         let size = f.area();
-        let x_value = 40;
-        let y_value = 30;
+        let x_value = 50;
+        let y_value = 20;
 
         let title = if self.new_location {
             "New Location"
@@ -28,7 +28,7 @@ impl NewPathsPopup {
             .title(title)
             .borders(Borders::ALL);
 
-        let area = centered_rect(x_value, y_value, size);
+        let area = centered_rect_exact(x_value, y_value, size);
 
         let new_chunks = Layout::default()
             .direction(Direction::Vertical)

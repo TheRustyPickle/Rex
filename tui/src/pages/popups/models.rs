@@ -498,7 +498,7 @@ impl PopupType {
     pub fn new_choice_methods(conn: &mut DbConn) -> Result<Self> {
         let tx_methods = conn.get_tx_methods_sorted();
 
-        if tx_methods.len() <= 1 {
+        if tx_methods.is_empty() {
             return Err(anyhow!(
                 "There needs to be at least 1 transaction method existing for this option"
             ));
