@@ -1,6 +1,6 @@
 [package]
 name = "rex-tui"
-version = "0.2.1"
+version = "0.2.0"
 edition = "2024"
 authors = ["TheRustyPickle <rusty.pickle94@gmail.com>"]
 readme = "../README.md"
@@ -21,7 +21,7 @@ test = false
 bench = false
 
 [dependencies]
-app = { package = "rex-app", version = "0.1.0" }
+app = { package = "rex-app", version = "0.1.1" }
 shared = { package = "rex-shared", version = "0.1.0" }
 anyhow.workspace = true
 crossterm = "0.29.0"

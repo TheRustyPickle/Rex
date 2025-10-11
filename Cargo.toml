@@ -5,8 +5,8 @@ resolver = "2"
 
 [workspace.dependencies]
 rex-shared = "0.1.0"
-rex-db = "0.1.0"
-rex-app = "0.1.0"
+rex-db = "0.1.1"
+rex-app = "0.1.1"
 chrono = "0.4.42"
 diesel = { version = "2.3.2", default-features = false, features = [
     "returning_clauses_for_sqlite_3_35",
