@@ -1,4 +1,4 @@
-use app::modifier::{parse_search_fields, parse_tx_fields};
+use rex_app::modifier::{parse_search_fields, parse_tx_fields};
 use std::fs;
 
 use crate::common::create_test_db;

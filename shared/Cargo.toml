@@ -1,6 +1,13 @@
 [package]
-name = "shared"
+name = "rex-shared"
 version = "0.1.0"
 edition = "2024"
+description = """
+Shared code for Rex
+"""
+homepage = "https://github.com/TheRustyPickle/Rex"
+repository = "https://github.com/TheRustyPickle/Rex"
+license = "MIT"
 
 [dependencies]
+
