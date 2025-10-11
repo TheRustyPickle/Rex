@@ -210,7 +210,7 @@ pub fn home_ui(
 
     // Use the acquired width data to the allocated spaces
     // between columns on Balance widget.
-    let balance_area = Table::new(bal_data, width_data.to_owned())
+    let balance_area = Table::new(bal_data, width_data.clone())
         .block(styled_block("Balance"))
         .style(Style::default().fg(BOX));
 

@@ -29,14 +29,14 @@ impl Cache {
             .values()
             .find(|m| m.name == name)
             .map(|m| m.id)
-            .ok_or_else(|| anyhow!("method '{}' not found", name))
+            .ok_or_else(|| anyhow!("method '{name}' not found"))
     }
 
     pub fn get_method_by_name(&self, name: &str) -> Result<&TxMethod> {
         self.tx_methods
             .values()
             .find(|m| m.name == name)
-            .ok_or_else(|| anyhow!("method '{}' not found", name))
+            .ok_or_else(|| anyhow!("method '{name}' not found"))
     }
 
     pub fn get_method_by_name_mut(&mut self, name: &str) -> Result<&mut TxMethod> {
@@ -50,7 +50,7 @@ impl Cache {
             .values()
             .find(|m| m.name == name)
             .map(|m| m.id)
-            .ok_or_else(|| anyhow!("tag '{}' not found", name))
+            .ok_or_else(|| anyhow!("tag '{name}' not found"))
     }
 
     pub fn new_tags(&mut self, tags: Vec<Tag>) {

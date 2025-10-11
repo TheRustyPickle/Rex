@@ -247,25 +247,36 @@ pub fn migrate_to_new_schema(old_conn_path: &Path, new_conn: &str) -> Result<boo
     Ok(true)
 }
 
-/// The function takes certain parameters to create an empty space in the layout
-/// and returns an area where we can place various widgets. Taken from tui-rs examples.
-/// This is used as a popup for helpful information.
-pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
-    let popup_layout = Layout::default()
+pub fn centered_rect_exact(width: u16, height: u16, r: Rect) -> Rect {
+    let w = width.min(r.width);
+    let h = height.min(r.height);
+
+    let horizontal_space = r.width.saturating_sub(w);
+    let vertical_space = r.height.saturating_sub(h);
+
+    let left = horizontal_space / 2;
+    let top = vertical_space / 2;
+
+    let right = horizontal_space - left;
+    let bottom = vertical_space - top;
+
+    let vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage((100 - percent_y) / 2),
-            Constraint::Percentage(percent_y),
-            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Length(top),
+            Constraint::Length(h),
+            Constraint::Length(bottom),
         ])
         .split(r);
 
-    Layout::default()
+    let horizontal = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage((100 - percent_x) / 2),
-            Constraint::Percentage(percent_x),
-            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Length(left),
+            Constraint::Length(w),
+            Constraint::Length(right),
         ])
-        .split(popup_layout[1])[1]
+        .split(vertical[1]);
+
+    horizontal[1]
 }

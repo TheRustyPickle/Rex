@@ -6,13 +6,13 @@ use ratatui::widgets::{BorderType, Borders, Clear, Paragraph};
 
 use crate::page_handler::{BACKGROUND, TEXT};
 use crate::pages::InputPopup;
-use crate::utility::{centered_rect, create_bolded_text, main_block, styled_block};
+use crate::utility::{centered_rect_exact, create_bolded_text, main_block, styled_block};
 
 impl InputPopup {
     pub fn show_ui(&mut self, f: &mut Frame) {
         let size = f.area();
-        let x_value = 40;
-        let y_value = 10;
+        let x_value = 50;
+        let y_value = 7;
 
         let title = if self.modifying_method.is_none() {
             "New Method"
@@ -31,7 +31,7 @@ impl InputPopup {
             .title(title)
             .borders(Borders::ALL);
 
-        let area = centered_rect(x_value, y_value, size);
+        let area = centered_rect_exact(x_value, y_value, size);
 
         let new_chunks = Layout::default()
             .direction(Direction::Vertical)

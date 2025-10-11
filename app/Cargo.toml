@@ -1,6 +1,6 @@
 [package]
 name = "rex-app"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = """
 Core functionality for Rex
@@ -10,7 +10,7 @@ repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
 
 [dependencies]
-db = { package = "rex-db", version = "0.1.0" }
+db = { package = "rex-db", version = "0.1.1" }
 shared = { package = "rex-shared", version = "0.1.0" }
 chrono.workspace = true
 anyhow.workspace = true

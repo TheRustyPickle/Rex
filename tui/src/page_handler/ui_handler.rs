@@ -193,7 +193,7 @@ pub fn start_app<B: Backend>(
             && let PopupType::Nothing = popup_status
         {
             popup_status = PopupType::new_choice_config_forced();
-        };
+        }
 
         // Passing out relevant data to the UI function
         terminal
