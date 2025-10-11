@@ -2,7 +2,7 @@ use chrono::{Datelike, Months, NaiveDate};
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::upsert::excluded;
-use shared::models::Cent;
+use rex_shared::models::Cent;
 use std::collections::{HashMap, HashSet};
 
 use crate::ConnCache;

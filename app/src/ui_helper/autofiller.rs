@@ -1,5 +1,5 @@
-use db::ConnCache;
-use db::models::TxType;
+use rex_db::ConnCache;
+use rex_db::models::TxType;
 
 use crate::conn::MutDbConn;
 use crate::ui_helper::get_best_match;

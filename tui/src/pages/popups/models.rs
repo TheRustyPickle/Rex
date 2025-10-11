@@ -1,7 +1,7 @@
 use anyhow::{Result, anyhow};
-use app::conn::DbConn;
 use ratatui::Frame;
 use ratatui::style::Color;
+use rex_app::conn::DbConn;
 use rfd::FileDialog;
 use std::path::PathBuf;
 use strum::IntoEnumIterator;

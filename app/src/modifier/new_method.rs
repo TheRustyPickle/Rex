@@ -1,6 +1,6 @@
 use anyhow::Result;
-use db::ConnCache;
-use db::models::{Balance, NewTxMethod, TxMethod};
+use rex_db::ConnCache;
+use rex_db::models::{Balance, NewTxMethod, TxMethod};
 
 pub(crate) fn add_new_tx_methods(
     method_list: &Vec<String>,

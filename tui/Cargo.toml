@@ -21,8 +21,8 @@ test = false
 bench = false
 
 [dependencies]
-app = { package = "rex-app", version = "0.1.1" }
-shared = { package = "rex-shared", version = "0.1.0" }
+rex-app.workspace = true
+rex-shared.workspace = true
 anyhow.workspace = true
 crossterm = "0.29.0"
 chrono = "0.4.42"

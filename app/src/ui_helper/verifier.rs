@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 
 use chrono::NaiveDate;
-use db::ConnCache;
+use rex_db::ConnCache;
 
 use crate::conn::MutDbConn;
 use crate::ui_helper::{DateType, Field, Output, VerifierError, get_best_match};

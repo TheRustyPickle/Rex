@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
-use db::ConnCache;
-use db::models::{Balance, NewTag, NewTx, Tag, Tx, TxTag, TxType};
+use rex_db::ConnCache;
+use rex_db::models::{Balance, NewTag, NewTx, Tag, Tx, TxTag, TxType};
 
 use crate::modifier::tidy_balances;
 

@@ -1,6 +1,6 @@
 use anyhow::Result;
-use db::models::AmountNature;
-use shared::models::{Cent, Dollar};
+use rex_db::models::AmountNature;
+use rex_shared::models::{Cent, Dollar};
 
 pub fn month_name_to_num(name: &str) -> u32 {
     match name {

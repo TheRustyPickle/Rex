@@ -1,5 +1,5 @@
 use chrono::NaiveDate;
-use shared::models::{Cent, Dollar};
+use rex_shared::models::{Cent, Dollar};
 use std::fmt;
 
 #[derive(Default, Clone)]
