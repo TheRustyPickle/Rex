@@ -1,9 +1,9 @@
 use anyhow::{Error, Result};
 use chrono::NaiveDate;
-pub use db::models::FetchNature;
-use db::models::{Balance, FullTx, NewSearch, NewTx, Tag, Tx, TxMethod};
-use db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
 use diesel::{Connection, SqliteConnection};
+pub use rex_db::models::FetchNature;
+use rex_db::models::{Balance, FullTx, NewSearch, NewTx, Tag, Tx, TxMethod};
+use rex_db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
 use std::collections::{HashMap, HashSet};
 
 use crate::modifier::{

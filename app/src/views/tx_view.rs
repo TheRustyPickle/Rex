@@ -1,9 +1,9 @@
 use anyhow::Result;
 use chrono::NaiveDate;
-use db::ConnCache;
-pub use db::models::FullTx;
-use db::models::{Balance, FetchNature, TxMethod, TxType};
-use shared::models::{Cent, Dollar};
+use rex_db::ConnCache;
+pub use rex_db::models::FullTx;
+use rex_db::models::{Balance, FetchNature, TxMethod, TxType};
+use rex_shared::models::{Cent, Dollar};
 use std::collections::HashMap;
 
 use crate::conn::DbConn;

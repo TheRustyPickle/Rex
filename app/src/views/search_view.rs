@@ -1,6 +1,6 @@
 use anyhow::Result;
-use db::ConnCache;
-use db::models::{FullTx, NewSearch};
+use rex_db::ConnCache;
+use rex_db::models::{FullTx, NewSearch};
 
 pub struct SearchView(Vec<FullTx>);
 
@@ -18,7 +18,7 @@ pub(crate) fn get_search_txs(
 impl SearchView {
     #[must_use]
     pub fn tx_array(&self) -> Vec<Vec<String>> {
-        self.0.iter().map(db::models::FullTx::to_array).collect()
+        self.0.iter().map(FullTx::to_array).collect()
     }
 
     #[must_use]

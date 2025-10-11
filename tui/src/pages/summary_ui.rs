@@ -1,9 +1,9 @@
-use app::conn::DbConn;
-use app::views::FullSummary;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Cell, Row, Table};
+use rex_app::conn::DbConn;
+use rex_app::views::FullSummary;
 use thousands::Separable;
 
 use crate::page_handler::{

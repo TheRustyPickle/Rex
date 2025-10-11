@@ -1,6 +1,6 @@
 [package]
 name = "rex-db"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 description = """
 Rex database models using diesel
@@ -10,7 +10,7 @@ repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
 
 [dependencies]
-shared = { package = "rex-shared", version = "0.1.0" }
+rex-shared.workspace = true
 diesel.workspace = true
 chrono.workspace = true
 anyhow.workspace = true

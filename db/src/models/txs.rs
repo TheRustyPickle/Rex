@@ -3,7 +3,7 @@ use diesel::dsl::{exists, sql};
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::sql_types::Bool;
-use shared::models::Cent;
+use rex_shared::models::Cent;
 use std::collections::HashMap;
 
 use crate::ConnCache;
