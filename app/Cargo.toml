@@ -1,17 +1,22 @@
 [package]
-name = "app"
+name = "rex-app"
 version = "0.1.0"
 edition = "2024"
+description = """
+Core functionality for Rex
+"""
+homepage = "https://github.com/TheRustyPickle/Rex"
+repository = "https://github.com/TheRustyPickle/Rex"
+license = "MIT"
 
 [dependencies]
-db.workspace = true
-shared.workspace = true
+db = { package = "rex-db", version = "0.1.0" }
+shared = { package = "rex-shared", version = "0.1.0" }
 chrono.workspace = true
 anyhow.workspace = true
 diesel.workspace = true
-log = "0.4.27"
 strsim = "0.11.1"
-thiserror = "2.0.16"
+thiserror = "2.0.17"
 
 [lints.clippy]
 too_many_arguments = { level = "allow" }

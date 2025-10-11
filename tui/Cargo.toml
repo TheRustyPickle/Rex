@@ -3,16 +3,16 @@ name = "rex-tui"
 version = "0.2.0"
 edition = "2024"
 authors = ["TheRustyPickle <rusty.pickle94@gmail.com>"]
-readme = "README.md"
+readme = "../README.md"
 description = """
 A TUI app for managing Incomes and Expenses
 """
 homepage = "https://github.com/TheRustyPickle/Rex"
 repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
-keywords = ["tui", "terminal", "budget", "ratatui", "ledger"]
+keywords = ["tui", "terminal", "budget", "ratatui", "money"]
 categories = ["command-line-utilities"]
-exclude = ["logo.png", "tests", ".github", "typos.toml", "codecov.yml"]
+exclude = ["logo.png", "tests_old", ".github", "typos.toml", "codecov.yml"]
 
 [[bin]]
 name = "rex"
@@ -21,20 +21,20 @@ test = false
 bench = false
 
 [dependencies]
-app.workspace = true
+app = { package = "rex-app", version = "0.1.0" }
+shared = { package = "rex-shared", version = "0.1.0" }
 anyhow.workspace = true
-shared.workspace = true
 crossterm = "0.29.0"
-chrono = "0.4.41"
+chrono = "0.4.42"
 open = "5.3.2"
 atty = "0.2.14"
-reqwest = { version = "0.12.22", features = ["blocking", "json"] }
-serde = { version = "1.0.219", features = ["derive"] }
+reqwest = { version = "0.12.23", features = ["blocking", "json"] }
+serde = { version = "1.0.228", features = ["derive"] }
 dirs = "6.0.0"
 thousands = "0.2.0"
-semver = "1.0.26"
+semver = "1.0.27"
 ratatui = "0.29.0"
-serde_json = "1.0.142"
+serde_json = "1.0.145"
 strum = "0.27"
 strum_macros = "0.27"
 rfd = "0.15.4"
