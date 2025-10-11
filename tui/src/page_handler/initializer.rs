@@ -1,6 +1,6 @@
 use anyhow::Result;
-use app::conn::get_conn;
 use atty::Stream;
+use rex_app::conn::get_conn;
 use std::env::set_current_dir;
 use std::fs::{self, File};
 use std::io::prelude::*;

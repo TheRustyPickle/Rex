@@ -1,10 +1,10 @@
 use anyhow::Result as AResult;
-use app::conn::DbConn;
-use app::modifier::{parse_search_fields, parse_tx_fields};
-use app::ui_helper::{DateType, Output, StepType, SteppingError, VerifierError};
-use app::views::{FullTx, PartialTx, SearchView, TxViewGroup};
 use chrono::prelude::Local;
-use shared::models::Cent;
+use rex_app::conn::DbConn;
+use rex_app::modifier::{parse_search_fields, parse_tx_fields};
+use rex_app::ui_helper::{DateType, Output, StepType, SteppingError, VerifierError};
+use rex_app::views::{FullTx, PartialTx, SearchView, TxViewGroup};
+use rex_shared::models::Cent;
 use std::cmp::Ordering;
 
 use crate::outputs::{CheckingError, ComparisonType, TxType};

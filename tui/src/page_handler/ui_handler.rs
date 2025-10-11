@@ -1,10 +1,10 @@
-use app::conn::{DbConn, FetchNature};
-use app::ui_helper::DateType;
-use app::views::SearchView;
 use crossterm::event::{self, Event, KeyEventKind, poll};
 use ratatui::Terminal;
 use ratatui::backend::Backend;
 use ratatui::style::Color;
+use rex_app::conn::{DbConn, FetchNature};
+use rex_app::ui_helper::DateType;
+use rex_app::views::SearchView;
 use std::time::Duration;
 
 use crate::config::Config;

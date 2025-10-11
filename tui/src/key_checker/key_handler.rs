@@ -1,8 +1,8 @@
 use anyhow::{Result, anyhow};
-use app::conn::{DbConn, FetchNature};
-use app::ui_helper::{DateType, StepType};
-use app::views::{ActivityView, ChartView, FullSummary, SearchView, SummaryView, TxViewGroup};
 use crossterm::event::{KeyCode, KeyEvent};
+use rex_app::conn::{DbConn, FetchNature};
+use rex_app::ui_helper::{DateType, StepType};
+use rex_app::views::{ActivityView, ChartView, FullSummary, SearchView, SummaryView, TxViewGroup};
 use std::collections::HashMap;
 use std::fmt::Write;
 

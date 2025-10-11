@@ -1,5 +1,3 @@
-use app::conn::DbConn;
-use app::views::ChartView;
 use chrono::{Duration, naive::NaiveDate};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
@@ -7,6 +5,8 @@ use ratatui::style::{Color, Modifier, Style};
 use ratatui::symbols::Marker;
 use ratatui::text::Span;
 use ratatui::widgets::{Axis, Block, Chart, Dataset, GraphType};
+use rex_app::conn::DbConn;
+use rex_app::views::ChartView;
 use std::collections::HashMap;
 
 use crate::page_handler::{BACKGROUND, BOX, ChartTab, IndexedData, SELECTED};

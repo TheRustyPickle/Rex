@@ -1,8 +1,8 @@
-use app::views::ActivityView;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Cell, Row, Table};
+use rex_app::views::ActivityView;
 use thousands::Separable;
 
 use crate::page_handler::{

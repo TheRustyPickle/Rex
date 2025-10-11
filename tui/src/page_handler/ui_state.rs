@@ -1,7 +1,7 @@
-use app::conn::DbConn;
 use chrono::Datelike;
 use chrono::prelude::Local;
 use ratatui::widgets::TableState;
+use rex_app::conn::DbConn;
 use strum_macros::Display;
 
 pub const MONTHS: [&str; 12] = [
