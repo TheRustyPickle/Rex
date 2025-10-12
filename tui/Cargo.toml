@@ -12,7 +12,7 @@ repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
 keywords = ["tui", "terminal", "budget", "ratatui", "money"]
 categories = ["command-line-utilities"]
-exclude = ["logo.png", "tests_old", ".github", "typos.toml", "codecov.yml"]
+exclude = ["logo.png", ".github", "typos.toml", "codecov.yml"]
 
 [[bin]]
 name = "rex"
