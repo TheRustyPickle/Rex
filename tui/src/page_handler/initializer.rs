@@ -50,7 +50,7 @@ pub fn initialize_app(
         }
     }
 
-    let new_version = check_version()?;
+    let new_version = check_version().unwrap_or_default();
 
     if let Err(e) = migrate_config(old_db_path) {
         println!("Failed to migrate config. Error: {e:?}");
