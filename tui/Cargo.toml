@@ -1,6 +1,6 @@
 [package]
 name = "rex-tui"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["TheRustyPickle <rusty.pickle94@gmail.com>"]
 readme = "../README.md"
@@ -12,7 +12,7 @@ repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
 keywords = ["tui", "terminal", "budget", "ratatui", "money"]
 categories = ["command-line-utilities"]
-exclude = ["logo.png", "tests_old", ".github", "typos.toml", "codecov.yml"]
+exclude = ["logo.png", ".github", "typos.toml", "codecov.yml"]
 
 [[bin]]
 name = "rex"
