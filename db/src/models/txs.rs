@@ -2,7 +2,7 @@ use chrono::{Datelike, Days, Months, NaiveDate, NaiveDateTime, NaiveTime};
 use diesel::dsl::{exists, sql};
 use diesel::prelude::*;
 use diesel::result::Error;
-use diesel::sql_types::Bool;
+use diesel::sql_types::{Integer, Text};
 use rex_shared::models::Cent;
 use std::collections::HashMap;
 
@@ -442,8 +442,8 @@ impl Tx {
 
         query
             .order((
-                date.asc(),
-                sql::<Bool>("display_order = 0"),
+                sql::<Text>("DATE(date) ASC"),
+                sql::<Integer>("CASE WHEN display_order = 0 THEN 1 ELSE 0 END ASC"),
                 display_order.asc(),
                 id.asc(),
             ))
