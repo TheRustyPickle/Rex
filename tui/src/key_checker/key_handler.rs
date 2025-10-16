@@ -1017,7 +1017,7 @@ impl<'a> InputKeyHandler<'a> {
                 .swap_tx_position(index, index - 1, self.home_txs)?;
 
             if reload_stuff {
-                *self.home_table = TableData::new(self.home_txs.tx_array());
+                self.reload_home_table()?;
                 self.home_down_till(index - 1);
                 self.reload_activity_table()?;
             }
@@ -1038,7 +1038,7 @@ impl<'a> InputKeyHandler<'a> {
                 .swap_tx_position(index, index + 1, self.home_txs)?;
 
             if reload_stuff {
-                *self.home_table = TableData::new(self.home_txs.tx_array());
+                self.reload_home_table()?;
                 self.home_down_till(index + 1);
                 self.reload_activity_table()?;
             }
