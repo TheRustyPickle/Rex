@@ -518,8 +518,6 @@ impl TxViewGroup {
 
         tx_2.tx.set_display_order(db_conn)?;
 
-        self.0.swap(index_1, index_2);
-
         Ok(true)
     }
 
