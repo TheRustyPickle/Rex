@@ -51,7 +51,11 @@ pub fn search_ui(
             let height = 1;
             let cells = item.iter().enumerate().map(|(index, c)| {
                 let Ok(parsed_num) = c.parse::<f64>() else {
-                    return Cell::from(c.separate_with_commas());
+                    if index == 0 {
+                        return Cell::from(c.to_string());
+                    } else {
+                        return Cell::from(c.separate_with_commas());
+                    }
                 };
 
                 let lerp_id = format!("search_table:{index}:{row_index}");
