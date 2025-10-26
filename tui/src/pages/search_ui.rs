@@ -53,9 +53,8 @@ pub fn search_ui(
                 let Ok(parsed_num) = c.parse::<f64>() else {
                     if index == 0 {
                         return Cell::from(c.to_string());
-                    } else {
-                        return Cell::from(c.separate_with_commas());
                     }
+                    return Cell::from(c.separate_with_commas());
                 };
 
                 let lerp_id = format!("search_table:{index}:{row_index}");
