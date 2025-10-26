@@ -18,7 +18,7 @@ pub(crate) fn get_search_txs(
 impl SearchView {
     #[must_use]
     pub fn tx_array(&self) -> Vec<Vec<String>> {
-        self.0.iter().map(FullTx::to_array).collect()
+        self.0.iter().map(|tx| tx.to_array(true)).collect()
     }
 
     #[must_use]
