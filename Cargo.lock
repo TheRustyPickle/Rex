@@ -1934,7 +1934,7 @@ dependencies = [
 
 [[package]]
 name = "rex-app"
-version = "0.2.0"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1947,7 +1947,7 @@ dependencies = [
 
 [[package]]
 name = "rex-db"
-version = "0.2.0"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1963,7 +1963,7 @@ version = "0.2.0"
 
 [[package]]
 name = "rex-tui"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "atty",
@@ -2038,7 +2038,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.4.15",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
