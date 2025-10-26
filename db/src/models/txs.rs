@@ -357,15 +357,21 @@ impl FullTx {
     }
 
     #[must_use]
-    pub fn to_array(&self) -> Vec<String> {
+    pub fn to_array(&self, is_search: bool) -> Vec<String> {
         let mut method = self.from_method.name.clone();
 
         if let Some(to_method) = &self.to_method {
             method = format!("{} → {}", self.from_method.name, to_method.name);
         }
 
+        let date = if is_search {
+            self.date.format("%Y-%m-%d").to_string()
+        } else {
+            self.date.format("%a %d %I:%M %p").to_string()
+        };
+
         vec![
-            self.date.format("%a %d %I:%M %p").to_string(),
+            date,
             self.details.clone().unwrap_or_default(),
             method,
             format!("{:.2}", self.amount.dollar()),

@@ -321,7 +321,10 @@ impl TxViewGroup {
 
     #[must_use]
     pub fn tx_array(&self) -> Vec<Vec<String>> {
-        self.0.iter().map(|tx_view| tx_view.tx.to_array()).collect()
+        self.0
+            .iter()
+            .map(|tx_view| tx_view.tx.to_array(false))
+            .collect()
     }
 
     #[must_use]
