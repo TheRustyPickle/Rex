@@ -322,9 +322,14 @@ pub fn search_ui(
 
     if let Some(a) = search_table.state.selected() {
         table_area = table_area.highlight_symbol(">> ");
-        if search_table.items[a][4] == "Expense" {
+        let income_strings = ["Income", "Borrow", "Lend Repay"];
+        let expense_strings = ["Expense", "Lend", "Borrow Repay"];
+
+        let target_string = &search_table.items[a][4].as_str();
+
+        if expense_strings.contains(target_string) {
             table_area = table_area.row_highlight_style(selected_style_expense);
-        } else if search_table.items[a][4] == "Income" {
+        } else if income_strings.contains(target_string) {
             table_area = table_area.row_highlight_style(selected_style_income);
         } else if search_table.items[a][4] == "Transfer" {
             table_area = table_area.row_highlight_style(Style::default().bg(SELECTED));

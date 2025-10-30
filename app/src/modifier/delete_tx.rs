@@ -19,7 +19,7 @@ pub(crate) fn delete_tx(tx: &FullTx, db_conn: &mut impl ConnCache) -> Result<()>
 
     // Reverse the transaction effect on balances.
     match &tx.tx_type {
-        TxType::Income => {
+        TxType::Income | TxType::Borrow | TxType::LendRepay => {
             let mut balance = current_balance.remove(&from_method).unwrap();
             let mut final_balance_entry = final_balance.get(&from_method).unwrap().clone();
 
@@ -30,7 +30,7 @@ pub(crate) fn delete_tx(tx: &FullTx, db_conn: &mut impl ConnCache) -> Result<()>
 
             balance_to_update.push(balance);
         }
-        TxType::Expense => {
+        TxType::Expense | TxType::Lend | TxType::BorrowRepay => {
             let mut balance = current_balance.remove(&from_method).unwrap();
             let mut final_balance_entry = final_balance.get(&from_method).unwrap().clone();
 

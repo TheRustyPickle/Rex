@@ -39,7 +39,7 @@ pub(crate) fn add_new_tx(
     let mut final_balance_updates = Vec::new();
 
     match tx_type.into() {
-        TxType::Income => {
+        TxType::Income | TxType::Borrow | TxType::LendRepay => {
             let mut balance = current_balance.remove(&from_method).unwrap();
             let mut final_balance_entry = final_balance.get(&from_method).unwrap().clone();
 
@@ -50,7 +50,7 @@ pub(crate) fn add_new_tx(
 
             balance_to_update.push(balance);
         }
-        TxType::Expense => {
+        TxType::Expense | TxType::Lend | TxType::BorrowRepay => {
             let mut balance = current_balance.remove(&from_method).unwrap();
             let mut final_balance_entry = final_balance.get(&from_method).unwrap().clone();
 

@@ -56,6 +56,14 @@ impl<'a> Autofiller<'a> {
             TxType::Expense
         } else if lowercase.starts_with('i') {
             TxType::Income
+        } else if lowercase.starts_with("br") {
+            TxType::BorrowRepay
+        } else if lowercase.starts_with("lr") {
+            TxType::LendRepay
+        } else if lowercase.starts_with('b') {
+            TxType::Borrow
+        } else if lowercase.starts_with('l') {
+            TxType::Lend
         } else {
             let tx_types = TX_TYPES
                 .iter()
