@@ -6,9 +6,8 @@ use rex_app::conn::DbConn;
 use rex_app::views::TxViewGroup;
 use thousands::Separable;
 
-use crate::page_handler::{
-    BACKGROUND, BLUE, BOX, HEADER, HomeRow, HomeTab, IndexedData, RED, SELECTED, TEXT, TableData,
-};
+use crate::page_handler::{HomeRow, HomeTab, IndexedData, TableData};
+use crate::theme::Theme;
 use crate::utility::{LerpState, create_tab, main_block, styled_block};
 
 pub const BALANCE_BOLD: [&str; 7] = [
@@ -30,6 +29,7 @@ pub fn home_ui(
     current_tab: &HomeTab,
     lerp_state: &mut LerpState,
     view_group: &mut TxViewGroup,
+    theme: &Theme,
     conn: &mut DbConn,
 ) {
     let all_methods: Vec<String> = conn
@@ -49,8 +49,12 @@ pub fn home_ui(
     let size = f.area();
 
     // Used to highlight Changes on Balance section of Home Page
-    let selected_style_income = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
-    let selected_style_expense = Style::default().fg(RED).add_modifier(Modifier::REVERSED);
+    let selected_style_income = Style::default()
+        .fg(theme.positive())
+        .add_modifier(Modifier::REVERSED);
+    let selected_style_expense = Style::default()
+        .fg(theme.negative())
+        .add_modifier(Modifier::REVERSED);
 
     let tx_count = home_table.items.len();
     let lerp_id = "home_tx_count";
@@ -61,10 +65,10 @@ pub fn home_ui(
     // Transaction widget top row/header to highlight what each data will mean
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
+        .map(|h| Cell::from(*h).style(Style::default().fg(theme.background())));
 
     let header = Row::new(header_cells)
-        .style(Style::default().bg(HEADER))
+        .style(Style::default().bg(theme.header()))
         .height(1)
         .bottom_margin(0);
 
@@ -87,7 +91,7 @@ pub fn home_ui(
             Row::new(cells)
                 .height(1)
                 .bottom_margin(0)
-                .style(Style::default().bg(BACKGROUND).fg(TEXT))
+                .style(Style::default().bg(theme.background()).fg(theme.text()))
         });
 
     // Decides how many chunks of spaces in the terminal will be.
@@ -112,11 +116,11 @@ pub fn home_ui(
         ])
         .split(size);
 
-    f.render_widget(main_block(), size);
+    f.render_widget(main_block(theme), size);
 
-    let mut month_tab = create_tab(months, "Months");
+    let mut month_tab = create_tab(months, "Months", theme);
 
-    let mut year_tab = create_tab(years, "Years");
+    let mut year_tab = create_tab(years, "Years", theme);
 
     // set up the table columns and their size
     // resizing the table headers to match an % of the
@@ -134,7 +138,7 @@ pub fn home_ui(
         ],
     )
     .header(header)
-    .block(styled_block(&table_name));
+    .block(styled_block(&table_name, theme));
 
     let balance_array = view_group
         .balance_array(home_table.state.selected(), conn)
@@ -193,9 +197,9 @@ pub fn home_ui(
             };
 
             if c.contains('↑') {
-                Cell::from(c).style(Style::default().fg(BLUE))
+                Cell::from(c).style(Style::default().fg(theme.positive()))
             } else if c.contains('↓') {
-                Cell::from(c).style(Style::default().fg(RED))
+                Cell::from(c).style(Style::default().fg(theme.negative()))
             } else if all_methods.contains(&c) || BALANCE_BOLD.contains(&c.as_str()) {
                 Cell::from(c).style(Style::default().add_modifier(Modifier::BOLD))
             } else {
@@ -205,26 +209,32 @@ pub fn home_ui(
         Row::new(cells)
             .height(height)
             .bottom_margin(0)
-            .style(Style::default().fg(TEXT))
+            .style(Style::default().fg(theme.text()))
     });
 
     // Use the acquired width data to the allocated spaces
     // between columns on Balance widget.
     let balance_area = Table::new(bal_data, width_data.clone())
-        .block(styled_block("Balance"))
-        .style(Style::default().fg(BOX));
+        .block(styled_block("Balance", theme))
+        .style(Style::default().fg(theme.border()));
 
     match current_tab {
         // Previously added a black block to year and month widget if a value is not selected
         // Now we will turn that black block into green if a value is selected
         HomeTab::Months => {
-            month_tab = month_tab
-                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+            month_tab = month_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(theme.selected()),
+            );
         }
 
         HomeTab::Years => {
-            year_tab = year_tab
-                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+            year_tab = year_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(theme.selected()),
+            );
         }
         // Changes the color of row based on Expense or Income tx type on Transaction widget.
         HomeTab::Table => {
@@ -241,7 +251,8 @@ pub fn home_ui(
                 } else if income_strings.contains(target_string) {
                     table_area = table_area.row_highlight_style(selected_style_income);
                 } else if home_table.items[a][4] == "Transfer" {
-                    table_area = table_area.row_highlight_style(Style::default().bg(SELECTED));
+                    table_area =
+                        table_area.row_highlight_style(Style::default().bg(theme.selected()));
                 }
             }
         }

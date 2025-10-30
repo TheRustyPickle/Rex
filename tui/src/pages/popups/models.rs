@@ -8,7 +8,8 @@ use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, FromRepr};
 
 use crate::config::Config;
-use crate::page_handler::{BLUE, RED, TableData};
+use crate::page_handler::TableData;
+use crate::theme::Theme;
 use crate::utility::{RESTRICTED, add_char_to};
 
 pub enum PopupType {
@@ -125,37 +126,37 @@ impl InfoPopup {
 }
 
 impl DeletionChoices {
-    fn to_choice(self) -> ChoiceDetails {
+    fn to_choice(self, theme: &Theme) -> ChoiceDetails {
         match self {
             Self::Yes => ChoiceDetails {
                 text: self.to_string(),
-                color: RED,
+                color: theme.negative(),
             },
             Self::No => ChoiceDetails {
                 text: self.to_string(),
-                color: BLUE,
+                color: theme.positive(),
             },
         }
     }
 }
 
 impl ConfigChoices {
-    fn to_choice(self) -> ChoiceDetails {
+    fn to_choice(self, theme: &Theme) -> ChoiceDetails {
         ChoiceDetails {
             text: self.to_string(),
-            color: BLUE,
+            color: theme.positive(),
         }
     }
 }
 
 impl PopupType {
-    pub fn show_ui(&mut self, f: &mut Frame) {
+    pub fn show_ui(&mut self, f: &mut Frame, theme: &Theme) {
         match self {
-            PopupType::Info(info) => info.show_ui(f),
-            PopupType::Choice(choice) => choice.show_ui(f),
-            PopupType::Reposition(reposition) => reposition.show_ui(f),
-            PopupType::NewPaths(new_paths) => new_paths.show_ui(f),
-            PopupType::Input(input) => input.show_ui(f),
+            PopupType::Info(info) => info.show_ui(f, theme),
+            PopupType::Choice(choice) => choice.show_ui(f, theme),
+            PopupType::Reposition(reposition) => reposition.show_ui(f, theme),
+            PopupType::NewPaths(new_paths) => new_paths.show_ui(f, theme),
+            PopupType::Input(input) => input.show_ui(f, theme),
             PopupType::Nothing => {}
         }
     }
@@ -320,9 +321,9 @@ impl PopupType {
         }
     }
 
-    pub fn new_choice_deletion() -> Self {
+    pub fn new_choice_deletion(theme: &Theme) -> Self {
         let choices: Vec<ChoiceDetails> = DeletionChoices::iter()
-            .map(DeletionChoices::to_choice)
+            .map(|v| v.to_choice(theme))
             .collect();
 
         let table_items = choices.iter().map(|c| vec![c.text.clone()]).collect();
@@ -345,10 +346,9 @@ impl PopupType {
         }
     }
 
-    pub fn new_choice_config() -> Self {
-        let choices: Vec<ChoiceDetails> = ConfigChoices::iter()
-            .map(ConfigChoices::to_choice)
-            .collect();
+    pub fn new_choice_config(theme: &Theme) -> Self {
+        let choices: Vec<ChoiceDetails> =
+            ConfigChoices::iter().map(|v| v.to_choice(theme)).collect();
 
         let table_items = choices.iter().map(|c| vec![c.text.clone()]).collect();
         let mut table_data = TableData::new(table_items);
@@ -361,8 +361,8 @@ impl PopupType {
         })
     }
 
-    pub fn new_choice_config_forced() -> Self {
-        let choices = vec![ConfigChoices::AddNewTxMethod.to_choice()];
+    pub fn new_choice_config_forced(theme: &Theme) -> Self {
+        let choices = vec![ConfigChoices::AddNewTxMethod.to_choice(theme)];
 
         let table_items = choices.iter().map(|c| vec![c.text.clone()]).collect();
         let mut table_data = TableData::new(table_items);
@@ -495,7 +495,7 @@ impl PopupType {
         }
     }
 
-    pub fn new_choice_methods(conn: &mut DbConn) -> Result<Self> {
+    pub fn new_choice_methods(conn: &mut DbConn, theme: &Theme) -> Result<Self> {
         let tx_methods = conn.get_tx_methods_sorted();
 
         if tx_methods.is_empty() {
@@ -508,7 +508,7 @@ impl PopupType {
             .iter()
             .map(|c| ChoiceDetails {
                 text: c.name.clone(),
-                color: BLUE,
+                color: theme.positive(),
             })
             .collect();
 

@@ -3,12 +3,12 @@ use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::style::{Modifier, Style};
 use ratatui::widgets::{Paragraph, Wrap};
 
-use crate::page_handler::{BACKGROUND, RED, TEXT};
 use crate::pages::{A, F, H, J, Q, R, V, W, Y, Z};
+use crate::theme::Theme;
 use crate::utility::{create_bolded_text, main_block, styled_block};
 
 /// The function draws the Initial page of the interface.
-pub fn initial_ui(f: &mut Frame, start_from: usize) {
+pub fn initial_ui(f: &mut Frame, start_from: usize, theme: &Theme) {
     let size = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -35,7 +35,7 @@ pub fn initial_ui(f: &mut Frame, start_from: usize) {
         .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
         .split(horizontal_help_chunks[1]);
 
-    f.render_widget(main_block(), size);
+    f.render_widget(main_block(theme), size);
 
     // This is the text that is shown in the startup which is the project's name in ASCII format.
     let text = r"   _____    ______  __   __
@@ -141,8 +141,8 @@ Esc: Stop editing a field";
     let paragraph = Paragraph::new(upper_text)
         .style(
             Style::default()
-                .bg(BACKGROUND)
-                .fg(TEXT)
+                .bg(theme.background())
+                .fg(theme.text())
                 .add_modifier(Modifier::BOLD),
         )
         .alignment(Alignment::Center);
@@ -150,30 +150,30 @@ Esc: Stop editing a field";
     let paragraph_2 = Paragraph::new(middle_text)
         .style(
             Style::default()
-                .bg(BACKGROUND)
-                .fg(RED)
+                .bg(theme.background())
+                .fg(theme.negative())
                 .add_modifier(Modifier::BOLD),
         )
         .alignment(Alignment::Center);
 
     let help_1 = Paragraph::new(first_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Page Keys"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Page Keys", theme))
         .wrap(Wrap { trim: true });
 
     let help_2 = Paragraph::new(second_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Other Keys"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Other Keys", theme))
         .wrap(Wrap { trim: true });
 
     let help_3 = Paragraph::new(third_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Home Page Keys"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Home Page Keys", theme))
         .wrap(Wrap { trim: true });
 
     let help_4 = Paragraph::new(fourth_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Transaction Field Keys"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Transaction Field Keys", theme))
         .wrap(Wrap { trim: true });
 
     f.render_widget(paragraph, chunks[0]);

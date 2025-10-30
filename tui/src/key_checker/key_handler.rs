@@ -17,6 +17,7 @@ use crate::pages::{
     ChoicePopupState, ConfigChoices, DeletionChoices, InfoPopupState, MovementDirection,
     NewPathChoices, PopupType,
 };
+use crate::theme::Theme;
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, sort_table_data};
 
@@ -66,6 +67,7 @@ pub struct InputKeyHandler<'a> {
     chart_activated_methods: &'a mut HashMap<String, bool>,
     lerp_state: &'a mut LerpState,
     config: &'a mut Config,
+    theme: &'a mut Theme,
     conn: &'a mut DbConn,
 }
 
@@ -112,6 +114,7 @@ impl<'a> InputKeyHandler<'a> {
         chart_activated_methods: &'a mut HashMap<String, bool>,
         lerp_state: &'a mut LerpState,
         config: &'a mut Config,
+        theme: &'a mut Theme,
         conn: &'a mut DbConn,
     ) -> InputKeyHandler<'a> {
         let total_tags = conn.cache.tags.len();
@@ -158,6 +161,7 @@ impl<'a> InputKeyHandler<'a> {
             chart_activated_methods,
             lerp_state,
             config,
+            theme,
             conn,
         }
     }
@@ -262,7 +266,7 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     pub fn do_config_popup(&mut self) {
-        *self.popup_status = PopupType::new_choice_config();
+        *self.popup_status = PopupType::new_choice_config(self.theme);
     }
 
     /// Turns on deletion confirmation popup
@@ -270,12 +274,12 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::Home => {
                 if self.home_table.state.selected().is_some() {
-                    *self.popup_status = PopupType::new_choice_deletion();
+                    *self.popup_status = PopupType::new_choice_deletion(self.theme);
                 }
             }
             CurrentUi::Search => {
                 if self.search_table.state.selected().is_some() {
-                    *self.popup_status = PopupType::new_choice_deletion();
+                    *self.popup_status = PopupType::new_choice_deletion(self.theme);
                 }
             }
             _ => {}
@@ -838,7 +842,7 @@ impl<'a> InputKeyHandler<'a> {
                         *self.popup_status = PopupType::new_path(true, self.config);
                     }
                     ConfigChoices::RenameTxMethod => {
-                        *self.popup_status = PopupType::new_choice_methods(self.conn)?;
+                        *self.popup_status = PopupType::new_choice_methods(self.conn, self.theme)?;
                     }
                     ConfigChoices::AddNewTxMethod => {
                         *self.popup_status = PopupType::new_input(None);
