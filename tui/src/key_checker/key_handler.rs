@@ -60,7 +60,6 @@ pub struct InputKeyHandler<'a> {
     activity_tab: &'a mut ActivityTab,
     activity_view: &'a mut ActivityView,
     activity_table: &'a mut TableData,
-    total_tags: usize,
     chart_hidden_mode: &'a mut bool,
     chart_hidden_legends: &'a mut bool,
     summary_hidden_mode: &'a mut bool,
@@ -117,7 +116,6 @@ impl<'a> InputKeyHandler<'a> {
         theme: &'a mut Theme,
         conn: &'a mut DbConn,
     ) -> InputKeyHandler<'a> {
-        let total_tags = conn.cache.tags.len();
         InputKeyHandler {
             key,
             page,
@@ -154,7 +152,6 @@ impl<'a> InputKeyHandler<'a> {
             activity_tab,
             activity_view,
             activity_table,
-            total_tags,
             chart_hidden_mode,
             chart_hidden_legends,
             summary_hidden_mode,
@@ -307,7 +304,7 @@ impl<'a> InputKeyHandler<'a> {
 
         if *self.summary_hidden_mode {
             *self.summary_tab = SummaryTab::Table;
-            if self.total_tags > 0 {
+            if !self.summary_table.items.is_empty() {
                 self.summary_table.state.select(Some(0));
             }
         } else {
@@ -1191,6 +1188,8 @@ impl InputKeyHandler<'_> {
 
     /// Handle Arrow Up keypress on the Summary page
     fn do_summary_up(&mut self) {
+        let total_tags = self.summary_table.items.len();
+
         if !*self.summary_hidden_mode {
             match self.summary_modes.index {
                 0 => match self.summary_tab {
@@ -1202,8 +1201,8 @@ impl InputKeyHandler<'_> {
                         }
                     }
                     SummaryTab::ModeSelection => {
-                        if self.total_tags > 0 {
-                            self.summary_table.state.select(Some(self.total_tags - 1));
+                        if total_tags > 0 {
+                            self.summary_table.state.select(Some(total_tags - 1));
                             *self.summary_tab = self.summary_tab.change_tab_up_monthly();
                         } else {
                             *self.summary_tab = self.summary_tab.change_tab_up_monthly();
@@ -1222,8 +1221,8 @@ impl InputKeyHandler<'_> {
                         }
                     }
                     SummaryTab::ModeSelection => {
-                        if self.total_tags > 0 {
-                            self.summary_table.state.select(Some(self.total_tags - 1));
+                        if total_tags > 0 {
+                            self.summary_table.state.select(Some(total_tags - 1));
                             *self.summary_tab = self.summary_tab.change_tab_up_yearly();
                         } else {
                             *self.summary_tab = self.summary_tab.change_tab_up_yearly();
@@ -1242,8 +1241,8 @@ impl InputKeyHandler<'_> {
                         }
                     }
                     SummaryTab::ModeSelection => {
-                        if self.total_tags > 0 {
-                            self.summary_table.state.select(Some(self.total_tags - 1));
+                        if total_tags > 0 {
+                            self.summary_table.state.select(Some(total_tags - 1));
                             *self.summary_tab = self.summary_tab.change_tab_up_all_time();
                         } else {
                             *self.summary_tab = self.summary_tab.change_tab_up_all_time();
@@ -1255,9 +1254,9 @@ impl InputKeyHandler<'_> {
                 },
                 _ => {}
             }
-        } else if self.total_tags > 0 {
+        } else if total_tags > 0 {
             if self.summary_table.state.selected() == Some(0) {
-                self.summary_table.state.select(Some(self.total_tags - 1));
+                self.summary_table.state.select(Some(total_tags - 1));
             } else {
                 self.summary_table.previous();
             }
@@ -1266,18 +1265,20 @@ impl InputKeyHandler<'_> {
 
     /// Handle Arrow Down keypress on the Summary page
     fn do_summary_down(&mut self) {
+        let total_tags = self.summary_table.items.len();
+
         if !*self.summary_hidden_mode {
             match self.summary_modes.index {
                 0 => match self.summary_tab {
                     SummaryTab::Table => {
-                        if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                        if self.summary_table.state.selected() == Some(total_tags - 1) {
                             *self.summary_tab = self.summary_tab.change_tab_down_monthly();
                         } else {
                             self.summary_table.next();
                         }
                     }
                     SummaryTab::Months => {
-                        if self.total_tags > 0 {
+                        if total_tags > 0 {
                             self.summary_table.state.select(Some(0));
                             *self.summary_tab = self.summary_tab.change_tab_down_monthly();
                         } else {
@@ -1290,14 +1291,14 @@ impl InputKeyHandler<'_> {
                 },
                 1 => match self.summary_tab {
                     SummaryTab::Table => {
-                        if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                        if self.summary_table.state.selected() == Some(total_tags - 1) {
                             *self.summary_tab = self.summary_tab.change_tab_down_yearly();
                         } else {
                             self.summary_table.next();
                         }
                     }
                     SummaryTab::Years => {
-                        if self.total_tags > 0 {
+                        if total_tags > 0 {
                             self.summary_table.state.select(Some(0));
                             *self.summary_tab = self.summary_tab.change_tab_down_yearly();
                         } else {
@@ -1310,14 +1311,14 @@ impl InputKeyHandler<'_> {
                 },
                 2 => match self.summary_tab {
                     SummaryTab::Table => {
-                        if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                        if self.summary_table.state.selected() == Some(total_tags - 1) {
                             *self.summary_tab = self.summary_tab.change_tab_down_all_time();
                         } else {
                             self.summary_table.next();
                         }
                     }
                     SummaryTab::ModeSelection => {
-                        if self.total_tags > 0 {
+                        if total_tags > 0 {
                             self.summary_table.state.select(Some(0));
                             *self.summary_tab = self.summary_tab.change_tab_down_all_time();
                         } else {
@@ -1330,8 +1331,8 @@ impl InputKeyHandler<'_> {
                 },
                 _ => {}
             }
-        } else if self.total_tags > 0 {
-            if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+        } else if total_tags > 0 {
+            if self.summary_table.state.selected() == Some(total_tags - 1) {
                 self.summary_table.state.select(Some(0));
             } else {
                 self.summary_table.next();
