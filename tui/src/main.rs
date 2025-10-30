@@ -3,6 +3,7 @@ mod key_checker;
 mod outputs;
 mod page_handler;
 mod pages;
+mod theme;
 mod tx_handler;
 mod utility;
 

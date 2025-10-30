@@ -16,7 +16,8 @@ use std::io::{Stdout, stdout};
 use std::path::{Path, PathBuf};
 
 use crate::outputs::ComparisonType;
-use crate::page_handler::{BACKGROUND, BOX, HIGHLIGHTED, IndexedData, RED, SortingType, TEXT};
+use crate::page_handler::{IndexedData, SortingType};
+use crate::theme::Theme;
 
 pub const RESTRICTED: [&str; 8] = [
     "Total",
@@ -53,11 +54,11 @@ pub fn exit_tui_interface() -> Result<()> {
 
 /// Returns a styled block for UI to use
 #[must_use]
-pub fn styled_block(title: &str) -> Block<'_> {
+pub fn styled_block<'a>(title: &'a str, theme: &'a Theme) -> Block<'a> {
     Block::default()
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
-        .style(Style::default().bg(BACKGROUND).fg(BOX))
+        .style(Style::default().bg(theme.background()).fg(theme.border()))
         .title(Span::styled(
             title,
             Style::default().add_modifier(Modifier::BOLD),
@@ -65,11 +66,11 @@ pub fn styled_block(title: &str) -> Block<'_> {
 }
 
 #[must_use]
-pub fn styled_block_no_top(title: &str) -> Block<'_> {
+pub fn styled_block_no_top<'a>(title: &'a str, theme: &'a Theme) -> Block<'a> {
     Block::default()
         .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
         .border_type(BorderType::Rounded)
-        .style(Style::default().bg(BACKGROUND).fg(BOX))
+        .style(Style::default().bg(theme.border()).fg(theme.border()))
         .title(Span::styled(
             title,
             Style::default().add_modifier(Modifier::BOLD),
@@ -77,11 +78,11 @@ pub fn styled_block_no_top(title: &str) -> Block<'_> {
 }
 
 #[must_use]
-pub fn styled_block_no_bottom(title: &str) -> Block<'_> {
+pub fn styled_block_no_bottom<'a>(title: &'a str, theme: &'a Theme) -> Block<'a> {
     Block::default()
         .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
         .border_type(BorderType::Rounded)
-        .style(Style::default().bg(BACKGROUND).fg(BOX))
+        .style(Style::default().bg(theme.background()).fg(theme.border()))
         .title(Span::styled(
             title,
             Style::default().add_modifier(Modifier::BOLD),
@@ -89,8 +90,8 @@ pub fn styled_block_no_bottom(title: &str) -> Block<'_> {
 }
 
 #[must_use]
-pub fn main_block<'a>() -> Block<'a> {
-    Block::default().style(Style::default().bg(BACKGROUND).fg(BOX))
+pub fn main_block<'a>(theme: &'a Theme) -> Block<'a> {
+    Block::default().style(Style::default().bg(theme.background()).fg(theme.border()))
 }
 
 /// Takes a string and makes any word before the first occurrence of : to Bold
@@ -116,21 +117,21 @@ pub fn create_bolded_text(text: &str) -> Vec<Line<'_>> {
 
 /// Tabs from some given data for the UI
 #[must_use]
-pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str) -> Tabs<'a> {
+pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str, theme: &'a Theme) -> Tabs<'a> {
     let titles: Vec<Line> = data
         .titles
         .iter()
-        .map(|t| Line::from(vec![Span::styled(t, Style::default().fg(TEXT))]))
+        .map(|t| Line::from(vec![Span::styled(t, Style::default().fg(theme.text()))]))
         .collect();
 
     Tabs::new(titles)
-        .block(styled_block(name))
+        .block(styled_block(name, theme))
         .select(data.index)
-        .style(Style::default().fg(BOX))
+        .style(Style::default().fg(theme.border()))
         .highlight_style(
             Style::default()
                 .add_modifier(Modifier::BOLD)
-                .bg(HIGHLIGHTED),
+                .bg(theme.selectable()),
         )
 }
 
@@ -140,23 +141,24 @@ pub fn create_tab_activation<'a>(
     data: &'a IndexedData,
     name: &'a str,
     activation: &HashMap<String, bool>,
+    theme: &'a Theme,
 ) -> Tabs<'a> {
     let titles: Vec<Line> = data
         .titles
         .iter()
         .map(|t| {
             if activation[t] {
-                Line::from(vec![Span::styled(t, Style::default().fg(TEXT))])
+                Line::from(vec![Span::styled(t, Style::default().fg(theme.text()))])
             } else {
-                Line::from(vec![Span::styled(t, Style::default().fg(RED))])
+                Line::from(vec![Span::styled(t, Style::default().fg(theme.negative()))])
             }
         })
         .collect();
 
     Tabs::new(titles)
-        .block(styled_block(name))
+        .block(styled_block(name, theme))
         .select(data.index)
-        .style(Style::default().fg(BOX))
+        .style(Style::default().fg(theme.border()))
         .highlight_style(Style::default())
 }
 

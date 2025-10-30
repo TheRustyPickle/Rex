@@ -5,9 +5,8 @@ use ratatui::widgets::{Cell, Row, Table};
 use rex_app::views::ActivityView;
 use thousands::Separable;
 
-use crate::page_handler::{
-    ActivityTab, BACKGROUND, HEADER, IndexedData, SELECTED, TEXT, TableData,
-};
+use crate::page_handler::{ActivityTab, IndexedData, TableData};
+use crate::theme::Theme;
 use crate::utility::{LerpState, create_tab, main_block, styled_block};
 
 pub fn activity_ui(
@@ -18,6 +17,7 @@ pub fn activity_ui(
     activity_view: &ActivityView,
     table_data: &mut TableData,
     lerp_state: &mut LerpState,
+    theme: &Theme,
 ) {
     let activity_txs_data = activity_view.get_activity_txs_table(table_data.state.selected());
     let mut activity_txs_table = TableData::new(activity_txs_data);
@@ -78,7 +78,7 @@ pub fn activity_ui(
         ])
         .split(size);
 
-    f.render_widget(main_block(), size);
+    f.render_widget(main_block(theme), size);
 
     let tx_count = activity_view.total_activity();
     let lerp_id = "activity_tx_count";
@@ -88,19 +88,19 @@ pub fn activity_ui(
 
     let activity_header_cells = ["Created At", "Activity Type"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
+        .map(|h| Cell::from(*h).style(Style::default().fg(theme.background())));
 
     let activity_tx_header_cells = activity_tx_header_vec
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
+        .map(|h| Cell::from(*h).style(Style::default().fg(theme.background())));
 
     let activity_header = Row::new(activity_header_cells)
-        .style(Style::default().bg(HEADER))
+        .style(Style::default().bg(theme.header()))
         .height(1)
         .bottom_margin(0);
 
     let activity_tx_header = Row::new(activity_tx_header_cells)
-        .style(Style::default().bg(HEADER))
+        .style(Style::default().bg(theme.header()))
         .height(1)
         .bottom_margin(0);
 
@@ -110,7 +110,7 @@ pub fn activity_ui(
         Row::new(cells)
             .height(height as u16)
             .bottom_margin(0)
-            .style(Style::default().bg(BACKGROUND).fg(TEXT))
+            .style(Style::default().bg(theme.background()).fg(theme.text()))
     });
 
     let activity_tx_rows = activity_txs_table.items.iter().map(|item| {
@@ -129,7 +129,7 @@ pub fn activity_ui(
         Row::new(cells)
             .height(height as u16)
             .bottom_margin(0)
-            .style(Style::default().bg(BACKGROUND).fg(TEXT))
+            .style(Style::default().bg(theme.background()).fg(theme.text()))
     });
 
     let mut activity_table_area = Table::new(
@@ -137,29 +137,35 @@ pub fn activity_ui(
         [Constraint::Percentage(50), Constraint::Percentage(50)],
     )
     .header(activity_header)
-    .block(styled_block(&table_name));
+    .block(styled_block(&table_name, theme));
 
     let activity_txs_table_area = Table::new(activity_tx_rows, activity_tx_header_widths)
         .header(activity_tx_header)
-        .block(styled_block("TX Details"));
+        .block(styled_block("TX Details", theme));
 
-    let mut month_tab = create_tab(months, "Months");
-    let mut year_tab = create_tab(years, "Years");
+    let mut month_tab = create_tab(months, "Months", theme);
+    let mut year_tab = create_tab(years, "Years", theme);
 
     match current_tab {
         ActivityTab::Months => {
-            month_tab = month_tab
-                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+            month_tab = month_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(theme.selected()),
+            );
         }
         ActivityTab::Years => {
-            year_tab = year_tab
-                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+            year_tab = year_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(theme.selected()),
+            );
         }
         ActivityTab::List => {
             if table_data.state.selected().is_some() {
                 activity_table_area = activity_table_area
                     .highlight_symbol(">> ")
-                    .row_highlight_style(Style::default().bg(SELECTED));
+                    .row_highlight_style(Style::default().bg(theme.selected()));
             }
         }
     }

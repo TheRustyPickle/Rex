@@ -7,9 +7,8 @@ use rex_app::ui_helper::DateType;
 use thousands::Separable;
 
 use crate::outputs::TxType;
-use crate::page_handler::{
-    BACKGROUND, BLUE, GRAY, HEADER, LogType, RED, SELECTED, TEXT, TableData, TxTab,
-};
+use crate::page_handler::{LogType, TableData, TxTab};
+use crate::theme::Theme;
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, main_block, styled_block};
 
@@ -20,6 +19,7 @@ pub fn search_ui(
     search_table: &mut TableData,
     date_type: DateType,
     lerp_state: &mut LerpState,
+    theme: &Theme,
 ) {
     // Get the data to insert into the Status widget of this page
 
@@ -30,8 +30,12 @@ pub fn search_ui(
     // The index of the cursor position
     let current_index = search_data.get_current_index();
 
-    let selected_style_income = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
-    let selected_style_expense = Style::default().fg(RED).add_modifier(Modifier::REVERSED);
+    let selected_style_income = Style::default()
+        .fg(theme.positive())
+        .add_modifier(Modifier::REVERSED);
+    let selected_style_expense = Style::default()
+        .fg(theme.negative())
+        .add_modifier(Modifier::REVERSED);
 
     let size = f.area();
 
@@ -65,7 +69,7 @@ pub fn search_ui(
             Row::new(cells)
                 .height(height as u16)
                 .bottom_margin(0)
-                .style(Style::default().bg(BACKGROUND).fg(TEXT))
+                .style(Style::default().bg(theme.background()).fg(theme.text()))
         });
 
     let from_method_name = match tx_type {
@@ -81,10 +85,10 @@ pub fn search_ui(
 
     let header_cells = ["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
+        .map(|h| Cell::from(*h).style(Style::default().fg(theme.background())));
 
     let header = Row::new(header_cells)
-        .style(Style::default().bg(HEADER))
+        .style(Style::default().bg(theme.header()))
         .height(1)
         .bottom_margin(0);
 
@@ -133,7 +137,7 @@ pub fn search_ui(
     };
 
     // Creates border around the entire terminal
-    f.render_widget(main_block(), size);
+    f.render_widget(main_block(theme), size);
 
     let mut table_area = Table::new(
         rows,
@@ -147,7 +151,7 @@ pub fn search_ui(
         ],
     )
     .header(header)
-    .block(styled_block(&table_name));
+    .block(styled_block(&table_name, theme));
 
     let mut status_text = vec![];
 
@@ -161,18 +165,22 @@ pub fn search_ui(
                 status_text.push(Line::from(vec![
                     Span::styled(
                         initial,
-                        Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+                        Style::default()
+                            .fg(theme.positive())
+                            .add_modifier(Modifier::BOLD),
                     ),
-                    Span::styled(format!(":{rest}"), Style::default().fg(BLUE)),
+                    Span::styled(format!(":{rest}"), Style::default().fg(theme.positive())),
                 ]));
             }
             LogType::Error => {
                 status_text.push(Line::from(vec![
                     Span::styled(
                         initial,
-                        Style::default().fg(RED).add_modifier(Modifier::BOLD),
+                        Style::default()
+                            .fg(theme.negative())
+                            .add_modifier(Modifier::BOLD),
                     ),
-                    Span::styled(format!(":{rest}"), Style::default().fg(RED)),
+                    Span::styled(format!(":{rest}"), Style::default().fg(theme.negative())),
                 ]));
             }
         }
@@ -197,31 +205,31 @@ pub fn search_ui(
         TxTab::Details => {
             details_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[1])),
-                Span::styled(input_data[7], Style::default().fg(GRAY)),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
             ]);
         }
         TxTab::FromMethod => {
             from_method_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[2])),
-                Span::styled(input_data[7], Style::default().fg(GRAY)),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
             ]);
         }
         TxTab::ToMethod => {
             to_method_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[3])),
-                Span::styled(input_data[7], Style::default().fg(GRAY)),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
             ]);
         }
         TxTab::Tags => {
             tags_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[6])),
-                Span::styled(input_data[7], Style::default().fg(GRAY)),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
             ]);
         }
         TxTab::TxType => {
             tx_type_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[5])),
-                Span::styled(input_data[7], Style::default().fg(GRAY)),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
             ]);
         }
         _ => {}
@@ -229,43 +237,43 @@ pub fn search_ui(
 
     // Creates the widgets to ready it for rendering
     let status_sec = Paragraph::new(status_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Status"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Status", theme))
         .alignment(Alignment::Left);
 
     let date_sec = Paragraph::new(date_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block(date_name))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block(date_name, theme))
         .alignment(Alignment::Left);
 
     let from_method_sec = Paragraph::new(from_method_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block(from_method_name))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block(from_method_name, theme))
         .alignment(Alignment::Left);
 
     let to_method_sec = Paragraph::new(to_method_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("To Method"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("To Method", theme))
         .alignment(Alignment::Left);
 
     let amount_sec = Paragraph::new(amount_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Amount"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Amount", theme))
         .alignment(Alignment::Left);
 
     let tx_type_sec = Paragraph::new(tx_type_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("TX Type"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("TX Type", theme))
         .alignment(Alignment::Left);
 
     let details_sec = Paragraph::new(details_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Details"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Details", theme))
         .alignment(Alignment::Left);
 
     let tags_sec = Paragraph::new(tags_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Tags"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Tags", theme))
         .alignment(Alignment::Left);
 
     // We will be adding a cursor based on which tab is selected + the selected index.
@@ -332,7 +340,7 @@ pub fn search_ui(
         } else if income_strings.contains(target_string) {
             table_area = table_area.row_highlight_style(selected_style_income);
         } else if search_table.items[a][4] == "Transfer" {
-            table_area = table_area.row_highlight_style(Style::default().bg(SELECTED));
+            table_area = table_area.row_highlight_style(Style::default().bg(theme.selected()));
         }
     }
 

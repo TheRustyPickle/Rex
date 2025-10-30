@@ -6,15 +6,15 @@ use ratatui::widgets::{
     BorderType, Borders, Clear, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, Wrap,
 };
 
-use crate::page_handler::{BACKGROUND, RED, TEXT};
 use crate::pages::{
     InfoPopup, InfoPopupState, activity_help_text, add_tx_help_text, chart_help_text, choice_help,
     home_help_text, new_update_text, reposition_help, search_help_text, summary_help_text,
 };
+use crate::theme::Theme;
 use crate::utility::{centered_rect_exact, create_bolded_text, main_block};
 
 impl InfoPopup {
-    pub fn show_ui(&mut self, f: &mut Frame) {
+    pub fn show_ui(&mut self, f: &mut Frame, theme: &Theme) {
         let size = f.area();
         let mut x_value = 80;
         let mut y_value = 30;
@@ -85,7 +85,7 @@ impl InfoPopup {
 
         let area = centered_rect_exact(x_value, y_value, size);
 
-        let block = main_block()
+        let block = main_block(theme)
             .title(title)
             .borders(Borders::ALL)
             .border_type(BorderType::Rounded);
@@ -100,7 +100,7 @@ impl InfoPopup {
         f.render_widget(block, area);
 
         let help_sec = Paragraph::new(Text::from(text))
-            .style(Style::default().bg(BACKGROUND).fg(TEXT))
+            .style(Style::default().bg(theme.background()).fg(theme.text()))
             .wrap(Wrap { trim: true })
             .scroll((self.scroll_position as u16, 0));
 
@@ -108,8 +108,8 @@ impl InfoPopup {
             Paragraph::new("Use Arrow Keys To Scroll. Press Any Other Key To Dismiss")
                 .style(
                     Style::default()
-                        .bg(BACKGROUND)
-                        .fg(RED)
+                        .bg(theme.background())
+                        .fg(theme.negative())
                         .add_modifier(Modifier::BOLD),
                 )
                 .alignment(Alignment::Center);
