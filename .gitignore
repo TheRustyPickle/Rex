@@ -4,3 +4,4 @@
 .fleet
 todo.txt
 *.log
+.env
