@@ -70,7 +70,7 @@ pub fn styled_block_no_top<'a>(title: &'a str, theme: &'a Theme) -> Block<'a> {
     Block::default()
         .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
         .border_type(BorderType::Rounded)
-        .style(Style::default().bg(theme.border()).fg(theme.border()))
+        .style(Style::default().bg(theme.background()).fg(theme.border()))
         .title(Span::styled(
             title,
             Style::default().add_modifier(Modifier::BOLD),
