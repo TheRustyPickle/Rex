@@ -520,7 +520,7 @@ pub fn summary_ui(
     f.render_widget(summary_area_peak, summary_chunk[0]);
 
     if summary_hidden_mode {
-        f.render_widget(table_area, chunks[3]);
+        f.render_stateful_widget(table_area, chunks[3], &mut table_data.state);
         f.render_widget(net_area, chunks[1]);
         f.render_widget(method_area, chunks[0]);
     } else {
