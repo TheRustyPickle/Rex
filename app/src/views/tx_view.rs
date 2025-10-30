@@ -44,11 +44,11 @@ pub(crate) fn get_txs(
 
     for tx in txs {
         match &tx.tx_type {
-            TxType::Income => {
+            TxType::Income | TxType::Borrow | TxType::LendRepay => {
                 let method_id = tx.from_method.id;
                 *last_balance.get_mut(&method_id).unwrap() += tx.amount;
             }
-            TxType::Expense => {
+            TxType::Expense | TxType::Lend | TxType::BorrowRepay => {
                 let method_id = tx.from_method.id;
                 *last_balance.get_mut(&method_id).unwrap() -= tx.amount;
             }
@@ -392,8 +392,8 @@ impl TxViewGroup {
                     let amount = target_tx.tx.amount;
 
                     match target_tx.tx.tx_type {
-                        TxType::Income => balance -= amount,
-                        TxType::Expense => balance += amount,
+                        TxType::Income | TxType::Borrow | TxType::LendRepay => balance -= amount,
+                        TxType::Expense | TxType::Lend | TxType::BorrowRepay => balance += amount,
                         TxType::Transfer => {
                             if method_id == target_tx.tx.from_method.id {
                                 balance += amount;
@@ -443,13 +443,13 @@ impl TxViewGroup {
                 };
 
                 match tx_type {
-                    TxType::Income => {
+                    TxType::Income | TxType::Borrow | TxType::LendRepay => {
                         if from_method == method_id {
                             method_balance += amount;
                             total_balance += amount;
                         }
                     }
-                    TxType::Expense => {
+                    TxType::Expense | TxType::Lend | TxType::BorrowRepay => {
                         if from_method == method_id {
                             method_balance -= amount;
                             total_balance -= amount;

@@ -280,10 +280,10 @@ impl FullTx {
             }
 
             match self.tx_type {
-                TxType::Income => {
+                TxType::Income | TxType::Borrow | TxType::LendRepay => {
                     map.insert(*method_id, format!("↑{:.2}", self.amount.dollar()));
                 }
-                TxType::Expense => {
+                TxType::Expense | TxType::Lend | TxType::BorrowRepay => {
                     map.insert(*method_id, format!("↓{:.2}", self.amount.dollar()));
                 }
                 TxType::Transfer => {
@@ -337,10 +337,10 @@ impl FullTx {
             }
 
             match tx_type {
-                TxType::Income => {
+                TxType::Income | TxType::Borrow | TxType::LendRepay => {
                     map.insert(*method_id, format!("↑{:.2}", amount.dollar()));
                 }
-                TxType::Expense => {
+                TxType::Expense | TxType::Lend | TxType::BorrowRepay => {
                     map.insert(*method_id, format!("↓{:.2}", amount.dollar()));
                 }
                 TxType::Transfer => {

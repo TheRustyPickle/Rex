@@ -1098,7 +1098,7 @@ impl<'a> InputKeyHandler<'a> {
                 .chart_activated_methods
                 .get_mut(selected_method)
                 .ok_or(anyhow!(
-                    "Method {selected_method} not found int eh chart activted methods list"
+                    "Method {selected_method} not found in the chart activated methods list"
                 ))?;
 
             *activation_status = !*activation_status;

@@ -339,6 +339,9 @@ fn migrate_tx(
             final_balance.get_mut(&from_method).unwrap().balance -= amount;
             final_balance.get_mut(&to_method.unwrap()).unwrap().balance += amount;
         }
+        TxType::Borrow | TxType::Lend | TxType::BorrowRepay | TxType::LendRepay => {
+            panic!("This type of transaction should not exist in the database");
+        }
     }
 
     let added_tx = new_tx.insert(db_conn)?;
