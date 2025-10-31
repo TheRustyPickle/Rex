@@ -1,5 +1,5 @@
 use chrono::{Datelike, Days, Months, NaiveDate, NaiveDateTime, NaiveTime};
-use diesel::dsl::{exists, sql};
+use diesel::dsl::{count_star, exists, sql};
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::sql_types::{Integer, Text};
@@ -111,12 +111,16 @@ impl<'a> NewSearch<'a> {
             }
         }
 
-        if let Some(tag_ids) = self.tags.as_ref() {
-            query = query.filter(exists(
-                tx_tags::table
-                    .filter(tx_tags::tx_id.eq(id))
-                    .filter(tx_tags::tag_id.eq_any(tag_ids)),
-            ));
+        if let Some(tag_ids) = self.tags.as_ref()
+            && !tag_ids.is_empty()
+        {
+            let subquery = tx_tags::table
+                .filter(tx_tags::tag_id.eq_any(tag_ids))
+                .group_by(tx_tags::tx_id)
+                .select((tx_tags::tx_id, count_star()))
+                .having(count_star().eq(tag_ids.len() as i64));
+
+            query = query.filter(id.eq_any(subquery.select(tx_tags::tx_id)));
         }
 
         let result = query.select(Tx::as_select()).load(db_conn.conn())?;
