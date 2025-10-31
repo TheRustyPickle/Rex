@@ -205,17 +205,11 @@ pub fn summary_ui(
 
                             return Cell::from(format!("{sym}{new_c:.2}").separate_with_commas());
                         }
-                    } else {
-                        log::info!("No symbol found. {c}");
                     }
                     return Cell::from(c.separate_with_commas());
                 };
 
                 let new_c = lerp_state.lerp(&lerp_id, parsed_num);
-
-                if index == 7 && row_index == 0 && new_c != 0.0 {
-                    log::info!("{new_c} {c} {parsed_num} {lerp_id}")
-                }
 
                 Cell::from(format!("{new_c:.2}").separate_with_commas())
             });
