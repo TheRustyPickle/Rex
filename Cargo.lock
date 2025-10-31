@@ -1960,6 +1960,9 @@ dependencies = [
 [[package]]
 name = "rex-shared"
 version = "0.2.0"
+dependencies = [
+ "chrono",
+]
 
 [[package]]
 name = "rex-tui"
