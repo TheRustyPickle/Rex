@@ -17,11 +17,11 @@ pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Re
 
     for tx in txs {
         match tx.tx_type.as_str().into() {
-            TxType::Income => {
+            TxType::Income | TxType::Borrow | TxType::LendRepay => {
                 let method_id = tx.from_method;
                 *last_balance.get_mut(&method_id).unwrap() += tx.amount;
             }
-            TxType::Expense => {
+            TxType::Expense | TxType::Lend | TxType::BorrowRepay => {
                 let method_id = tx.from_method;
                 *last_balance.get_mut(&method_id).unwrap() -= tx.amount;
             }

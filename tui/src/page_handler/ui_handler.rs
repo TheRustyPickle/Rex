@@ -1,7 +1,6 @@
 use crossterm::event::{self, Event, KeyEventKind, poll};
 use ratatui::Terminal;
 use ratatui::backend::Backend;
-use ratatui::style::Color;
 use rex_app::conn::{DbConn, FetchNature};
 use rex_app::ui_helper::DateType;
 use rex_app::views::SearchView;
@@ -21,18 +20,9 @@ use crate::pages::{
     InfoPopupState, PopupType, activity_ui, add_tx_ui, chart_ui, home_ui, initial_ui, search_ui,
     summary_ui,
 };
+use crate::theme::{Theme, ThemeVariant};
 use crate::tx_handler::TxData;
 use crate::utility::LerpState;
-
-pub const BACKGROUND: Color = Color::Rgb(245, 245, 255);
-pub const TEXT: Color = Color::Rgb(153, 78, 236);
-pub const BOX: Color = Color::Rgb(255, 87, 51);
-pub const SELECTED: Color = Color::Rgb(151, 251, 151);
-pub const HIGHLIGHTED: Color = Color::Rgb(38, 38, 38);
-pub const HEADER: Color = Color::Rgb(0, 150, 255);
-pub const RED: Color = Color::Rgb(255, 51, 51);
-pub const BLUE: Color = Color::Rgb(51, 51, 255);
-pub const GRAY: Color = Color::Rgb(128, 128, 128);
 
 /// Starts the interface and run the app
 pub fn start_app<B: Backend>(
@@ -42,6 +32,8 @@ pub fn start_app<B: Backend>(
     conn: &mut DbConn,
 ) -> Result<HandlingOutput, UiHandlingError> {
     // Setting up some default values. Let's go through all of them
+
+    let mut theme = Theme::new(ThemeVariant::Light);
 
     // Contains the homepage month list that is indexed
     let mut home_months = IndexedData::new_monthly();
@@ -192,7 +184,7 @@ pub fn start_app<B: Backend>(
         if conn.is_tx_method_empty()
             && let PopupType::Nothing = popup_status
         {
-            popup_status = PopupType::new_choice_config_forced();
+            popup_status = PopupType::new_choice_config_forced(&theme);
         }
 
         // Passing out relevant data to the UI function
@@ -207,6 +199,7 @@ pub fn start_app<B: Backend>(
                         &home_tab,
                         &mut lerp_state,
                         &mut home_txs,
+                        &theme,
                         conn,
                     ),
 
@@ -216,10 +209,11 @@ pub fn start_app<B: Backend>(
                         &add_tx_data,
                         &add_tx_tab,
                         &mut lerp_state,
+                        &theme,
                         conn,
                     ),
 
-                    CurrentUi::Initial => initial_ui(f, starter_index),
+                    CurrentUi::Initial => initial_ui(f, starter_index, &theme),
 
                     CurrentUi::Chart => chart_ui(
                         f,
@@ -233,6 +227,7 @@ pub fn start_app<B: Backend>(
                         &chart_activated_methods,
                         &mut lerp_state,
                         &chart_view,
+                        &theme,
                         conn,
                     ),
 
@@ -247,6 +242,7 @@ pub fn start_app<B: Backend>(
                         &summary_sort,
                         &mut lerp_state,
                         &full_summary,
+                        &theme,
                         conn,
                     ),
                     CurrentUi::Search => search_ui(
@@ -256,6 +252,7 @@ pub fn start_app<B: Backend>(
                         &mut search_table,
                         search_date_type,
                         &mut lerp_state,
+                        &theme,
                     ),
                     CurrentUi::Activity => activity_ui(
                         f,
@@ -265,10 +262,11 @@ pub fn start_app<B: Backend>(
                         &activity_view,
                         &mut activity_table,
                         &mut lerp_state,
+                        &theme,
                     ),
                 }
 
-                popup_status.show_ui(f);
+                popup_status.show_ui(f, &theme);
             })
             .map_err(UiHandlingError::Drawing)?;
 
@@ -344,6 +342,7 @@ pub fn start_app<B: Backend>(
                 &mut chart_activated_methods,
                 &mut lerp_state,
                 config,
+                &mut theme,
                 conn,
             );
 

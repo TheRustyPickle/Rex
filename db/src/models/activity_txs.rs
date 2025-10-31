@@ -304,7 +304,12 @@ impl FullActivityTx {
 
                     format!("{to_method} → {from_method}")
                 }
-                TxType::Income | TxType::Expense => self
+                TxType::Income
+                | TxType::Expense
+                | TxType::Borrow
+                | TxType::Lend
+                | TxType::BorrowRepay
+                | TxType::LendRepay => self
                     .from_method
                     .as_ref()
                     .map(|m| m.name.clone())

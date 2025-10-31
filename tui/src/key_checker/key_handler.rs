@@ -17,6 +17,7 @@ use crate::pages::{
     ChoicePopupState, ConfigChoices, DeletionChoices, InfoPopupState, MovementDirection,
     NewPathChoices, PopupType,
 };
+use crate::theme::Theme;
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, sort_table_data};
 
@@ -59,13 +60,13 @@ pub struct InputKeyHandler<'a> {
     activity_tab: &'a mut ActivityTab,
     activity_view: &'a mut ActivityView,
     activity_table: &'a mut TableData,
-    total_tags: usize,
     chart_hidden_mode: &'a mut bool,
     chart_hidden_legends: &'a mut bool,
     summary_hidden_mode: &'a mut bool,
     chart_activated_methods: &'a mut HashMap<String, bool>,
     lerp_state: &'a mut LerpState,
     config: &'a mut Config,
+    theme: &'a mut Theme,
     conn: &'a mut DbConn,
 }
 
@@ -112,9 +113,9 @@ impl<'a> InputKeyHandler<'a> {
         chart_activated_methods: &'a mut HashMap<String, bool>,
         lerp_state: &'a mut LerpState,
         config: &'a mut Config,
+        theme: &'a mut Theme,
         conn: &'a mut DbConn,
     ) -> InputKeyHandler<'a> {
-        let total_tags = conn.cache.tags.len();
         InputKeyHandler {
             key,
             page,
@@ -151,13 +152,13 @@ impl<'a> InputKeyHandler<'a> {
             activity_tab,
             activity_view,
             activity_table,
-            total_tags,
             chart_hidden_mode,
             chart_hidden_legends,
             summary_hidden_mode,
             chart_activated_methods,
             lerp_state,
             config,
+            theme,
             conn,
         }
     }
@@ -262,7 +263,7 @@ impl<'a> InputKeyHandler<'a> {
     }
 
     pub fn do_config_popup(&mut self) {
-        *self.popup_status = PopupType::new_choice_config();
+        *self.popup_status = PopupType::new_choice_config(self.theme);
     }
 
     /// Turns on deletion confirmation popup
@@ -270,12 +271,12 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::Home => {
                 if self.home_table.state.selected().is_some() {
-                    *self.popup_status = PopupType::new_choice_deletion();
+                    *self.popup_status = PopupType::new_choice_deletion(self.theme);
                 }
             }
             CurrentUi::Search => {
                 if self.search_table.state.selected().is_some() {
-                    *self.popup_status = PopupType::new_choice_deletion();
+                    *self.popup_status = PopupType::new_choice_deletion(self.theme);
                 }
             }
             _ => {}
@@ -302,12 +303,11 @@ impl<'a> InputKeyHandler<'a> {
         *self.summary_hidden_mode = !*self.summary_hidden_mode;
 
         if *self.summary_hidden_mode {
-            *self.summary_tab = SummaryTab::Table;
-            if self.total_tags > 0 {
+            if self.summary_table.state.selected().is_none() && !self.summary_table.items.is_empty()
+            {
+                *self.summary_tab = SummaryTab::Table;
                 self.summary_table.state.select(Some(0));
             }
-        } else {
-            *self.summary_tab = SummaryTab::ModeSelection;
         }
     }
 
@@ -838,7 +838,7 @@ impl<'a> InputKeyHandler<'a> {
                         *self.popup_status = PopupType::new_path(true, self.config);
                     }
                     ConfigChoices::RenameTxMethod => {
-                        *self.popup_status = PopupType::new_choice_methods(self.conn)?;
+                        *self.popup_status = PopupType::new_choice_methods(self.conn, self.theme)?;
                     }
                     ConfigChoices::AddNewTxMethod => {
                         *self.popup_status = PopupType::new_input(None);
@@ -1098,7 +1098,7 @@ impl<'a> InputKeyHandler<'a> {
                 .chart_activated_methods
                 .get_mut(selected_method)
                 .ok_or(anyhow!(
-                    "Method {selected_method} not found int eh chart activted methods list"
+                    "Method {selected_method} not found in the chart activated methods list"
                 ))?;
 
             *activation_status = !*activation_status;
@@ -1187,6 +1187,8 @@ impl InputKeyHandler<'_> {
 
     /// Handle Arrow Up keypress on the Summary page
     fn do_summary_up(&mut self) {
+        let total_tags = self.summary_table.items.len();
+
         if !*self.summary_hidden_mode {
             match self.summary_modes.index {
                 0 => match self.summary_tab {
@@ -1198,8 +1200,8 @@ impl InputKeyHandler<'_> {
                         }
                     }
                     SummaryTab::ModeSelection => {
-                        if self.total_tags > 0 {
-                            self.summary_table.state.select(Some(self.total_tags - 1));
+                        if total_tags > 0 {
+                            self.summary_table.state.select(Some(total_tags - 1));
                             *self.summary_tab = self.summary_tab.change_tab_up_monthly();
                         } else {
                             *self.summary_tab = self.summary_tab.change_tab_up_monthly();
@@ -1218,8 +1220,8 @@ impl InputKeyHandler<'_> {
                         }
                     }
                     SummaryTab::ModeSelection => {
-                        if self.total_tags > 0 {
-                            self.summary_table.state.select(Some(self.total_tags - 1));
+                        if total_tags > 0 {
+                            self.summary_table.state.select(Some(total_tags - 1));
                             *self.summary_tab = self.summary_tab.change_tab_up_yearly();
                         } else {
                             *self.summary_tab = self.summary_tab.change_tab_up_yearly();
@@ -1238,8 +1240,8 @@ impl InputKeyHandler<'_> {
                         }
                     }
                     SummaryTab::ModeSelection => {
-                        if self.total_tags > 0 {
-                            self.summary_table.state.select(Some(self.total_tags - 1));
+                        if total_tags > 0 {
+                            self.summary_table.state.select(Some(total_tags - 1));
                             *self.summary_tab = self.summary_tab.change_tab_up_all_time();
                         } else {
                             *self.summary_tab = self.summary_tab.change_tab_up_all_time();
@@ -1251,9 +1253,9 @@ impl InputKeyHandler<'_> {
                 },
                 _ => {}
             }
-        } else if self.total_tags > 0 {
+        } else if total_tags > 0 {
             if self.summary_table.state.selected() == Some(0) {
-                self.summary_table.state.select(Some(self.total_tags - 1));
+                self.summary_table.state.select(Some(total_tags - 1));
             } else {
                 self.summary_table.previous();
             }
@@ -1262,18 +1264,20 @@ impl InputKeyHandler<'_> {
 
     /// Handle Arrow Down keypress on the Summary page
     fn do_summary_down(&mut self) {
+        let total_tags = self.summary_table.items.len();
+
         if !*self.summary_hidden_mode {
             match self.summary_modes.index {
                 0 => match self.summary_tab {
                     SummaryTab::Table => {
-                        if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                        if self.summary_table.state.selected() == Some(total_tags - 1) {
                             *self.summary_tab = self.summary_tab.change_tab_down_monthly();
                         } else {
                             self.summary_table.next();
                         }
                     }
                     SummaryTab::Months => {
-                        if self.total_tags > 0 {
+                        if total_tags > 0 {
                             self.summary_table.state.select(Some(0));
                             *self.summary_tab = self.summary_tab.change_tab_down_monthly();
                         } else {
@@ -1286,14 +1290,14 @@ impl InputKeyHandler<'_> {
                 },
                 1 => match self.summary_tab {
                     SummaryTab::Table => {
-                        if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                        if self.summary_table.state.selected() == Some(total_tags - 1) {
                             *self.summary_tab = self.summary_tab.change_tab_down_yearly();
                         } else {
                             self.summary_table.next();
                         }
                     }
                     SummaryTab::Years => {
-                        if self.total_tags > 0 {
+                        if total_tags > 0 {
                             self.summary_table.state.select(Some(0));
                             *self.summary_tab = self.summary_tab.change_tab_down_yearly();
                         } else {
@@ -1306,14 +1310,14 @@ impl InputKeyHandler<'_> {
                 },
                 2 => match self.summary_tab {
                     SummaryTab::Table => {
-                        if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+                        if self.summary_table.state.selected() == Some(total_tags - 1) {
                             *self.summary_tab = self.summary_tab.change_tab_down_all_time();
                         } else {
                             self.summary_table.next();
                         }
                     }
                     SummaryTab::ModeSelection => {
-                        if self.total_tags > 0 {
+                        if total_tags > 0 {
                             self.summary_table.state.select(Some(0));
                             *self.summary_tab = self.summary_tab.change_tab_down_all_time();
                         } else {
@@ -1326,8 +1330,8 @@ impl InputKeyHandler<'_> {
                 },
                 _ => {}
             }
-        } else if self.total_tags > 0 {
-            if self.summary_table.state.selected() == Some(self.total_tags - 1) {
+        } else if total_tags > 0 {
+            if self.summary_table.state.selected() == Some(total_tags - 1) {
                 self.summary_table.state.select(Some(0));
             } else {
                 self.summary_table.next();

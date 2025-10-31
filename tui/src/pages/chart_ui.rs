@@ -9,7 +9,8 @@ use rex_app::conn::DbConn;
 use rex_app::views::ChartView;
 use std::collections::HashMap;
 
-use crate::page_handler::{BACKGROUND, BOX, ChartTab, IndexedData, SELECTED};
+use crate::page_handler::{ChartTab, IndexedData};
+use crate::theme::Theme;
 use crate::utility::{LerpState, create_tab, create_tab_activation, main_block};
 
 /// Creates the balance chart from the transactions
@@ -25,7 +26,8 @@ pub fn chart_ui(
     chart_activated_methods: &HashMap<String, bool>,
     lerp_state: &mut LerpState,
     chart_view: &ChartView,
-    migrated_conn: &mut DbConn,
+    theme: &Theme,
+    conn: &mut DbConn,
 ) {
     let size = f.area();
 
@@ -80,21 +82,22 @@ pub fn chart_ui(
     let chunks = main_layout.split(size);
 
     // Creates border around the entire terminal
-    f.render_widget(main_block(), size);
+    f.render_widget(main_block(theme), size);
 
-    let mut month_tab = create_tab(months, "Months");
+    let mut month_tab = create_tab(months, "Months", theme);
 
-    let mut year_tab = create_tab(years, "Years");
+    let mut year_tab = create_tab(years, "Years", theme);
 
-    let mut mode_selection_tab = create_tab(mode_selection, "Modes");
+    let mut mode_selection_tab = create_tab(mode_selection, "Modes", theme);
 
     let mut tx_method_selection_tab = create_tab_activation(
         chart_tx_methods,
         "Tx Method Selection",
         chart_activated_methods,
+        theme,
     );
 
-    let tx_methods = migrated_conn.get_tx_methods_sorted();
+    let tx_methods = conn.get_tx_methods_sorted();
 
     let mut all_tx_methods: Vec<&str> = tx_methods.iter().map(|t| t.name.as_str()).collect();
     all_tx_methods.push("Cumulative");
@@ -289,7 +292,7 @@ pub fn chart_ui(
             .style(
                 Style::default()
                     .fg(color_list.pop().unwrap())
-                    .bg(BACKGROUND),
+                    .bg(theme.background()),
             )
             .data(&datasets[i]);
 
@@ -301,12 +304,15 @@ pub fn chart_ui(
     }
 
     let chart = Chart::new(final_dataset)
-        .block(Block::default().style(Style::default().bg(BACKGROUND).fg(BOX)))
-        .style(Style::default().bg(BACKGROUND).fg(BOX))
+        .block(Block::default().style(Style::default().bg(theme.background()).fg(theme.border())))
+        .style(Style::default().bg(theme.background()).fg(theme.border()))
         .x_axis(
             Axis::default()
-                .title(Span::styled("", Style::default().bg(BACKGROUND).fg(BOX)))
-                .style(Style::default().bg(BACKGROUND).fg(BOX))
+                .title(Span::styled(
+                    "",
+                    Style::default().bg(theme.background()).fg(theme.border()),
+                ))
+                .style(Style::default().bg(theme.background()).fg(theme.border()))
                 .bounds([0.0, current_axis - 1.0])
                 .labels(
                     date_labels
@@ -318,29 +324,44 @@ pub fn chart_ui(
         )
         .y_axis(
             Axis::default()
-                .title(Span::styled("", Style::default().bg(BACKGROUND).fg(BOX)))
-                .style(Style::default().bg(BACKGROUND).fg(BOX))
+                .title(Span::styled(
+                    "",
+                    Style::default().bg(theme.background()).fg(theme.border()),
+                ))
+                .style(Style::default().bg(theme.background()).fg(theme.border()))
                 .bounds([lowest_balance, highest_balance])
                 .labels(labels.iter().cloned().map(Span::from).collect::<Vec<_>>()),
         );
 
     match current_page {
         ChartTab::Months => {
-            month_tab = month_tab
-                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+            month_tab = month_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(theme.selected()),
+            );
         }
 
         ChartTab::Years => {
-            year_tab = year_tab
-                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+            year_tab = year_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(theme.selected()),
+            );
         }
         ChartTab::ModeSelection => {
-            mode_selection_tab = mode_selection_tab
-                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+            mode_selection_tab = mode_selection_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(theme.selected()),
+            );
         }
         ChartTab::TxMethods => {
-            tx_method_selection_tab = tx_method_selection_tab
-                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+            tx_method_selection_tab = tx_method_selection_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(theme.selected()),
+            );
         }
     }
 

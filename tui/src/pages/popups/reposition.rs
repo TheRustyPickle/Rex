@@ -4,12 +4,12 @@ use ratatui::style::{Modifier, Style};
 use ratatui::text::Span;
 use ratatui::widgets::{BorderType, Borders, Clear, Row, Table};
 
-use crate::page_handler::{BLUE, BOX, TEXT};
 use crate::pages::RepositionPopup;
+use crate::theme::Theme;
 use crate::utility::{centered_rect_exact, main_block, styled_block};
 
 impl RepositionPopup {
-    pub fn show_ui(&mut self, f: &mut Frame) {
+    pub fn show_ui(&mut self, f: &mut Frame, theme: &Theme) {
         let size = f.area();
         let x_value = 40;
         let mut y_value = self.reposition_table.items.len() as u16 + 4 + 3;
@@ -22,7 +22,7 @@ impl RepositionPopup {
 
         let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
 
-        let block = main_block()
+        let block = main_block(theme)
             .border_type(BorderType::Rounded)
             .title(title)
             .borders(Borders::ALL);
@@ -42,23 +42,25 @@ impl RepositionPopup {
             .reposition_table
             .items
             .iter()
-            .map(|r| Row::new(r.clone()).style(Style::default().fg(TEXT)));
+            .map(|r| Row::new(r.clone()).style(Style::default().fg(theme.text())));
 
         let confirmation_rows = self
             .confirm_table
             .items
             .iter()
-            .map(|r| Row::new(r.clone()).style(Style::default().fg(TEXT)));
+            .map(|r| Row::new(r.clone()).style(Style::default().fg(theme.text())));
 
         let mut reposition_table = Table::new(reposition_rows, [Constraint::Percentage(100)])
-            .block(styled_block("H for help"))
-            .style(Style::default().fg(BOX));
+            .block(styled_block("H for help", theme))
+            .style(Style::default().fg(theme.border()));
 
         let mut confirmation_table = Table::new(confirmation_rows, [Constraint::Percentage(100)])
-            .block(styled_block("Confirm"))
-            .style(Style::default().fg(BOX));
+            .block(styled_block("Confirm", theme))
+            .style(Style::default().fg(theme.border()));
 
-        let highlight_style = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
+        let highlight_style = Style::default()
+            .fg(theme.positive())
+            .add_modifier(Modifier::REVERSED);
 
         if self.reposition_selected {
             reposition_table = reposition_table
