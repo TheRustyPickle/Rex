@@ -87,6 +87,8 @@ impl SummaryView {
     ) -> Vec<Vec<String>> {
         let mut income_tags = HashMap::new();
         let mut expense_tags = HashMap::new();
+        let mut borrow_tags = HashMap::new();
+        let mut lend_tags = HashMap::new();
 
         let mut total_income = Cent::new(0);
         let mut total_expense = Cent::new(0);
@@ -107,7 +109,7 @@ impl SummaryView {
         }
 
         for tx in &self.txs {
-            for tag in &tx.tags {
+            if let Some(tag) = tx.tags.first() {
                 match tx.tx_type {
                     TxType::Income => {
                         total_income += tx.amount;
@@ -121,12 +123,23 @@ impl SummaryView {
                         let value = expense_tags.entry(tag.name.clone()).or_insert(Cent::new(0));
                         *value += tx.amount;
                     }
-                    // TODO: Check borrow and lends for two new columns
-                    TxType::Transfer
-                    | TxType::Borrow
-                    | TxType::Lend
-                    | TxType::BorrowRepay
-                    | TxType::LendRepay => {}
+                    TxType::Borrow => {
+                        let value = borrow_tags.entry(tag.name.clone()).or_insert(Cent::new(0));
+                        *value += tx.amount;
+                    }
+                    TxType::BorrowRepay => {
+                        let value = borrow_tags.entry(tag.name.clone()).or_insert(Cent::new(0));
+                        *value -= tx.amount;
+                    }
+                    TxType::Lend => {
+                        let value = lend_tags.entry(tag.name.clone()).or_insert(Cent::new(0));
+                        *value += tx.amount;
+                    }
+                    TxType::LendRepay => {
+                        let value = lend_tags.entry(tag.name.clone()).or_insert(Cent::new(0));
+                        *value -= tx.amount;
+                    }
+                    TxType::Transfer => {}
                 }
             }
         }
@@ -144,6 +157,9 @@ impl SummaryView {
             let mut income_amount = Dollar::new(0.0);
             let mut expense_amount = Dollar::new(0.0);
 
+            let mut borrow_amount = Dollar::new(0.0);
+            let mut lend_amount = Dollar::new(0.0);
+
             if let Some(income) = income_tags.get(&tag.name) {
                 income_percentage = (income.value() as f64 / total_income.value() as f64) * 100.0;
                 income_amount = income.dollar();
@@ -155,6 +171,18 @@ impl SummaryView {
                 expense_percentage =
                     (expense.value() as f64 / total_expense.value() as f64) * 100.0;
                 expense_amount = expense.dollar();
+
+                no_push = false;
+            }
+
+            if let Some(borrow) = borrow_tags.get(&tag.name) {
+                borrow_amount = borrow.dollar();
+
+                no_push = false;
+            }
+
+            if let Some(lend) = lend_tags.get(&tag.name) {
+                lend_amount = lend.dollar();
 
                 no_push = false;
             }
@@ -207,6 +235,9 @@ impl SummaryView {
                     to_push.push("∞".to_string());
                 }
             }
+
+            to_push.push(format!("{borrow_amount:.2}"));
+            to_push.push(format!("{lend_amount:.2}"));
 
             to_return.push(to_push);
         }
