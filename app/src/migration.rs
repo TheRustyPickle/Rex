@@ -348,10 +348,10 @@ fn migrate_tx(
 
     let mut tx_tags = Vec::new();
 
-    for tag in tag_list {
+    for (index, tag) in tag_list.into_iter().enumerate() {
         let tag_data = NewTag::new(&tag).insert(db_conn)?;
 
-        let tx_tag = TxTag::new(added_tx.id, tag_data.id);
+        let tx_tag = TxTag::new(added_tx.id, tag_data.id, index == 0);
 
         tx_tags.push(tx_tag);
     }

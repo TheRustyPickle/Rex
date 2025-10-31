@@ -8,12 +8,17 @@ use crate::schema::tx_tags;
 pub struct TxTag {
     pub tx_id: i32,
     pub tag_id: i32,
+    pub is_primary: bool,
 }
 
 impl TxTag {
     #[must_use]
-    pub fn new(tx_id: i32, tag_id: i32) -> Self {
-        TxTag { tx_id, tag_id }
+    pub fn new(tx_id: i32, tag_id: i32, is_primary: bool) -> Self {
+        TxTag {
+            tx_id,
+            tag_id,
+            is_primary,
+        }
     }
 
     pub fn get_by_tx_ids(
