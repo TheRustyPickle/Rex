@@ -302,12 +302,12 @@ impl<'a> InputKeyHandler<'a> {
     pub fn do_summary_hidden_mode(&mut self) {
         *self.summary_hidden_mode = !*self.summary_hidden_mode;
 
-        if *self.summary_hidden_mode {
-            if self.summary_table.state.selected().is_none() && !self.summary_table.items.is_empty()
-            {
-                *self.summary_tab = SummaryTab::Table;
-                self.summary_table.state.select(Some(0));
-            }
+        if *self.summary_hidden_mode
+            && self.summary_table.state.selected().is_none()
+            && !self.summary_table.items.is_empty()
+        {
+            *self.summary_tab = SummaryTab::Table;
+            self.summary_table.state.select(Some(0));
         }
     }
 

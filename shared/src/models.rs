@@ -1,6 +1,10 @@
+use chrono::NaiveTime;
 use std::cmp::Ordering;
 use std::fmt;
 use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
+
+pub const LAST_POSSIBLE_TIME: NaiveTime =
+    NaiveTime::from_hms_nano_opt(23, 59, 59, 999_999_999).unwrap();
 
 impl Add<i64> for Cent {
     type Output = Cent;

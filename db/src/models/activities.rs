@@ -1,6 +1,7 @@
 use chrono::{Datelike, Days, Local, Months, NaiveDate, NaiveDateTime, NaiveTime};
 use diesel::prelude::*;
 use diesel::result::Error;
+use rex_shared::models::LAST_POSSIBLE_TIME;
 
 use crate::ConnCache;
 use crate::models::{ActivityNature, ActivityTx, FullActivityTx};
@@ -77,7 +78,7 @@ impl Activity {
         let end_date = start_date + Months::new(1) - Days::new(1);
 
         let start_date = start_date.and_time(NaiveTime::MIN);
-        let end_date = end_date.and_time(NaiveTime::MIN);
+        let end_date = end_date.and_time(LAST_POSSIBLE_TIME);
 
         let results: Vec<(Activity, ActivityTx)> = act::activities
             .inner_join(tx::activity_txs.on(tx::activity_num.eq(act::id)))
