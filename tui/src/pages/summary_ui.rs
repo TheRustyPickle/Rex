@@ -63,6 +63,9 @@ pub fn summary_ui(
         table_headers.push("YoY Expense %");
     }
 
+    table_headers.push("Borrow");
+    table_headers.push("Lend");
+
     let header_cells = table_headers
         .into_iter()
         .map(|h| Cell::from(h).style(Style::default().fg(theme.background())));
@@ -177,10 +180,16 @@ pub fn summary_ui(
         .enumerate()
         .map(|(row_index, item)| {
             let cells = item.iter().enumerate().map(|(index, c)| {
+                if index == 0 {
+                    return Cell::from(c.to_string());
+                }
+
+                let lerp_id = format!("summary_table_main:{index}:{row_index}");
+
                 let Ok(parsed_num) = c.parse::<f64>() else {
                     if c == "∞" {
-                        let lerp_id = format!("summary_table_main:{index}:{row_index}");
-                        lerp_state.lerp(&lerp_id, 0.0);
+                        let new_c = lerp_state.lerp(&lerp_id, 0.0);
+                        return Cell::from(format!("{new_c:.2}").separate_with_commas());
                     }
 
                     let symbol = if c.contains('↑') || c.contains('↓') {
@@ -192,17 +201,21 @@ pub fn summary_ui(
                     if let Some(sym) = symbol {
                         let c = c.replace(sym, "");
                         if let Ok(parsed_num) = c.parse::<f64>() {
-                            let lerp_id = format!("summary_table_main:{index}:{row_index}");
                             let new_c = lerp_state.lerp(&lerp_id, parsed_num);
 
                             return Cell::from(format!("{sym}{new_c:.2}").separate_with_commas());
                         }
+                    } else {
+                        log::info!("No symbol found. {c}");
                     }
                     return Cell::from(c.separate_with_commas());
                 };
 
-                let lerp_id = format!("summary_table_main:{index}:{row_index}");
                 let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+
+                if index == 7 && row_index == 0 && new_c != 0.0 {
+                    log::info!("{new_c} {c} {parsed_num} {lerp_id}")
+                }
 
                 Cell::from(format!("{new_c:.2}").separate_with_commas())
             });
@@ -214,21 +227,25 @@ pub fn summary_ui(
 
     let table_width = if mode_selection.index == 2 {
         vec![
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
         ]
     } else {
         vec![
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(15),
+            Constraint::Percentage(12),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
         ]
     };
 
@@ -449,7 +466,7 @@ pub fn summary_ui(
                     if let Some(sym) = symbol {
                         let c = c.replace(sym, "");
                         if let Ok(parsed_num) = c.parse::<f64>() {
-                            let lerp_id = format!("summary_table_main:{index}:{row_index}");
+                            let lerp_id = format!("summary_net_rows:{index}:{row_index}");
                             let new_c = lerp_state.lerp(&lerp_id, parsed_num);
 
                             return Cell::from(format!("{sym}{new_c:.2}").separate_with_commas());

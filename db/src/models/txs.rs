@@ -1,5 +1,5 @@
 use chrono::{Datelike, Days, Months, NaiveDate, NaiveDateTime, NaiveTime};
-use diesel::dsl::{count_star, exists, sql};
+use diesel::dsl::{count_star, sql};
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::sql_types::{Integer, Text};
