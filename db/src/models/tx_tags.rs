@@ -25,9 +25,12 @@ impl TxTag {
         tx_ids: Vec<i32>,
         db_conn: &mut impl ConnCache,
     ) -> Result<Vec<TxTag>, Error> {
-        use crate::schema::tx_tags::dsl::{tx_id, tx_tags};
+        use crate::schema::tx_tags::dsl::{is_primary, tx_id, tx_tags};
 
-        tx_tags.filter(tx_id.eq_any(tx_ids)).load(db_conn.conn())
+        tx_tags
+            .filter(tx_id.eq_any(tx_ids))
+            .order(is_primary.desc())
+            .load(db_conn.conn())
     }
 
     pub fn insert_batch(txs: Vec<TxTag>, db_conn: &mut impl ConnCache) -> Result<usize, Error> {
