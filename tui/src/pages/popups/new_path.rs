@@ -5,12 +5,12 @@ use ratatui::text::{Span, Text};
 use ratatui::widgets::{BorderType, Borders, Clear, Paragraph, Row, Table, Wrap};
 use std::fmt::Write;
 
-use crate::page_handler::{BACKGROUND, BLUE, BOX, TEXT};
 use crate::pages::NewPathsPopup;
+use crate::theme::Theme;
 use crate::utility::{centered_rect_exact, main_block, styled_block};
 
 impl NewPathsPopup {
-    pub fn show_ui(&mut self, f: &mut Frame) {
+    pub fn show_ui(&mut self, f: &mut Frame, theme: &Theme) {
         let size = f.area();
         let x_value = 50;
         let y_value = 20;
@@ -23,7 +23,7 @@ impl NewPathsPopup {
 
         let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
 
-        let block = main_block()
+        let block = main_block(theme)
             .border_type(BorderType::Rounded)
             .title(title)
             .borders(Borders::ALL);
@@ -43,7 +43,7 @@ impl NewPathsPopup {
             .table
             .items
             .iter()
-            .map(|r| Row::new(r.clone()).style(Style::default().fg(TEXT)));
+            .map(|r| Row::new(r.clone()).style(Style::default().fg(theme.text())));
 
         let mut path_text = String::new();
 
@@ -52,17 +52,19 @@ impl NewPathsPopup {
         }
 
         let path_list = Paragraph::new(Text::from(path_text))
-            .style(Style::default().bg(BACKGROUND).fg(TEXT))
+            .style(Style::default().bg(theme.background()).fg(theme.text()))
             .wrap(Wrap { trim: true })
             .alignment(Alignment::Left);
 
-        let highlight_style = Style::default().fg(BLUE).add_modifier(Modifier::REVERSED);
+        let highlight_style = Style::default()
+            .fg(theme.positive())
+            .add_modifier(Modifier::REVERSED);
 
         let table = Table::new(choice_rows, [Constraint::Percentage(100)])
             .highlight_symbol(">> ")
-            .block(styled_block("H for help"))
+            .block(styled_block("H for help", theme))
             .row_highlight_style(highlight_style)
-            .style(Style::default().fg(BOX));
+            .style(Style::default().fg(theme.border()));
 
         f.render_widget(path_list, new_chunks[0]);
         f.render_stateful_widget(table, new_chunks[1], &mut self.table.state);

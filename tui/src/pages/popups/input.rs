@@ -4,12 +4,12 @@ use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{BorderType, Borders, Clear, Paragraph};
 
-use crate::page_handler::{BACKGROUND, TEXT};
 use crate::pages::InputPopup;
+use crate::theme::Theme;
 use crate::utility::{centered_rect_exact, create_bolded_text, main_block, styled_block};
 
 impl InputPopup {
-    pub fn show_ui(&mut self, f: &mut Frame) {
+    pub fn show_ui(&mut self, f: &mut Frame, theme: &Theme) {
         let size = f.area();
         let x_value = 50;
         let y_value = 7;
@@ -26,7 +26,7 @@ impl InputPopup {
 
         let status_text = create_bolded_text(&status_text);
 
-        let block = main_block()
+        let block = main_block(theme)
             .border_type(BorderType::Rounded)
             .title(title)
             .borders(Borders::ALL);
@@ -45,12 +45,12 @@ impl InputPopup {
         let input_text = Line::from(vec![Span::from(format!("{} ", self.text))]);
 
         let input_section = Paragraph::new(input_text)
-            .style(Style::default().bg(BACKGROUND).fg(TEXT))
-            .block(styled_block("Method name"))
+            .style(Style::default().bg(theme.background()).fg(theme.text()))
+            .block(styled_block("Method name", theme))
             .alignment(Alignment::Left);
 
         let status_section = Paragraph::new(status_text)
-            .style(Style::default().bg(BACKGROUND).fg(TEXT))
+            .style(Style::default().bg(theme.background()).fg(theme.text()))
             .alignment(Alignment::Left);
 
         f.set_cursor_position(Position {

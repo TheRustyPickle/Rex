@@ -4,12 +4,12 @@ use ratatui::style::{Modifier, Style};
 use ratatui::text::{Span, Text};
 use ratatui::widgets::{BorderType, Borders, Clear, Paragraph, Row, Table, Wrap};
 
-use crate::page_handler::{BACKGROUND, BOX, TEXT};
 use crate::pages::{ChoicePopup, ChoicePopupState};
+use crate::theme::Theme;
 use crate::utility::{centered_rect_exact, main_block, styled_block};
 
 impl ChoicePopup {
-    pub fn show_ui(&mut self, f: &mut Frame) {
+    pub fn show_ui(&mut self, f: &mut Frame, theme: &Theme) {
         let size = f.area();
         let mut x_value = 40;
         let mut y_value = 10;
@@ -77,7 +77,7 @@ impl ChoicePopup {
 
         let text = Span::styled(message, Style::default().add_modifier(Modifier::BOLD));
 
-        let block = main_block()
+        let block = main_block(theme)
             .border_type(BorderType::Rounded)
             .title(title)
             .borders(Borders::ALL);
@@ -94,7 +94,7 @@ impl ChoicePopup {
         f.render_widget(block, area);
 
         let deletion_text = Paragraph::new(Text::from(text))
-            .style(Style::default().bg(BACKGROUND).fg(TEXT))
+            .style(Style::default().bg(theme.background()).fg(theme.text()))
             .wrap(Wrap { trim: true })
             .alignment(Alignment::Center);
 
@@ -102,12 +102,12 @@ impl ChoicePopup {
             .table
             .items
             .iter()
-            .map(|r| Row::new(r.clone()).style(Style::default().fg(TEXT)));
+            .map(|r| Row::new(r.clone()).style(Style::default().fg(theme.text())));
 
         let mut table = Table::new(rows, [Constraint::Percentage(100)])
             .highlight_symbol(">> ")
-            .block(styled_block("H for help"))
-            .style(Style::default().fg(BOX));
+            .block(styled_block("H for help", theme))
+            .style(Style::default().fg(theme.border()));
 
         let selected_index = self.table.state.selected().unwrap();
 

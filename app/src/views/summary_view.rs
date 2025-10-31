@@ -121,7 +121,12 @@ impl SummaryView {
                         let value = expense_tags.entry(tag.name.clone()).or_insert(Cent::new(0));
                         *value += tx.amount;
                     }
-                    TxType::Transfer => {}
+                    // TODO: Check borrow and lends for two new columns
+                    TxType::Transfer
+                    | TxType::Borrow
+                    | TxType::Lend
+                    | TxType::BorrowRepay
+                    | TxType::LendRepay => {}
                 }
             }
         }
@@ -224,7 +229,12 @@ impl SummaryView {
                         let value = expense_tags.entry(tag.name.clone()).or_insert(Cent::new(0));
                         *value += tx.amount;
                     }
-                    TxType::Transfer => {}
+                    // TODO: Check borrow and lends for two new columns
+                    TxType::Transfer
+                    | TxType::Borrow
+                    | TxType::Lend
+                    | TxType::BorrowRepay
+                    | TxType::LendRepay => {}
                 }
             }
         }
@@ -327,7 +337,12 @@ impl SummaryView {
 
                     last_peak_expense.amount += tx.amount;
                 }
-                TxType::Transfer => {}
+                // TODO: Check borrow and lends for two new columns
+                TxType::Transfer
+                | TxType::Borrow
+                | TxType::Lend
+                | TxType::BorrowRepay
+                | TxType::LendRepay => {}
             }
         }
 

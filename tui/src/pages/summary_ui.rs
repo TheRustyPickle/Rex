@@ -6,9 +6,8 @@ use rex_app::conn::DbConn;
 use rex_app::views::FullSummary;
 use thousands::Separable;
 
-use crate::page_handler::{
-    BACKGROUND, BOX, HEADER, IndexedData, SELECTED, SortingType, SummaryTab, TEXT, TableData,
-};
+use crate::page_handler::{IndexedData, SortingType, SummaryTab, TableData};
+use crate::theme::Theme;
 use crate::utility::{
     LerpState, create_tab, main_block, styled_block, styled_block_no_bottom, styled_block_no_top,
 };
@@ -25,7 +24,8 @@ pub fn summary_ui(
     summary_sort: &SortingType,
     lerp_state: &mut LerpState,
     full_summary: &FullSummary,
-    migrated_conn: &mut DbConn,
+    theme: &Theme,
+    conn: &mut DbConn,
 ) {
     let size = f.area();
 
@@ -65,7 +65,7 @@ pub fn summary_ui(
 
     let header_cells = table_headers
         .into_iter()
-        .map(|h| Cell::from(h).style(Style::default().fg(BACKGROUND)));
+        .map(|h| Cell::from(h).style(Style::default().fg(theme.background())));
 
     let mut method_headers = vec!["Method", "Total Income", "Total Expense"];
 
@@ -87,19 +87,19 @@ pub fn summary_ui(
 
     let method_header_cells = method_headers
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(BACKGROUND)));
+        .map(|h| Cell::from(*h).style(Style::default().fg(theme.background())));
 
     let header = Row::new(header_cells)
-        .style(Style::default().bg(HEADER))
+        .style(Style::default().bg(theme.header()))
         .height(1)
         .bottom_margin(0);
 
     let method_header = Row::new(method_header_cells)
-        .style(Style::default().bg(HEADER))
+        .style(Style::default().bg(theme.header()))
         .height(1)
         .bottom_margin(0);
 
-    let method_len = migrated_conn.get_tx_methods().len() as u16;
+    let method_len = conn.get_tx_methods().len() as u16;
 
     let mut main_layout = Layout::default().direction(Direction::Vertical).margin(2);
     let mut summary_layout = Layout::default().direction(Direction::Horizontal);
@@ -162,13 +162,13 @@ pub fn summary_ui(
         summary_layout.split(chunks[5 - mode_selection.index])
     };
 
-    f.render_widget(main_block(), size);
+    f.render_widget(main_block(theme), size);
 
-    let mut month_tab = create_tab(months, "Months");
+    let mut month_tab = create_tab(months, "Months", theme);
 
-    let mut year_tab = create_tab(years, "Years");
+    let mut year_tab = create_tab(years, "Years", theme);
 
-    let mut mode_selection_tab = create_tab(mode_selection, "Modes");
+    let mut mode_selection_tab = create_tab(mode_selection, "Modes", theme);
 
     // Goes through all tags provided and creates row for the table
     let rows = table_data
@@ -209,7 +209,7 @@ pub fn summary_ui(
             Row::new(cells)
                 .height(1)
                 .bottom_margin(0)
-                .style(Style::default().fg(TEXT))
+                .style(Style::default().fg(theme.text()))
         });
 
     let table_width = if mode_selection.index == 2 {
@@ -234,8 +234,8 @@ pub fn summary_ui(
 
     let mut table_area = Table::new(rows, table_width)
         .header(header)
-        .block(styled_block("Tags"))
-        .style(Style::default().fg(BOX));
+        .block(styled_block("Tags", theme))
+        .style(Style::default().fg(theme.border()));
 
     let summary_rows_largest =
         full_summary
@@ -254,14 +254,18 @@ pub fn summary_ui(
                     };
 
                     if index == 0 {
-                        cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
+                        cell = cell.style(
+                            Style::default()
+                                .fg(theme.text())
+                                .add_modifier(Modifier::BOLD),
+                        );
                     }
                     cell
                 });
                 Row::new(cells)
                     .height(1)
                     .bottom_margin(0)
-                    .style(Style::default().fg(TEXT))
+                    .style(Style::default().fg(theme.text()))
             });
 
     let summary_area_largest = Table::new(
@@ -273,8 +277,8 @@ pub fn summary_ui(
             Constraint::Percentage(25),
         ],
     )
-    .block(styled_block(""))
-    .style(Style::default().fg(BOX));
+    .block(styled_block("", theme))
+    .style(Style::default().fg(theme.border()));
 
     let summary_rows_peak =
         full_summary
@@ -302,14 +306,18 @@ pub fn summary_ui(
                     };
 
                     if index == 0 {
-                        cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
+                        cell = cell.style(
+                            Style::default()
+                                .fg(theme.text())
+                                .add_modifier(Modifier::BOLD),
+                        );
                     }
                     cell
                 });
                 Row::new(cells)
                     .height(height)
                     .bottom_margin(0)
-                    .style(Style::default().fg(TEXT))
+                    .style(Style::default().fg(theme.text()))
             });
 
     let summary_area_peak = Table::new(
@@ -320,8 +328,8 @@ pub fn summary_ui(
             Constraint::Percentage(33),
         ],
     )
-    .block(styled_block(""))
-    .style(Style::default().fg(BOX));
+    .block(styled_block("", theme))
+    .style(Style::default().fg(theme.border()));
 
     let method_rows =
         full_summary
@@ -362,14 +370,18 @@ pub fn summary_ui(
                     };
 
                     if index == 0 {
-                        cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
+                        cell = cell.style(
+                            Style::default()
+                                .fg(theme.text())
+                                .add_modifier(Modifier::BOLD),
+                        );
                     }
                     cell
                 });
                 Row::new(cells)
                     .height(1)
                     .bottom_margin(0)
-                    .style(Style::default().fg(TEXT))
+                    .style(Style::default().fg(theme.text()))
             });
 
     let method_widths = if mode_selection.index == 2 {
@@ -408,8 +420,8 @@ pub fn summary_ui(
 
     let method_area = Table::new(method_rows, &method_widths)
         .header(method_header)
-        .block(styled_block_no_bottom(""))
-        .style(Style::default().fg(BOX));
+        .block(styled_block_no_bottom("", theme))
+        .style(Style::default().fg(theme.border()));
 
     let net_row = full_summary
         .net_array()
@@ -447,39 +459,52 @@ pub fn summary_ui(
                 };
 
                 if index == 0 {
-                    cell = cell.style(Style::default().fg(TEXT).add_modifier(Modifier::BOLD));
+                    cell = cell.style(
+                        Style::default()
+                            .fg(theme.text())
+                            .add_modifier(Modifier::BOLD),
+                    );
                 }
                 cell
             });
             Row::new(cells)
                 .height(1)
                 .bottom_margin(0)
-                .style(Style::default().fg(TEXT))
+                .style(Style::default().fg(theme.text()))
         });
 
     let net_area = Table::new(net_row, &method_widths)
-        .block(styled_block_no_top(""))
-        .style(Style::default().fg(BOX));
+        .block(styled_block_no_top("", theme))
+        .style(Style::default().fg(theme.border()));
 
     match current_page {
         // Previously added a black block to year and month widget if a value is not selected
         // Now we will turn that black block into green if a value is selected
         SummaryTab::Months => {
-            month_tab = month_tab
-                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+            month_tab = month_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(theme.selected()),
+            );
         }
 
         SummaryTab::Years => {
-            year_tab = year_tab
-                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+            year_tab = year_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(theme.selected()),
+            );
         }
         SummaryTab::ModeSelection => {
-            mode_selection_tab = mode_selection_tab
-                .highlight_style(Style::default().add_modifier(Modifier::BOLD).bg(SELECTED));
+            mode_selection_tab = mode_selection_tab.highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .bg(theme.selected()),
+            );
         }
         SummaryTab::Table => {
             table_area = table_area
-                .row_highlight_style(Style::default().bg(SELECTED))
+                .row_highlight_style(Style::default().bg(theme.selected()))
                 .highlight_symbol(">> ");
         }
     }
@@ -495,7 +520,7 @@ pub fn summary_ui(
     f.render_widget(summary_area_peak, summary_chunk[0]);
 
     if summary_hidden_mode {
-        f.render_widget(table_area, chunks[3]);
+        f.render_stateful_widget(table_area, chunks[3], &mut table_data.state);
         f.render_widget(net_area, chunks[1]);
         f.render_widget(method_area, chunks[0]);
     } else {

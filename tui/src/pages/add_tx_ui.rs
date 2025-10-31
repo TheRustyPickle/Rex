@@ -7,8 +7,9 @@ use rex_app::conn::DbConn;
 use thousands::Separable;
 
 use crate::outputs::TxType;
-use crate::page_handler::{BACKGROUND, BLUE, BOX, GRAY, HomeRow, LogType, RED, TEXT, TxTab};
+use crate::page_handler::{HomeRow, LogType, TxTab};
 use crate::pages::BALANCE_BOLD;
+use crate::theme::Theme;
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, main_block, styled_block};
 
@@ -19,6 +20,7 @@ pub fn add_tx_ui(
     add_tx_data: &TxData,
     add_tx_tab: &TxTab,
     lerp_state: &mut LerpState,
+    theme: &Theme,
     conn: &mut DbConn,
 ) {
     let all_methods: Vec<String> = conn
@@ -97,7 +99,7 @@ pub fn add_tx_ui(
     };
 
     // Creates border around the entire terminal
-    f.render_widget(main_block(), size);
+    f.render_widget(main_block(theme), size);
 
     let bal_data = balance.iter().map(|item| {
         let height = 1;
@@ -142,9 +144,9 @@ pub fn add_tx_ui(
             };
 
             if c.contains('↑') {
-                Cell::from(c).style(Style::default().fg(BLUE))
+                Cell::from(c).style(Style::default().fg(theme.positive()))
             } else if c.contains('↓') {
-                Cell::from(c).style(Style::default().fg(RED))
+                Cell::from(c).style(Style::default().fg(theme.negative()))
             } else if all_methods.contains(&c) || BALANCE_BOLD.contains(&c.as_str()) {
                 Cell::from(c).style(Style::default().add_modifier(Modifier::BOLD))
             } else {
@@ -154,12 +156,12 @@ pub fn add_tx_ui(
         Row::new(cells)
             .height(height as u16)
             .bottom_margin(0)
-            .style(Style::default().fg(TEXT))
+            .style(Style::default().fg(theme.text()))
     });
 
     let balance_area = Table::new(bal_data, width_data.clone())
-        .block(styled_block("Balance Change"))
-        .style(Style::default().fg(BOX));
+        .block(styled_block("Balance Change", theme))
+        .style(Style::default().fg(theme.border()));
 
     let mut status_text = vec![];
 
@@ -173,18 +175,22 @@ pub fn add_tx_ui(
                 status_text.push(Line::from(vec![
                     Span::styled(
                         initial,
-                        Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+                        Style::default()
+                            .fg(theme.positive())
+                            .add_modifier(Modifier::BOLD),
                     ),
-                    Span::styled(format!(":{rest}"), Style::default().fg(BLUE)),
+                    Span::styled(format!(":{rest}"), Style::default().fg(theme.positive())),
                 ]));
             }
             LogType::Error => {
                 status_text.push(Line::from(vec![
                     Span::styled(
                         initial,
-                        Style::default().fg(RED).add_modifier(Modifier::BOLD),
+                        Style::default()
+                            .fg(theme.negative())
+                            .add_modifier(Modifier::BOLD),
                     ),
-                    Span::styled(format!(":{rest}"), Style::default().fg(RED)),
+                    Span::styled(format!(":{rest}"), Style::default().fg(theme.negative())),
                 ]));
             }
         }
@@ -209,74 +215,74 @@ pub fn add_tx_ui(
         TxTab::Details => {
             details_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[1])),
-                Span::styled(input_data[7], Style::default().fg(GRAY)),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
             ]);
         }
         TxTab::FromMethod => {
             from_method_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[2])),
-                Span::styled(input_data[7], Style::default().fg(GRAY)),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
             ]);
         }
         TxTab::ToMethod => {
             to_method_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[3])),
-                Span::styled(input_data[7], Style::default().fg(GRAY)),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
             ]);
         }
         TxTab::Tags => {
             tags_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[6])),
-                Span::styled(input_data[7], Style::default().fg(GRAY)),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
             ]);
         }
         TxTab::TxType => {
             tx_type_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[5])),
-                Span::styled(input_data[7], Style::default().fg(GRAY)),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
             ]);
         }
         _ => {}
     }
 
     let status_sec = Paragraph::new(status_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Status"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Status", theme))
         .alignment(Alignment::Left);
 
     let date_sec = Paragraph::new(date_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Date"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Date", theme))
         .alignment(Alignment::Left);
 
     let from_method_sec = Paragraph::new(from_method_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block(from_method_name))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block(from_method_name, theme))
         .alignment(Alignment::Left);
 
     let to_method_sec = Paragraph::new(to_method_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("To Method"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("To Method", theme))
         .alignment(Alignment::Left);
 
     let amount_sec = Paragraph::new(amount_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Amount"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Amount", theme))
         .alignment(Alignment::Left);
 
     let tx_type_sec = Paragraph::new(tx_type_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("TX Type"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("TX Type", theme))
         .alignment(Alignment::Left);
 
     let details_sec = Paragraph::new(details_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Details"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Details", theme))
         .alignment(Alignment::Left);
 
     let tags_sec = Paragraph::new(tags_text)
-        .style(Style::default().bg(BACKGROUND).fg(TEXT))
-        .block(styled_block("Tags"))
+        .style(Style::default().bg(theme.background()).fg(theme.text()))
+        .block(styled_block("Tags", theme))
         .alignment(Alignment::Left);
 
     // We will be adding a cursor based on which tab is selected + the selected index.

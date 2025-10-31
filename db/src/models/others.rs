@@ -7,6 +7,10 @@ pub enum TxType {
     Income,
     Expense,
     Transfer,
+    Borrow,
+    Lend,
+    BorrowRepay,
+    LendRepay,
 }
 
 #[derive(Clone, Debug, Copy, Eq, PartialEq)]
@@ -174,6 +178,10 @@ impl From<&str> for TxType {
             "Income" => TxType::Income,
             "Expense" => TxType::Expense,
             "Transfer" => TxType::Transfer,
+            "Borrow" => TxType::Borrow,
+            "Lend" => TxType::Lend,
+            "Borrow Repay" => TxType::BorrowRepay,
+            "Lend Repay" => TxType::LendRepay,
             other => panic!("Invalid TxType string: {other}"),
         }
     }
@@ -185,6 +193,10 @@ impl Display for TxType {
             TxType::Income => "Income",
             TxType::Expense => "Expense",
             TxType::Transfer => "Transfer",
+            TxType::Borrow => "Borrow",
+            TxType::Lend => "Lend",
+            TxType::BorrowRepay => "Borrow Repay",
+            TxType::LendRepay => "Lend Repay",
         };
         write!(f, "{s}")
     }

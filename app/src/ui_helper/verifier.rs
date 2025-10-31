@@ -3,6 +3,7 @@ use std::collections::HashSet;
 
 use chrono::NaiveDate;
 use rex_db::ConnCache;
+use rex_db::models::TxType;
 
 use crate::conn::MutDbConn;
 use crate::ui_helper::{DateType, Field, Output, VerifierError, get_best_match};
@@ -445,11 +446,19 @@ impl<'a> Verifier<'a> {
             return Ok(Output::Nothing(Field::TxType));
         }
         if user_type.to_lowercase().starts_with('e') {
-            *user_type = "Expense".to_string();
+            *user_type = TxType::Expense.to_string();
         } else if user_type.to_lowercase().starts_with('i') {
-            *user_type = "Income".to_string();
+            *user_type = TxType::Income.to_string();
         } else if user_type.to_lowercase().starts_with('t') {
-            *user_type = "Transfer".to_string();
+            *user_type = TxType::Transfer.to_string();
+        } else if user_type.to_lowercase().starts_with("br") {
+            *user_type = TxType::BorrowRepay.to_string();
+        } else if user_type.to_lowercase().starts_with("lr") {
+            *user_type = TxType::LendRepay.to_string();
+        } else if user_type.to_lowercase().starts_with('b') {
+            *user_type = TxType::Borrow.to_string();
+        } else if user_type.to_lowercase().starts_with('l') {
+            *user_type = TxType::Lend.to_string();
         } else {
             *user_type = String::new();
             return Err(VerifierError::InvalidTxType);
