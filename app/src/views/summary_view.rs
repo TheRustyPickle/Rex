@@ -44,6 +44,7 @@ impl FullSummary {
         self.largest.iter().map(SummaryLargest::array).collect()
     }
 
+    #[must_use]
     pub fn lend_borrows_array(&self) -> Vec<Vec<String>> {
         vec![self.lend_borrows.array()]
     }
@@ -209,11 +210,11 @@ impl SummaryView {
 
                 to_push.push(compare_change_opt(
                     income_amount,
-                    compare_income.map(|x| x.dollar()),
+                    compare_income.map(Cent::dollar),
                 ));
                 to_push.push(compare_change_opt(
                     expense_amount,
-                    compare_expense.map(|x| x.dollar()),
+                    compare_expense.map(Cent::dollar),
                 ));
             }
 
@@ -276,8 +277,8 @@ impl SummaryView {
         let mut method_expense = HashMap::new();
 
         for method in conn.cache().get_methods() {
-            method_earning.insert(method.name.to_string(), Cent::new(0));
-            method_expense.insert(method.name.to_string(), Cent::new(0));
+            method_earning.insert(method.name.clone(), Cent::new(0));
+            method_expense.insert(method.name.clone(), Cent::new(0));
         }
 
         let mut ongoing_month = 0;
@@ -451,7 +452,7 @@ impl SummaryView {
             }
 
             let method_summary = SummaryMethods::new(
-                method.name.to_string(),
+                method.name.clone(),
                 method_earning[&method.name].dollar(),
                 method_expense[&method.name].dollar(),
                 earning_percentage,

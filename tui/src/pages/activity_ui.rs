@@ -123,7 +123,7 @@ pub fn activity_ui(
                 Cell::from(c.separate_with_commas())
             } else {
                 first_index_passed = true;
-                Cell::from(c.to_string())
+                Cell::from(c.clone())
             }
         });
         Row::new(cells)

@@ -90,7 +90,7 @@ pub fn styled_block_no_bottom<'a>(title: &'a str, theme: &'a Theme) -> Block<'a>
 }
 
 #[must_use]
-pub fn main_block<'a>(theme: &'a Theme) -> Block<'a> {
+pub fn main_block(theme: &Theme) -> Block<'_> {
     Block::default().style(Style::default().bg(theme.background()).fg(theme.border()))
 }
 
