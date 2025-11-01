@@ -205,7 +205,7 @@ pub fn summary_ui(
         .map(|(row_index, item)| {
             let cells = item.iter().enumerate().map(|(index, c)| {
                 if index == 0 {
-                    return Cell::from(c.to_string());
+                    return Cell::from(c.clone());
                 }
 
                 let lerp_id = format!("summary_table_main:{index}:{row_index}");

@@ -306,9 +306,9 @@ impl<'a> Verifier<'a> {
                         // If either of them is empty, the one that is not empty is the value we want to use for using in replacement
                         let final_value = if first_value.is_empty() || last_value.is_empty() {
                             if first_value.is_empty() {
-                                last_value.to_string()
+                                last_value.clone()
                             } else {
-                                first_value.to_string()
+                                first_value.clone()
                             }
                         } else {
                             // If both value is intact, do the calculation and the result is for replacement
@@ -417,7 +417,7 @@ impl<'a> Verifier<'a> {
             let method_name = &method.name;
 
             if method_name.to_lowercase() == user_method.to_lowercase() {
-                *user_method = method_name.to_string();
+                *user_method = method_name.clone();
                 return Ok(Output::Accepted(Field::Amount));
             }
         }

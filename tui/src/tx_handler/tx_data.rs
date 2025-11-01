@@ -273,10 +273,10 @@ impl TxData {
 
     pub fn accept_autofill(&mut self, current_tab: &TxTab) {
         match current_tab {
-            TxTab::Details => self.details = self.autofill.to_string(),
-            TxTab::FromMethod => self.from_method = self.autofill.to_string(),
-            TxTab::ToMethod => self.to_method = self.autofill.to_string(),
-            TxTab::TxType => self.tx_type = self.autofill.to_string(),
+            TxTab::Details => self.details = self.autofill.clone(),
+            TxTab::FromMethod => self.from_method = self.autofill.clone(),
+            TxTab::ToMethod => self.to_method = self.autofill.clone(),
+            TxTab::TxType => self.tx_type = self.autofill.clone(),
             TxTab::Tags => {
                 let mut split_tags = self.tags.split(',').map(str::trim).collect::<Vec<&str>>();
 

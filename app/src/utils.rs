@@ -65,7 +65,7 @@ pub fn compare_change(current: Dollar, previous: Dollar) -> String {
         if diff < 0.0 {
             format!("↓{:.2}", diff.abs())
         } else {
-            format!("↑{:.2}", diff)
+            format!("↑{diff:.2}")
         }
     }
 }
@@ -77,7 +77,7 @@ pub fn compare_change_opt(current: Dollar, previous: Option<Dollar>) -> String {
             if diff < 0.0 {
                 format!("↓{:.2}", diff.abs())
             } else {
-                format!("↑{:.2}", diff)
+                format!("↑{diff:.2}")
             }
         }
         _ => "∞".to_string(),

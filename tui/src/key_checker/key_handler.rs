@@ -2152,12 +2152,12 @@ impl InputKeyHandler<'_> {
                 if self.summary_months.index > 0 {
                     let month_value = self.summary_months.index;
 
-                    previous_month = Some(self.summary_months.titles[month_value - 1].to_string());
+                    previous_month = Some(self.summary_months.titles[month_value - 1].clone());
                     previous_year = Some(self.summary_years.get_selected_value().to_string());
                 } else if self.summary_months.index == 0 && self.summary_years.index > 0 {
-                    previous_month = Some(self.summary_months.titles[MONTHS.len() - 1].to_string());
+                    previous_month = Some(self.summary_months.titles[MONTHS.len() - 1].clone());
                     previous_year =
-                        Some(self.summary_years.titles[self.summary_years.index - 1].to_string());
+                        Some(self.summary_years.titles[self.summary_years.index - 1].clone());
                 }
             }
             1 => {
@@ -2165,7 +2165,7 @@ impl InputKeyHandler<'_> {
                     let year_value = self.summary_years.index;
 
                     previous_month = Some(self.summary_months.get_selected_value().to_string());
-                    previous_year = Some(self.summary_years.titles[year_value - 1].to_string());
+                    previous_year = Some(self.summary_years.titles[year_value - 1].clone());
                 }
             }
             _ => {}

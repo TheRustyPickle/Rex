@@ -113,7 +113,7 @@ impl TxViewGroup {
 
         let mut to_return = vec![vec![String::new()]];
 
-        to_return[0].extend(sorted_methods.iter().map(|m| m.name.to_string()));
+        to_return[0].extend(sorted_methods.iter().map(|m| m.name.clone()));
 
         to_return[0].push(String::from("Total"));
 
@@ -171,7 +171,7 @@ impl TxViewGroup {
             }
 
             let changes_value = changes.get(&method_id).unwrap();
-            to_insert_changes.push(changes_value.to_string());
+            to_insert_changes.push(changes_value.clone());
 
             let method_income = *income.get(&method_id).unwrap();
             total_income += method_income;
@@ -357,7 +357,7 @@ impl TxViewGroup {
 
         let mut to_return = vec![vec![String::new()]];
 
-        to_return[0].extend(sorted_methods.iter().map(|m| m.name.to_string()));
+        to_return[0].extend(sorted_methods.iter().map(|m| m.name.clone()));
 
         to_return[0].push(String::from("Total"));
 
@@ -472,7 +472,7 @@ impl TxViewGroup {
             to_insert_balance.push(format!("{:.2}", method_balance.dollar()));
 
             let changes_value = changes.get(&method_id).unwrap();
-            to_insert_changes.push(changes_value.to_string());
+            to_insert_changes.push(changes_value.clone());
         }
 
         to_insert_balance.push(format!("{:.2}", total_balance.dollar()));

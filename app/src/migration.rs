@@ -117,7 +117,7 @@ pub fn start_migration(mut old_db_conn: DbConn, db_conn: &mut DbConn) -> Result<
         let mut skipped_activity_id = HashSet::new();
 
         for row in rows {
-            let method = row.tx_method.to_string();
+            let method = row.tx_method.clone();
 
             let from_method;
             let mut to_method = String::new();
