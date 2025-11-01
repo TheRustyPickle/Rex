@@ -5,10 +5,10 @@ use rex_db::models::{FetchNature, FullTx, TxType};
 use rex_shared::models::{Cent, Dollar};
 use std::collections::HashMap;
 
-use crate::utils::{get_percentages, month_year_to_unique};
+use crate::utils::{compare_change, compare_change_opt, get_percentages, month_year_to_unique};
 use crate::views::{
-    LargestMomvement, LargestType, PeakMonthlyMovement, PeakType, SummaryLargest, SummaryMethods,
-    SummaryNet, SummaryPeak,
+    LargestMomvement, LargestType, PeakMonthlyMovement, PeakType, SummaryLargest,
+    SummaryLendBorrows, SummaryMethods, SummaryNet, SummaryPeak,
 };
 
 /// Contains `FullTx` to generate summary data. Will always contain the exact number of txs from
@@ -23,6 +23,7 @@ pub struct FullSummary {
     largest: Vec<SummaryLargest>,
     peak: Vec<SummaryPeak>,
     net: SummaryNet,
+    lend_borrows: SummaryLendBorrows,
 }
 
 impl FullSummary {
@@ -41,6 +42,10 @@ impl FullSummary {
 
     pub fn largest_array(&self) -> Vec<Vec<String>> {
         self.largest.iter().map(SummaryLargest::array).collect()
+    }
+
+    pub fn lend_borrows_array(&self) -> Vec<Vec<String>> {
+        vec![self.lend_borrows.array()]
     }
 }
 
@@ -202,38 +207,14 @@ impl SummaryView {
 
                 let compare_expense = compare_expense_tags.get(&tag.name);
 
-                if let Some(last_income) = compare_income {
-                    let last_earning = last_income.dollar();
-
-                    let earning_increased_percentage =
-                        ((income_amount - last_earning) / last_earning) * 100.0;
-
-                    if last_earning == 0.0 {
-                        to_push.push("∞".to_string());
-                    } else if earning_increased_percentage < 0.0 {
-                        to_push.push(format!("↓{:.2}", earning_increased_percentage.abs()));
-                    } else {
-                        to_push.push(format!("↑{earning_increased_percentage:.2}"));
-                    }
-                } else {
-                    to_push.push("∞".to_string());
-                }
-
-                if let Some(last_expense) = compare_expense {
-                    let last_expense = last_expense.dollar();
-                    let expense_increased_percentage =
-                        ((expense_amount - last_expense) / last_expense) * 100.0;
-
-                    if last_expense == 0.0 {
-                        to_push.push("∞".to_string());
-                    } else if expense_increased_percentage < 0.0 {
-                        to_push.push(format!("↓{:.2}", expense_increased_percentage.abs()));
-                    } else {
-                        to_push.push(format!("↑{expense_increased_percentage:.2}"));
-                    }
-                } else {
-                    to_push.push("∞".to_string());
-                }
+                to_push.push(compare_change_opt(
+                    income_amount,
+                    compare_income.map(|x| x.dollar()),
+                ));
+                to_push.push(compare_change_opt(
+                    expense_amount,
+                    compare_expense.map(|x| x.dollar()),
+                ));
             }
 
             to_push.push(format!("{borrow_amount:.2}"));
@@ -260,7 +241,6 @@ impl SummaryView {
                         let value = expense_tags.entry(tag.name.clone()).or_insert(Cent::new(0));
                         *value += tx.amount;
                     }
-                    // TODO: Check borrow and lends for two new columns
                     TxType::Transfer
                     | TxType::Borrow
                     | TxType::Lend
@@ -273,7 +253,6 @@ impl SummaryView {
         (income_tags, expense_tags)
     }
 
-    #[allow(private_interfaces)]
     pub fn generate_summary(
         &self,
         last_summary: Option<&FullSummary>,
@@ -310,6 +289,9 @@ impl SummaryView {
 
         let mut last_peak_earning = PeakMonthlyMovement::default();
         let mut last_peak_expense = PeakMonthlyMovement::default();
+
+        let mut outstanding_borrows = Cent::new(0);
+        let mut outstanding_lends = Cent::new(0);
 
         for tx in &self.txs {
             ongoing_date = tx.date.date();
@@ -368,12 +350,19 @@ impl SummaryView {
 
                     last_peak_expense.amount += tx.amount;
                 }
-                // TODO: Check borrow and lends for two new columns
-                TxType::Transfer
-                | TxType::Borrow
-                | TxType::Lend
-                | TxType::BorrowRepay
-                | TxType::LendRepay => {}
+                TxType::Borrow => {
+                    outstanding_borrows += tx.amount;
+                }
+                TxType::Lend => {
+                    outstanding_lends += tx.amount;
+                }
+                TxType::BorrowRepay => {
+                    outstanding_borrows -= tx.amount;
+                }
+                TxType::LendRepay => {
+                    outstanding_lends -= tx.amount;
+                }
+                TxType::Transfer => {}
             }
         }
 
@@ -452,27 +441,8 @@ impl SummaryView {
                 let current_earning = method_earning[&method.name].dollar();
                 let current_expense = method_expense[&method.name].dollar();
 
-                let earning_increased_percentage =
-                    ((current_earning - last_earning) / last_earning) * 100.0;
-
-                if last_earning == 0.0 {
-                    mom_yoy_earning = Some("∞".to_string());
-                } else if earning_increased_percentage < 0.0 {
-                    mom_yoy_earning = Some(format!("↓{:.2}", earning_increased_percentage.abs()));
-                } else {
-                    mom_yoy_earning = Some(format!("↑{earning_increased_percentage:.2}"));
-                }
-
-                let expense_increased_percentage =
-                    ((current_expense - last_expense) / last_expense) * 100.0;
-
-                if last_expense == 0.0 {
-                    mom_yoy_expense = Some("∞".to_string());
-                } else if expense_increased_percentage < 0.0 {
-                    mom_yoy_expense = Some(format!("↓{:.2}", expense_increased_percentage.abs()));
-                } else {
-                    mom_yoy_expense = Some(format!("↑{expense_increased_percentage:.2}"));
-                }
+                mom_yoy_earning = Some(compare_change(current_earning, last_earning));
+                mom_yoy_expense = Some(compare_change(current_expense, last_expense));
             }
 
             if !no_mom_yoy && mom_yoy_expense.is_none() && mom_yoy_earning.is_none() {
@@ -503,40 +473,42 @@ impl SummaryView {
         let mut net_mom_yoy_earning = None;
         let mut net_mom_yoy_expense = None;
 
+        let mut mom_yoy_borrows = None;
+        let mut mom_yoy_lends = None;
+
         if let Some(last_summary) = last_summary
             && !no_mom_yoy
         {
-            let comparison = &last_summary.net;
+            let net_comparison = &last_summary.net;
 
-            let last_earning = comparison.total_income;
-            let last_expense = comparison.total_expense;
+            let lend_borrows_comparison = &last_summary.lend_borrows;
 
-            let earning_increased_percentage =
-                ((total_income.dollar() - last_earning) / last_earning) * 100.0;
-
-            if last_earning == 0.0 {
-                net_mom_yoy_earning = Some("∞".to_string());
-            } else if earning_increased_percentage < 0.0 {
-                net_mom_yoy_earning = Some(format!("↓{:.2}", earning_increased_percentage.abs()));
-            } else {
-                net_mom_yoy_earning = Some(format!("↑{earning_increased_percentage:.2}"));
-            }
-
-            let expense_increased_percentage =
-                ((total_expense.dollar() - last_expense) / last_expense) * 100.0;
-
-            if last_expense == 0.0 {
-                net_mom_yoy_expense = Some("∞".to_string());
-            } else if expense_increased_percentage < 0.0 {
-                net_mom_yoy_expense = Some(format!("↓{:.2}", expense_increased_percentage.abs()));
-            } else {
-                net_mom_yoy_expense = Some(format!("↑{expense_increased_percentage:.2}"));
-            }
+            net_mom_yoy_earning = Some(compare_change(
+                total_income.dollar(),
+                net_comparison.total_income,
+            ));
+            net_mom_yoy_expense = Some(compare_change(
+                total_expense.dollar(),
+                net_comparison.total_expense,
+            ));
+            mom_yoy_borrows = Some(compare_change(
+                outstanding_borrows.dollar(),
+                lend_borrows_comparison.borrows,
+            ));
+            mom_yoy_lends = Some(compare_change(
+                outstanding_lends.dollar(),
+                lend_borrows_comparison.lends,
+            ));
         }
 
         if !no_mom_yoy && net_mom_yoy_expense.is_none() && net_mom_yoy_earning.is_none() {
             net_mom_yoy_earning = Some("∞".to_string());
             net_mom_yoy_expense = Some("∞".to_string());
+        }
+
+        if !no_mom_yoy && mom_yoy_borrows.is_none() && mom_yoy_lends.is_none() {
+            mom_yoy_borrows = Some("∞".to_string());
+            mom_yoy_lends = Some("∞".to_string());
         }
 
         let summary_net = SummaryNet::new(
@@ -578,11 +550,19 @@ impl SummaryView {
             ),
         ];
 
+        let summary_lend_borrows = SummaryLendBorrows::new(
+            outstanding_borrows.dollar(),
+            outstanding_lends.dollar(),
+            mom_yoy_borrows,
+            mom_yoy_lends,
+        );
+
         FullSummary {
             methods: method_data,
             net: summary_net,
             largest: summary_largest,
             peak: summary_peak,
+            lend_borrows: summary_lend_borrows,
         }
     }
 }
