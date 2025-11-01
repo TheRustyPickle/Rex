@@ -280,3 +280,43 @@ impl SummaryMethods {
         to_return
     }
 }
+
+#[derive(Debug, PartialEq)]
+pub(crate) struct SummaryLendBorrows {
+    pub(crate) borrows: Dollar,
+    pub(crate) lends: Dollar,
+    mom_yoy_borrows: Option<String>,
+    mom_yoy_lends: Option<String>,
+}
+
+impl SummaryLendBorrows {
+    pub(crate) fn new(
+        borrows: Dollar,
+        lends: Dollar,
+        mom_yoy_borrows: Option<String>,
+        mom_yoy_lends: Option<String>,
+    ) -> Self {
+        Self {
+            borrows,
+            lends,
+            mom_yoy_borrows,
+            mom_yoy_lends,
+        }
+    }
+
+    pub(crate) fn array(&self) -> Vec<String> {
+        let mut to_return = vec![
+            format!("{:.2}", self.borrows.value()),
+            format!("{:.2}", self.lends.value()),
+        ];
+
+        if let Some(mom_yoy_borrows) = &self.mom_yoy_borrows {
+            to_return.push(mom_yoy_borrows.to_string());
+        }
+        if let Some(mom_yoy_lends) = &self.mom_yoy_lends {
+            to_return.push(mom_yoy_lends.to_string());
+        }
+
+        to_return
+    }
+}

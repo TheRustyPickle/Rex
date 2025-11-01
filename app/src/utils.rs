@@ -56,3 +56,30 @@ pub fn parse_amount_nature_cent(amount: &str) -> Result<Option<AmountNature>> {
 
     Ok(Some(res))
 }
+
+pub fn compare_change(current: Dollar, previous: Dollar) -> String {
+    if previous == 0.0 {
+        "∞".to_string()
+    } else {
+        let diff = ((current - previous) / previous) * 100.0;
+        if diff < 0.0 {
+            format!("↓{:.2}", diff.abs())
+        } else {
+            format!("↑{:.2}", diff)
+        }
+    }
+}
+
+pub fn compare_change_opt(current: Dollar, previous: Option<Dollar>) -> String {
+    match previous {
+        Some(prev) if prev != 0.0 => {
+            let diff = ((current - prev) / prev) * 100.0;
+            if diff < 0.0 {
+                format!("↓{:.2}", diff.abs())
+            } else {
+                format!("↑{:.2}", diff)
+            }
+        }
+        _ => "∞".to_string(),
+    }
+}
