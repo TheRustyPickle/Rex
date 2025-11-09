@@ -1,9 +1,11 @@
 use chrono::{Duration, Months, NaiveDate};
 use rex_db::ConnCache;
+use rex_db::models::TxType;
+use strum::IntoEnumIterator;
 
 use crate::conn::MutDbConn;
 use crate::ui_helper::{
-    DateType, Field, Output, StepType, SteppingError, TX_TYPES, VerifierError, get_best_match,
+    DateType, Field, Output, StepType, SteppingError, VerifierError, get_best_match,
 };
 
 pub struct Stepper<'a> {
@@ -184,27 +186,22 @@ impl<'a> Stepper<'a> {
     ) -> Result<(), SteppingError> {
         let verify_status = self.conn.verify().tx_type(user_type);
 
-        if !user_type.is_empty() {
-            let mut current_index: usize =
-                match user_type.chars().next().unwrap().to_ascii_lowercase() {
-                    'e' => 1,
-                    't' => 2,
-                    // 'I' is 0
-                    _ => 0,
-                };
-
-            match step_type {
-                StepType::StepUp => current_index = (current_index + 1) % TX_TYPES.len(),
-                StepType::StepDown => {
-                    current_index = (current_index + TX_TYPES.len() - 1) % TX_TYPES.len();
-                }
-            }
-            *user_type = TX_TYPES[current_index].to_string();
-        }
-
         match verify_status {
             Ok(data) => match data {
-                Output::Accepted(_) => {}
+                Output::Accepted(_) => {
+                    let tx_types: Vec<String> = TxType::iter().map(|s| s.to_string()).collect();
+
+                    let mut current_index = tx_types.iter().position(|t| t == user_type).unwrap();
+
+                    match step_type {
+                        StepType::StepUp => current_index = (current_index + 1) % tx_types.len(),
+                        StepType::StepDown => {
+                            current_index = (current_index + tx_types.len() - 1) % tx_types.len()
+                        }
+                    }
+
+                    *user_type = tx_types[current_index].to_string();
+                }
                 Output::Nothing(_) => {
                     *user_type = "Income".to_string();
                 }

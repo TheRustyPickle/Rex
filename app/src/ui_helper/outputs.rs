@@ -49,7 +49,9 @@ pub enum VerifierError {
     AmountBelowZero,
     #[error("TX Method: Transaction Method not found")]
     InvalidTxMethod,
-    #[error("TX Type: Transaction Type not acceptable. Values: Expense/Income/E/I")]
+    #[error(
+        "TX Type: Transaction Type not acceptable. Values: Expense/Income/Transfer/Borrow/Borrow Repay/Lend/Lend Repay/I/E/T/B/BR/L/LR"
+    )]
     InvalidTxType,
     #[error("{0}: Error acquired while validating input")]
     ParsingError(Field),

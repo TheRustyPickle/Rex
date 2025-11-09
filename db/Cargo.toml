@@ -14,5 +14,7 @@ rex-shared.workspace = true
 diesel.workspace = true
 chrono.workspace = true
 anyhow.workspace = true
+strum.workspace = true
+strum_macros.workspace = true
 diesel_migrations = "2.3.0"
 libsqlite3-sys = { version = "0.35.0", features = ["bundled"] }
