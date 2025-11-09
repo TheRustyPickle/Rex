@@ -14,6 +14,8 @@ diesel = { version = "2.3.3", default-features = false, features = [
     "chrono",
 ] }
 anyhow = "1.0.100"
+strum = "0.27"
+strum_macros = "0.27"
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
