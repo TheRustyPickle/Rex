@@ -82,7 +82,7 @@ impl<'a> Autofiller<'a> {
                 return_best_match()
             };
 
-            tx_type.to_string()
+            tx_type.clone()
         } else {
             return_best_match()
         };

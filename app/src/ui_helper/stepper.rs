@@ -196,11 +196,11 @@ impl<'a> Stepper<'a> {
                     match step_type {
                         StepType::StepUp => current_index = (current_index + 1) % tx_types.len(),
                         StepType::StepDown => {
-                            current_index = (current_index + tx_types.len() - 1) % tx_types.len()
+                            current_index = (current_index + tx_types.len() - 1) % tx_types.len();
                         }
                     }
 
-                    *user_type = tx_types[current_index].to_string();
+                    *user_type = tx_types[current_index].clone();
                 }
                 Output::Nothing(_) => {
                     *user_type = "Income".to_string();
