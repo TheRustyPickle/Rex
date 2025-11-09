@@ -575,7 +575,7 @@ impl PopupType {
             if let Some(modifying) = &input.modifying_method {
                 conn.rename_tx_method(modifying, &input.text)?;
             } else {
-                conn.add_new_methods(&vec![input.text.to_string()])?;
+                conn.add_new_methods(&vec![input.text.clone()])?;
             }
 
             Ok(true)

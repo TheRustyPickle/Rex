@@ -47,11 +47,11 @@ impl InfoPopup {
             }
             InfoPopupState::Error(err) => {
                 title = "Error";
-                message = err.to_string();
+                message = err.clone();
             }
             InfoPopupState::ShowDetails(details) => {
                 title = "Transaction Details";
-                message = details.to_string();
+                message = details.clone();
 
                 x_value = 40;
                 y_value = 20;

@@ -93,9 +93,9 @@ pub(crate) fn add_new_tx(
 
     let mut tx_tags = Vec::new();
 
-    for tag in tag_list {
+    for (index, tag) in tag_list.into_iter().enumerate() {
         if let Ok(tag_id) = db_conn.cache().get_tag_id(&tag) {
-            let tx_tag = TxTag::new(added_tx.id, tag_id);
+            let tx_tag = TxTag::new(added_tx.id, tag_id, index == 0);
             tx_tags.push(tx_tag);
             continue;
         }
@@ -106,7 +106,7 @@ pub(crate) fn add_new_tx(
 
         new_tags.push(tag_data.clone());
 
-        let tx_tag = TxTag::new(added_tx.id, tag_data.id);
+        let tx_tag = TxTag::new(added_tx.id, tag_data.id, index == 0);
 
         tx_tags.push(tx_tag);
     }

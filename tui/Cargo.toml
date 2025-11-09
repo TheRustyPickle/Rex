@@ -24,8 +24,10 @@ bench = false
 rex-app.workspace = true
 rex-shared.workspace = true
 anyhow.workspace = true
+chrono.workspace = true
+strum.workspace = true
+strum_macros.workspace = true
 crossterm = "0.29.0"
-chrono = "0.4.42"
 open = "5.3.2"
 atty = "0.2.14"
 reqwest = { version = "0.12.23", features = ["blocking", "json"] }
@@ -35,8 +37,6 @@ thousands = "0.2.0"
 semver = "1.0.27"
 ratatui = "0.29.0"
 serde_json = "1.0.145"
-strum = "0.27"
-strum_macros = "0.27"
 rfd = "0.15.4"
 
 [lints.clippy]

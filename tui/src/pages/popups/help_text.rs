@@ -27,6 +27,7 @@ On Transfer transaction there will be one additional field pushing Tags to the k
 1: Date         Example: 2022-05-12, YYYY-MM-DD
 2: TX details   Example: For Grocery, Salary
 5: TX Type      Example: Income/Expense/Transfer/I/E/T
+5: New TX Type  Example: Borrow/Borrow Repay/Lend/Lend Repay/b/br/l/lr
 3: TX Method    Example: Cash, Bank, Card
 4: Amount       Example: 1000, 100+50, b - 100
 6: Tags         Example: Food, Car. Add a Comma for a new tag
@@ -88,9 +89,7 @@ Arrow Left/Right: Move value of the widget
 
 pub fn summary_help_text() -> String {
     format!(
-        "This page shows various information based on all transactions \
-            and is for tracking incomes and expenses based on tags \
-            Transfer Transaction are not shown here
+        "This page shows various information based on all transactions primary tag within a given period. Transfer Transaction are not shown here
 
 Following are the supported keys here
 
@@ -116,7 +115,7 @@ pub fn home_help_text() -> String {
     format!(
         "This is the Home page where all txs added so far, the balances and the changes are shown
 
-J: Take user input for various actions
+J: Configuration
 E: Edit the selected transaction on the table
 D: Delete the selected transaction on the table
 ,: Swaps the location of the selected transaction with the transaction above it

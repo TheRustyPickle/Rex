@@ -8,21 +8,29 @@ use crate::schema::tx_tags;
 pub struct TxTag {
     pub tx_id: i32,
     pub tag_id: i32,
+    pub is_primary: bool,
 }
 
 impl TxTag {
     #[must_use]
-    pub fn new(tx_id: i32, tag_id: i32) -> Self {
-        TxTag { tx_id, tag_id }
+    pub fn new(tx_id: i32, tag_id: i32, is_primary: bool) -> Self {
+        TxTag {
+            tx_id,
+            tag_id,
+            is_primary,
+        }
     }
 
     pub fn get_by_tx_ids(
         tx_ids: Vec<i32>,
         db_conn: &mut impl ConnCache,
     ) -> Result<Vec<TxTag>, Error> {
-        use crate::schema::tx_tags::dsl::{tx_id, tx_tags};
+        use crate::schema::tx_tags::dsl::{is_primary, tx_id, tx_tags};
 
-        tx_tags.filter(tx_id.eq_any(tx_ids)).load(db_conn.conn())
+        tx_tags
+            .filter(tx_id.eq_any(tx_ids))
+            .order(is_primary.desc())
+            .load(db_conn.conn())
     }
 
     pub fn insert_batch(txs: Vec<TxTag>, db_conn: &mut impl ConnCache) -> Result<usize, Error> {

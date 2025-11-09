@@ -4,6 +4,7 @@ use std::collections::HashSet;
 use chrono::NaiveDate;
 use rex_db::ConnCache;
 use rex_db::models::TxType;
+use strum::IntoEnumIterator;
 
 use crate::conn::MutDbConn;
 use crate::ui_helper::{DateType, Field, Output, VerifierError, get_best_match};
@@ -306,9 +307,9 @@ impl<'a> Verifier<'a> {
                         // If either of them is empty, the one that is not empty is the value we want to use for using in replacement
                         let final_value = if first_value.is_empty() || last_value.is_empty() {
                             if first_value.is_empty() {
-                                last_value.to_string()
+                                last_value.clone()
                             } else {
-                                first_value.to_string()
+                                first_value.clone()
                             }
                         } else {
                             // If both value is intact, do the calculation and the result is for replacement
@@ -417,7 +418,7 @@ impl<'a> Verifier<'a> {
             let method_name = &method.name;
 
             if method_name.to_lowercase() == user_method.to_lowercase() {
-                *user_method = method_name.to_string();
+                *user_method = method_name.clone();
                 return Ok(Output::Accepted(Field::Amount));
             }
         }
@@ -440,27 +441,52 @@ impl<'a> Verifier<'a> {
     ///
     /// Auto expands E to Expense, I to Income and T to transfer.
     pub fn tx_type(&self, user_type: &mut String) -> Result<Output, VerifierError> {
-        *user_type = user_type.replace(' ', "");
+        let trimmed_input = user_type.trim();
 
         if user_type.is_empty() {
             return Ok(Output::Nothing(Field::TxType));
         }
-        if user_type.to_lowercase().starts_with('e') {
-            *user_type = TxType::Expense.to_string();
-        } else if user_type.to_lowercase().starts_with('i') {
-            *user_type = TxType::Income.to_string();
-        } else if user_type.to_lowercase().starts_with('t') {
-            *user_type = TxType::Transfer.to_string();
-        } else if user_type.to_lowercase().starts_with("br") {
-            *user_type = TxType::BorrowRepay.to_string();
-        } else if user_type.to_lowercase().starts_with("lr") {
-            *user_type = TxType::LendRepay.to_string();
-        } else if user_type.to_lowercase().starts_with('b') {
-            *user_type = TxType::Borrow.to_string();
-        } else if user_type.to_lowercase().starts_with('l') {
-            *user_type = TxType::Lend.to_string();
+
+        let tx_types = TxType::iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+
+        let return_best_match = || {
+            let best_match = get_best_match(user_type, &tx_types);
+
+            if best_match == trimmed_input {
+                String::new()
+            } else {
+                best_match
+            }
+        };
+
+        let lowercase = user_type.to_lowercase();
+
+        if lowercase.len() <= 2 {
+            if lowercase.starts_with('e') {
+                *user_type = TxType::Expense.to_string();
+            } else if lowercase.starts_with('i') {
+                *user_type = TxType::Income.to_string();
+            } else if lowercase.starts_with('t') {
+                *user_type = TxType::Transfer.to_string();
+            } else if lowercase.starts_with("br") {
+                *user_type = TxType::BorrowRepay.to_string();
+            } else if lowercase.starts_with("lr") {
+                *user_type = TxType::LendRepay.to_string();
+            } else if lowercase.starts_with('b') {
+                *user_type = TxType::Borrow.to_string();
+            } else if lowercase.starts_with('l') {
+                *user_type = TxType::Lend.to_string();
+            } else {
+                *user_type = return_best_match();
+                return Err(VerifierError::InvalidTxType);
+            }
         } else {
-            *user_type = String::new();
+            if tx_types.contains(user_type) {
+                return Ok(Output::Accepted(Field::TxType));
+            }
+            *user_type = return_best_match();
             return Err(VerifierError::InvalidTxType);
         }
 
