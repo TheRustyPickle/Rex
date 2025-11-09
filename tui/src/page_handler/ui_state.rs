@@ -140,12 +140,38 @@ impl IndexedData {
         self.index = (self.index + 1) % self.titles.len();
     }
 
+    pub fn next_yearly(&mut self) {
+        if self.index == 8 {
+            self.titles.remove(0);
+            let mut final_year: u64 = self.titles[self.titles.len() - 1].parse().unwrap();
+            final_year += 1;
+            self.titles.push(final_year.to_string());
+        } else {
+            self.next()
+        }
+    }
+
     /// Decreases the current index by 1 or goes to final index if at 0
     pub fn previous(&mut self) {
         if self.index > 0 {
             self.index -= 1;
         } else {
             self.index = self.titles.len() - 1;
+        }
+    }
+
+    pub fn previous_yearly(&mut self) {
+        if self.index == 8 {
+            let first_year: i64 = self.titles[0].parse().unwrap();
+
+            if first_year != 2022 {
+                self.titles.pop();
+                self.titles.insert(0, (first_year - 1).to_string());
+            } else if self.index > 0 {
+                self.index -= 1;
+            }
+        } else if self.index > 0 {
+            self.index -= 1;
         }
     }
 

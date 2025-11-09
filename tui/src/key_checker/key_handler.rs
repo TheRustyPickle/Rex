@@ -485,7 +485,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.reload_home_table()?;
                 }
                 HomeTab::Years => {
-                    self.home_years.previous();
+                    self.home_years.previous_yearly();
                     self.home_months.set_index_zero();
                     self.reload_home_table()?;
                 }
@@ -502,7 +502,7 @@ impl<'a> InputKeyHandler<'a> {
                             self.reload_chart_data()?;
                         }
                         ChartTab::Years => {
-                            self.chart_years.previous();
+                            self.chart_years.previous_yearly();
                             self.lerp_state.clear();
                             self.chart_months.set_index_zero();
                             self.reload_chart_data()?;
@@ -527,7 +527,7 @@ impl<'a> InputKeyHandler<'a> {
                         }
                         SummaryTab::Years => {
                             self.summary_months.set_index_zero();
-                            self.summary_years.previous();
+                            self.summary_years.previous_yearly();
                             self.reload_summary()?;
                         }
                         SummaryTab::Months => {
@@ -541,7 +541,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Activity => match self.activity_tab {
                 ActivityTab::Years => {
                     self.activity_months.set_index_zero();
-                    self.activity_years.previous();
+                    self.activity_years.previous_yearly();
                     self.reload_activity_table()?;
                 }
                 ActivityTab::Months => {
@@ -565,7 +565,7 @@ impl<'a> InputKeyHandler<'a> {
                     self.reload_home_table()?;
                 }
                 HomeTab::Years => {
-                    self.home_years.next();
+                    self.home_years.next_yearly();
                     self.home_months.set_index_zero();
                     self.reload_home_table()?;
                 }
@@ -583,7 +583,7 @@ impl<'a> InputKeyHandler<'a> {
                         }
                         ChartTab::Years => {
                             self.lerp_state.clear();
-                            self.chart_years.next();
+                            self.chart_years.next_yearly();
                             self.chart_months.set_index_zero();
                             self.reload_chart_data()?;
                         }
@@ -605,7 +605,7 @@ impl<'a> InputKeyHandler<'a> {
                 }
                 SummaryTab::Years => {
                     self.summary_months.set_index_zero();
-                    self.summary_years.next();
+                    self.summary_years.next_yearly();
                     self.reload_summary()?;
                 }
                 SummaryTab::Months => {
@@ -617,7 +617,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Activity => match self.activity_tab {
                 ActivityTab::Years => {
                     self.activity_months.set_index_zero();
-                    self.activity_years.next();
+                    self.activity_years.next_yearly();
                     self.reload_activity_table()?;
                 }
                 ActivityTab::Months => {
