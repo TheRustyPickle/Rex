@@ -1,5 +1,6 @@
 use rex_db::ConnCache;
 use rex_db::models::TxType;
+use strum::IntoEnumIterator;
 
 use crate::conn::MutDbConn;
 use crate::ui_helper::get_best_match;
@@ -7,8 +8,6 @@ use crate::ui_helper::get_best_match;
 pub struct Autofiller<'a> {
     conn: MutDbConn<'a>,
 }
-
-pub(crate) const TX_TYPES: [&str; 3] = ["Income", "Expense", "Transfer"];
 
 impl<'a> Autofiller<'a> {
     pub(crate) fn new(conn: MutDbConn<'a>) -> Self {
@@ -50,43 +49,48 @@ impl<'a> Autofiller<'a> {
             return String::new();
         }
 
-        let tx_type = if lowercase.starts_with('t') {
-            TxType::Transfer
-        } else if lowercase.starts_with('e') {
-            TxType::Expense
-        } else if lowercase.starts_with('i') {
-            TxType::Income
-        } else if lowercase.starts_with("br") {
-            TxType::BorrowRepay
-        } else if lowercase.starts_with("lr") {
-            TxType::LendRepay
-        } else if lowercase.starts_with('b') {
-            TxType::Borrow
-        } else if lowercase.starts_with('l') {
-            TxType::Lend
-        } else {
-            let tx_types = TX_TYPES
-                .iter()
-                .map(|s| (*s).to_string())
+        let return_best_match = || {
+            let tx_types = TxType::iter()
+                .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
             let best_match = get_best_match(user_input, &tx_types);
 
-            let to_return = if best_match == trimmed_input {
+            if best_match == trimmed_input {
                 String::new()
             } else {
                 best_match
-            };
-
-            return to_return;
+            }
         };
 
-        let to_return = tx_type.to_string();
+        let best_match = if lowercase.len() <= 2 {
+            let tx_type = if lowercase.starts_with('t') {
+                TxType::Transfer.to_string()
+            } else if lowercase.starts_with('e') {
+                TxType::Expense.to_string()
+            } else if lowercase.starts_with('i') {
+                TxType::Income.to_string()
+            } else if lowercase.starts_with("br") {
+                TxType::BorrowRepay.to_string()
+            } else if lowercase.starts_with("lr") {
+                TxType::LendRepay.to_string()
+            } else if lowercase.starts_with('b') {
+                TxType::Borrow.to_string()
+            } else if lowercase.starts_with('l') {
+                TxType::Lend.to_string()
+            } else {
+                return_best_match()
+            };
 
-        if to_return == trimmed_input {
+            tx_type.clone()
+        } else {
+            return_best_match()
+        };
+
+        if best_match == trimmed_input {
             String::new()
         } else {
-            to_return
+            best_match
         }
     }
 

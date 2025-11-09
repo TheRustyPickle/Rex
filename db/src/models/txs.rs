@@ -1,9 +1,9 @@
 use chrono::{Datelike, Days, Months, NaiveDate, NaiveDateTime, NaiveTime};
-use diesel::dsl::{exists, sql};
+use diesel::dsl::{count_star, sql};
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::sql_types::{Integer, Text};
-use rex_shared::models::Cent;
+use rex_shared::models::{Cent, LAST_POSSIBLE_TIME};
 use std::collections::HashMap;
 
 use crate::ConnCache;
@@ -54,7 +54,13 @@ impl<'a> NewSearch<'a> {
         if let Some(d) = self.date.as_ref() {
             match d {
                 DateNature::Exact(d) => {
-                    query = query.filter(date.eq(d));
+                    let start_date = NaiveDate::from_ymd_opt(d.year(), d.month(), d.day()).unwrap();
+                    let end_date = start_date;
+
+                    let start_date = start_date.and_time(NaiveTime::MIN);
+                    let end_date = end_date.and_time(LAST_POSSIBLE_TIME);
+
+                    query = query.filter(date.between(start_date, end_date));
                 }
                 DateNature::ByMonth {
                     start_date,
@@ -105,12 +111,16 @@ impl<'a> NewSearch<'a> {
             }
         }
 
-        if let Some(tag_ids) = self.tags.as_ref() {
-            query = query.filter(exists(
-                tx_tags::table
-                    .filter(tx_tags::tx_id.eq(id))
-                    .filter(tx_tags::tag_id.eq_any(tag_ids)),
-            ));
+        if let Some(tag_ids) = self.tags.as_ref()
+            && !tag_ids.is_empty()
+        {
+            let subquery = tx_tags::table
+                .filter(tx_tags::tag_id.eq_any(tag_ids))
+                .group_by(tx_tags::tx_id)
+                .select((tx_tags::tx_id, count_star()))
+                .having(count_star().eq(tag_ids.len() as i64));
+
+            query = query.filter(id.eq_any(subquery.select(tx_tags::tx_id)));
         }
 
         let result = query.select(Tx::as_select()).load(db_conn.conn())?;
@@ -422,19 +432,23 @@ impl Tx {
 
         let dates = match nature {
             FetchNature::Monthly => {
-                let start_date = NaiveDate::from_ymd_opt(d.year(), d.month(), 1)
-                    .unwrap()
-                    .and_time(NaiveTime::MIN);
+                let start_date = NaiveDate::from_ymd_opt(d.year(), d.month(), 1).unwrap();
 
                 let end_date = start_date + Months::new(1) - Days::new(1);
+
+                let start_date = start_date.and_time(NaiveTime::MIN);
+                let end_date = end_date.and_time(LAST_POSSIBLE_TIME);
+
                 Some((start_date, end_date))
             }
             FetchNature::Yearly => {
-                let start_date = NaiveDate::from_ymd_opt(d.year(), 1, 1)
-                    .unwrap()
-                    .and_time(NaiveTime::MIN);
+                let start_date = NaiveDate::from_ymd_opt(d.year(), 1, 1).unwrap();
 
                 let end_date = start_date + Months::new(12) - Days::new(1);
+
+                let start_date = start_date.and_time(NaiveTime::MIN);
+                let end_date = end_date.and_time(LAST_POSSIBLE_TIME);
+
                 Some((start_date, end_date))
             }
             FetchNature::All => None,

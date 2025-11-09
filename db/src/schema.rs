@@ -60,6 +60,7 @@ diesel::table! {
     tx_tags (tx_id, tag_id) {
         tx_id -> Integer,
         tag_id -> Integer,
+        is_primary -> Bool,
     }
 }
 

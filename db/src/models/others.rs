@@ -1,15 +1,23 @@
 use chrono::NaiveDateTime;
 use rex_shared::models::Cent;
 use std::fmt::{self, Display};
+use strum_macros::{Display, EnumIter};
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, Display, EnumIter)]
 pub enum TxType {
+    #[strum(to_string = "Income")]
     Income,
+    #[strum(to_string = "Expense")]
     Expense,
+    #[strum(to_string = "Transfer")]
     Transfer,
+    #[strum(to_string = "Borrow")]
     Borrow,
+    #[strum(to_string = "Lend")]
     Lend,
+    #[strum(to_string = "Borrow Repay")]
     BorrowRepay,
+    #[strum(to_string = "Lend Repay")]
     LendRepay,
 }
 
@@ -184,20 +192,5 @@ impl From<&str> for TxType {
             "Lend Repay" => TxType::LendRepay,
             other => panic!("Invalid TxType string: {other}"),
         }
-    }
-}
-
-impl Display for TxType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            TxType::Income => "Income",
-            TxType::Expense => "Expense",
-            TxType::Transfer => "Transfer",
-            TxType::Borrow => "Borrow",
-            TxType::Lend => "Lend",
-            TxType::BorrowRepay => "Borrow Repay",
-            TxType::LendRepay => "Lend Repay",
-        };
-        write!(f, "{s}")
     }
 }

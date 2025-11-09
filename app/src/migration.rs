@@ -117,7 +117,7 @@ pub fn start_migration(mut old_db_conn: DbConn, db_conn: &mut DbConn) -> Result<
         let mut skipped_activity_id = HashSet::new();
 
         for row in rows {
-            let method = row.tx_method.to_string();
+            let method = row.tx_method.clone();
 
             let from_method;
             let mut to_method = String::new();
@@ -348,10 +348,10 @@ fn migrate_tx(
 
     let mut tx_tags = Vec::new();
 
-    for tag in tag_list {
+    for (index, tag) in tag_list.into_iter().enumerate() {
         let tag_data = NewTag::new(&tag).insert(db_conn)?;
 
-        let tx_tag = TxTag::new(added_tx.id, tag_data.id);
+        let tx_tag = TxTag::new(added_tx.id, tag_data.id, index == 0);
 
         tx_tags.push(tx_tag);
     }

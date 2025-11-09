@@ -545,9 +545,9 @@ dependencies = [
 
 [[package]]
 name = "diesel"
-version = "2.3.2"
+version = "2.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8496eeb328dce26ee9d9b73275d396d9bddb433fa30106cf6056dd8c3c2764c"
+checksum = "5e7624a3bb9fffd82fff016be9a7f163d20e5a89eb8d28f9daaa6b30fff37500"
 dependencies = [
  "chrono",
  "diesel_derives",
@@ -1396,9 +1396,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.27"
+version = "0.4.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
+checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 
 [[package]]
 name = "lru"
@@ -1939,9 +1939,12 @@ dependencies = [
  "anyhow",
  "chrono",
  "diesel",
+ "log",
  "rex-db",
  "rex-shared",
  "strsim",
+ "strum 0.27.2",
+ "strum_macros 0.27.2",
  "thiserror",
 ]
 
@@ -1955,11 +1958,16 @@ dependencies = [
  "diesel_migrations",
  "libsqlite3-sys",
  "rex-shared",
+ "strum 0.27.2",
+ "strum_macros 0.27.2",
 ]
 
 [[package]]
 name = "rex-shared"
 version = "0.2.0"
+dependencies = [
+ "chrono",
+]
 
 [[package]]
 name = "rex-tui"
@@ -2038,7 +2046,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.4.15",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

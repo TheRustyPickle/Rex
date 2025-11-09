@@ -47,7 +47,7 @@ pub fn summary_ui(
         "Total Expense"
     };
 
-    let mut table_headers = vec![
+    let mut tag_table_headers = vec![
         tag_header,
         total_income_header,
         total_expense_header,
@@ -55,17 +55,24 @@ pub fn summary_ui(
         "Expense %",
     ];
 
+    let mut lend_borrow_headers = vec!["Borrow", "Lend"];
+
     if mode_selection.index == 0 {
-        table_headers.push("MoM Income %");
-        table_headers.push("MoM Expense %");
+        tag_table_headers.push("MoM Income %");
+        tag_table_headers.push("MoM Expense %");
+
+        lend_borrow_headers.push("MoM Borrow %");
+        lend_borrow_headers.push("MoM Lend %");
     } else if mode_selection.index == 1 {
-        table_headers.push("YoY Income %");
-        table_headers.push("YoY Expense %");
+        tag_table_headers.push("YoY Income %");
+        tag_table_headers.push("YoY Expense %");
+
+        lend_borrow_headers.push("YoY Borrow %");
+        lend_borrow_headers.push("YoY Lend %");
     }
 
-    let header_cells = table_headers
-        .into_iter()
-        .map(|h| Cell::from(h).style(Style::default().fg(theme.background())));
+    tag_table_headers.push("Borrow");
+    tag_table_headers.push("Lend");
 
     let mut method_headers = vec!["Method", "Total Income", "Total Expense"];
 
@@ -89,12 +96,25 @@ pub fn summary_ui(
         .iter()
         .map(|h| Cell::from(*h).style(Style::default().fg(theme.background())));
 
-    let header = Row::new(header_cells)
+    let tag_table_header_cells = tag_table_headers
+        .into_iter()
+        .map(|h| Cell::from(h).style(Style::default().fg(theme.background())));
+
+    let lend_borrow_header_cells = lend_borrow_headers
+        .into_iter()
+        .map(|h| Cell::from(h).style(Style::default().fg(theme.background())));
+
+    let tag_table_header = Row::new(tag_table_header_cells)
         .style(Style::default().bg(theme.header()))
         .height(1)
         .bottom_margin(0);
 
     let method_header = Row::new(method_header_cells)
+        .style(Style::default().bg(theme.header()))
+        .height(1)
+        .bottom_margin(0);
+
+    let lend_borrow_header = Row::new(lend_borrow_header_cells)
         .style(Style::default().bg(theme.header()))
         .height(1)
         .bottom_margin(0);
@@ -107,6 +127,7 @@ pub fn summary_ui(
     if summary_hidden_mode {
         main_layout = main_layout.constraints([
             Constraint::Length(method_len + 2),
+            Constraint::Length(3),
             Constraint::Length(3),
             Constraint::Length(4),
             Constraint::Min(0),
@@ -123,6 +144,7 @@ pub fn summary_ui(
                     Constraint::Length(method_len + 2),
                     Constraint::Length(3),
                     Constraint::Length(4),
+                    Constraint::Length(4),
                     Constraint::Min(0),
                 ]);
                 summary_layout = summary_layout
@@ -135,6 +157,7 @@ pub fn summary_ui(
                     Constraint::Length(method_len + 2),
                     Constraint::Length(3),
                     Constraint::Length(4),
+                    Constraint::Length(4),
                     Constraint::Min(0),
                 ]);
                 summary_layout = summary_layout
@@ -146,20 +169,24 @@ pub fn summary_ui(
                     Constraint::Length(method_len + 2),
                     Constraint::Length(3),
                     Constraint::Length(4),
+                    Constraint::Length(4),
                     Constraint::Min(0),
                 ]);
                 summary_layout = summary_layout
-                    .constraints([Constraint::Percentage(100), Constraint::Percentage(50)]);
+                    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)]);
             }
             _ => {}
         }
     }
 
     let chunks = main_layout.split(size);
+
+    // Horizontal split for the peak + largest area. Split the main block into several vertical
+    // chunk => Take a specific vertical take and split it into two Horizontal chunk once again
     let summary_chunk = if summary_hidden_mode {
-        summary_layout.split(chunks[2])
+        summary_layout.split(chunks[3])
     } else {
-        summary_layout.split(chunks[5 - mode_selection.index])
+        summary_layout.split(chunks[6 - mode_selection.index])
     };
 
     f.render_widget(main_block(theme), size);
@@ -177,10 +204,16 @@ pub fn summary_ui(
         .enumerate()
         .map(|(row_index, item)| {
             let cells = item.iter().enumerate().map(|(index, c)| {
+                if index == 0 {
+                    return Cell::from(c.clone());
+                }
+
+                let lerp_id = format!("summary_table_main:{index}:{row_index}");
+
                 let Ok(parsed_num) = c.parse::<f64>() else {
                     if c == "∞" {
-                        let lerp_id = format!("summary_table_main:{index}:{row_index}");
-                        lerp_state.lerp(&lerp_id, 0.0);
+                        let new_c = lerp_state.lerp(&lerp_id, 0.0);
+                        return Cell::from(format!("{new_c:.2}").separate_with_commas());
                     }
 
                     let symbol = if c.contains('↑') || c.contains('↓') {
@@ -192,7 +225,6 @@ pub fn summary_ui(
                     if let Some(sym) = symbol {
                         let c = c.replace(sym, "");
                         if let Ok(parsed_num) = c.parse::<f64>() {
-                            let lerp_id = format!("summary_table_main:{index}:{row_index}");
                             let new_c = lerp_state.lerp(&lerp_id, parsed_num);
 
                             return Cell::from(format!("{sym}{new_c:.2}").separate_with_commas());
@@ -201,7 +233,6 @@ pub fn summary_ui(
                     return Cell::from(c.separate_with_commas());
                 };
 
-                let lerp_id = format!("summary_table_main:{index}:{row_index}");
                 let new_c = lerp_state.lerp(&lerp_id, parsed_num);
 
                 Cell::from(format!("{new_c:.2}").separate_with_commas())
@@ -214,26 +245,30 @@ pub fn summary_ui(
 
     let table_width = if mode_selection.index == 2 {
         vec![
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
+            Constraint::Percentage(15),
+            Constraint::Percentage(15),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
+            Constraint::Percentage(14),
         ]
     } else {
         vec![
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(14),
-            Constraint::Percentage(15),
+            Constraint::Percentage(12),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
+            Constraint::Percentage(11),
         ]
     };
 
     let mut table_area = Table::new(rows, table_width)
-        .header(header)
+        .header(tag_table_header)
         .block(styled_block("Tags", theme))
         .style(Style::default().fg(theme.border()));
 
@@ -423,6 +458,62 @@ pub fn summary_ui(
         .block(styled_block_no_bottom("", theme))
         .style(Style::default().fg(theme.border()));
 
+    let lend_borrow_rows = full_summary
+        .lend_borrows_array()
+        .into_iter()
+        .enumerate()
+        .map(|(row_index, item)| {
+            let cells = item.into_iter().enumerate().map(|(index, c)| {
+                let lerp_id = format!("lend_borrow_table:{index}:{row_index}");
+
+                if let Ok(parsed_num) = c.parse::<f64>() {
+                    let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+
+                    Cell::from(format!("{new_c:.2}").separate_with_commas())
+                } else {
+                    let symbol = if c.contains('↑') || c.contains('↓') {
+                        c.chars().next()
+                    } else {
+                        None
+                    };
+
+                    if let Some(sym) = symbol {
+                        let c = c.replace(sym, "");
+                        if let Ok(parsed_num) = c.parse::<f64>() {
+                            let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+
+                            return Cell::from(format!("{sym}{new_c:.2}").separate_with_commas());
+                        }
+                    }
+
+                    if c == "∞" {
+                        lerp_state.lerp(&lerp_id, 0.0);
+                    }
+                    Cell::from(c.separate_with_commas())
+                }
+            });
+            Row::new(cells)
+                .height(1)
+                .bottom_margin(0)
+                .style(Style::default().fg(theme.text()))
+        });
+
+    let lend_borrow_widths = if mode_selection.index == 2 {
+        vec![Constraint::Percentage(50), Constraint::Percentage(50)]
+    } else {
+        vec![
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+        ]
+    };
+
+    let lend_borrow_area = Table::new(lend_borrow_rows, &lend_borrow_widths)
+        .header(lend_borrow_header)
+        .block(styled_block("", theme))
+        .style(Style::default().fg(theme.border()));
+
     let net_row = full_summary
         .net_array()
         .into_iter()
@@ -449,7 +540,7 @@ pub fn summary_ui(
                     if let Some(sym) = symbol {
                         let c = c.replace(sym, "");
                         if let Ok(parsed_num) = c.parse::<f64>() {
-                            let lerp_id = format!("summary_table_main:{index}:{row_index}");
+                            let lerp_id = format!("summary_net_rows:{index}:{row_index}");
                             let new_c = lerp_state.lerp(&lerp_id, parsed_num);
 
                             return Cell::from(format!("{sym}{new_c:.2}").separate_with_commas());
@@ -530,19 +621,22 @@ pub fn summary_ui(
             0 => {
                 f.render_widget(year_tab, chunks[1]);
                 f.render_widget(month_tab, chunks[2]);
-                f.render_stateful_widget(table_area, chunks[6], &mut table_data.state);
+                f.render_stateful_widget(table_area, chunks[7], &mut table_data.state);
                 f.render_widget(net_area, chunks[4]);
+                f.render_widget(lend_borrow_area, chunks[5]);
                 f.render_widget(method_area, chunks[3]);
             }
             1 => {
                 f.render_widget(year_tab, chunks[1]);
-                f.render_stateful_widget(table_area, chunks[5], &mut table_data.state);
+                f.render_stateful_widget(table_area, chunks[6], &mut table_data.state);
                 f.render_widget(net_area, chunks[3]);
+                f.render_widget(lend_borrow_area, chunks[4]);
                 f.render_widget(method_area, chunks[2]);
             }
             2 => {
-                f.render_stateful_widget(table_area, chunks[4], &mut table_data.state);
+                f.render_stateful_widget(table_area, chunks[5], &mut table_data.state);
                 f.render_widget(net_area, chunks[2]);
+                f.render_widget(lend_borrow_area, chunks[3]);
                 f.render_widget(method_area, chunks[1]);
             }
             _ => {}

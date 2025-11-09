@@ -10,4 +10,5 @@ repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
 
 [dependencies]
+chrono.workspace = true
 

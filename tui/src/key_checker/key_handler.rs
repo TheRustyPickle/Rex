@@ -302,12 +302,12 @@ impl<'a> InputKeyHandler<'a> {
     pub fn do_summary_hidden_mode(&mut self) {
         *self.summary_hidden_mode = !*self.summary_hidden_mode;
 
-        if *self.summary_hidden_mode {
-            if self.summary_table.state.selected().is_none() && !self.summary_table.items.is_empty()
-            {
-                *self.summary_tab = SummaryTab::Table;
-                self.summary_table.state.select(Some(0));
-            }
+        if *self.summary_hidden_mode
+            && self.summary_table.state.selected().is_none()
+            && !self.summary_table.items.is_empty()
+        {
+            *self.summary_tab = SummaryTab::Table;
+            self.summary_table.state.select(Some(0));
         }
     }
 
@@ -2152,12 +2152,12 @@ impl InputKeyHandler<'_> {
                 if self.summary_months.index > 0 {
                     let month_value = self.summary_months.index;
 
-                    previous_month = Some(self.summary_months.titles[month_value - 1].to_string());
+                    previous_month = Some(self.summary_months.titles[month_value - 1].clone());
                     previous_year = Some(self.summary_years.get_selected_value().to_string());
                 } else if self.summary_months.index == 0 && self.summary_years.index > 0 {
-                    previous_month = Some(self.summary_months.titles[MONTHS.len() - 1].to_string());
+                    previous_month = Some(self.summary_months.titles[MONTHS.len() - 1].clone());
                     previous_year =
-                        Some(self.summary_years.titles[self.summary_years.index - 1].to_string());
+                        Some(self.summary_years.titles[self.summary_years.index - 1].clone());
                 }
             }
             1 => {
@@ -2165,7 +2165,7 @@ impl InputKeyHandler<'_> {
                     let year_value = self.summary_years.index;
 
                     previous_month = Some(self.summary_months.get_selected_value().to_string());
-                    previous_year = Some(self.summary_years.titles[year_value - 1].to_string());
+                    previous_year = Some(self.summary_years.titles[year_value - 1].clone());
                 }
             }
             _ => {}

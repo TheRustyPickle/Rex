@@ -85,11 +85,11 @@ impl SummaryNet {
         };
 
         if let Some(mom_yoy_earning) = &self.mom_yoy_earning {
-            to_return[0].push(mom_yoy_earning.to_string());
+            to_return[0].push(mom_yoy_earning.clone());
         }
 
         if let Some(mom_yoy_expense) = &self.mom_yoy_expense {
-            to_return[0].push(mom_yoy_expense.to_string());
+            to_return[0].push(mom_yoy_expense.clone());
         }
 
         to_return
@@ -158,14 +158,14 @@ impl SummaryLargest {
                 self.largest_type.to_string(),
                 String::from("-"),
                 format!("{:.2}", self.amount.value()),
-                self.method.to_string(),
+                self.method.clone(),
             ]
         } else {
             vec![
                 self.largest_type.to_string(),
                 self.date.format("%d-%m-%Y").to_string(),
                 format!("{:.2}", self.amount.value()),
-                self.method.to_string(),
+                self.method.clone(),
             ]
         }
     }
@@ -271,10 +271,50 @@ impl SummaryMethods {
         };
 
         if let Some(mom_yoy_earning) = &self.mom_yoy_earning {
-            to_return.push(mom_yoy_earning.to_string());
+            to_return.push(mom_yoy_earning.clone());
         }
         if let Some(mom_yoy_expense) = &self.mom_yoy_expense {
-            to_return.push(mom_yoy_expense.to_string());
+            to_return.push(mom_yoy_expense.clone());
+        }
+
+        to_return
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) struct SummaryLendBorrows {
+    pub(crate) borrows: Dollar,
+    pub(crate) lends: Dollar,
+    mom_yoy_borrows: Option<String>,
+    mom_yoy_lends: Option<String>,
+}
+
+impl SummaryLendBorrows {
+    pub(crate) fn new(
+        borrows: Dollar,
+        lends: Dollar,
+        mom_yoy_borrows: Option<String>,
+        mom_yoy_lends: Option<String>,
+    ) -> Self {
+        Self {
+            borrows,
+            lends,
+            mom_yoy_borrows,
+            mom_yoy_lends,
+        }
+    }
+
+    pub(crate) fn array(&self) -> Vec<String> {
+        let mut to_return = vec![
+            format!("{:.2}", self.borrows.value()),
+            format!("{:.2}", self.lends.value()),
+        ];
+
+        if let Some(mom_yoy_borrows) = &self.mom_yoy_borrows {
+            to_return.push(mom_yoy_borrows.clone());
+        }
+        if let Some(mom_yoy_lends) = &self.mom_yoy_lends {
+            to_return.push(mom_yoy_lends.clone());
         }
 
         to_return

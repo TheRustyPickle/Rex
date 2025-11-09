@@ -14,7 +14,7 @@ pub(crate) fn get_best_match(data: &str, matching_set: &[String]) -> String {
             best_score = new_score;
         }
     }
-    best_match.to_string()
+    best_match.clone()
 }
 
 #[derive(Copy, Clone)]

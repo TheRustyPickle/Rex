@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use chrono::{Days, Local, Months, NaiveDate, NaiveTime};
 use rex_db::ConnCache;
 use rex_db::models::{Balance, DateNature, FetchNature, NewSearch, NewTx, Tx, TxType};
-use rex_shared::models::Dollar;
+use rex_shared::models::{Dollar, LAST_POSSIBLE_TIME};
 
 use crate::utils::parse_amount_nature_cent;
 
@@ -118,7 +118,7 @@ pub fn parse_search_fields<'a>(
 
                 let end_date = NaiveDate::from_ymd_opt(year + 1, 1, 1)
                     .ok_or_else(|| anyhow!("{year} is an invalid year"))?
-                    .and_time(NaiveTime::MIN);
+                    .and_time(LAST_POSSIBLE_TIME);
 
                 Some(DateNature::ByYear {
                     start_date,
@@ -130,10 +130,12 @@ pub fn parse_search_fields<'a>(
                 let month = split_date[1].parse::<u32>()?;
 
                 let start_date = NaiveDate::from_ymd_opt(year, month, 1)
-                    .ok_or_else(|| anyhow!("{year} or {month} value is invalid"))?
-                    .and_time(NaiveTime::MIN);
+                    .ok_or_else(|| anyhow!("{year} or {month} value is invalid"))?;
 
                 let end_date = start_date + Months::new(1) - Days::new(1);
+
+                let start_date = start_date.and_time(NaiveTime::MIN);
+                let end_date = end_date.and_time(LAST_POSSIBLE_TIME);
 
                 Some(DateNature::ByMonth {
                     start_date,
