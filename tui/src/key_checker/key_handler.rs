@@ -598,22 +598,26 @@ impl<'a> InputKeyHandler<'a> {
                     }
                 }
             }
-            CurrentUi::Summary => match self.summary_tab {
-                SummaryTab::ModeSelection => {
-                    self.summary_modes.next();
-                    self.reload_summary()?;
+            CurrentUi::Summary => {
+                if !*self.summary_hidden_mode {
+                    match self.summary_tab {
+                        SummaryTab::ModeSelection => {
+                            self.summary_modes.next();
+                            self.reload_summary()?;
+                        }
+                        SummaryTab::Years => {
+                            self.summary_months.set_index_zero();
+                            self.summary_years.next_yearly();
+                            self.reload_summary()?;
+                        }
+                        SummaryTab::Months => {
+                            self.summary_months.next();
+                            self.reload_summary()?;
+                        }
+                        SummaryTab::Table => {}
+                    }
                 }
-                SummaryTab::Years => {
-                    self.summary_months.set_index_zero();
-                    self.summary_years.next_yearly();
-                    self.reload_summary()?;
-                }
-                SummaryTab::Months => {
-                    self.summary_months.next();
-                    self.reload_summary()?;
-                }
-                SummaryTab::Table => {}
-            },
+            }
             CurrentUi::Activity => match self.activity_tab {
                 ActivityTab::Years => {
                     self.activity_months.set_index_zero();
