@@ -147,7 +147,7 @@ impl IndexedData {
             final_year += 1;
             self.titles.push(final_year.to_string());
         } else {
-            self.next()
+            self.next();
         }
     }
 

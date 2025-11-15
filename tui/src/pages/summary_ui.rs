@@ -128,7 +128,7 @@ pub fn summary_ui(
         main_layout = main_layout.constraints([
             Constraint::Length(method_len + 2),
             Constraint::Length(3),
-            Constraint::Length(3),
+            Constraint::Length(4),
             Constraint::Length(4),
             Constraint::Min(0),
         ]);
@@ -611,7 +611,8 @@ pub fn summary_ui(
     f.render_widget(summary_area_peak, summary_chunk[0]);
 
     if summary_hidden_mode {
-        f.render_stateful_widget(table_area, chunks[3], &mut table_data.state);
+        f.render_stateful_widget(table_area, chunks[4], &mut table_data.state);
+        f.render_widget(lend_borrow_area, chunks[2]);
         f.render_widget(net_area, chunks[1]);
         f.render_widget(method_area, chunks[0]);
     } else {
