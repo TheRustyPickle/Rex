@@ -169,7 +169,7 @@ pub fn chart_ui(
                         let method_at_index = tx_methods[method_index];
                         let balance = current_balances.get(&method_at_index.id).unwrap().dollar();
 
-                        cumulative_balance += balance;
+                        cumulative_balance += balance.value();
 
                         balance.value()
                     };
