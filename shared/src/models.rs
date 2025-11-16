@@ -230,6 +230,6 @@ impl Dollar {
 
     #[must_use]
     pub fn cent(&self) -> Cent {
-        Cent::new((self.0 * 100.0) as i64)
+        Cent::new((self.0 * 100.0).round() as i64)
     }
 }
