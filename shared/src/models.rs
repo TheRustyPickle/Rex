@@ -6,19 +6,23 @@ use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 pub const LAST_POSSIBLE_TIME: NaiveTime =
     NaiveTime::from_hms_nano_opt(23, 59, 59, 999_999_999).unwrap();
 
+impl Cent {
+    pub fn percent_change(self, previous: Cent) -> Option<f64> {
+        if previous.0 == 0 {
+            None
+        } else {
+            let cur = self.0 as f64;
+            let prev = previous.0 as f64;
+            Some(((cur - prev) / prev) * 100.0)
+        }
+    }
+}
+
 impl Add<i64> for Cent {
     type Output = Cent;
 
     fn add(self, rhs: i64) -> Self::Output {
         Cent(self.0 + rhs)
-    }
-}
-
-impl Add<f64> for Dollar {
-    type Output = Dollar;
-
-    fn add(self, rhs: f64) -> Self::Output {
-        Dollar(self.0 + rhs)
     }
 }
 
@@ -30,49 +34,11 @@ impl Sub<i64> for Cent {
     }
 }
 
-impl Sub<f64> for Dollar {
-    type Output = Dollar;
-
-    fn sub(self, rhs: f64) -> Self::Output {
-        Dollar(self.0 - rhs)
-    }
-}
-
-impl Sub for Dollar {
-    type Output = Dollar;
-
-    fn sub(self, rhs: Dollar) -> Self::Output {
-        Dollar(self.0 - rhs.0)
-    }
-}
-
-impl Div for Dollar {
-    type Output = f64;
-
-    fn div(self, rhs: Dollar) -> Self::Output {
-        self.0 / rhs.0
-    }
-}
-
 impl Mul<i64> for Cent {
     type Output = Cent;
 
     fn mul(self, rhs: i64) -> Self::Output {
         Cent(self.0 * rhs)
-    }
-}
-
-impl Mul<f64> for Dollar {
-    type Output = Dollar;
-
-    fn mul(self, rhs: f64) -> Self::Output {
-        Dollar(self.0 * rhs)
-    }
-}
-
-impl AddAssign<f64> for Dollar {
-    fn add_assign(&mut self, rhs: f64) {
-        self.0 += rhs;
     }
 }
 
@@ -97,20 +63,6 @@ impl SubAssign for Cent {
 impl AddAssign for Cent {
     fn add_assign(&mut self, other: Self) {
         self.0 += other.0;
-    }
-}
-
-impl AddAssign<Dollar> for f64 {
-    fn add_assign(&mut self, other: Dollar) {
-        *self += other.0;
-    }
-}
-
-impl Div<i64> for Cent {
-    type Output = Cent;
-
-    fn div(self, rhs: i64) -> Self::Output {
-        Cent(self.0 / rhs)
     }
 }
 
@@ -146,19 +98,7 @@ impl PartialEq<i64> for Cent {
     }
 }
 
-impl PartialEq<f64> for Dollar {
-    fn eq(&self, other: &f64) -> bool {
-        self.0 == *other
-    }
-}
-
 impl PartialEq for Cent {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
-    }
-}
-
-impl PartialEq for Dollar {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0
     }
@@ -170,20 +110,8 @@ impl PartialOrd for Cent {
     }
 }
 
-impl PartialOrd for Dollar {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.0.partial_cmp(&other.0)
-    }
-}
-
 impl PartialOrd<i64> for Cent {
     fn partial_cmp(&self, other: &i64) -> Option<Ordering> {
-        self.0.partial_cmp(other)
-    }
-}
-
-impl PartialOrd<f64> for Dollar {
-    fn partial_cmp(&self, other: &f64) -> Option<Ordering> {
         self.0.partial_cmp(other)
     }
 }
