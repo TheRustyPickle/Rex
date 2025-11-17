@@ -7,7 +7,7 @@ pub const LAST_POSSIBLE_TIME: NaiveTime =
     NaiveTime::from_hms_nano_opt(23, 59, 59, 999_999_999).unwrap();
 
 impl Cent {
-    #[must_use] 
+    #[must_use]
     pub fn percent_change(self, previous: Cent) -> Option<f64> {
         if previous.0 == 0 {
             None
