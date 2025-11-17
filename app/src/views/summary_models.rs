@@ -24,7 +24,7 @@ impl PeakMonthlyMovement {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug)]
 pub(crate) struct SummaryNet {
     pub(crate) total_income: Dollar,
     pub(crate) total_expense: Dollar,
@@ -96,13 +96,13 @@ impl SummaryNet {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug)]
 pub(crate) enum LargestType {
     Earning,
     Expense,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug)]
 pub(crate) enum PeakType {
     Earning,
     Expense,
@@ -126,7 +126,7 @@ impl fmt::Display for PeakType {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug)]
 pub(crate) struct SummaryLargest {
     largest_type: LargestType,
     method: String,
@@ -171,7 +171,7 @@ impl SummaryLargest {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug)]
 pub(crate) struct SummaryPeak {
     peak_type: PeakType,
     amount: Dollar,
@@ -207,7 +207,7 @@ impl SummaryPeak {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub(crate) struct SummaryMethods {
     method: String,
     pub(crate) total_earning: Dollar,
@@ -281,7 +281,7 @@ impl SummaryMethods {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub(crate) struct SummaryLendBorrows {
     pub(crate) borrows: Dollar,
     pub(crate) lends: Dollar,
