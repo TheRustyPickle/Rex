@@ -282,3 +282,17 @@ pub fn centered_rect_exact(width: u16, height: u16, r: Rect) -> Rect {
 
     horizontal[1]
 }
+
+pub fn tab_highlight_style(theme: &Theme) -> Style {
+    let add_modifier = theme.add_reverse_modifier();
+
+    let mut style = Style::default().add_modifier(Modifier::BOLD);
+
+    if add_modifier {
+        style = style.fg(theme.selected()).add_modifier(Modifier::REVERSED);
+    } else {
+        style = style.bg(theme.selected());
+    }
+
+    style
+}

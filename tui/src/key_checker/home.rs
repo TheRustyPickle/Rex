@@ -22,6 +22,7 @@ pub fn home_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutput>
             KeyCode::Char(',') => handler.switch_tx_position_up()?,
             KeyCode::Char('.') => handler.switch_tx_position_down()?,
             KeyCode::Char('v') => handler.show_home_tx_details(),
+            KeyCode::Char('t') => handler.next_theme()?,
             KeyCode::Right => handler.handle_right_arrow()?,
             KeyCode::Left => handler.handle_left_arrow()?,
             KeyCode::Up => handler.handle_up_arrow(),
