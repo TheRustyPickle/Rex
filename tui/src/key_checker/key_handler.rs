@@ -1119,6 +1119,14 @@ impl<'a> InputKeyHandler<'a> {
     pub fn popup_down(&mut self) {
         self.popup_status.next();
     }
+
+    pub fn next_theme(&mut self) -> Result<()> {
+        let new_index = self.theme.next();
+        self.config.theme_index = Some(new_index);
+        self.config.save_config()?;
+
+        Ok(())
+    }
 }
 
 impl InputKeyHandler<'_> {
