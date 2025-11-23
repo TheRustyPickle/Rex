@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="https://github.com/TheRustyPickle/Rex/assets/35862475/04575a15-53f7-497f-b2e7-88a7a66d1136" width=400>
-</p>
-
 <div align="center"><h1>Rex</h1></div>
 <div align="center">
 <a href="https://wakatime.com/@RustyPickle"><img src="https://wakatime.com/badge/github/TheRustyPickle/Rex.svg" alt="wakatime"></a>
@@ -57,6 +53,7 @@ cargo run --release
 **4. Install using a package manager:**
 
 * On NetBSD a package is available from the [official repositories](https://pkgsrc.se/finance/rex). To install it simply run:
+
 ```sh
 pkgin install rex
 ```
