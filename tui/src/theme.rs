@@ -83,7 +83,7 @@ impl Theme {
     pub fn add_reverse_modifier(&self) -> bool {
         match self.variant {
             ThemeVariant::Light => false,
-            ThemeVariant::Dracula => false,
+            ThemeVariant::Dracula => true,
             ThemeVariant::CatppuccinLatte => true,
             ThemeVariant::CatppuccinFrappe => true,
         }
@@ -121,12 +121,12 @@ impl ThemePalette {
                 background: Color::Rgb(40, 42, 54),
                 text: Color::Rgb(248, 248, 242),
                 border: Color::Rgb(189, 147, 249),
-                selected: Color::Rgb(98, 114, 164),
-                selectable: Color::Rgb(255, 85, 85),
-                header: Color::Rgb(80, 250, 123),
+                selected: Color::Rgb(255, 184, 108),
+                selectable: Color::Rgb(98, 114, 164),
+                header: Color::Rgb(139, 233, 253),
                 negative: Color::Rgb(255, 85, 85),
                 positive: Color::Rgb(80, 250, 123),
-                autocomplete: Color::Rgb(139, 233, 253),
+                autocomplete: Color::Rgb(98, 114, 164),
             },
 
             ThemeVariant::CatppuccinLatte => Self {
