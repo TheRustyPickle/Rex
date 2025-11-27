@@ -8,6 +8,7 @@ pub const Q: &str = "Q: Quit";
 pub const H: &str = "H: Show help";
 pub const V: &str = "V: Show selected transaction details";
 pub const J: &str = "J: Configuration";
+pub const T: &str = "T: Cycle through themes";
 
 pub fn new_update_text(data: &[String]) -> String {
     format!(
@@ -51,6 +52,7 @@ Empty tags field gets replaced with Unknown. Separate more than 1 tags with a co
 Example amount: 100 + b, b + b, 5 * b, 1.2k + 1m
 
 {F}
+{T}
 {R}
 {Z}
 {Y}
@@ -76,6 +78,7 @@ Arrow Up/Down: Cycle widgets
 Arrow Left/Right: Move value of the widget
 
 {F}
+{T}
 {A}
 {Z}
 {Y}
@@ -89,7 +92,8 @@ Arrow Left/Right: Move value of the widget
 
 pub fn summary_help_text() -> String {
     format!(
-        "This page shows various information based on all transactions primary tag within a given period. Transfer Transaction are not shown here
+        "This page shows various information based on all transactions primary tag within a given period.
+Lend and borrow is based on the current outstanding amount.
 
 Following are the supported keys here
 
@@ -100,6 +104,7 @@ Arrow Up/Down: Cycle widgets/table value
 Arrow Left/Right: Move value of the widget
 
 {F}
+{T}
 {A}
 {R}
 {Y}
@@ -128,6 +133,7 @@ Arrow Left/Right: Move value of the widget
 Swapping transaction location will only work if they are on the same date. 
 
 {A}
+{T}
 {R}
 {Z}
 {Y}
@@ -147,6 +153,7 @@ pub fn search_help_text() -> String {
 1: Date         Example: 2022-05-12, YYYY-MM-DD
 2: TX details   Example: For Grocery, Salary
 5: TX Type      Example: Income/Expense/Transfer/I/E/T
+5: New TX Type  Example: Borrow/Borrow Repay/Lend/Lend Repay/b/br/l/lr
 3: TX Method    Example: Cash, Bank, Card
 4: Amount       Example: 1000, 100+50, b - 100
 6: Tags         Example: Food, Car. Add a Comma for a new tag
@@ -181,6 +188,7 @@ Amount Field: Amount field supports '>' '<' '>=' '<=' highlighting amount \
 Example amount : <1000, >=10000
 
 {F}
+{T}
 {A}
 {R}
 {Z}
@@ -205,6 +213,7 @@ Arrow Up/Down: Cycle widgets
 Arrow Left/Right: Move value of the widget
 
 {F}
+{T}
 {A}
 {R}
 {Z}
