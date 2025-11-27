@@ -83,9 +83,9 @@ impl Theme {
     pub fn add_reverse_modifier(&self) -> bool {
         match self.variant {
             ThemeVariant::Light => false,
-            ThemeVariant::Dracula => true,
-            ThemeVariant::CatppuccinLatte => true,
-            ThemeVariant::CatppuccinFrappe => true,
+            ThemeVariant::Dracula
+            | ThemeVariant::CatppuccinLatte
+            | ThemeVariant::CatppuccinFrappe => true,
         }
     }
 }

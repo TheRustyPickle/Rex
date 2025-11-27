@@ -575,7 +575,7 @@ pub fn summary_ui(
         SummaryTab::Months => month_tab = month_tab.highlight_style(tab_highlight_style(theme)),
         SummaryTab::Years => year_tab = year_tab.highlight_style(tab_highlight_style(theme)),
         SummaryTab::ModeSelection => {
-            mode_selection_tab = mode_selection_tab.highlight_style(tab_highlight_style(theme))
+            mode_selection_tab = mode_selection_tab.highlight_style(tab_highlight_style(theme));
         }
         SummaryTab::Table => {
             let add_modifier = theme.add_reverse_modifier();
