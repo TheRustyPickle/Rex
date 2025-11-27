@@ -100,8 +100,11 @@ pub fn initial_ui(f: &mut Frame, start_from: usize, theme: &Theme) {
 Arrow Left/Right: Cycle values of a widget
 H: Show help of the page the UI is currently on
 X: Change sort type on summary/Change date type on Search page
-Double R: Go to the Chart page and hide top widget. Press again to unhide
-Double Z: Go to the Summary page and hide top widget. Press again to unhide";
+T: Cycle through themes
+Double r (Lowercase): Go to the Chart page and hide top widget. Press again to unhide
+Double R (Upeercase): Go to the Chart page and hide chart legends. Press again to unhide
+Double Z: Go to the Summary page and hide top widget. Press again to unhide
+";
 
     let unmodified_third_help = format!(
         "Arrow Up/Down: Move between year/month/transaction selections and scroll

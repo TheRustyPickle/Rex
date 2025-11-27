@@ -7,7 +7,7 @@ use thousands::Separable;
 
 use crate::page_handler::{ActivityTab, IndexedData, TableData};
 use crate::theme::Theme;
-use crate::utility::{LerpState, create_tab, main_block, styled_block};
+use crate::utility::{LerpState, create_tab, main_block, styled_block, tab_highlight_style};
 
 pub fn activity_ui(
     f: &mut Frame,
@@ -147,25 +147,23 @@ pub fn activity_ui(
     let mut year_tab = create_tab(years, "Years", theme);
 
     match current_tab {
-        ActivityTab::Months => {
-            month_tab = month_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(theme.selected()),
-            );
-        }
-        ActivityTab::Years => {
-            year_tab = year_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(theme.selected()),
-            );
-        }
+        ActivityTab::Months => month_tab = month_tab.highlight_style(tab_highlight_style(theme)),
+        ActivityTab::Years => year_tab = year_tab.highlight_style(tab_highlight_style(theme)),
         ActivityTab::List => {
             if table_data.state.selected().is_some() {
+                let add_modifier = theme.add_reverse_modifier();
+
+                let mut style = Style::default();
+
+                if add_modifier {
+                    style = style.fg(theme.selected()).add_modifier(Modifier::REVERSED);
+                } else {
+                    style = style.bg(theme.selected());
+                }
+
                 activity_table_area = activity_table_area
                     .highlight_symbol(">> ")
-                    .row_highlight_style(Style::default().bg(theme.selected()));
+                    .row_highlight_style(style);
             }
         }
     }

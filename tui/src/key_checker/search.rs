@@ -25,6 +25,7 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutpu
                 KeyCode::Char('e') => handler.search_edit_tx()?,
                 KeyCode::Char('d') => handler.do_deletion_popup(),
                 KeyCode::Char('y') => handler.go_activity(),
+                KeyCode::Char('t') => handler.next_theme()?,
                 KeyCode::Up => handler.handle_up_arrow(),
                 KeyCode::Down => handler.handle_down_arrow(),
                 KeyCode::Enter => handler.select_date_field(),

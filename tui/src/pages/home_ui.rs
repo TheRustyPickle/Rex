@@ -8,7 +8,7 @@ use thousands::Separable;
 
 use crate::page_handler::{HomeRow, HomeTab, IndexedData, TableData};
 use crate::theme::Theme;
-use crate::utility::{LerpState, create_tab, main_block, styled_block};
+use crate::utility::{LerpState, create_tab, main_block, styled_block, tab_highlight_style};
 
 pub const BALANCE_BOLD: [&str; 7] = [
     "Balance",
@@ -221,21 +221,8 @@ pub fn home_ui(
     match current_tab {
         // Previously added a black block to year and month widget if a value is not selected
         // Now we will turn that black block into green if a value is selected
-        HomeTab::Months => {
-            month_tab = month_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(theme.selected()),
-            );
-        }
-
-        HomeTab::Years => {
-            year_tab = year_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(theme.selected()),
-            );
-        }
+        HomeTab::Months => month_tab = month_tab.highlight_style(tab_highlight_style(theme)),
+        HomeTab::Years => year_tab = year_tab.highlight_style(tab_highlight_style(theme)),
         // Changes the color of row based on Expense or Income tx type on Transaction widget.
         HomeTab::Table => {
             if let Some(a) = home_table.state.selected() {
@@ -251,8 +238,17 @@ pub fn home_ui(
                 } else if income_strings.contains(target_string) {
                     table_area = table_area.row_highlight_style(selected_style_income);
                 } else if home_table.items[a][4] == "Transfer" {
-                    table_area =
-                        table_area.row_highlight_style(Style::default().bg(theme.selected()));
+                    let add_modifier = theme.add_reverse_modifier();
+
+                    let mut style = Style::default();
+
+                    if add_modifier {
+                        style = style.fg(theme.selected()).add_modifier(Modifier::REVERSED);
+                    } else {
+                        style = style.bg(theme.selected());
+                    }
+
+                    table_area = table_area.row_highlight_style(style);
                 }
             }
         }

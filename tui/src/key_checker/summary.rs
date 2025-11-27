@@ -19,6 +19,7 @@ pub fn summary_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutp
             KeyCode::Char('z') => handler.do_summary_hidden_mode(),
             KeyCode::Char('x') => handler.change_summary_sort(),
             KeyCode::Char('y') => handler.go_activity(),
+            KeyCode::Char('t') => handler.next_theme()?,
             KeyCode::Right => handler.handle_right_arrow()?,
             KeyCode::Left => handler.handle_left_arrow()?,
             KeyCode::Up => handler.handle_up_arrow(),

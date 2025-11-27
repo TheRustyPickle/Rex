@@ -1,7 +1,7 @@
 use chrono::{Duration, naive::NaiveDate};
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Direction, Layout};
-use ratatui::style::{Color, Modifier, Style};
+use ratatui::style::{Color, Style};
 use ratatui::symbols::Marker;
 use ratatui::text::Span;
 use ratatui::widgets::{Axis, Block, Chart, Dataset, GraphType};
@@ -11,7 +11,9 @@ use std::collections::HashMap;
 
 use crate::page_handler::{ChartTab, IndexedData};
 use crate::theme::Theme;
-use crate::utility::{LerpState, create_tab, create_tab_activation, main_block};
+use crate::utility::{
+    LerpState, create_tab, create_tab_activation, main_block, tab_highlight_style,
+};
 
 /// Creates the balance chart from the transactions
 pub fn chart_ui(
@@ -334,34 +336,14 @@ pub fn chart_ui(
         );
 
     match current_page {
-        ChartTab::Months => {
-            month_tab = month_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(theme.selected()),
-            );
-        }
-
-        ChartTab::Years => {
-            year_tab = year_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(theme.selected()),
-            );
-        }
+        ChartTab::Months => month_tab = month_tab.highlight_style(tab_highlight_style(theme)),
+        ChartTab::Years => year_tab = year_tab.highlight_style(tab_highlight_style(theme)),
         ChartTab::ModeSelection => {
-            mode_selection_tab = mode_selection_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(theme.selected()),
-            );
+            mode_selection_tab = mode_selection_tab.highlight_style(tab_highlight_style(theme));
         }
         ChartTab::TxMethods => {
-            tx_method_selection_tab = tx_method_selection_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(theme.selected()),
-            );
+            tx_method_selection_tab =
+                tx_method_selection_tab.highlight_style(tab_highlight_style(theme));
         }
     }
 
