@@ -339,11 +339,11 @@ pub fn chart_ui(
         ChartTab::Months => month_tab = month_tab.highlight_style(tab_highlight_style(theme)),
         ChartTab::Years => year_tab = year_tab.highlight_style(tab_highlight_style(theme)),
         ChartTab::ModeSelection => {
-            mode_selection_tab = mode_selection_tab.highlight_style(tab_highlight_style(theme))
+            mode_selection_tab = mode_selection_tab.highlight_style(tab_highlight_style(theme));
         }
         ChartTab::TxMethods => {
             tx_method_selection_tab =
-                tx_method_selection_tab.highlight_style(tab_highlight_style(theme))
+                tx_method_selection_tab.highlight_style(tab_highlight_style(theme));
         }
     }
 

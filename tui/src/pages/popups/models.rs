@@ -316,8 +316,11 @@ impl PopupType {
                     .state
                     .select(Some(selected_index - 1));
             }
-            PopupType::Info(_) | PopupType::Choice(_) => {}
-            _ => {}
+            PopupType::Info(_)
+            | PopupType::Choice(_)
+            | PopupType::Input(_)
+            | PopupType::NewPaths(_)
+            | PopupType::Nothing => {}
         }
     }
 
