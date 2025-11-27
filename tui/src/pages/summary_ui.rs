@@ -10,6 +10,7 @@ use crate::page_handler::{IndexedData, SortingType, SummaryTab, TableData};
 use crate::theme::Theme;
 use crate::utility::{
     LerpState, create_tab, main_block, styled_block, styled_block_no_bottom, styled_block_no_top,
+    tab_highlight_style,
 };
 
 /// The function draws the Summary page of the interface.
@@ -571,31 +572,24 @@ pub fn summary_ui(
     match current_page {
         // Previously added a black block to year and month widget if a value is not selected
         // Now we will turn that black block into green if a value is selected
-        SummaryTab::Months => {
-            month_tab = month_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(theme.selected()),
-            );
-        }
-
-        SummaryTab::Years => {
-            year_tab = year_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(theme.selected()),
-            );
-        }
+        SummaryTab::Months => month_tab = month_tab.highlight_style(tab_highlight_style(theme)),
+        SummaryTab::Years => year_tab = year_tab.highlight_style(tab_highlight_style(theme)),
         SummaryTab::ModeSelection => {
-            mode_selection_tab = mode_selection_tab.highlight_style(
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .bg(theme.selected()),
-            );
+            mode_selection_tab = mode_selection_tab.highlight_style(tab_highlight_style(theme));
         }
         SummaryTab::Table => {
+            let add_modifier = theme.add_reverse_modifier();
+
+            let mut style = Style::default();
+
+            if add_modifier {
+                style = style.fg(theme.selected()).add_modifier(Modifier::REVERSED);
+            } else {
+                style = style.bg(theme.selected());
+            }
+
             table_area = table_area
-                .row_highlight_style(Style::default().bg(theme.selected()))
+                .row_highlight_style(style)
                 .highlight_symbol(">> ");
         }
     }

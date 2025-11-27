@@ -340,7 +340,17 @@ pub fn search_ui(
         } else if income_strings.contains(target_string) {
             table_area = table_area.row_highlight_style(selected_style_income);
         } else if search_table.items[a][4] == "Transfer" {
-            table_area = table_area.row_highlight_style(Style::default().bg(theme.selected()));
+            let add_modifier = theme.add_reverse_modifier();
+
+            let mut style = Style::default();
+
+            if add_modifier {
+                style = style.fg(theme.selected()).add_modifier(Modifier::REVERSED);
+            } else {
+                style = style.bg(theme.selected());
+            }
+
+            table_area = table_area.row_highlight_style(style);
         }
     }
 

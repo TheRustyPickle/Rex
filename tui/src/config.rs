@@ -21,6 +21,7 @@ pub struct Config {
     pub location: PathBuf,
     pub backup_db_path: Option<Vec<PathBuf>>,
     pub new_location: Option<PathBuf>,
+    pub theme_index: Option<usize>,
 }
 
 impl Config {
@@ -35,6 +36,7 @@ impl Config {
                 backup_db_path: None,
                 new_location: None,
                 location: target_dir,
+                theme_index: Some(0),
             });
         }
 
@@ -44,6 +46,11 @@ impl Config {
         let mut config: Config = serde_json::from_str(&file_content)?;
 
         config.location = target_dir;
+
+        if config.theme_index.is_none() {
+            config.theme_index = Some(0);
+        }
+
         Ok(config)
     }
 
@@ -157,6 +164,7 @@ pub fn migrate_config(config_path: &PathBuf) -> Result<()> {
         backup_db_path: None,
         new_location: None,
         location: PathBuf::new(),
+        theme_index: Some(0),
     };
 
     let mut backup_path = config_path.to_owned();

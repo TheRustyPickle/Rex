@@ -19,6 +19,7 @@ pub fn chart_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutput
             KeyCode::Char('R') => handler.do_chart_lgeneds(),
             KeyCode::Char('w') => handler.go_search(),
             KeyCode::Char('y') => handler.go_activity(),
+            KeyCode::Char('t') => handler.next_theme()?,
             KeyCode::Right => handler.handle_right_arrow()?,
             KeyCode::Left => handler.handle_left_arrow()?,
             KeyCode::Up => handler.handle_up_arrow(),

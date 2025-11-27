@@ -20,7 +20,7 @@ use crate::pages::{
     InfoPopupState, PopupType, activity_ui, add_tx_ui, chart_ui, home_ui, initial_ui, search_ui,
     summary_ui,
 };
-use crate::theme::{Theme, ThemeVariant};
+use crate::theme::Theme;
 use crate::tx_handler::TxData;
 use crate::utility::LerpState;
 
@@ -33,7 +33,7 @@ pub fn start_app<B: Backend>(
 ) -> Result<HandlingOutput, UiHandlingError> {
     // Setting up some default values. Let's go through all of them
 
-    let mut theme = Theme::new(ThemeVariant::Light);
+    let mut theme = Theme::new_index(config.theme_index.unwrap_or(0));
 
     // Contains the homepage month list that is indexed
     let mut home_months = IndexedData::new_monthly();
