@@ -1,6 +1,6 @@
 [package]
 name = "rex-tui"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2024"
 authors = ["TheRustyPickle <rusty.pickle94@gmail.com>"]
 readme = "../README.md"
@@ -10,7 +10,7 @@ A TUI app for managing Incomes and Expenses
 homepage = "https://github.com/TheRustyPickle/Rex"
 repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
-keywords = ["tui", "terminal", "budget", "ratatui", "money"]
+keywords = ["tui", "terminal", "budget", "finance", "money"]
 categories = ["command-line-utilities"]
 exclude = ["logo.png", ".github", "typos.toml", "codecov.yml"]
 
@@ -37,7 +37,7 @@ thousands = "0.2.0"
 semver = "1.0.27"
 ratatui = "0.29.0"
 serde_json = "1.0.145"
-rfd = "0.15.4"
+rfd = "0.16.0"
 
 [lints.clippy]
 too_many_arguments = { level = "allow" }
