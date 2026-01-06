@@ -180,7 +180,7 @@ impl Balance {
 
         let mut pending_balance_tx_methods = HashSet::new();
 
-        // All means all txs were fetched. The last balance is the balance before the first tx
+        // All means all TXs were fetched. The last balance is the balance before the first TX
         // which is 0
         if let FetchNature::All = nature {
             let mut to_return = HashMap::new();
@@ -273,5 +273,18 @@ impl Balance {
         let balance_map = balance_list.into_iter().map(|b| (b.method_id, b)).collect();
 
         Ok(balance_map)
+    }
+
+    pub fn get_balance_highest_date(db_conn: &mut impl ConnCache) -> Result<Vec<Self>, Error> {
+        use crate::schema::balances::dsl::{balances, is_final_balance, month, year};
+
+        let total_methods = db_conn.cache().tx_methods.len();
+
+        balances
+            .filter(is_final_balance.eq(false))
+            .order((year.desc(), month.desc()))
+            .limit(total_methods as i64)
+            .select(Self::as_select())
+            .load(db_conn.conn())
     }
 }

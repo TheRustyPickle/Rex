@@ -45,7 +45,7 @@ pub fn start_app<B: Backend>(
     let mut chart_years = IndexedData::new_yearly_no_local();
     // Contains the chart page mode selection list that is indexed
     let mut chart_modes = IndexedData::new_modes();
-    // Contains the chart page tx method selection list that is indexed
+    // Contains the chart page TX method selection list that is indexed
     let mut chart_tx_methods = IndexedData::new_tx_methods_cumulative(conn);
 
     // Contains the summary page month list that is indexed
@@ -59,7 +59,7 @@ pub fn start_app<B: Backend>(
     // Contains the Activity page month list that is indexed
     let mut activity_months = IndexedData::new_monthly();
 
-    // The selected widget on the HomePage. Default set to the month selection
+    // The selected widget on the homepage. Default set to the month selection
     let mut home_tab = HomeTab::Months;
 
     // How summary table will be sorted
@@ -68,7 +68,7 @@ pub fn start_app<B: Backend>(
     // An empty search view, contains relevant data to create the search UI
     let mut search_txs = SearchView::new_empty();
 
-    // Contains the tx views for that month and year. Used for home page data + balances
+    // Contains the TX views for that month and year. Used for home page data + balances
     let mut home_txs = conn
         .fetch_txs_with_str(
             home_months.get_selected_value(),
@@ -77,13 +77,13 @@ pub fn start_app<B: Backend>(
         )
         .unwrap();
 
-    // Home tx data but in vector form with index tracking. Used for creating the table in the ui
+    // Home TX data but in vector form with index tracking. Used for creating the table in the UI
     let mut home_table = TableData::new(home_txs.tx_array());
 
     // The page which is currently selected. Default is the initial page
     let mut page = CurrentUi::Initial;
 
-    // Stores current popup status. if a new version is available, show popup
+    // Stores current popup status. If a new version is available, show popup
     let mut popup_status = if let Some(data) = new_version_data {
         let state = InfoPopupState::NewUpdate(data.to_owned());
         PopupType::new_info(state)
@@ -104,12 +104,12 @@ pub fn start_app<B: Backend>(
     // Store the current selected widget on Activity page
     let mut activity_tab = ActivityTab::Years;
 
-    // Holds the data that will be/are inserted into the Add Tx page's input fields
+    // Holds the data that will be/are inserted into the Add TX page's input fields
     let mut add_tx_data = TxData::new();
     // Holds the data that will be/are inserted into the Search page's input fields
     let mut search_data = TxData::new_empty();
 
-    // Chart view contains tx list to create the chart.
+    // Chart view contains TX list to create the chart.
     let mut chart_view = conn
         .get_chart_view_with_str(
             chart_months.get_selected_value(),
@@ -118,7 +118,7 @@ pub fn start_app<B: Backend>(
         )
         .unwrap();
 
-    // Summary view contains tx list to create the summary.
+    // Summary view contains TX list to create the summary.
     let mut summary_view = conn
         .get_summary_with_str(
             summary_months.get_selected_value(),
@@ -127,7 +127,7 @@ pub fn start_app<B: Backend>(
         )
         .unwrap();
 
-    // Activity view contains tx list to create the activity.
+    // Activity view contains TX list to create the activity.
     let mut activity_view = conn
         .get_activity_view_with_str(
             activity_months.get_selected_value(),
@@ -159,14 +159,14 @@ pub fn start_app<B: Backend>(
     // Whether the summary is in hidden mode
     let mut summary_hidden_mode = false;
 
-    // Map of which tx methods are activated in the chart
+    // Map of which TX methods are activated in the chart
     let mut chart_activated_methods = conn
         .get_tx_methods_cumulative()
         .into_iter()
         .map(|s| (s, true))
         .collect();
 
-    // The generated balance section on the Add tx UI
+    // The generated balance section on the Add TX UI
     let mut add_tx_balance = Vec::new();
     // Home and add TX page balance section's column space
 
@@ -180,7 +180,7 @@ pub fn start_app<B: Backend>(
     // If key press is detected, send most of the mutable values to InputKeyHandler -> Gets mutated based on keypress
     // -> loop ends -> start from beginning -> Send the new mutated values to the interface -> Keep up
     loop {
-        // If tx method list is empty, forcefully ask to create a new tx method
+        // If TX method list is empty, forcefully ask to create a new TX method
         if conn.is_tx_method_empty()
             && let PopupType::Nothing = popup_status
         {
@@ -268,12 +268,15 @@ pub fn start_app<B: Backend>(
 
                 popup_status.show_ui(f, &theme);
             })
-            .map_err(UiHandlingError::Drawing)?;
+            .map_err(|e| {
+                let e = e.to_string();
+                UiHandlingError::Drawing(e)
+            })?;
 
         // Based on the UI status, either start polling for key press or continue the loop
         match page {
             CurrentUi::Initial => {
-                // Initial page will loop indefinitely to animate the text
+                // Initial page will loop to animate the text
                 if !poll(Duration::from_millis(40)).map_err(UiHandlingError::Polling)? {
                     starter_index = (starter_index + 1) % 27;
                     continue;

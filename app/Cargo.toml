@@ -1,6 +1,6 @@
 [package]
 name = "rex-app"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2024"
 description = """
 Core functionality for Rex
@@ -17,7 +17,6 @@ anyhow.workspace = true
 diesel.workspace = true
 strum.workspace = true
 strum_macros.workspace = true
-log = "0.4.28"
 strsim = "0.11.1"
 thiserror = "2.0.17"
 
