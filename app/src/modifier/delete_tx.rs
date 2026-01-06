@@ -52,8 +52,8 @@ pub(crate) fn delete_tx(tx: &FullTx, db_conn: &mut impl ConnCache) -> Result<()>
             balance_from.balance += amount;
             balance_to.balance -= amount;
 
-            from_final_balance_entry.balance -= amount;
-            to_final_balance_entry.balance += amount;
+            from_final_balance_entry.balance += amount;
+            to_final_balance_entry.balance -= amount;
 
             balance_to_update.push(balance_from);
             balance_to_update.push(balance_to);
