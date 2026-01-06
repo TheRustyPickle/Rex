@@ -163,9 +163,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// Moves the interface to Home page and
-    /// resets any selected widget/data from Add Tx or Transfer
-    /// page to Nothing
+    /// Moves the interface to Home page and resets any selected widget/data from Add TX or Transfer page to Nothing
     pub fn go_home_reset(&mut self) {
         match self.page {
             CurrentUi::AddTx => {
@@ -187,7 +185,7 @@ impl<'a> InputKeyHandler<'a> {
         self.lerp_state.clear();
     }
 
-    /// Moves the interface to Add Tx page
+    /// Moves the interface to Add TX page
     pub fn go_add_tx(&mut self) -> Result<()> {
         *self.page = CurrentUi::AddTx;
         self.add_tx_data.add_tx_status(
@@ -354,7 +352,7 @@ impl<'a> InputKeyHandler<'a> {
         Ok(())
     }
 
-    /// Adds new tx and reloads home and chart data
+    /// Adds new TX and reloads home and chart data
     pub fn add_tx(&mut self) -> Result<()> {
         let status = self.add_tx_data.add_tx(self.home_txs, self.conn);
 
@@ -362,7 +360,7 @@ impl<'a> InputKeyHandler<'a> {
             Ok(()) => {
                 // TODO: Update cache?
                 self.go_home_reset();
-                // We just added a new tx, select the month tab again + reload the data of balance and table widgets to get updated data
+                // We just added a new TX, select the month tab again + reload the data of balance and table widgets to get updated data
                 *self.home_tab = HomeTab::Months;
                 self.reload_home_table()?;
                 self.reload_chart_data()?;
@@ -376,8 +374,8 @@ impl<'a> InputKeyHandler<'a> {
         Ok(())
     }
 
-    /// Based on transaction Selected, opens Add Tx page and
-    /// allocates the data of the tx to the input boxes
+    /// Based on transaction Selected, opens Add TX page and
+    /// allocates the data of the TX to the input boxes
     pub fn home_edit_tx(&mut self) -> Result<()> {
         if let Some(index) = self.home_table.state.selected() {
             let target_tx = self.home_txs.get_tx(index);
@@ -403,7 +401,7 @@ impl<'a> InputKeyHandler<'a> {
         let target_tx = self.home_txs.get_tx(index);
         self.conn.delete_tx(target_tx)?;
 
-        // INFO: maybe can reduce fetches by directly deleted from tx list?
+        // INFO: maybe can reduce fetches by directly deleted from TX list?
         // TODO: Update cache?
 
         // Transaction deleted so reload the data again
@@ -685,7 +683,7 @@ impl<'a> InputKeyHandler<'a> {
         self.check_autofill();
     }
 
-    /// Checks and verifies tx method field
+    /// Checks and verifies TX method field
     pub fn handle_tx_method(&mut self) -> Result<()> {
         match self.page {
             CurrentUi::AddTx => match self.add_tx_tab {
@@ -716,7 +714,7 @@ impl<'a> InputKeyHandler<'a> {
         Ok(())
     }
 
-    // Checks and verifies tx type field
+    // Checks and verifies TX type field
     pub fn handle_tx_type(&mut self) -> Result<()> {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_type()?,
@@ -738,7 +736,7 @@ impl<'a> InputKeyHandler<'a> {
         self.check_autofill();
     }
 
-    /// Resets all input boxes on Add Tx and Transfer page
+    /// Resets all input boxes on Add TX and Transfer page
     pub fn clear_input(&mut self) -> Result<()> {
         match self.page {
             CurrentUi::AddTx => {
@@ -764,7 +762,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// No field selected on add tx or search but enter is pressed then
+    /// No field selected on add TX or search but enter is pressed then
     /// select the Date field
     pub fn select_date_field(&mut self) {
         match self.page {
@@ -978,7 +976,7 @@ impl<'a> InputKeyHandler<'a> {
         self.search_data.clear_date();
     }
 
-    /// Start editing tx from a search result
+    /// Start editing TX from a search result
     pub fn search_edit_tx(&mut self) -> Result<()> {
         if let Some(a) = self.search_table.state.selected() {
             let target_tx = &self.search_txs.get_tx(a);
@@ -1061,7 +1059,7 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// Opens a popup that shows the details of the selected activity tx details on the Activity page
+    /// Opens a popup that shows the details of the selected activity TX details on the Activity page
     pub fn show_activity_tx_details(&mut self) -> Result<()> {
         if let Some(index) = self.activity_table.state.selected() {
             let activity_txs = self.activity_view.get_activity_txs(index);
@@ -1375,7 +1373,7 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    /// Handle key inputs for the Details field on the Add Tx page
+    /// Handle key inputs for the Details field on the Add TX page
     fn check_add_tx_date(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
@@ -1417,7 +1415,7 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    /// Handle key inputs for the Details field on the Add Tx page
+    /// Handle key inputs for the Details field on the Add TX page
     fn check_add_tx_details(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
@@ -1431,7 +1429,7 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    /// Handle key inputs for the Tx Type field on the Add Tx page
+    /// Handle key inputs for the TX Type field on the Add TX page
     fn check_add_tx_type(&mut self) -> Result<()> {
         match self.key.code {
             KeyCode::Enter => {
@@ -1477,7 +1475,7 @@ impl InputKeyHandler<'_> {
         Ok(())
     }
 
-    /// Handle key inputs for the From Method field on the Add Tx page
+    /// Handle key inputs for the From Method field on the Add TX page
     fn check_add_tx_from(&mut self) -> Result<()> {
         match self.key.code {
             KeyCode::Enter => {
@@ -1528,7 +1526,7 @@ impl InputKeyHandler<'_> {
         Ok(())
     }
 
-    /// Handle key inputs for the To Method field on the Add Tx page
+    /// Handle key inputs for the To Method field on the Add TX page
     fn check_add_tx_to(&mut self) -> Result<()> {
         match self.key.code {
             KeyCode::Enter => {
@@ -1573,7 +1571,7 @@ impl InputKeyHandler<'_> {
 
         Ok(())
     }
-    /// Handle key inputs for the Amount field on the Add Tx page
+    /// Handle key inputs for the Amount field on the Add TX page
     fn check_add_tx_amount(&mut self) -> Result<()> {
         match self.key.code {
             KeyCode::Enter => {
@@ -1619,7 +1617,7 @@ impl InputKeyHandler<'_> {
         Ok(())
     }
 
-    /// Handle key inputs for the Tag field on the Add Tx page
+    /// Handle key inputs for the Tag field on the Add TX page
     fn check_add_tx_tags(&mut self) {
         match self.key.code {
             KeyCode::Enter | KeyCode::Esc => {
@@ -1692,7 +1690,7 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    /// Handle key inputs for the Tx Type field on the Search page
+    /// Handle key inputs for the TX Type field on the Search page
     fn check_search_type(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
@@ -1998,10 +1996,10 @@ impl InputKeyHandler<'_> {
             self.activity_years.get_selected_value(),
         )?;
 
-        let old_table_position = self.activity_table.state.clone();
+        let old_table_position = self.activity_table.state;
 
         *self.activity_table = TableData::new(self.activity_view.get_activity_table());
-        self.activity_table.state = old_table_position.clone();
+        self.activity_table.state = old_table_position;
 
         Ok(())
     }
@@ -2126,7 +2124,7 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    /// Update add tx page balance section data that is being shown on the UI
+    /// Update add TX page balance section data that is being shown on the UI
     fn reload_add_tx_balance_data(&mut self) -> Result<()> {
         let is_editing_tx = self.add_tx_data.editing_tx;
 
