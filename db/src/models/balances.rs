@@ -180,7 +180,7 @@ impl Balance {
 
         let mut pending_balance_tx_methods = HashSet::new();
 
-        // All means all txs were fetched. The last balance is the balance before the first tx
+        // All means all TXs were fetched. The last balance is the balance before the first TX
         // which is 0
         if let FetchNature::All = nature {
             let mut to_return = HashMap::new();
