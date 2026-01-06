@@ -28,16 +28,16 @@ chrono.workspace = true
 strum.workspace = true
 strum_macros.workspace = true
 crossterm = "0.29.0"
-open = "5.3.2"
+open = "5.3.3"
 atty = "0.2.14"
-reqwest = { version = "0.12.23", features = ["blocking", "json"] }
+reqwest = { version = "0.13.1", features = ["blocking", "json"] }
 serde = { version = "1.0.228", features = ["derive"] }
 dirs = "6.0.0"
 thousands = "0.2.0"
 semver = "1.0.27"
-ratatui = "0.29.0"
-serde_json = "1.0.145"
-rfd = "0.16.0"
+ratatui = "0.30.0"
+serde_json = "1.0.148"
+rfd = "0.17.1"
 
 [lints.clippy]
 too_many_arguments = { level = "allow" }
