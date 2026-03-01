@@ -287,4 +287,17 @@ impl Balance {
             .select(Self::as_select())
             .load(db_conn.conn())
     }
+
+    pub fn get_highest_date(db_conn: &mut impl ConnCache) -> Result<Self, Error> {
+        use crate::schema::balances::dsl::{balances, is_final_balance, month, year};
+
+        let total_methods = db_conn.cache().tx_methods.len();
+
+        balances
+            .filter(is_final_balance.eq(false))
+            .order((year.desc(), month.desc()))
+            .limit(total_methods as i64)
+            .select(Self::as_select())
+            .first(db_conn.conn())
+    }
 }
