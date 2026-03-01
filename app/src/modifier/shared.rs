@@ -7,6 +7,35 @@ use rex_shared::models::{Dollar, LAST_POSSIBLE_TIME};
 use crate::utils::parse_amount_nature_cent;
 
 pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Result<()> {
+    let tx = Balance::get_highest_date(db_conn)?;
+
+    let max_date = NaiveDate::from_ymd_opt(tx.year, tx.month as u32, 1).unwrap();
+
+    tidy_recursive(max_date, date, db_conn)?;
+
+    // From bad delete txs, final balance got corrupted but monthly balances are fine.
+    // If does not match, trust the monthly balances
+    let mut final_balance = Balance::get_final_balance(db_conn)?;
+    let balance_highest_date = Balance::get_balance_highest_date(db_conn)?;
+
+    for balance in balance_highest_date {
+        let mut final_balance_entry = final_balance.get_mut(&balance.method_id).unwrap().clone();
+
+        if final_balance_entry.balance != balance.balance {
+            final_balance_entry.balance = balance.balance;
+            final_balance_entry.insert(db_conn)?;
+        }
+    }
+
+    Ok(())
+}
+
+/// Recursively tidy balances from the given date to the max date
+fn tidy_recursive(
+    max_date: NaiveDate,
+    date: NaiveDate,
+    db_conn: &mut impl ConnCache,
+) -> Result<()> {
     let nature = FetchNature::Monthly;
 
     let txs = Tx::get_txs(date, nature, db_conn)?;
@@ -52,18 +81,9 @@ pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Re
         to_insert.insert(db_conn)?;
     }
 
-    // From bad delete txs, final balance got corrupted but monthly balances are fine.
-    // If does not match, trust the monthly balances
-    let mut final_balance = Balance::get_final_balance(db_conn)?;
-    let balance_highest_date = Balance::get_balance_highest_date(db_conn)?;
-
-    for balance in balance_highest_date {
-        let mut final_balance_entry = final_balance.get_mut(&balance.method_id).unwrap().clone();
-
-        if final_balance_entry.balance != balance.balance {
-            final_balance_entry.balance = balance.balance;
-            final_balance_entry.insert(db_conn)?;
-        }
+    if date <= max_date {
+        let next_date = date + Months::new(1);
+        tidy_recursive(max_date, next_date, db_conn)?;
     }
 
     Ok(())
