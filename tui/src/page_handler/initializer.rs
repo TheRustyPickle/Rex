@@ -6,6 +6,8 @@ use std::fs::{self, File};
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process;
+use std::sync::{Arc, Mutex};
+use std::thread::spawn;
 
 use crate::config::{Config, migrate_config};
 use crate::outputs::HandlingOutput;
@@ -50,7 +52,16 @@ pub fn initialize_app(
         }
     }
 
-    let new_version = check_version().unwrap_or_default();
+    let new_update = Arc::new(Mutex::new(None));
+
+    let update_clone = new_update.clone();
+
+    spawn(move || {
+        let new_version = check_version().unwrap_or_default().unwrap_or_default();
+
+        let mut lock = update_clone.lock().unwrap();
+        *lock = Some(new_version);
+    });
 
     if let Err(e) = migrate_config(old_db_path) {
         println!("Failed to migrate config. Error: {e:?}");
@@ -79,7 +90,12 @@ pub fn initialize_app(
 
     loop {
         let mut terminal = enter_tui_interface()?;
-        let result = start_app(&mut terminal, &new_version, &mut config, &mut migrated_conn);
+        let result = start_app(
+            &mut terminal,
+            new_update.clone(),
+            &mut config,
+            &mut migrated_conn,
+        );
         exit_tui_interface()?;
 
         match result {

@@ -4,6 +4,7 @@ use ratatui::backend::Backend;
 use rex_app::conn::{DbConn, FetchNature};
 use rex_app::ui_helper::DateType;
 use rex_app::views::SearchView;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use crate::config::Config;
@@ -27,7 +28,7 @@ use crate::utility::LerpState;
 /// Starts the interface and run the app
 pub fn start_app<B: Backend>(
     terminal: &mut Terminal<B>,
-    new_version_data: &Option<Vec<String>>,
+    new_version_data: Arc<Mutex<Option<Vec<String>>>>,
     config: &mut Config,
     conn: &mut DbConn,
 ) -> Result<HandlingOutput, UiHandlingError> {
@@ -83,13 +84,7 @@ pub fn start_app<B: Backend>(
     // The page which is currently selected. Default is the initial page
     let mut page = CurrentUi::Initial;
 
-    // Stores current popup status. If a new version is available, show popup
-    let mut popup_status = if let Some(data) = new_version_data {
-        let state = InfoPopupState::NewUpdate(data.to_owned());
-        PopupType::new_info(state)
-    } else {
-        PopupType::Nothing
-    };
+    let mut popup_status = PopupType::Nothing;
 
     // Stores the current selected widget on Add Transaction page
     let mut add_tx_tab = TxTab::Nothing;
@@ -172,6 +167,8 @@ pub fn start_app<B: Backend>(
 
     let mut lerp_state = LerpState::new(1.0);
 
+    let mut version_checked = false;
+
     // How it work:
     // Default value from above -> Goes to an interface page and render -> Wait for an event key press.
     //
@@ -180,6 +177,16 @@ pub fn start_app<B: Backend>(
     // If key press is detected, send most of the mutable values to InputKeyHandler -> Gets mutated based on keypress
     // -> loop ends -> start from beginning -> Send the new mutated values to the interface -> Keep up
     loop {
+        if !version_checked {
+            let update_lock = new_version_data.lock().unwrap();
+            if let Some(data) = update_lock.as_ref() {
+                if !data.is_empty() {
+                    let state = InfoPopupState::NewUpdate(data.to_vec());
+                    popup_status = PopupType::new_info(state);
+                }
+                version_checked = true;
+            }
+        }
         // If TX method list is empty, forcefully ask to create a new TX method
         if conn.is_tx_method_empty()
             && let PopupType::Nothing = popup_status
