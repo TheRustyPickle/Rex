@@ -2,41 +2,41 @@
 name = "rex-tui"
 version = "0.2.5"
 edition = "2024"
-readme = "../README.md"
 description = """
 A TUI app for managing Incomes and Expenses
 """
+readme = "../README.md"
 homepage = "https://github.com/TheRustyPickle/Rex"
 repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
-keywords = ["tui", "terminal", "budget", "finance", "money"]
+keywords = ["budget", "finance", "money", "terminal", "tui"]
 categories = ["command-line-utilities"]
-exclude = ["logo.png", ".github", "typos.toml", "codecov.yml"]
+exclude = [".github", "codecov.yml", "logo.png", "typos.toml"]
 
 [[bin]]
+bench = false
 name = "rex"
 path = "src/main.rs"
 test = false
-bench = false
 
 [dependencies]
+anyhow.workspace = true
+atty = "0.2.14"
+chrono.workspace = true
+crossterm = "0.29.0"
+dirs = "6.0.0"
+open = "5.3.3"
+ratatui = "0.30.0"
+reqwest = { version = "0.13.2", features = ["blocking", "json"] }
 rex-app.workspace = true
 rex-shared.workspace = true
-anyhow.workspace = true
-chrono.workspace = true
+rfd = "0.17.2"
+semver = "1.0.28"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
 strum.workspace = true
 strum_macros.workspace = true
-crossterm = "0.29.0"
-open = "5.3.3"
-atty = "0.2.14"
-reqwest = { version = "0.13.1", features = ["blocking", "json"] }
-serde = { version = "1.0.228", features = ["derive"] }
-dirs = "6.0.0"
 thousands = "0.2.0"
-semver = "1.0.27"
-ratatui = "0.30.0"
-serde_json = "1.0.148"
-rfd = "0.17.1"
 
 [lints.clippy]
 too_many_arguments = { level = "allow" }
