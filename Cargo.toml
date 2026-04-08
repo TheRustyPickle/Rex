@@ -7,15 +7,15 @@ resolver = "2"
 rex-shared = "0.2.5"
 rex-db = "0.2.5"
 rex-app = "0.2.5"
-chrono = "0.4.42"
-diesel = { version = "2.3.5", default-features = false, features = [
+chrono = "0.4.44"
+diesel = { version = "2.3.7", default-features = false, features = [
     "returning_clauses_for_sqlite_3_35",
     "sqlite",
     "chrono",
 ] }
-anyhow = "1.0.100"
-strum = "0.27"
-strum_macros = "0.27"
+anyhow = "1.0.102"
+strum = "0.28"
+strum_macros = "0.28"
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
