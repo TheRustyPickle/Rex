@@ -4,9 +4,9 @@ members = ["app", "db", "shared", "tui"]
 resolver = "2"
 
 [workspace.dependencies]
-rex-shared = "0.2.5"
-rex-db = "0.2.5"
-rex-app = "0.2.5"
+rex-shared = "0.2.6"
+rex-db = "0.2.6"
+rex-app = "0.2.6"
 chrono = "0.4.44"
 diesel = { version = "2.3.7", default-features = false, features = [
     "returning_clauses_for_sqlite_3_35",
