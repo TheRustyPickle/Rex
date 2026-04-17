@@ -1,6 +1,6 @@
 [package]
 name = "rex-tui"
-version = "0.2.5"
+version = "0.2.6"
 edition = "2024"
 description = """
 A TUI app for managing Incomes and Expenses
@@ -39,4 +39,4 @@ strum_macros.workspace = true
 thousands = "0.2.0"
 
 [lints.clippy]
-too_many_arguments = { level = "allow" }
+too_many_arguments = "allow"
