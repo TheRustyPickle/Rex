@@ -23,6 +23,7 @@ pub fn create_test_db(file_name: &str) -> DbConn {
     conn
 }
 
+#[allow(dead_code)]
 pub fn add_tx(
     db_conn: &mut DbConn,
     date: &str,
