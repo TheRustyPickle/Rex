@@ -299,10 +299,10 @@ fn step_tx_type_cycles_all() {
     ];
 
     let mut s = "Income".to_string();
-    for i in 1..expected.len() {
+    (1..expected.len()).for_each(|i| {
         db_conn.step().tx_type(&mut s, StepType::StepUp).unwrap();
         assert_eq!(s, expected[i]);
-    }
+    });
 
     // Wrap back to first
     db_conn.step().tx_type(&mut s, StepType::StepUp).unwrap();
