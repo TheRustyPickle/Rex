@@ -18,16 +18,27 @@ fn search_view_with_results() {
     let mut db_conn = create_test_db(file_name);
 
     add_tx(
-        &mut db_conn, "2024-06-01", "Rent", "Cash", "", "500.00", "Expense", "Rent",
+        &mut db_conn,
+        "2024-06-01",
+        "Rent",
+        "Cash",
+        "",
+        "500.00",
+        "Expense",
+        "Rent",
     );
     add_tx(
-        &mut db_conn, "2024-06-01", "Salary", "Cash", "", "1000.00", "Income", "Work",
+        &mut db_conn,
+        "2024-06-01",
+        "Salary",
+        "Cash",
+        "",
+        "1000.00",
+        "Income",
+        "Work",
     );
 
-    let search = parse_search_fields(
-        "", "", "", "", "", "", "", &db_conn,
-    )
-    .unwrap();
+    let search = parse_search_fields("", "", "", "", "", "", "", &db_conn).unwrap();
     let view = db_conn.search_txs(search).unwrap();
 
     assert!(!view.is_empty());
@@ -53,14 +64,18 @@ fn search_view_no_results() {
     let mut db_conn = create_test_db(file_name);
 
     add_tx(
-        &mut db_conn, "2024-07-01", "Only tx", "Cash", "", "10.00", "Expense", "Tag",
+        &mut db_conn,
+        "2024-07-01",
+        "Only tx",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "Tag",
     );
 
     // Search for something that doesn't match
-    let search = parse_search_fields(
-        "", "", "", "", "", "Income", "", &db_conn,
-    )
-    .unwrap();
+    let search = parse_search_fields("", "", "", "", "", "Income", "", &db_conn).unwrap();
     let view = db_conn.search_txs(search).unwrap();
 
     assert!(view.is_empty());
