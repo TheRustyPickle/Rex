@@ -2030,10 +2030,9 @@ impl InputKeyHandler<'_> {
 
     fn do_search_step(&mut self, step_type: StepType) {
         let status = match self.search_tab {
-            TxTab::Date => {
-                self.search_data
-                    .step_date(*self.search_date_type, StepType::StepUp, self.conn)
-            }
+            TxTab::Date => self
+                .search_data
+                .step_date(*self.search_date_type, step_type, self.conn),
             TxTab::FromMethod => self.search_data.step_from_method(step_type, self.conn),
             TxTab::ToMethod => self.search_data.step_to_method(step_type, self.conn),
             TxTab::Amount => self.search_data.step_amount(false, step_type, self.conn),
