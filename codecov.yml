@@ -2,5 +2,3 @@ comment: false
 ignore:
   - "tui"
   - "app/tests"
-  - "db"
-  - "shared"
