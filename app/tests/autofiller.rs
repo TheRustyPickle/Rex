@@ -250,6 +250,82 @@ fn autofill_details_fuzzy_suggests_match() {
 }
 
 #[test]
+fn autofill_details_exact_returns_empty() {
+    let file_name = "test_autofill_details_exact.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    add_tx(
+        &mut db_conn,
+        "2024-06-01",
+        "Netflix",
+        "Cash",
+        "",
+        "15.00",
+        "Expense",
+        "Subscriptions",
+    );
+
+    let result = db_conn.autofill().details("Netflix");
+    assert_eq!(result, "");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn autofill_details_empty_returns_empty() {
+    let file_name = "test_autofill_details_empty.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    add_tx(
+        &mut db_conn,
+        "2024-07-01",
+        "Some detail",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "Tag",
+    );
+
+    let result = db_conn.autofill().details("");
+    assert_eq!(result, "");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn autofill_details_cached_after_edit() {
+    let file_name = "test_autofill_details_edit.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let old_tx = add_tx(
+        &mut db_conn,
+        "2024-08-01",
+        "Old detail",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "Tag",
+    );
+
+    // Replace with a new detail
+    let new_tx = rex_app::modifier::parse_tx_fields(
+        "2024-08-01",
+        "Brand new detail",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        &db_conn,
+    )
+    .unwrap();
+    db_conn.edit_tx(&old_tx, new_tx, "Tag").unwrap();
+
+    let result = db_conn.autofill().details("Brand");
+    assert_eq!(result, "Brand new detail");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
 fn autofill_details_on_empty_db_returns_empty() {
     let file_name = "test_autofill_details_empty_db.sqlite";
     let mut db_conn = create_test_db(file_name);
