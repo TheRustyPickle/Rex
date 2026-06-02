@@ -162,3 +162,166 @@ impl Dollar {
         Cent::new((self.0 * 100.0).round() as i64)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cent_new_and_value() {
+        let c = Cent::new(150);
+        assert_eq!(c.value(), 150);
+    }
+
+    #[test]
+    fn cent_default_is_zero() {
+        assert_eq!(Cent::default(), Cent::new(0));
+    }
+
+    #[test]
+    fn cent_to_dollar() {
+        assert_eq!(Cent::new(150).dollar().value(), 1.50);
+        assert_eq!(Cent::new(0).dollar().value(), 0.0);
+        assert_eq!(Cent::new(-250).dollar().value(), -2.50);
+    }
+
+    #[test]
+    fn dollar_to_cent() {
+        assert_eq!(Dollar::new(1.50).cent(), Cent::new(150));
+        assert_eq!(Dollar::new(0.0).cent(), Cent::new(0));
+        assert_eq!(Dollar::new(-2.50).cent(), Cent::new(-250));
+        assert_eq!(Dollar::new(1.999).cent(), Cent::new(200));
+        assert_eq!(Dollar::new(1.004).cent(), Cent::new(100));
+    }
+
+    #[test]
+    fn dollar_new_and_value() {
+        let d = Dollar::new(42.75);
+        assert_eq!(d.value(), 42.75);
+    }
+
+    #[test]
+    fn dollar_display_formats_two_decimals() {
+        assert_eq!(format!("{}", Dollar::new(5.0)), "5.00");
+        assert_eq!(format!("{}", Dollar::new(3.456)), "3.46");
+        assert_eq!(format!("{}", Dollar::new(0.0)), "0.00");
+        assert_eq!(format!("{}", Dollar::new(1234.5)), "1234.50");
+    }
+
+    #[test]
+    fn dollar_div() {
+        assert_eq!((Dollar::new(10.0) / 2.0).value(), 5.0);
+        assert_eq!((Dollar::new(3.0) / 2.0).value(), 1.5);
+        assert_eq!((Dollar::new(0.0) / 5.0).value(), 0.0);
+    }
+
+    #[test]
+    fn cent_add_i64() {
+        assert_eq!(Cent::new(100) + 50, Cent::new(150));
+        assert_eq!(Cent::new(-100) + 50, Cent::new(-50));
+    }
+
+    #[test]
+    fn cent_sub_i64() {
+        assert_eq!(Cent::new(100) - 50, Cent::new(50));
+        assert_eq!(Cent::new(-100) - 50, Cent::new(-150));
+    }
+
+    #[test]
+    fn cent_mul_i64() {
+        assert_eq!(Cent::new(10) * 3, Cent::new(30));
+        assert_eq!(Cent::new(-10) * 3, Cent::new(-30));
+        assert_eq!(Cent::new(0) * 100, Cent::new(0));
+    }
+
+    #[test]
+    fn cent_add_assign_i64() {
+        let mut c = Cent::new(100);
+        c += 50;
+        assert_eq!(c, Cent::new(150));
+    }
+
+    #[test]
+    fn cent_sub_assign_i64() {
+        let mut c = Cent::new(100);
+        c -= 50;
+        assert_eq!(c, Cent::new(50));
+    }
+
+    #[test]
+    fn cent_add_assign_cent() {
+        let mut c = Cent::new(100);
+        c += Cent::new(50);
+        assert_eq!(c, Cent::new(150));
+    }
+
+    #[test]
+    fn cent_sub_assign_cent() {
+        let mut c = Cent::new(100);
+        c -= Cent::new(50);
+        assert_eq!(c, Cent::new(50));
+    }
+
+    #[test]
+    fn cent_eq_cent() {
+        assert_eq!(Cent::new(100), Cent::new(100));
+        assert_ne!(Cent::new(100), Cent::new(200));
+    }
+
+    #[test]
+    fn cent_eq_i64() {
+        assert!(Cent::new(100) == 100);
+        assert!(Cent::new(100) != 200);
+    }
+
+    #[test]
+    fn i64_eq_cent() {
+        assert!(100 == Cent::new(100));
+    }
+
+    #[test]
+    fn cent_partial_cmp() {
+        assert!(Cent::new(100) < Cent::new(200));
+        assert!(Cent::new(200) > Cent::new(100));
+        assert!(Cent::new(100) <= Cent::new(100));
+        assert!(Cent::new(100) >= Cent::new(100));
+    }
+
+    #[test]
+    fn cent_partial_cmp_i64() {
+        assert!(Cent::new(100) < 200);
+        assert!(Cent::new(200) > 100);
+        assert!(Cent::new(100) <= 100);
+    }
+
+    #[test]
+    fn i64_add_assign_cent() {
+        let mut v: i64 = 100;
+        v += Cent::new(50);
+        assert_eq!(v, 150);
+    }
+
+    #[test]
+    fn i64_sub_assign_cent() {
+        let mut v: i64 = 100;
+        v -= Cent::new(50);
+        assert_eq!(v, 50);
+    }
+
+    #[test]
+    fn cent_percent_change_normal() {
+        let diff = Cent::new(150).percent_change(Cent::new(100)).unwrap();
+        assert!((diff - 50.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn cent_percent_change_decrease() {
+        let diff = Cent::new(50).percent_change(Cent::new(100)).unwrap();
+        assert!((diff - (-50.0)).abs() < 0.001);
+    }
+
+    #[test]
+    fn cent_percent_change_zero_previous() {
+        assert_eq!(Cent::new(100).percent_change(Cent::new(0)), None);
+    }
+}
