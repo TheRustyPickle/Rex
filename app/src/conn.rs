@@ -140,6 +140,10 @@ impl DbConn {
             Ok(())
         })?;
 
+        if let Some(details) = tx.details {
+            self.cache.new_details(details.to_string());
+        }
+
         Ok(())
     }
 
@@ -171,6 +175,10 @@ impl DbConn {
 
             Ok(())
         })?;
+
+        if let Some(details) = new_tx.details {
+            self.cache.new_details(details.to_string());
+        }
 
         Ok(())
     }
