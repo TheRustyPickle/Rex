@@ -23,13 +23,30 @@ fn swap_two_txs_same_day() {
     let date = NaiveDate::from_ymd_opt(2024, 6, 1).unwrap();
 
     add_tx(
-        &mut db_conn, "2024-06-01", "A", "Cash", "", "10.00", "Expense", "TagA",
+        &mut db_conn,
+        "2024-06-01",
+        "A",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "TagA",
     );
     add_tx(
-        &mut db_conn, "2024-06-01", "B", "Cash", "", "20.00", "Expense", "TagB",
+        &mut db_conn,
+        "2024-06-01",
+        "B",
+        "Cash",
+        "",
+        "20.00",
+        "Expense",
+        "TagB",
     );
 
-    assert_eq!(tx_details_order(&mut db_conn, date), vec![Some("A".into()), Some("B".into())]);
+    assert_eq!(
+        tx_details_order(&mut db_conn, date),
+        vec![Some("A".into()), Some("B".into())]
+    );
 
     let mut tx_view = db_conn
         .fetch_txs_with_date(date, FetchNature::Monthly)
@@ -37,7 +54,10 @@ fn swap_two_txs_same_day() {
     let swapped = db_conn.swap_tx_position(0, 1, &mut tx_view).unwrap();
     assert!(swapped);
 
-    assert_eq!(tx_details_order(&mut db_conn, date), vec![Some("B".into()), Some("A".into())]);
+    assert_eq!(
+        tx_details_order(&mut db_conn, date),
+        vec![Some("B".into()), Some("A".into())]
+    );
 
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
@@ -50,10 +70,24 @@ fn swap_two_txs_twice_restores_original_order() {
     let date = NaiveDate::from_ymd_opt(2024, 7, 1).unwrap();
 
     add_tx(
-        &mut db_conn, "2024-07-01", "First", "Cash", "", "10.00", "Expense", "A",
+        &mut db_conn,
+        "2024-07-01",
+        "First",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "A",
     );
     add_tx(
-        &mut db_conn, "2024-07-01", "Second", "Cash", "", "20.00", "Expense", "B",
+        &mut db_conn,
+        "2024-07-01",
+        "Second",
+        "Cash",
+        "",
+        "20.00",
+        "Expense",
+        "B",
     );
 
     assert_eq!(
@@ -91,14 +125,45 @@ fn swap_three_txs_first_and_last() {
     let mut db_conn = create_test_db(file_name);
     let date = NaiveDate::from_ymd_opt(2024, 8, 1).unwrap();
 
-    add_tx(&mut db_conn, "2024-08-01", "First", "Cash", "", "10.00", "Expense", "A");
-    add_tx(&mut db_conn, "2024-08-01", "Middle", "Cash", "", "20.00", "Expense", "B");
-    add_tx(&mut db_conn, "2024-08-01", "Last", "Cash", "", "30.00", "Expense", "C");
+    add_tx(
+        &mut db_conn,
+        "2024-08-01",
+        "First",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "A",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-08-01",
+        "Middle",
+        "Cash",
+        "",
+        "20.00",
+        "Expense",
+        "B",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-08-01",
+        "Last",
+        "Cash",
+        "",
+        "30.00",
+        "Expense",
+        "C",
+    );
 
     // Initial: First, Middle, Last
     assert_eq!(
         tx_details_order(&mut db_conn, date),
-        vec![Some("First".into()), Some("Middle".into()), Some("Last".into())]
+        vec![
+            Some("First".into()),
+            Some("Middle".into()),
+            Some("Last".into())
+        ]
     );
 
     // Swap first(0) and last(2)
@@ -110,7 +175,11 @@ fn swap_three_txs_first_and_last() {
     // Normalized: First(1), Middle(2), Last(3) → swap First↔Last: Last(1), Middle(2), First(3)
     assert_eq!(
         tx_details_order(&mut db_conn, date),
-        vec![Some("Last".into()), Some("Middle".into()), Some("First".into())]
+        vec![
+            Some("Last".into()),
+            Some("Middle".into()),
+            Some("First".into())
+        ]
     );
 
     drop(db_conn);
@@ -123,14 +192,45 @@ fn swap_three_txs_adjacent_middle_pair() {
     let mut db_conn = create_test_db(file_name);
     let date = NaiveDate::from_ymd_opt(2024, 9, 1).unwrap();
 
-    add_tx(&mut db_conn, "2024-09-01", "First", "Cash", "", "10.00", "Expense", "A");
-    add_tx(&mut db_conn, "2024-09-01", "Middle", "Cash", "", "20.00", "Expense", "B");
-    add_tx(&mut db_conn, "2024-09-01", "Last", "Cash", "", "30.00", "Expense", "C");
+    add_tx(
+        &mut db_conn,
+        "2024-09-01",
+        "First",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "A",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-09-01",
+        "Middle",
+        "Cash",
+        "",
+        "20.00",
+        "Expense",
+        "B",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-09-01",
+        "Last",
+        "Cash",
+        "",
+        "30.00",
+        "Expense",
+        "C",
+    );
 
     // Initial: First, Middle, Last
     assert_eq!(
         tx_details_order(&mut db_conn, date),
-        vec![Some("First".into()), Some("Middle".into()), Some("Last".into())]
+        vec![
+            Some("First".into()),
+            Some("Middle".into()),
+            Some("Last".into())
+        ]
     );
 
     // Swap Middle(1) and Last(2)
@@ -142,7 +242,11 @@ fn swap_three_txs_adjacent_middle_pair() {
     // Normalized: First(1), Middle(2), Last(3) → swap Middle↔Last: First(1), Last(2), Middle(3)
     assert_eq!(
         tx_details_order(&mut db_conn, date),
-        vec![Some("First".into()), Some("Last".into()), Some("Middle".into())]
+        vec![
+            Some("First".into()),
+            Some("Last".into()),
+            Some("Middle".into())
+        ]
     );
 
     drop(db_conn);
@@ -154,8 +258,26 @@ fn swap_different_dates_returns_false() {
     let file_name = "test_pos_swap_diff_date.sqlite";
     let mut db_conn = create_test_db(file_name);
 
-    add_tx(&mut db_conn, "2024-10-01", "Oct", "Cash", "", "10.00", "Expense", "A");
-    add_tx(&mut db_conn, "2024-10-02", "Oct2", "Cash", "", "20.00", "Expense", "B");
+    add_tx(
+        &mut db_conn,
+        "2024-10-01",
+        "Oct",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "A",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-10-02",
+        "Oct2",
+        "Cash",
+        "",
+        "20.00",
+        "Expense",
+        "B",
+    );
 
     // Fetch all txs for October to get both in one TxViewGroup
     let date = NaiveDate::from_ymd_opt(2024, 10, 1).unwrap();
@@ -183,9 +305,36 @@ fn swap_three_txs_first_and_middle() {
     let mut db_conn = create_test_db(file_name);
     let date = NaiveDate::from_ymd_opt(2024, 11, 1).unwrap();
 
-    add_tx(&mut db_conn, "2024-11-01", "First", "Cash", "", "10.00", "Expense", "A");
-    add_tx(&mut db_conn, "2024-11-01", "Middle", "Cash", "", "20.00", "Expense", "B");
-    add_tx(&mut db_conn, "2024-11-01", "Last", "Cash", "", "30.00", "Expense", "C");
+    add_tx(
+        &mut db_conn,
+        "2024-11-01",
+        "First",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "A",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-11-01",
+        "Middle",
+        "Cash",
+        "",
+        "20.00",
+        "Expense",
+        "B",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-11-01",
+        "Last",
+        "Cash",
+        "",
+        "30.00",
+        "Expense",
+        "C",
+    );
 
     // Swap First(0) and Middle(1)
     let mut tx_view = db_conn
@@ -199,7 +348,11 @@ fn swap_three_txs_first_and_middle() {
     // Order: Middle(1), First(2), Last(0)
     assert_eq!(
         tx_details_order(&mut db_conn, date),
-        vec![Some("Middle".into()), Some("First".into()), Some("Last".into())]
+        vec![
+            Some("Middle".into()),
+            Some("First".into()),
+            Some("Last".into())
+        ]
     );
 
     drop(db_conn);
@@ -213,10 +366,46 @@ fn swap_persists_after_multiple_swaps() {
     let date = NaiveDate::from_ymd_opt(2024, 12, 1).unwrap();
 
     // Add 4 txs all on same day
-    add_tx(&mut db_conn, "2024-12-01", "A", "Cash", "", "10.00", "Expense", "A");
-    add_tx(&mut db_conn, "2024-12-01", "B", "Cash", "", "20.00", "Expense", "B");
-    add_tx(&mut db_conn, "2024-12-01", "C", "Cash", "", "30.00", "Expense", "C");
-    add_tx(&mut db_conn, "2024-12-01", "D", "Cash", "", "40.00", "Expense", "D");
+    add_tx(
+        &mut db_conn,
+        "2024-12-01",
+        "A",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "A",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-12-01",
+        "B",
+        "Cash",
+        "",
+        "20.00",
+        "Expense",
+        "B",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-12-01",
+        "C",
+        "Cash",
+        "",
+        "30.00",
+        "Expense",
+        "C",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-12-01",
+        "D",
+        "Cash",
+        "",
+        "40.00",
+        "Expense",
+        "D",
+    );
 
     // Initial: A, B, C, D
     assert_eq!(
@@ -288,10 +477,46 @@ fn swap_four_txs_all_pairwise() {
     let mut db_conn = create_test_db(file_name);
     let date = NaiveDate::from_ymd_opt(2025, 1, 1).unwrap();
 
-    add_tx(&mut db_conn, "2025-01-01", "A", "Cash", "", "10.00", "Expense", "A");
-    add_tx(&mut db_conn, "2025-01-01", "B", "Cash", "", "20.00", "Expense", "B");
-    add_tx(&mut db_conn, "2025-01-01", "C", "Cash", "", "30.00", "Expense", "C");
-    add_tx(&mut db_conn, "2025-01-01", "D", "Cash", "", "40.00", "Expense", "D");
+    add_tx(
+        &mut db_conn,
+        "2025-01-01",
+        "A",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "A",
+    );
+    add_tx(
+        &mut db_conn,
+        "2025-01-01",
+        "B",
+        "Cash",
+        "",
+        "20.00",
+        "Expense",
+        "B",
+    );
+    add_tx(
+        &mut db_conn,
+        "2025-01-01",
+        "C",
+        "Cash",
+        "",
+        "30.00",
+        "Expense",
+        "C",
+    );
+    add_tx(
+        &mut db_conn,
+        "2025-01-01",
+        "D",
+        "Cash",
+        "",
+        "40.00",
+        "Expense",
+        "D",
+    );
 
     // Swap to reverse completely: D, C, B, A via multiple swaps
     // Step 1: A<->D -> B, C, A, D (based on first/last pattern)
@@ -347,7 +572,16 @@ fn swap_single_tx_noop() {
     let mut db_conn = create_test_db(file_name);
     let date = NaiveDate::from_ymd_opt(2025, 2, 1).unwrap();
 
-    add_tx(&mut db_conn, "2025-02-01", "Only", "Cash", "", "10.00", "Expense", "A");
+    add_tx(
+        &mut db_conn,
+        "2025-02-01",
+        "Only",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "A",
+    );
 
     let mut tx_view = db_conn
         .fetch_txs_with_date(date, FetchNature::Monthly)
@@ -373,9 +607,36 @@ fn swap_maintains_tx_integrity() {
     let mut db_conn = create_test_db(file_name);
     let date = NaiveDate::from_ymd_opt(2025, 3, 1).unwrap();
 
-    add_tx(&mut db_conn, "2025-03-01", "Income1", "Cash", "", "100.00", "Income", "Salary");
-    add_tx(&mut db_conn, "2025-03-01", "Expense1", "Cash", "", "30.00", "Expense", "Food");
-    add_tx(&mut db_conn, "2025-03-01", "Expense2", "Cash", "", "20.00", "Expense", "Coffee");
+    add_tx(
+        &mut db_conn,
+        "2025-03-01",
+        "Income1",
+        "Cash",
+        "",
+        "100.00",
+        "Income",
+        "Salary",
+    );
+    add_tx(
+        &mut db_conn,
+        "2025-03-01",
+        "Expense1",
+        "Cash",
+        "",
+        "30.00",
+        "Expense",
+        "Food",
+    );
+    add_tx(
+        &mut db_conn,
+        "2025-03-01",
+        "Expense2",
+        "Cash",
+        "",
+        "20.00",
+        "Expense",
+        "Coffee",
+    );
 
     // Swap first two
     let mut tx_view = db_conn
