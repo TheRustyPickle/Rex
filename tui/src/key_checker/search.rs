@@ -29,10 +29,8 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutpu
                 KeyCode::Up => handler.handle_up_arrow(),
                 KeyCode::Down => handler.handle_down_arrow(),
                 KeyCode::Enter => handler.select_date_field(),
-                KeyCode::Char(c) => {
-                    if c.is_numeric() {
-                        handler.handle_number_press();
-                    }
+                KeyCode::Char(c) if c.is_numeric() => {
+                    handler.handle_number_press();
                 }
                 _ => {}
             },

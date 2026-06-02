@@ -175,7 +175,7 @@ impl DbConn {
         Ok(())
     }
 
-    pub fn add_new_methods(&mut self, method_list: &Vec<String>) -> Result<()> {
+    pub fn add_new_methods(&mut self, method_list: &[String]) -> Result<()> {
         self.conn.transaction::<_, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
