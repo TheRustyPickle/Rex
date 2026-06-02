@@ -66,6 +66,10 @@ impl Cache {
         }
     }
 
+    pub fn new_details(&mut self, details: String) {
+        self.details.insert(details);
+    }
+
     // TODO: Start using cache
     pub fn set_txs(&mut self, txs: HashMap<i32, Vec<FullTx>>) {
         self.txs = Some(txs);
