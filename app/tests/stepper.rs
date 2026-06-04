@@ -1,4 +1,4 @@
-use rex_app::ui_helper::{DateType, StepType};
+use rex_app::ui_helper::{DateType, StepType, SteppingError};
 use std::fs;
 
 use crate::common::{add_tx, create_test_db};
@@ -541,6 +541,69 @@ fn step_tag_multiple_preserves_other_tags() {
     db_conn.step().tag(&mut s, StepType::StepUp).unwrap();
     assert_eq!(s, "Alpha, Gamma");
 
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+// ---- Stepper error paths ----
+
+#[test]
+fn step_date_invalid_format_errors() {
+    let file_name = "test_step_date_err.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "not-a-date".to_string();
+    let result = db_conn
+        .step()
+        .date(&mut s, StepType::StepUp, DateType::Exact);
+    assert!(result.is_err());
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_amount_non_numeric_errors() {
+    let file_name = "test_step_amount_err.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "abc".to_string();
+    let result = db_conn.step().amount(&mut s, StepType::StepUp);
+    assert!(matches!(result, Err(SteppingError::InvalidAmount)));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_tx_method_unknown_errors() {
+    let file_name = "test_step_method_err.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "NonExistentMethod".to_string();
+    let result = db_conn.step().tx_method(&mut s, StepType::StepUp);
+    assert!(matches!(result, Err(SteppingError::InvalidTxMethod)));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_tx_type_unknown_errors() {
+    let file_name = "test_step_type_err.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "UnknownType".to_string();
+    let result = db_conn.step().tx_type(&mut s, StepType::StepUp);
+    assert!(matches!(result, Err(SteppingError::InvalidTxType)));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_tag_empty_db_errors() {
+    let file_name = "test_step_tag_err.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    // No tags added — only pre-seeded "Unknown" exists, so empty+step finds it
+    // Actually "Unknown" is always there from migrations. Test with no user tags.
+    // Stepping from empty when no user tags exist still finds Unknown.
+    let mut s = "NonExistent".to_string();
+    let result = db_conn.step().tag(&mut s, StepType::StepUp);
+    // Fuzzy-corrects to best match and errors
+    assert!(result.is_err());
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
 }

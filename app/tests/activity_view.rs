@@ -190,3 +190,71 @@ fn activity_view_get_table_returns_formatted() {
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
 }
+
+#[test]
+fn activity_view_position_swap_has_extra_field() {
+    let file_name = "test_activity_swap.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    use chrono::NaiveDate;
+    use rex_app::conn::FetchNature;
+
+    add_tx(
+        &mut db_conn,
+        "2024-08-01",
+        "First",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "A",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-08-01",
+        "Second",
+        "Cash",
+        "",
+        "20.00",
+        "Expense",
+        "B",
+    );
+
+    let date = NaiveDate::from_ymd_opt(2024, 8, 1).unwrap();
+    let mut tx_view = db_conn
+        .fetch_txs_with_date(date, FetchNature::Monthly)
+        .unwrap();
+    db_conn.swap_tx_position(0, 1, &mut tx_view).unwrap();
+
+    let now = Local::now().naive_local();
+    let month_names = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ];
+    let month = month_names[now.month0() as usize];
+    let year = now.year().to_string();
+
+    let view = db_conn.get_activity_view_with_str(month, &year).unwrap();
+
+    let mut found = false;
+    for i in 0..view.total_activity() {
+        if view.add_extra_field(i) {
+            found = true;
+            break;
+        }
+    }
+    assert!(found, "Expected a PositionSwap or EditTx activity");
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}

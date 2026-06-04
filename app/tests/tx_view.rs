@@ -253,3 +253,69 @@ fn add_tx_balance_array_projection_transfer() {
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
 }
+
+#[test]
+fn get_tx_by_id_not_found() {
+    let file_name = "test_tx_by_id_miss.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    add_tx(
+        &mut db_conn,
+        "2024-11-01",
+        "Only",
+        "Cash",
+        "",
+        "10.00",
+        "Expense",
+        "A",
+    );
+
+    let date = NaiveDate::from_ymd_opt(2024, 11, 1).unwrap();
+    let tx_view = db_conn
+        .fetch_txs_with_date(date, FetchNature::Monthly)
+        .unwrap();
+    assert!(tx_view.get_tx_by_id(999).is_none());
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn add_tx_balance_array_at_index_zero() {
+    let file_name = "test_add_balance_idx0.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    add_tx(
+        &mut db_conn,
+        "2024-12-01",
+        "Existing",
+        "Cash",
+        "",
+        "500.00",
+        "Income",
+        "A",
+    );
+
+    let date = NaiveDate::from_ymd_opt(2024, 12, 1).unwrap();
+    let tx_view = db_conn
+        .fetch_txs_with_date(date, FetchNature::Monthly)
+        .unwrap();
+
+    // At index 0, the balance shows what was BEFORE the first tx (reverses it)
+    let partial = Some(PartialTx {
+        from_method: "Cash",
+        to_method: "",
+        tx_type: "Expense",
+        amount: "100.00",
+    });
+    let arr = tx_view
+        .add_tx_balance_array(Some(0), partial, &mut db_conn)
+        .unwrap();
+
+    // Before first tx: balance=0. Project expense -100 → -100
+    assert_eq!(get_col(&arr, 1, 0), "Balance");
+    assert_eq!(get_col(&arr, 1, 1), "-100.00");
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
