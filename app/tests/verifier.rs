@@ -500,3 +500,71 @@ fn verify_tags_forced_empty() {
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
 }
+
+// ---- Verifier error paths ----
+
+#[test]
+fn verify_date_parsing_error() {
+    let file_name = "test_verify_date_parse_err.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "abc-def-ghi".to_string();
+    let result = db_conn.verify().date(&mut s, DateType::Exact);
+    assert!(matches!(result, Err(VerifierError::ParsingError(_))));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_amount_only_symbols_becomes_zero() {
+    let file_name = "test_verify_amount_parse_err.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    // "+" is a calc symbol; empty operands → result is "" → ".00" → 0.00 → AmountBelowZero
+    let mut s = "+".to_string();
+    let v = db_conn.verify();
+    let result = v.amount(&mut s);
+    assert!(matches!(result, Err(VerifierError::AmountBelowZero)));
+    assert_eq!(s, "0.00");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_tx_method_not_found_fuzzy_corrects() {
+    let file_name = "test_verify_method_err.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "NonExistent".to_string();
+    let v = db_conn.verify();
+    let result = v.tx_method(&mut s);
+    assert!(matches!(result, Err(VerifierError::InvalidTxMethod)));
+    // Fuzzy corrects to closest match among Cash/Bank/Other
+    assert!(!s.is_empty());
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_tx_type_long_invalid_fuzzy_corrects() {
+    let file_name = "test_verify_type_long_err.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "SomethingWeird".to_string();
+    let v = db_conn.verify();
+    let result = v.tx_type(&mut s);
+    assert!(matches!(result, Err(VerifierError::InvalidTxType)));
+    // Gets fuzzy-corrected to closest match
+    assert!(!s.is_empty());
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_tx_type_short_invalid_fuzzy_corrects() {
+    let file_name = "test_verify_type_short_err.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    // Short (<2 chars) but not E/I/T/B/L/BR/LR
+    let mut s = "x".to_string();
+    let v = db_conn.verify();
+    let result = v.tx_type(&mut s);
+    assert!(matches!(result, Err(VerifierError::InvalidTxType)));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
