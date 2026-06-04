@@ -24,10 +24,8 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutpu
                 KeyCode::Char('y') => handler.go_activity(),
                 KeyCode::Char('t') => handler.next_theme()?,
                 KeyCode::Enter => handler.select_date_field(),
-                KeyCode::Char(c) => {
-                    if c.is_numeric() {
-                        handler.handle_number_press();
-                    }
+                KeyCode::Char(c) if c.is_numeric() => {
+                    handler.handle_number_press();
                 }
                 _ => {}
             },

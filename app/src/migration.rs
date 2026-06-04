@@ -94,7 +94,7 @@ pub fn start_migration(mut old_db_conn: DbConn, db_conn: &mut DbConn) -> Result<
         columns.remove(0);
     }
 
-    let tx_methods = columns.into_iter().map(|c| c.name).collect();
+    let tx_methods = columns.into_iter().map(|c| c.name).collect::<Vec<String>>();
 
     let new_methods = add_new_tx_methods(&tx_methods, db_conn)?;
     db_conn.cache.new_tx_methods(new_methods);

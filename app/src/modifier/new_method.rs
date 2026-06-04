@@ -3,19 +3,16 @@ use rex_db::ConnCache;
 use rex_db::models::{Balance, NewTxMethod, TxMethod};
 
 pub(crate) fn add_new_tx_methods(
-    method_list: &Vec<String>,
+    method_list: &[String],
     db_conn: &mut impl ConnCache,
 ) -> Result<Vec<TxMethod>> {
-    let mut last_position = TxMethod::get_last_position(db_conn)?;
-
     let mut methods = Vec::new();
 
-    for method in method_list {
+    for (last_position, method) in (TxMethod::get_last_position(db_conn)?..).zip(method_list.iter())
+    {
         let new_method = NewTxMethod::new(method, last_position + 1);
 
         methods.push(new_method);
-
-        last_position += 1;
     }
 
     let mut new_methods = Vec::new();

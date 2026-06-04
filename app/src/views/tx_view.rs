@@ -489,37 +489,43 @@ impl TxViewGroup {
         index_2: usize,
         db_conn: &mut impl ConnCache,
     ) -> Result<bool> {
-        let tx_1 = self.0.get(index_1).unwrap();
-        let tx_2 = self.0.get(index_2).unwrap();
+        let target_date = {
+            let tx_1 = self.0.get(index_1).unwrap();
+            let tx_2 = self.0.get(index_2).unwrap();
 
-        // Can't switch index if not in the same date
-        if tx_1.tx.date.date() != tx_2.tx.date.date() {
-            return Ok(false);
+            if tx_1.tx.date.date() != tx_2.tx.date.date() {
+                return Ok(false);
+            }
+
+            tx_1.tx.date.date()
+        };
+
+        // If has unset/display order = 0, set display order from 1 to N.
+        // Once order has been set, only then switch display order and commit
+        let has_unset = self
+            .0
+            .iter()
+            .any(|tv| tv.tx.date.date() == target_date && tv.tx.display_order == 0);
+
+        if has_unset {
+            let mut order = 1i32;
+            for tx_view in &mut self.0 {
+                if tx_view.tx.date.date() == target_date {
+                    tx_view.tx.display_order = order;
+                    tx_view.tx.set_display_order(db_conn)?;
+                    order += 1;
+                }
+            }
         }
 
-        let tx_1_order = tx_1.tx.display_order;
-        let tx_2_order = tx_2.tx.display_order;
+        let tx_1_order = self.0[index_1].tx.display_order;
+        let tx_2_order = self.0[index_2].tx.display_order;
 
-        let new_tx_1_order = if tx_2_order == 0 {
-            tx_2.tx.id
-        } else {
-            tx_2_order
-        };
-        let new_tx_2_order = if tx_1_order == 0 {
-            tx_1.tx.id
-        } else {
-            tx_1_order
-        };
+        self.0[index_1].tx.display_order = tx_2_order;
+        self.0[index_1].tx.set_display_order(db_conn)?;
 
-        let tx_1 = self.0.get_mut(index_1).unwrap();
-        tx_1.tx.display_order = new_tx_1_order;
-
-        tx_1.tx.set_display_order(db_conn)?;
-
-        let tx_2 = self.0.get_mut(index_2).unwrap();
-        tx_2.tx.display_order = new_tx_2_order;
-
-        tx_2.tx.set_display_order(db_conn)?;
+        self.0[index_2].tx.display_order = tx_1_order;
+        self.0[index_2].tx.set_display_order(db_conn)?;
 
         Ok(true)
     }

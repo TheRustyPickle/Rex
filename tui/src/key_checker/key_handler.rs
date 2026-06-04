@@ -267,15 +267,12 @@ impl<'a> InputKeyHandler<'a> {
     /// Turns on deletion confirmation popup
     pub fn do_deletion_popup(&mut self) {
         match self.page {
-            CurrentUi::Home => {
-                if self.home_table.state.selected().is_some() {
-                    *self.popup_status = PopupType::new_choice_deletion(self.theme);
-                }
+            CurrentUi::Home if self.home_table.state.selected().is_some() => {
+                *self.popup_status = PopupType::new_choice_deletion(self.theme);
             }
-            CurrentUi::Search => {
-                if self.search_table.state.selected().is_some() {
-                    *self.popup_status = PopupType::new_choice_deletion(self.theme);
-                }
+            CurrentUi::Home => {}
+            CurrentUi::Search if self.search_table.state.selected().is_some() => {
+                *self.popup_status = PopupType::new_choice_deletion(self.theme);
             }
             _ => {}
         }
@@ -2033,10 +2030,9 @@ impl InputKeyHandler<'_> {
 
     fn do_search_step(&mut self, step_type: StepType) {
         let status = match self.search_tab {
-            TxTab::Date => {
-                self.search_data
-                    .step_date(*self.search_date_type, StepType::StepUp, self.conn)
-            }
+            TxTab::Date => self
+                .search_data
+                .step_date(*self.search_date_type, step_type, self.conn),
             TxTab::FromMethod => self.search_data.step_from_method(step_type, self.conn),
             TxTab::ToMethod => self.search_data.step_to_method(step_type, self.conn),
             TxTab::Amount => self.search_data.step_amount(false, step_type, self.conn),
@@ -2170,13 +2166,11 @@ impl InputKeyHandler<'_> {
                         Some(self.summary_years.titles[self.summary_years.index - 1].clone());
                 }
             }
-            1 => {
-                if self.summary_years.index > 0 {
-                    let year_value = self.summary_years.index;
+            1 if self.summary_years.index > 0 => {
+                let year_value = self.summary_years.index;
 
-                    previous_month = Some(self.summary_months.get_selected_value().to_string());
-                    previous_year = Some(self.summary_years.titles[year_value - 1].clone());
-                }
+                previous_month = Some(self.summary_months.get_selected_value().to_string());
+                previous_year = Some(self.summary_years.titles[year_value - 1].clone());
             }
             _ => {}
         }
