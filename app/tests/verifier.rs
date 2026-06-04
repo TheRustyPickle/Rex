@@ -568,3 +568,77 @@ fn verify_tx_type_short_invalid_fuzzy_corrects() {
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
 }
+
+// ---- Missing branches from coverage ----
+
+#[test]
+fn verify_date_monthly_wrong_parts() {
+    let file_name = "test_verify_date_monthly_parts.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "2024".to_string();
+    let result = db_conn.verify().date(&mut s, DateType::Monthly);
+    assert!(matches!(result, Err(VerifierError::InvalidDate)));
+    assert_eq!(s, "2022-01");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_date_monthly_month_too_short() {
+    let file_name = "test_verify_date_monthly_short.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "2024-6".to_string();
+    let result = db_conn.verify().date(&mut s, DateType::Monthly);
+    assert!(matches!(result, Err(VerifierError::InvalidMonth)));
+    assert_eq!(s, "2024-06");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_date_monthly_month_too_big() {
+    let file_name = "test_verify_date_monthly_big.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "2024-13".to_string();
+    let result = db_conn.verify().date(&mut s, DateType::Monthly);
+    assert!(matches!(result, Err(VerifierError::MonthTooBig)));
+    assert_eq!(s, "2024-12");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_date_day_too_short() {
+    let file_name = "test_verify_date_day_short.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "2024-06-5".to_string();
+    let result = db_conn.verify().date(&mut s, DateType::Exact);
+    assert!(matches!(result, Err(VerifierError::InvalidDay)));
+    assert_eq!(s, "2024-06-05");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_amount_decimal_truncated() {
+    let file_name = "test_verify_amount_trunc.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "10.123".to_string();
+    let v = db_conn.verify();
+    v.amount(&mut s).unwrap();
+    assert_eq!(s, "10.12");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_amount_integer_limits_to_10_chars() {
+    let file_name = "test_verify_amount_limit.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "12345678901.50".to_string();
+    let v = db_conn.verify();
+    v.amount(&mut s).unwrap();
+    assert_eq!(s, "1234567890.50");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}

@@ -399,3 +399,246 @@ fn summary_yearly_with_monthly_averages() {
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
 }
+
+#[test]
+fn summary_tags_array_with_compare() {
+    let file_name = "test_summary_tags_compare.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    // August: income + expense
+    add_tx(
+        &mut db_conn,
+        "2024-08-01",
+        "Salary",
+        "Cash",
+        "",
+        "2000.00",
+        "Income",
+        "Work",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-08-15",
+        "Rent",
+        "Cash",
+        "",
+        "1000.00",
+        "Expense",
+        "Housing",
+    );
+
+    // September: different amounts
+    add_tx(
+        &mut db_conn,
+        "2024-09-01",
+        "Salary",
+        "Cash",
+        "",
+        "2500.00",
+        "Income",
+        "Work",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-09-15",
+        "Rent",
+        "Cash",
+        "",
+        "800.00",
+        "Expense",
+        "Housing",
+    );
+
+    let sep = db_conn
+        .get_summary_with_str("September", "2024", FetchNature::Monthly)
+        .unwrap();
+    let aug = db_conn
+        .get_summary_with_str("August", "2024", FetchNature::Monthly)
+        .unwrap();
+
+    let tags = sep.tags_array(Some(&aug), &db_conn);
+    // Should include MoM/YoY comparison columns with ↑/↓ percentages
+    let work_row = tags.iter().find(|r| r[0] == "Work").unwrap();
+    // Income amount for Work tag
+    assert_eq!(work_row[1], "2500.00");
+    // Should have compare columns (positions 6-7 after income/expense %)
+    assert!(work_row.len() > 6, "Should have compare columns");
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn summary_with_last_summary_mom_comparison() {
+    let file_name = "test_summary_mom.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    // August
+    add_tx(
+        &mut db_conn,
+        "2024-08-01",
+        "Income",
+        "Cash",
+        "",
+        "1000.00",
+        "Income",
+        "Work",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-08-15",
+        "Expense",
+        "Cash",
+        "",
+        "200.00",
+        "Expense",
+        "Food",
+    );
+
+    // September — higher numbers
+    add_tx(
+        &mut db_conn,
+        "2024-09-01",
+        "Income",
+        "Cash",
+        "",
+        "2000.00",
+        "Income",
+        "Work",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-09-15",
+        "Expense",
+        "Cash",
+        "",
+        "300.00",
+        "Expense",
+        "Food",
+    );
+
+    let aug_view = db_conn
+        .get_summary_with_str("August", "2024", FetchNature::Monthly)
+        .unwrap();
+    let aug_full = aug_view.generate_summary(None, &db_conn);
+
+    let sep_view = db_conn
+        .get_summary_with_str("September", "2024", FetchNature::Monthly)
+        .unwrap();
+    let sep_full = sep_view.generate_summary(Some(&aug_full), &db_conn);
+
+    // Net should have MoM comparison strings (↑/↓ with percentages)
+    let net = sep_full.net_array();
+    assert!(
+        net[0].len() >= 7,
+        "Net array should have MoM columns, got len {}",
+        net[0].len()
+    );
+
+    // Methods should have MoM comparison
+    let methods = sep_full.method_array();
+    let cash_row = methods.iter().find(|r| r[0] == "Cash").unwrap();
+    assert!(cash_row.len() >= 7, "Method row should have MoM columns");
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn summary_lend_borrows_with_mom() {
+    let file_name = "test_summary_lb_mom.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    // August: borrow 500
+    add_tx(
+        &mut db_conn,
+        "2024-08-01",
+        "Borrow",
+        "Cash",
+        "",
+        "500.00",
+        "Borrow",
+        "Loan",
+    );
+
+    let aug_view = db_conn
+        .get_summary_with_str("August", "2024", FetchNature::Monthly)
+        .unwrap();
+    let aug_full = aug_view.generate_summary(None, &db_conn);
+
+    // September: borrow more, repay some
+    add_tx(
+        &mut db_conn,
+        "2024-09-01",
+        "Borrow more",
+        "Cash",
+        "",
+        "300.00",
+        "Borrow",
+        "Loan",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-09-15",
+        "Repay",
+        "Cash",
+        "",
+        "200.00",
+        "Borrow Repay",
+        "Loan",
+    );
+
+    let sep_view = db_conn
+        .get_summary_with_str("September", "2024", FetchNature::Monthly)
+        .unwrap();
+    let sep_full = sep_view.generate_summary(Some(&aug_full), &db_conn);
+
+    // Lend borrows should have MoM columns
+    let lb = sep_full.lend_borrows_array();
+    assert!(
+        lb[0].len() >= 2,
+        "Lend borrows array should have value columns"
+    );
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn summary_all_fetch_nature() {
+    let file_name = "test_summary_all.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    add_tx(
+        &mut db_conn,
+        "2024-01-15",
+        "Jan income",
+        "Cash",
+        "",
+        "1000.00",
+        "Income",
+        "Work",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-06-20",
+        "Jun expense",
+        "Cash",
+        "",
+        "200.00",
+        "Expense",
+        "Food",
+    );
+
+    let summary_view = db_conn
+        .get_summary_with_str("January", "2024", FetchNature::All)
+        .unwrap();
+    let full = summary_view.generate_summary(None, &db_conn);
+
+    let net = full.net_array();
+    assert_eq!(net[0][1], "1000.00"); // total income
+    assert_eq!(net[0][2], "200.00"); // total expense
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
