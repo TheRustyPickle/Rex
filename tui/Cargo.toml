@@ -39,4 +39,4 @@ strum_macros.workspace = true
 thousands = "0.2.0"
 
 [lints.clippy]
-too_many_arguments = "allow"
+too_many_arguments = { level = "allow" }

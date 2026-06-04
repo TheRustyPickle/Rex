@@ -140,6 +140,10 @@ impl DbConn {
             Ok(())
         })?;
 
+        if let Some(details) = tx.details {
+            self.cache.new_details(details.to_string());
+        }
+
         Ok(())
     }
 
@@ -172,10 +176,14 @@ impl DbConn {
             Ok(())
         })?;
 
+        if let Some(details) = new_tx.details {
+            self.cache.new_details(details.to_string());
+        }
+
         Ok(())
     }
 
-    pub fn add_new_methods(&mut self, method_list: &Vec<String>) -> Result<()> {
+    pub fn add_new_methods(&mut self, method_list: &[String]) -> Result<()> {
         self.conn.transaction::<_, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 

@@ -2,5 +2,5 @@ comment: false
 ignore:
   - "tui"
   - "app/tests"
-  - "db"
-  - "shared"
+  - "app/src/migration.rs"
+  - "app/src/ui_helper/output.rs"
