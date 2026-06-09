@@ -135,7 +135,7 @@ pub fn chart_ui(
         let total_loop = final_date.signed_duration_since(checking_date).num_days() as f64;
 
         let lerp_id = "chart_loop_size";
-        let mut to_loop = lerp_state.lerp(lerp_id, total_loop);
+        let mut to_loop = lerp_state.lerp(lerp_id, total_loop, None);
 
         // labels of the x axis
         date_labels.push(checking_date.to_string());

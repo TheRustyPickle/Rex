@@ -1899,6 +1899,9 @@ impl InputKeyHandler<'_> {
 
         *self.home_table = TableData::new(self.home_txs.tx_array());
 
+        let lerp_tx_row_id = "home_tx_row";
+        self.lerp_state.clear_lerp(lerp_tx_row_id);
+
         Ok(())
     }
 

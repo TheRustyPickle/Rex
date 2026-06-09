@@ -130,7 +130,7 @@ pub fn add_tx_ui(
                 index += 1;
 
                 let lerp_id = format!("{row_type}:{index}");
-                let to_show = lerp_state.lerp(&lerp_id, actual_data);
+                let to_show = lerp_state.lerp(&lerp_id, actual_data, None);
 
                 // re-add the previously removed symbol if is the Changes row
                 // Otherwise separate the number with commas
