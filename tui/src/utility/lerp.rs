@@ -26,7 +26,7 @@ impl LerpState {
         }
     }
 
-    pub fn lerp(&mut self, id: &str, new_target: f64) -> f64 {
+    pub fn lerp(&mut self, id: &str, new_target: f64, duration: Option<f64>) -> f64 {
         let now = Instant::now();
 
         let entry = self.values.entry(id.to_string()).or_insert_with(|| {
@@ -51,7 +51,7 @@ impl LerpState {
             entry.start_time = now;
         }
 
-        let t = (now - entry.start_time).as_secs_f64() / self.duration_secs;
+        let t = (now - entry.start_time).as_secs_f64() / duration.unwrap_or(self.duration_secs);
         let clamped_t = t.min(1.0);
 
         entry.current = entry.start + (entry.target - entry.start) * clamped_t;
@@ -69,6 +69,11 @@ impl LerpState {
     #[must_use]
     pub fn has_active_lerps(&self) -> bool {
         self.active_lerp_count > 0
+    }
+
+    pub fn clear_lerp(&mut self, id: &str) {
+        self.values.remove(id);
+        self.active_lerp_count = self.active_lerp_count.saturating_sub(1);
     }
 
     pub fn clear(&mut self) {
