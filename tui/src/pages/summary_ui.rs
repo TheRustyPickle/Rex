@@ -13,6 +13,8 @@ use crate::utility::{
     tab_highlight_style,
 };
 
+pub const SUMMARY_TABLE_ID: &str = "summary_table_row";
+
 /// The function draws the Summary page of the interface.
 pub fn summary_ui(
     f: &mut Frame,
@@ -29,6 +31,12 @@ pub fn summary_ui(
     conn: &mut DbConn,
 ) {
     let size = f.area();
+
+    let tags_count = table_data.items.len();
+    let lerp_id = "summary_tags_count";
+    let lerp_tags_count = lerp_state.lerp(lerp_id, tags_count as f64, None) as i64;
+
+    let lerp_row = lerp_state.lerp(SUMMARY_TABLE_ID, tags_count as f64, Some(0.50)) as usize;
 
     let tag_header = if let SortingType::Tags = summary_sort {
         "Tags ↑"
@@ -202,6 +210,7 @@ pub fn summary_ui(
     let rows = table_data
         .items
         .iter()
+        .take(lerp_row)
         .enumerate()
         .map(|(row_index, item)| {
             let cells = item.iter().enumerate().map(|(index, c)| {
@@ -268,9 +277,11 @@ pub fn summary_ui(
         ]
     };
 
+    let tags_text = format!("Tags: {lerp_tags_count}");
+
     let mut table_area = Table::new(rows, table_width)
         .header(tag_table_header)
-        .block(styled_block("Tags", theme))
+        .block(styled_block(&tags_text, theme))
         .style(Style::default().fg(theme.border()));
 
     let summary_rows_largest =

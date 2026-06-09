@@ -10,6 +10,8 @@ use crate::page_handler::{HomeRow, HomeTab, IndexedData, TableData};
 use crate::theme::Theme;
 use crate::utility::{LerpState, create_tab, main_block, styled_block, tab_highlight_style};
 
+pub const HOME_TABLE_ID: &str = "home_table_row";
+
 pub const BALANCE_BOLD: [&str; 7] = [
     "Balance",
     "Changes",
@@ -60,8 +62,7 @@ pub fn home_ui(
     let lerp_id = "home_tx_count";
     let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64, None) as i64;
 
-    let lerp_tx_row_id = "home_tx_row";
-    let lerp_tx_row = lerp_state.lerp(lerp_tx_row_id, tx_count as f64, Some(0.50)) as i64;
+    let lerp_tx_row = lerp_state.lerp(HOME_TABLE_ID, tx_count as f64, Some(0.50)) as i64;
 
     let table_name = format!("Transactions: {lerp_tx_count}");
 
