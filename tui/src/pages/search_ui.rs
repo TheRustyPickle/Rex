@@ -12,6 +12,8 @@ use crate::theme::Theme;
 use crate::tx_handler::TxData;
 use crate::utility::{LerpState, main_block, styled_block};
 
+pub const SEARCH_TABLE_ID: &str = "search_table_row";
+
 pub fn search_ui(
     f: &mut Frame,
     search_data: &TxData,
@@ -43,13 +45,16 @@ pub fn search_ui(
 
     let tx_count = search_table.items.len();
     let lerp_id = "home_tx_count";
-    let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64) as i64;
+    let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64, None) as i64;
+
+    let lerp_row = lerp_state.lerp(SEARCH_TABLE_ID, tx_count as f64, Some(0.50)) as usize;
 
     let table_name = format!("Transactions: {lerp_tx_count}");
 
     let rows = search_table
         .items
         .iter()
+        .take(lerp_row)
         .enumerate()
         .map(|(row_index, item)| {
             let height = 1;
@@ -62,7 +67,7 @@ pub fn search_ui(
                 };
 
                 let lerp_id = format!("search_table:{index}:{row_index}");
-                let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                 Cell::from(format!("{new_c:.2}").separate_with_commas())
             });

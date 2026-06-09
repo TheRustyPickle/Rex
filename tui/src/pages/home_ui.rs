@@ -10,6 +10,8 @@ use crate::page_handler::{HomeRow, HomeTab, IndexedData, TableData};
 use crate::theme::Theme;
 use crate::utility::{LerpState, create_tab, main_block, styled_block, tab_highlight_style};
 
+pub const HOME_TABLE_ID: &str = "home_table_row";
+
 pub const BALANCE_BOLD: [&str; 7] = [
     "Balance",
     "Changes",
@@ -58,7 +60,9 @@ pub fn home_ui(
 
     let tx_count = home_table.items.len();
     let lerp_id = "home_tx_count";
-    let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64) as i64;
+    let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64, None) as i64;
+
+    let lerp_tx_row = lerp_state.lerp(HOME_TABLE_ID, tx_count as f64, Some(0.50)) as i64;
 
     let table_name = format!("Transactions: {lerp_tx_count}");
 
@@ -76,6 +80,7 @@ pub fn home_ui(
     let rows = home_table
         .items
         .iter()
+        .take(lerp_tx_row as usize)
         .enumerate()
         .map(|(row_index, item)| {
             let cells = item.iter().enumerate().map(|(index, c)| {
@@ -84,7 +89,7 @@ pub fn home_ui(
                 };
 
                 let lerp_id = format!("home_table:{index}:{row_index}");
-                let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                 Cell::from(format!("{new_c:.2}").separate_with_commas())
             });
@@ -183,7 +188,7 @@ pub fn home_ui(
                 };
 
                 let lerp_id = format!("{row_type}:{index}");
-                let to_show = lerp_state.lerp(&lerp_id, actual_data);
+                let to_show = lerp_state.lerp(&lerp_id, actual_data, None);
 
                 // re-add the previously removed symbol if is the Changes row
                 // Otherwise separate the number with commas

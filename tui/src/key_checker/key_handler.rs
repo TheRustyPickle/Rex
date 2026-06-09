@@ -14,8 +14,9 @@ use crate::page_handler::{
     SummaryTab, TableData, TxTab,
 };
 use crate::pages::{
-    ChoicePopupState, ConfigChoices, DeletionChoices, InfoPopupState, MovementDirection,
-    NewPathChoices, PopupType,
+    ACTIVITY_TABLE_ID, ChoicePopupState, ConfigChoices, DeletionChoices, HOME_TABLE_ID,
+    InfoPopupState, MovementDirection, NewPathChoices, PopupType, SEARCH_TABLE_ID,
+    SUMMARY_TABLE_ID,
 };
 use crate::theme::Theme;
 use crate::tx_handler::TxData;
@@ -344,6 +345,8 @@ impl<'a> InputKeyHandler<'a> {
                     LogType::Info,
                 );
             }
+
+            self.lerp_state.clear_lerp(SEARCH_TABLE_ID);
             self.reload_activity_table()?;
         }
         Ok(())
@@ -567,7 +570,10 @@ impl<'a> InputKeyHandler<'a> {
                 HomeTab::Table => {}
             },
             CurrentUi::AddTx => self.add_tx_data.move_index_right(self.add_tx_tab),
-            CurrentUi::Search => self.search_data.move_index_right(self.search_tab),
+            CurrentUi::Search => {
+                self.search_data.move_index_right(self.search_tab);
+                self.lerp_state.clear_lerp(SEARCH_TABLE_ID);
+            }
             CurrentUi::Chart => {
                 if !*self.chart_hidden_mode {
                     match self.chart_tab {
@@ -611,20 +617,26 @@ impl<'a> InputKeyHandler<'a> {
                         }
                         SummaryTab::Table => {}
                     }
+
+                    self.lerp_state.clear_lerp(SUMMARY_TABLE_ID);
                 }
             }
-            CurrentUi::Activity => match self.activity_tab {
-                ActivityTab::Years => {
-                    self.activity_months.set_index_zero();
-                    self.activity_years.next_yearly();
-                    self.reload_activity_table()?;
-                }
-                ActivityTab::Months => {
-                    self.activity_months.next();
-                    self.reload_activity_table()?;
-                }
-                ActivityTab::List => {}
-            },
+            CurrentUi::Activity => {
+                match self.activity_tab {
+                    ActivityTab::Years => {
+                        self.activity_months.set_index_zero();
+                        self.activity_years.next_yearly();
+                        self.reload_activity_table()?;
+                    }
+                    ActivityTab::Months => {
+                        self.activity_months.next();
+                        self.reload_activity_table()?;
+                    }
+                    ActivityTab::List => {}
+                };
+
+                self.lerp_state.clear_lerp(ACTIVITY_TABLE_ID);
+            }
             CurrentUi::Initial => {}
         }
 
@@ -1898,6 +1910,8 @@ impl InputKeyHandler<'_> {
         )?;
 
         *self.home_table = TableData::new(self.home_txs.tx_array());
+
+        self.lerp_state.clear_lerp(HOME_TABLE_ID);
 
         Ok(())
     }

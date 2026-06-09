@@ -13,6 +13,8 @@ use crate::utility::{
     tab_highlight_style,
 };
 
+pub const SUMMARY_TABLE_ID: &str = "summary_table_row";
+
 /// The function draws the Summary page of the interface.
 pub fn summary_ui(
     f: &mut Frame,
@@ -29,6 +31,12 @@ pub fn summary_ui(
     conn: &mut DbConn,
 ) {
     let size = f.area();
+
+    let tags_count = table_data.items.len();
+    let lerp_id = "summary_tags_count";
+    let lerp_tags_count = lerp_state.lerp(lerp_id, tags_count as f64, None) as i64;
+
+    let lerp_row = lerp_state.lerp(SUMMARY_TABLE_ID, tags_count as f64, Some(0.50)) as usize;
 
     let tag_header = if let SortingType::Tags = summary_sort {
         "Tags ↑"
@@ -202,6 +210,7 @@ pub fn summary_ui(
     let rows = table_data
         .items
         .iter()
+        .take(lerp_row)
         .enumerate()
         .map(|(row_index, item)| {
             let cells = item.iter().enumerate().map(|(index, c)| {
@@ -213,7 +222,7 @@ pub fn summary_ui(
 
                 let Ok(parsed_num) = c.parse::<f64>() else {
                     if c == "∞" {
-                        let new_c = lerp_state.lerp(&lerp_id, 0.0);
+                        let new_c = lerp_state.lerp(&lerp_id, 0.0, None);
                         return Cell::from(format!("{new_c:.2}").separate_with_commas());
                     }
 
@@ -226,7 +235,7 @@ pub fn summary_ui(
                     if let Some(sym) = symbol {
                         let c = c.replace(sym, "");
                         if let Ok(parsed_num) = c.parse::<f64>() {
-                            let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                            let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                             return Cell::from(format!("{sym}{new_c:.2}").separate_with_commas());
                         }
@@ -234,7 +243,7 @@ pub fn summary_ui(
                     return Cell::from(c.separate_with_commas());
                 };
 
-                let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                 Cell::from(format!("{new_c:.2}").separate_with_commas())
             });
@@ -268,9 +277,11 @@ pub fn summary_ui(
         ]
     };
 
+    let tags_text = format!("Tags: {lerp_tags_count}");
+
     let mut table_area = Table::new(rows, table_width)
         .header(tag_table_header)
-        .block(styled_block("Tags", theme))
+        .block(styled_block(&tags_text, theme))
         .style(Style::default().fg(theme.border()));
 
     let summary_rows_largest =
@@ -282,7 +293,7 @@ pub fn summary_ui(
                 let cells = item.into_iter().enumerate().map(|(index, c)| {
                     let mut cell = if let Ok(parsed_num) = c.parse::<f64>() {
                         let lerp_id = format!("summary_table_largest:{index}:{row_index}");
-                        let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                        let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                         Cell::from(format!("{new_c:.2}").separate_with_commas())
                     } else {
@@ -326,7 +337,7 @@ pub fn summary_ui(
                 let cells = item.into_iter().enumerate().map(|(index, c)| {
                     let mut cell = if let Ok(parsed_num) = c.parse::<f64>() {
                         let lerp_id = format!("summary_table_peak:{index}:{row_index}");
-                        let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                        let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                         let text = if index == 1 && row_index == 2 {
                             // Month checked value. No need float for this
@@ -376,7 +387,7 @@ pub fn summary_ui(
                 let cells = item.into_iter().enumerate().map(|(index, c)| {
                     let mut cell = if let Ok(parsed_num) = c.parse::<f64>() {
                         let lerp_id = format!("method_table:{index}:{row_index}");
-                        let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                        let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                         Cell::from(format!("{new_c:.2}").separate_with_commas())
                     } else {
@@ -390,7 +401,7 @@ pub fn summary_ui(
                             let c = c.replace(sym, "");
                             if let Ok(parsed_num) = c.parse::<f64>() {
                                 let lerp_id = format!("method_table:{index}:{row_index}");
-                                let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                                let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                                 return Cell::from(
                                     format!("{sym}{new_c:.2}").separate_with_commas(),
@@ -400,7 +411,7 @@ pub fn summary_ui(
 
                         if c == "∞" {
                             let lerp_id = format!("method_table:{index}:{row_index}");
-                            lerp_state.lerp(&lerp_id, 0.0);
+                            lerp_state.lerp(&lerp_id, 0.0, None);
                         }
                         Cell::from(c.separate_with_commas())
                     };
@@ -468,7 +479,7 @@ pub fn summary_ui(
                 let lerp_id = format!("lend_borrow_table:{index}:{row_index}");
 
                 if let Ok(parsed_num) = c.parse::<f64>() {
-                    let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                    let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                     Cell::from(format!("{new_c:.2}").separate_with_commas())
                 } else {
@@ -481,14 +492,14 @@ pub fn summary_ui(
                     if let Some(sym) = symbol {
                         let c = c.replace(sym, "");
                         if let Ok(parsed_num) = c.parse::<f64>() {
-                            let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                            let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                             return Cell::from(format!("{sym}{new_c:.2}").separate_with_commas());
                         }
                     }
 
                     if c == "∞" {
-                        lerp_state.lerp(&lerp_id, 0.0);
+                        lerp_state.lerp(&lerp_id, 0.0, None);
                     }
                     Cell::from(c.separate_with_commas())
                 }
@@ -523,13 +534,13 @@ pub fn summary_ui(
             let cells = item.iter().enumerate().map(|(index, c)| {
                 let mut cell = if let Ok(parsed_num) = c.parse::<f64>() {
                     let lerp_id = format!("summary_rows_net:{index}:{row_index}");
-                    let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                    let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                     Cell::from(format!("{new_c:.2}").separate_with_commas())
                 } else {
                     if c == "∞" {
                         let lerp_id = format!("summary_rows_net:{index}:{row_index}");
-                        lerp_state.lerp(&lerp_id, 0.0);
+                        lerp_state.lerp(&lerp_id, 0.0, None);
                     }
 
                     let symbol = if c.contains('↑') || c.contains('↓') {
@@ -542,7 +553,7 @@ pub fn summary_ui(
                         let c = c.replace(sym, "");
                         if let Ok(parsed_num) = c.parse::<f64>() {
                             let lerp_id = format!("summary_net_rows:{index}:{row_index}");
-                            let new_c = lerp_state.lerp(&lerp_id, parsed_num);
+                            let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                             return Cell::from(format!("{sym}{new_c:.2}").separate_with_commas());
                         }

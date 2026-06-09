@@ -9,6 +9,8 @@ use crate::page_handler::{ActivityTab, IndexedData, TableData};
 use crate::theme::Theme;
 use crate::utility::{LerpState, create_tab, main_block, styled_block, tab_highlight_style};
 
+pub const ACTIVITY_TABLE_ID: &str = "activity_table_row";
+
 pub fn activity_ui(
     f: &mut Frame,
     months: &IndexedData,
@@ -82,7 +84,9 @@ pub fn activity_ui(
 
     let tx_count = activity_view.total_activity();
     let lerp_id = "activity_tx_count";
-    let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64) as i64;
+    let lerp_tx_count = lerp_state.lerp(lerp_id, tx_count as f64, None) as i64;
+
+    let lerp_row = lerp_state.lerp(ACTIVITY_TABLE_ID, tx_count as f64, Some(0.50)) as usize;
 
     let table_name = format!("Transactions: {lerp_tx_count}");
 
@@ -104,7 +108,7 @@ pub fn activity_ui(
         .height(1)
         .bottom_margin(0);
 
-    let activity_rows = table_data.items.iter().map(|item| {
+    let activity_rows = table_data.items.iter().take(lerp_row).map(|item| {
         let height = 1;
         let cells = item.iter().map(|c| Cell::from(c.separate_with_commas()));
         Row::new(cells)
