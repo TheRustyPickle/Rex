@@ -6,15 +6,11 @@ resolver = "2"
 [workspace.dependencies]
 anyhow = "1.0.102"
 chrono = "0.4.44"
-diesel = {
-  version = "2.3.7",
-  default-features = false,
-  features = [
-    "chrono",
-    "returning_clauses_for_sqlite_3_35",
-    "sqlite",
-  ]
-}
+diesel = { version = "2.3.7", default-features = false, features = [
+  "chrono",
+  "returning_clauses_for_sqlite_3_35",
+  "sqlite",
+] }
 rex-app = "0.2.7"
 rex-db = "0.2.7"
 rex-shared = "0.2.7"
