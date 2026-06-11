@@ -4,24 +4,28 @@ members = ["app", "db", "shared", "tui"]
 resolver = "2"
 
 [workspace.dependencies]
-rex-shared = "0.2.6"
-rex-db = "0.2.6"
-rex-app = "0.2.6"
+anyhow = "1.0.102"
 chrono = "0.4.44"
-diesel = { version = "2.3.7", default-features = false, features = [
+diesel = {
+  version = "2.3.7",
+  default-features = false,
+  features = [
+    "chrono",
     "returning_clauses_for_sqlite_3_35",
     "sqlite",
-    "chrono",
-] }
-anyhow = "1.0.102"
-strum = "0.28"
+  ]
+}
+rex-app = "0.2.7"
+rex-db = "0.2.7"
+rex-shared = "0.2.7"
+strum = "0.28.0"
 strum_macros = "0.28"
+
+[patch.crates-io]
+rex-app = { path = "app" }
+rex-db = { path = "db" }
+rex-shared = { path = "shared" }
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
 inherits = "release"
-
-[patch.crates-io]
-rex-shared = { path = "shared" }
-rex-db = { path = "db" }
-rex-app = { path = "app" }

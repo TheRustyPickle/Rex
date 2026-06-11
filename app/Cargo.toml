@@ -1,6 +1,6 @@
 [package]
 name = "rex-app"
-version = "0.2.6"
+version = "0.2.7"
 edition = "2024"
 description = """
 Core functionality for Rex
@@ -10,14 +10,14 @@ repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
 
 [dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+diesel.workspace = true
 rex-db.workspace = true
 rex-shared.workspace = true
-chrono.workspace = true
-anyhow.workspace = true
-diesel.workspace = true
+strsim = "0.11.1"
 strum.workspace = true
 strum_macros.workspace = true
-strsim = "0.11.1"
 thiserror = "2.0.17"
 
 [lints.clippy]
