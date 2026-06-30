@@ -362,7 +362,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.go_home_reset();
                 // We just added a new TX, select the month tab again + reload the data of balance and table widgets to get updated data
                 *self.home_tab = HomeTab::Months;
-                self.reload_home_table()?;
+                self.reload_home_table(true)?;
                 self.reload_chart_data()?;
                 self.reload_summary()?;
                 self.reset_search_data();
@@ -405,7 +405,7 @@ impl<'a> InputKeyHandler<'a> {
         // TODO: Update cache?
 
         // Transaction deleted so reload the data again
-        self.reload_home_table()?;
+        self.reload_home_table(false)?;
         self.reload_chart_data()?;
         self.reload_summary()?;
         self.reset_search_data();
@@ -480,12 +480,12 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Home => match self.home_tab {
                 HomeTab::Months => {
                     self.home_months.previous();
-                    self.reload_home_table()?;
+                    self.reload_home_table(true)?;
                 }
                 HomeTab::Years => {
                     self.home_years.previous_yearly();
                     self.home_months.set_index_zero();
-                    self.reload_home_table()?;
+                    self.reload_home_table(true)?;
                 }
                 HomeTab::Table => {}
             },
@@ -560,12 +560,12 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Home => match self.home_tab {
                 HomeTab::Months => {
                     self.home_months.next();
-                    self.reload_home_table()?;
+                    self.reload_home_table(true)?;
                 }
                 HomeTab::Years => {
                     self.home_years.next_yearly();
                     self.home_months.set_index_zero();
-                    self.reload_home_table()?;
+                    self.reload_home_table(true)?;
                 }
                 HomeTab::Table => {}
             },
@@ -891,7 +891,7 @@ impl<'a> InputKeyHandler<'a> {
 
         self.go_home_reset();
         *self.home_tab = HomeTab::Months;
-        self.reload_home_table()?;
+        self.reload_home_table(true)?;
         self.reload_chart_data()?;
         self.reload_summary()?;
         self.reset_search_data();
@@ -953,7 +953,7 @@ impl<'a> InputKeyHandler<'a> {
 
                     self.go_home_reset();
                     *self.home_tab = HomeTab::Months;
-                    self.reload_home_table()?;
+                    self.reload_home_table(true)?;
                     self.reload_chart_data()?;
                     self.reload_summary()?;
                     self.reset_search_data();
@@ -1008,7 +1008,7 @@ impl<'a> InputKeyHandler<'a> {
         self.conn.delete_tx(target_tx)?;
 
         // Transaction deleted so reload the data again
-        self.reload_home_table()?;
+        self.reload_home_table(true)?;
         self.reload_chart_data()?;
         self.reload_summary()?;
         self.reset_search_data();
@@ -1028,7 +1028,7 @@ impl<'a> InputKeyHandler<'a> {
                 .swap_tx_position(index, index - 1, self.home_txs)?;
 
             if reload_stuff {
-                self.reload_home_table()?;
+                self.reload_home_table(false)?;
                 self.home_down_till(index - 1);
                 self.reload_activity_table()?;
             }
@@ -1049,7 +1049,7 @@ impl<'a> InputKeyHandler<'a> {
                 .swap_tx_position(index, index + 1, self.home_txs)?;
 
             if reload_stuff {
-                self.reload_home_table()?;
+                self.reload_home_table(false)?;
                 self.home_down_till(index + 1);
                 self.reload_activity_table()?;
             }
@@ -1902,7 +1902,7 @@ impl InputKeyHandler<'_> {
     }
 
     /// Reload Home page's table data by fetching from the DB
-    fn reload_home_table(&mut self) -> Result<()> {
+    fn reload_home_table(&mut self, clear_lerp: bool) -> Result<()> {
         *self.home_txs = self.conn.fetch_txs_with_str(
             self.home_months.get_selected_value(),
             self.home_years.get_selected_value(),
@@ -1911,7 +1911,9 @@ impl InputKeyHandler<'_> {
 
         *self.home_table = TableData::new(self.home_txs.tx_array());
 
-        self.lerp_state.clear_lerp(HOME_TABLE_ID);
+        if clear_lerp {
+            self.lerp_state.clear_lerp(HOME_TABLE_ID);
+        }
 
         Ok(())
     }

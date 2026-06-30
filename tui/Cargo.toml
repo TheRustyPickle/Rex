@@ -1,6 +1,6 @@
 [package]
 name = "rex-tui"
-version = "0.2.7"
+version = "0.2.8"
 edition = "2024"
 description = """
 A TUI app for managing Incomes and Expenses
