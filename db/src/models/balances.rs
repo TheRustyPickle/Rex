@@ -265,10 +265,11 @@ impl Balance {
             .select(Balance::as_select())
             .load(db_conn.conn())?;
 
-        assert!(
-            (balance_list.len() == db_conn.cache().tx_methods.len()),
-            "Final balances are not set for all transaction methods"
-        );
+        if balance_list.len() != db_conn.cache().tx_methods.len() {
+            return Err(Error::QueryBuilderError(Box::new(std::io::Error::other(
+                "Final balances are not set for all transaction methods",
+            ))));
+        }
 
         let balance_map = balance_list.into_iter().map(|b| (b.method_id, b)).collect();
 
