@@ -6,9 +6,8 @@ use diesel::prelude::*;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use std::collections::{HashMap, HashSet};
 
-use crate::models::{FullTx, Tag, TxMethod};
+use crate::models::{Tag, TxMethod};
 
-// pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../db/src/migrations");
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 
 pub trait ConnCache {
@@ -20,7 +19,6 @@ pub trait ConnCache {
 pub struct Cache {
     pub tags: HashMap<i32, Tag>,
     pub tx_methods: HashMap<i32, TxMethod>,
-    pub txs: Option<HashMap<i32, Vec<FullTx>>>,
     pub details: HashSet<String>,
 }
 
@@ -68,20 +66,6 @@ impl Cache {
 
     pub fn new_details(&mut self, details: String) {
         self.details.insert(details);
-    }
-
-    // TODO: Start using cache
-    pub fn set_txs(&mut self, txs: HashMap<i32, Vec<FullTx>>) {
-        self.txs = Some(txs);
-    }
-
-    #[must_use]
-    pub fn get_txs(&self, id: i32) -> Option<&Vec<FullTx>> {
-        if let Some(txs) = &self.txs {
-            return txs.get(&id);
-        }
-
-        None
     }
 
     #[must_use]

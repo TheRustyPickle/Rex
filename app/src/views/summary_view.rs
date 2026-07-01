@@ -50,39 +50,14 @@ impl FullSummary {
     }
 }
 
-type CacheTxs = HashMap<i32, Vec<FullTx>>;
-
 pub(crate) fn get_summary(
     date: NaiveDate,
     nature: FetchNature,
     conn: &mut impl ConnCache,
-) -> Result<(SummaryView, Option<CacheTxs>)> {
+) -> Result<SummaryView> {
     let txs = FullTx::get_txs(date, nature, conn)?;
 
-    let mut create_map = false;
-    if let FetchNature::All = nature {
-        create_map = true;
-    }
-
-    if create_map {
-        let mut map = HashMap::with_capacity(txs.len());
-
-        for tx in &txs {
-            let unique_value = month_year_to_unique(date.month() as i32, date.year());
-
-            map.entry(unique_value)
-                .or_insert_with(Vec::new)
-                .push(tx.clone());
-        }
-
-        let summary_view = SummaryView { txs, nature };
-
-        return Ok((summary_view, Some(map)));
-    }
-
-    let summary_view = SummaryView { txs, nature };
-
-    Ok((summary_view, None))
+    Ok(SummaryView { txs, nature })
 }
 
 impl SummaryView {

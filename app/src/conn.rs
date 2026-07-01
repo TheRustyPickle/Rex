@@ -11,7 +11,7 @@ use crate::modifier::{
     activity_swap_position, add_new_tx, add_new_tx_methods, delete_tx,
 };
 use crate::ui_helper::{Autofiller, Stepper, Verifier};
-use crate::utils::month_name_to_num;
+use crate::utils::parse_month_year;
 use crate::views::{
     ActivityView, ChartView, SearchView, SummaryView, TxViewGroup, get_activity_view,
     get_chart_view, get_search_txs, get_summary, get_txs,
@@ -78,7 +78,6 @@ impl DbConn {
             cache: Cache {
                 tags: HashMap::new(),
                 tx_methods: HashMap::new(),
-                txs: None,
                 details: HashSet::new(),
             },
         };
@@ -98,7 +97,6 @@ impl DbConn {
             cache: Cache {
                 tags: HashMap::new(),
                 tx_methods: HashMap::new(),
-                txs: None,
                 details: HashSet::new(),
             },
         }
@@ -212,10 +210,7 @@ impl DbConn {
         let result = self.conn.transaction::<TxViewGroup, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
-            let year_num = year.parse::<i32>().unwrap();
-            let month_num = month_name_to_num(month);
-
-            let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
+            let date = parse_month_year(month, year)?;
 
             get_txs(date, nature, &mut db_conn)
         })?;
@@ -257,24 +252,13 @@ impl DbConn {
         year: &'a str,
         nature: FetchNature,
     ) -> Result<SummaryView> {
-        let (summary, txs) = self
-            .conn
-            .transaction::<(SummaryView, Option<HashMap<i32, Vec<FullTx>>>), Error, _>(|conn| {
-                let mut db_conn = MutDbConn::new(conn, &self.cache);
+        self.conn.transaction::<SummaryView, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
 
-                let year_num = year.parse::<i32>().unwrap();
-                let month_num = month_name_to_num(month);
+            let date = parse_month_year(month, year)?;
 
-                let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
-
-                get_summary(date, nature, &mut db_conn)
-            })?;
-
-        if let Some(txs) = txs {
-            self.cache.set_txs(txs);
-        }
-
-        Ok(summary)
+            get_summary(date, nature, &mut db_conn)
+        })
     }
 
     pub fn get_chart_view_with_str<'a>(
@@ -286,10 +270,7 @@ impl DbConn {
         let result = self.conn.transaction::<ChartView, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
-            let year_num = year.parse::<i32>().unwrap();
-            let month_num = month_name_to_num(month);
-
-            let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
+            let date = parse_month_year(month, year)?;
 
             let tx_view = get_txs(date, nature, &mut db_conn)?;
 
@@ -309,10 +290,7 @@ impl DbConn {
         let result = self.conn.transaction::<ActivityView, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
-            let year_num = year.parse::<i32>().unwrap();
-            let month_num = month_name_to_num(month);
-
-            let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
+            let date = parse_month_year(month, year)?;
 
             let activity_view = get_activity_view(date, &mut db_conn)?;
 
@@ -361,6 +339,19 @@ impl DbConn {
         Ok(())
     }
 
+    pub fn rename_tag(&mut self, old_name: &str, new_name: &str) -> Result<()> {
+        let new_tag = self.conn.transaction::<Tag, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            Ok(Tag::update_name(old_name, new_name, &mut db_conn)?)
+        })?;
+
+        let tag = self.cache.tags.get_mut(&new_tag.id).unwrap();
+        tag.name = new_name.to_string();
+
+        Ok(())
+    }
+
     pub fn set_new_tx_method_positions(&mut self, new_format: &[String]) -> Result<()> {
         let mut new_method_positions = Vec::new();
 
@@ -395,6 +386,11 @@ impl DbConn {
     #[must_use]
     pub fn get_tx_methods_sorted(&self) -> Vec<&TxMethod> {
         self.cache.get_methods()
+    }
+
+    #[must_use]
+    pub fn get_tags_sorted(&self) -> Vec<&Tag> {
+        self.cache.get_tags_sorted()
     }
 
     #[must_use]
