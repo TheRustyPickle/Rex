@@ -81,19 +81,12 @@ fn parse_search_fields_amount_nature_variants() {
 }
 
 #[test]
-fn parse_search_fields_nonexistent_tags_filtered() {
+fn parse_search_fields_nonexistent_tags_errors() {
     let file_name = "test_parse_search_tags.sqlite";
     let db_conn = create_test_db(file_name);
 
-    // Non-existent tags are silently skipped by parse_search_fields
-    let search =
-        parse_search_fields("", "", "", "", "", "", "FakeTag, AnotherFake", &db_conn).unwrap();
-    // tags get filtered to empty because no tag exists in cache (except "Unknown")
-    assert!(
-        search.tags.is_none() || search.tags.as_ref().unwrap().is_empty(),
-        "Non-existent tags should be filtered out, got: {:?}",
-        search.tags
-    );
+    let result = parse_search_fields("", "", "", "", "", "", "FakeTag", &db_conn);
+    assert!(result.is_err(), "Non-existent tags should return an error");
 
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
