@@ -541,7 +541,11 @@ impl PopupType {
     }
 
     pub fn new_choice_tags(conn: &mut DbConn, theme: &Theme) -> Result<Self> {
-        let tags = conn.get_tags_sorted();
+        let tags: Vec<_> = conn
+            .get_tags_sorted()
+            .into_iter()
+            .filter(|t| t.name != "Unknown")
+            .collect();
 
         if tags.is_empty() {
             return Err(anyhow!(
