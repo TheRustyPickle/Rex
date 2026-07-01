@@ -217,14 +217,15 @@ pub fn parse_search_fields<'a>(
     let tags = if tags.is_empty() {
         None
     } else {
-        let tags = tags.split(',').map(str::trim).collect::<Vec<&str>>();
-        let tags = tags
-            .iter()
-            .map(|t| db_conn.cache().get_tag_id(t))
-            .filter_map(Result::ok)
-            .collect::<Vec<i32>>();
+        let tag_names = tags.split(',').map(str::trim).filter(|s| !s.is_empty());
 
-        Some(tags)
+        let mut tag_ids = Vec::new();
+
+        for t in tag_names {
+            tag_ids.push(db_conn.cache().get_tag_id(t)?);
+        }
+
+        Some(tag_ids)
     };
 
     let search_tx = NewSearch::new(
