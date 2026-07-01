@@ -358,7 +358,6 @@ impl<'a> InputKeyHandler<'a> {
 
         match status {
             Ok(()) => {
-                // TODO: Update cache?
                 self.go_home_reset();
                 // We just added a new TX, select the month tab again + reload the data of balance and table widgets to get updated data
                 *self.home_tab = HomeTab::Months;
@@ -400,9 +399,6 @@ impl<'a> InputKeyHandler<'a> {
 
         let target_tx = self.home_txs.get_tx(index);
         self.conn.delete_tx(target_tx)?;
-
-        // INFO: maybe can reduce fetches by directly deleted from TX list?
-        // TODO: Update cache?
 
         // Transaction deleted so reload the data again
         self.reload_home_table(false)?;

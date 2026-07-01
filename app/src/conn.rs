@@ -78,7 +78,6 @@ impl DbConn {
             cache: Cache {
                 tags: HashMap::new(),
                 tx_methods: HashMap::new(),
-                txs: None,
                 details: HashSet::new(),
             },
         };
@@ -98,7 +97,6 @@ impl DbConn {
             cache: Cache {
                 tags: HashMap::new(),
                 tx_methods: HashMap::new(),
-                txs: None,
                 details: HashSet::new(),
             },
         }
@@ -257,9 +255,8 @@ impl DbConn {
         year: &'a str,
         nature: FetchNature,
     ) -> Result<SummaryView> {
-        let (summary, txs) = self
-            .conn
-            .transaction::<(SummaryView, Option<HashMap<i32, Vec<FullTx>>>), Error, _>(|conn| {
+        self.conn
+            .transaction::<SummaryView, Error, _>(|conn| {
                 let mut db_conn = MutDbConn::new(conn, &self.cache);
 
                 let year_num = year.parse::<i32>().unwrap();
@@ -268,13 +265,7 @@ impl DbConn {
                 let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
 
                 get_summary(date, nature, &mut db_conn)
-            })?;
-
-        if let Some(txs) = txs {
-            self.cache.set_txs(txs);
-        }
-
-        Ok(summary)
+            })
     }
 
     pub fn get_chart_view_with_str<'a>(
