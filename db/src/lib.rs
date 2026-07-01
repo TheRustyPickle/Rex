@@ -8,7 +8,6 @@ use std::collections::{HashMap, HashSet};
 
 use crate::models::{Tag, TxMethod};
 
-// pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../db/src/migrations");
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 
 pub trait ConnCache {
