@@ -34,12 +34,12 @@ impl ChoicePopup {
                 title = "Configuration";
                 message = "Select an option to configure";
 
-                y_value = 12;
+                y_value = 13;
 
                 constraints = vec![
                     Constraint::Length(4),
                     Constraint::Min(1),
-                    Constraint::Length(7),
+                    Constraint::Length(8),
                 ];
             }
             ChoicePopupState::ConfigForced => {
@@ -58,6 +58,22 @@ impl ChoicePopup {
             ChoicePopupState::TxMethods => {
                 title = "Rename Method";
                 message = "Select a method to rename";
+
+                y_value = 5 + self.table.items.len() as u16 + 2;
+
+                if y_value > 20 {
+                    y_value = 20;
+                }
+
+                constraints = vec![
+                    Constraint::Length(4),
+                    Constraint::Length(1),
+                    Constraint::Length((self.table.items.len() + 2) as u16),
+                ];
+            }
+            ChoicePopupState::Tags => {
+                title = "Rename Tag";
+                message = "Select a tag to rename";
 
                 y_value = 5 + self.table.items.len() as u16 + 2;
 

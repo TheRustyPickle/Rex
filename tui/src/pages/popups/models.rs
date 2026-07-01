@@ -66,6 +66,7 @@ pub struct InputPopup {
     pub cursor_position: usize,
     pub status: String,
     pub modifying_method: Option<String>,
+    pub modifying_tag: Option<String>,
 }
 
 pub struct ChoiceDetails {
@@ -91,6 +92,7 @@ pub enum ChoicePopupState {
     Delete,
     Config,
     TxMethods,
+    Tags,
     ConfigForced,
 }
 
@@ -116,6 +118,8 @@ pub enum ConfigChoices {
     NewLocation,
     #[strum(to_string = "Set backup paths for app data")]
     BackupPaths,
+    #[strum(to_string = "Rename a Tag")]
+    RenameTag,
 }
 
 impl InfoPopup {
@@ -536,12 +540,57 @@ impl PopupType {
         }
     }
 
-    pub fn new_input(modifying: Option<String>) -> Self {
+    pub fn new_choice_tags(conn: &mut DbConn, theme: &Theme) -> Result<Self> {
+        let tags = conn.get_tags_sorted();
+
+        if tags.is_empty() {
+            return Err(anyhow!(
+                "There needs to be at least 1 tag existing for this option"
+            ));
+        }
+
+        let choices = tags
+            .iter()
+            .map(|c| ChoiceDetails {
+                text: c.name.clone(),
+                color: theme.positive(),
+            })
+            .collect();
+
+        let table = tags.iter().map(|m| vec![m.name.clone()]).collect();
+        let mut table_data = TableData::new(table);
+        table_data.state.select(Some(0));
+
+        Ok(PopupType::Choice(ChoicePopup {
+            table: table_data,
+            choices,
+            showing: ChoicePopupState::Tags,
+        }))
+    }
+
+    pub fn get_choice_tag(&self) -> Option<String> {
+        match self {
+            PopupType::Choice(choice) => {
+                let selected = choice.table.state.selected().unwrap();
+                Some(choice.choices[selected].text.clone())
+            }
+            _ => None,
+        }
+    }
+
+    pub fn new_input(modifying: Option<String>, is_tag: bool) -> Self {
+        let (modifying_method, modifying_tag) = if is_tag {
+            (None, modifying)
+        } else {
+            (modifying, None)
+        };
+
         PopupType::Input(InputPopup {
             text: String::new(),
             cursor_position: 0,
             status: String::from("All good"),
-            modifying_method: modifying,
+            modifying_method,
+            modifying_tag,
         })
     }
 
@@ -549,36 +598,59 @@ impl PopupType {
         if let PopupType::Input(input) = self {
             add_char_to(char, &mut input.cursor_position, &mut input.text);
 
-            let tx_methods = conn.get_tx_methods_sorted();
+            if input.modifying_tag.is_some() {
+                let tags = conn.get_tags_sorted();
 
-            if tx_methods.iter().any(|m| m.name == input.text) {
-                input.status = String::from("Cannot use existing method name");
-            } else if RESTRICTED.iter().any(|m| m == &input.text) {
-                input.status = String::from("Cannot use this text as method name");
+                if tags.iter().any(|t| t.name == input.text) {
+                    input.status = String::from("Cannot use existing tag name");
+                } else if input.text.is_empty() {
+                    input.status = String::from("Tag name cannot be empty");
+                } else {
+                    input.status = String::from("All good");
+                }
             } else {
-                input.status = String::from("All good");
+                let tx_methods = conn.get_tx_methods_sorted();
+
+                if tx_methods.iter().any(|m| m.name == input.text) {
+                    input.status = String::from("Cannot use existing method name");
+                } else if RESTRICTED.iter().any(|m| m == &input.text) {
+                    input.status = String::from("Cannot use this text as method name");
+                } else {
+                    input.status = String::from("All good");
+                }
             }
         }
     }
 
     pub fn accept_input(&mut self, conn: &mut DbConn) -> Result<bool> {
         if let PopupType::Input(input) = self {
-            let tx_methods = conn.get_tx_methods_sorted();
+            if let Some(modifying) = &input.modifying_tag {
+                let tags = conn.get_tags_sorted();
 
-            if tx_methods.iter().any(|m| m.name == input.text) {
-                input.status = String::from("Cannot use existing method name");
-                return Ok(false);
-            }
+                if tags.iter().any(|t| t.name == input.text) {
+                    input.status = String::from("Cannot use existing tag name");
+                    return Ok(false);
+                }
 
-            if RESTRICTED.iter().any(|m| m == &input.text) {
-                input.status = String::from("Cannot use this text as method name");
-                return Ok(false);
-            }
-
-            if let Some(modifying) = &input.modifying_method {
-                conn.rename_tx_method(modifying, &input.text)?;
+                conn.rename_tag(modifying, &input.text)?;
             } else {
-                conn.add_new_methods(std::slice::from_ref(&input.text))?;
+                let tx_methods = conn.get_tx_methods_sorted();
+
+                if tx_methods.iter().any(|m| m.name == input.text) {
+                    input.status = String::from("Cannot use existing method name");
+                    return Ok(false);
+                }
+
+                if RESTRICTED.iter().any(|m| m == &input.text) {
+                    input.status = String::from("Cannot use this text as method name");
+                    return Ok(false);
+                }
+
+                if let Some(modifying) = &input.modifying_method {
+                    conn.rename_tx_method(modifying, &input.text)?;
+                } else {
+                    conn.add_new_methods(std::slice::from_ref(&input.text))?;
+                }
             }
 
             Ok(true)

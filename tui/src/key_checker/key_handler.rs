@@ -851,8 +851,11 @@ impl<'a> InputKeyHandler<'a> {
                     ConfigChoices::RenameTxMethod => {
                         *self.popup_status = PopupType::new_choice_methods(self.conn, self.theme)?;
                     }
+                    ConfigChoices::RenameTag => {
+                        *self.popup_status = PopupType::new_choice_tags(self.conn, self.theme)?;
+                    }
                     ConfigChoices::AddNewTxMethod => {
-                        *self.popup_status = PopupType::new_input(None);
+                        *self.popup_status = PopupType::new_input(None, false);
                     }
                 }
             }
@@ -861,7 +864,14 @@ impl<'a> InputKeyHandler<'a> {
                     return Err(anyhow!("Popup choice should not have been None"));
                 };
 
-                *self.popup_status = PopupType::new_input(Some(choice));
+                *self.popup_status = PopupType::new_input(Some(choice), false);
+            }
+            ChoicePopupState::Tags => {
+                let Some(choice) = self.popup_status.get_choice_tag() else {
+                    return Err(anyhow!("Popup choice should not have been None"));
+                };
+
+                *self.popup_status = PopupType::new_input(Some(choice), true);
             }
         }
 
