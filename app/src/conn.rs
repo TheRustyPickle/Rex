@@ -11,7 +11,7 @@ use crate::modifier::{
     activity_swap_position, add_new_tx, add_new_tx_methods, delete_tx,
 };
 use crate::ui_helper::{Autofiller, Stepper, Verifier};
-use crate::utils::month_name_to_num;
+use crate::utils::parse_month_year;
 use crate::views::{
     ActivityView, ChartView, SearchView, SummaryView, TxViewGroup, get_activity_view,
     get_chart_view, get_search_txs, get_summary, get_txs,
@@ -210,10 +210,7 @@ impl DbConn {
         let result = self.conn.transaction::<TxViewGroup, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
-            let year_num = year.parse::<i32>().unwrap();
-            let month_num = month_name_to_num(month);
-
-            let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
+            let date = parse_month_year(month, year)?;
 
             get_txs(date, nature, &mut db_conn)
         })?;
@@ -255,17 +252,13 @@ impl DbConn {
         year: &'a str,
         nature: FetchNature,
     ) -> Result<SummaryView> {
-        self.conn
-            .transaction::<SummaryView, Error, _>(|conn| {
-                let mut db_conn = MutDbConn::new(conn, &self.cache);
+        self.conn.transaction::<SummaryView, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
 
-                let year_num = year.parse::<i32>().unwrap();
-                let month_num = month_name_to_num(month);
+            let date = parse_month_year(month, year)?;
 
-                let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
-
-                get_summary(date, nature, &mut db_conn)
-            })
+            get_summary(date, nature, &mut db_conn)
+        })
     }
 
     pub fn get_chart_view_with_str<'a>(
@@ -277,10 +270,7 @@ impl DbConn {
         let result = self.conn.transaction::<ChartView, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
-            let year_num = year.parse::<i32>().unwrap();
-            let month_num = month_name_to_num(month);
-
-            let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
+            let date = parse_month_year(month, year)?;
 
             let tx_view = get_txs(date, nature, &mut db_conn)?;
 
@@ -300,10 +290,7 @@ impl DbConn {
         let result = self.conn.transaction::<ActivityView, Error, _>(|conn| {
             let mut db_conn = MutDbConn::new(conn, &self.cache);
 
-            let year_num = year.parse::<i32>().unwrap();
-            let month_num = month_name_to_num(month);
-
-            let date = NaiveDate::from_ymd_opt(year_num, month_num, 1).unwrap();
+            let date = parse_month_year(month, year)?;
 
             let activity_view = get_activity_view(date, &mut db_conn)?;
 

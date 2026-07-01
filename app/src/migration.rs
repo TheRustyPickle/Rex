@@ -14,6 +14,7 @@ use std::io::Write;
 use crate::conn::{DbConn, MutDbConn};
 use crate::modifier::add_new_tx_methods;
 use crate::utils::parse_amount_nature_cent;
+use crate::utils::split_tags;
 
 #[derive(QueryableByName)]
 struct ColumnInfo {
@@ -283,19 +284,10 @@ fn migrate_tx(
         Some(db_conn.cache().get_method_id(to_method).unwrap())
     };
 
-    let mut tag_list = Vec::new();
+    let mut tag_list = split_tags(tags);
 
-    if tags.is_empty() {
+    if tag_list.is_empty() {
         tag_list.push("Unknown".to_string());
-    } else {
-        let split_tags = tags.split(',').collect::<Vec<&str>>();
-
-        for tag in split_tags {
-            let trimmed_tag = tag.trim();
-            if !trimmed_tag.is_empty() {
-                tag_list.push(trimmed_tag.to_string());
-            }
-        }
     }
 
     let new_tx = NewTx::new(
