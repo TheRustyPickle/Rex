@@ -47,4 +47,17 @@ impl Tag {
 
         tags.filter(name.eq(n)).first(db_conn.conn()).optional()
     }
+
+    pub fn update_name(
+        old_name: &str,
+        new_name: &str,
+        db_conn: &mut impl ConnCache,
+    ) -> Result<Self, Error> {
+        use crate::schema::tags::dsl::{name, tags};
+
+        diesel::update(tags.filter(name.eq(old_name)))
+            .set(name.eq(new_name))
+            .returning(Self::as_returning())
+            .get_result(db_conn.conn())
+    }
 }

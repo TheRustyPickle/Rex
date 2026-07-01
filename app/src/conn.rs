@@ -361,6 +361,19 @@ impl DbConn {
         Ok(())
     }
 
+    pub fn rename_tag(&mut self, old_name: &str, new_name: &str) -> Result<()> {
+        let new_tag = self.conn.transaction::<Tag, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            Ok(Tag::update_name(old_name, new_name, &mut db_conn)?)
+        })?;
+
+        let tag = self.cache.tags.get_mut(&new_tag.id).unwrap();
+        tag.name = new_name.to_string();
+
+        Ok(())
+    }
+
     pub fn set_new_tx_method_positions(&mut self, new_format: &[String]) -> Result<()> {
         let mut new_method_positions = Vec::new();
 
@@ -395,6 +408,11 @@ impl DbConn {
     #[must_use]
     pub fn get_tx_methods_sorted(&self) -> Vec<&TxMethod> {
         self.cache.get_methods()
+    }
+
+    #[must_use]
+    pub fn get_tags_sorted(&self) -> Vec<&Tag> {
+        self.cache.get_tags_sorted()
     }
 
     #[must_use]
