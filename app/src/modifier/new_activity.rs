@@ -4,25 +4,18 @@ use rex_db::models::{
     ActivityNature, ActivityTxTag, FullTx, NewActivity, NewActivityTx, NewSearch, NewTx, Tag,
 };
 
+use crate::utils::split_tags;
+
 pub(crate) fn activity_new_tx(tx: &NewTx, tags: &str, conn: &mut impl ConnCache) -> Result<()> {
     let activity_type = ActivityNature::AddTx;
 
     let new_activity = NewActivity::new(activity_type).insert(conn)?;
     let added_tx = NewActivityTx::new_from_new_tx(tx, new_activity.id).insert(conn)?;
 
-    let mut tag_list = Vec::new();
+    let mut tag_list = split_tags(tags);
 
-    if tags.is_empty() {
+    if tag_list.is_empty() {
         tag_list.push("Unknown".to_string());
-    } else {
-        let split_tags = tags.split(',').collect::<Vec<&str>>();
-
-        for tag in split_tags {
-            let trimmed_tag = tag.trim();
-            if !trimmed_tag.is_empty() {
-                tag_list.push(trimmed_tag.to_string());
-            }
-        }
     }
 
     let mut tx_tags = Vec::new();
@@ -80,24 +73,16 @@ pub(crate) fn activity_edit_tx(
         NewActivityTx::new_from_full_tx(old_tx, false, new_activity.id).insert(conn)?;
 
     let mut old_tag_list = Vec::new();
-    let mut new_tag_list = Vec::new();
 
     for tag in &old_tx.tags {
         let tag = ActivityTxTag::new(old_tx_activity.id, tag.id);
         old_tag_list.push(tag);
     }
 
-    if tags.is_empty() {
-        new_tag_list.push("Unknown".to_string());
-    } else {
-        let split_tags = tags.split(',').collect::<Vec<&str>>();
+    let mut new_tag_list = split_tags(tags);
 
-        for tag in split_tags {
-            let trimmed_tag = tag.trim();
-            if !trimmed_tag.is_empty() {
-                new_tag_list.push(trimmed_tag.to_string());
-            }
-        }
+    if new_tag_list.is_empty() {
+        new_tag_list.push("Unknown".to_string());
     }
 
     let mut new_tags = Vec::new();

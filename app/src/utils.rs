@@ -1,22 +1,40 @@
-use anyhow::Result;
+use anyhow::{Result, anyhow};
+use chrono::NaiveDate;
 use rex_db::models::AmountNature;
 use rex_shared::models::{Cent, Dollar};
 
-pub fn month_name_to_num(name: &str) -> u32 {
+pub fn split_tags(input: &str) -> Vec<String> {
+    input
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .collect()
+}
+
+pub fn parse_month_year(month: &str, year: &str) -> Result<NaiveDate> {
+    let year_num = year.parse::<i32>()?;
+    let month_num = month_name_to_num(month)?;
+
+    NaiveDate::from_ymd_opt(year_num, month_num, 1)
+        .ok_or_else(|| anyhow!("Invalid date: {year}-{month}-01"))
+}
+
+pub fn month_name_to_num(name: &str) -> Result<u32> {
     match name {
-        "January" => 1,
-        "February" => 2,
-        "March" => 3,
-        "April" => 4,
-        "May" => 5,
-        "June" => 6,
-        "July" => 7,
-        "August" => 8,
-        "September" => 9,
-        "October" => 10,
-        "November" => 11,
-        "December" => 12,
-        _ => panic!("Invalid month name {name}"),
+        "January" => Ok(1),
+        "February" => Ok(2),
+        "March" => Ok(3),
+        "April" => Ok(4),
+        "May" => Ok(5),
+        "June" => Ok(6),
+        "July" => Ok(7),
+        "August" => Ok(8),
+        "September" => Ok(9),
+        "October" => Ok(10),
+        "November" => Ok(11),
+        "December" => Ok(12),
+        _ => Err(anyhow!("Invalid month name {name}")),
     }
 }
 
@@ -84,24 +102,23 @@ mod tests {
 
     #[test]
     fn test_month_name_to_num_all_months() {
-        assert_eq!(month_name_to_num("January"), 1);
-        assert_eq!(month_name_to_num("February"), 2);
-        assert_eq!(month_name_to_num("March"), 3);
-        assert_eq!(month_name_to_num("April"), 4);
-        assert_eq!(month_name_to_num("May"), 5);
-        assert_eq!(month_name_to_num("June"), 6);
-        assert_eq!(month_name_to_num("July"), 7);
-        assert_eq!(month_name_to_num("August"), 8);
-        assert_eq!(month_name_to_num("September"), 9);
-        assert_eq!(month_name_to_num("October"), 10);
-        assert_eq!(month_name_to_num("November"), 11);
-        assert_eq!(month_name_to_num("December"), 12);
+        assert_eq!(month_name_to_num("January").unwrap(), 1);
+        assert_eq!(month_name_to_num("February").unwrap(), 2);
+        assert_eq!(month_name_to_num("March").unwrap(), 3);
+        assert_eq!(month_name_to_num("April").unwrap(), 4);
+        assert_eq!(month_name_to_num("May").unwrap(), 5);
+        assert_eq!(month_name_to_num("June").unwrap(), 6);
+        assert_eq!(month_name_to_num("July").unwrap(), 7);
+        assert_eq!(month_name_to_num("August").unwrap(), 8);
+        assert_eq!(month_name_to_num("September").unwrap(), 9);
+        assert_eq!(month_name_to_num("October").unwrap(), 10);
+        assert_eq!(month_name_to_num("November").unwrap(), 11);
+        assert_eq!(month_name_to_num("December").unwrap(), 12);
     }
 
     #[test]
-    #[should_panic(expected = "Invalid month name")]
-    fn test_month_name_to_num_invalid_panics() {
-        month_name_to_num("NotAMonth");
+    fn test_month_name_to_num_invalid_errors() {
+        assert!(month_name_to_num("NotAMonth").is_err());
     }
 
     #[test]

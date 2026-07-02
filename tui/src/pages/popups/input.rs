@@ -14,10 +14,18 @@ impl InputPopup {
         let x_value = 50;
         let y_value = 7;
 
-        let title = if self.modifying_method.is_none() {
+        let title = if self.modifying_method.is_none() && self.modifying_tag.is_none() {
             "New Method"
+        } else if self.modifying_tag.is_some() {
+            "Rename Tag"
         } else {
-            "Rename to"
+            "Rename Method"
+        };
+
+        let block_name = if self.modifying_tag.is_some() {
+            "Tag name"
+        } else {
+            "Method name"
         };
 
         let title = Span::styled(title, Style::default().add_modifier(Modifier::BOLD));
@@ -46,7 +54,7 @@ impl InputPopup {
 
         let input_section = Paragraph::new(input_text)
             .style(Style::default().bg(theme.background()).fg(theme.text()))
-            .block(styled_block("Method name", theme))
+            .block(styled_block(block_name, theme))
             .alignment(Alignment::Left);
 
         let status_section = Paragraph::new(status_text)
