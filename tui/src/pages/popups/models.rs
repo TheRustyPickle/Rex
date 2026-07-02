@@ -619,6 +619,8 @@ impl PopupType {
                     input.status = String::from("Cannot use existing method name");
                 } else if RESTRICTED.iter().any(|m| m == &input.text) {
                     input.status = String::from("Cannot use this text as method name");
+                } else if input.text.is_empty() {
+                    input.status = String::from("Method name cannot be empty");
                 } else {
                     input.status = String::from("All good");
                 }
@@ -636,6 +638,11 @@ impl PopupType {
                     return Ok(false);
                 }
 
+                if input.text.is_empty() {
+                    input.status = String::from("Tag name cannot be empty");
+                    return Ok(false);
+                }
+
                 conn.rename_tag(modifying, &input.text)?;
             } else {
                 let tx_methods = conn.get_tx_methods_sorted();
@@ -647,6 +654,11 @@ impl PopupType {
 
                 if RESTRICTED.iter().any(|m| m == &input.text) {
                     input.status = String::from("Cannot use this text as method name");
+                    return Ok(false);
+                }
+
+                if input.text.is_empty() {
+                    input.status = String::from("Method name cannot be empty");
                     return Ok(false);
                 }
 
