@@ -1,6 +1,6 @@
 [package]
 name = "rex-db"
-version = "0.2.7"
+version = "0.2.9"
 edition = "2024"
 description = """
 Rex database models using diesel
@@ -13,8 +13,8 @@ license = "MIT"
 anyhow.workspace = true
 chrono.workspace = true
 diesel.workspace = true
-diesel_migrations = "2.3.1"
-libsqlite3-sys = { version = "0.35.0", features = ["bundled"] }
+diesel_migrations = "2.3.2"
+libsqlite3-sys = { version = "0.37.0", features = ["bundled"] }
 rex-shared.workspace = true
 strum.workspace = true
 strum_macros.workspace = true
