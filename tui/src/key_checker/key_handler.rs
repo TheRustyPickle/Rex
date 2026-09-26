@@ -863,6 +863,7 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::AddTx => self.add_tx_data.accept_autofill(self.add_tx_tab),
             CurrentUi::Search => self.search_data.accept_autofill(self.search_tab),
+            CurrentUi::Recurring => self.recurring_data.accept_autofill(self.recurring_tab),
             _ => {}
         }
     }

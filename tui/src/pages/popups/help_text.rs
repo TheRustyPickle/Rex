@@ -246,7 +246,7 @@ Yearly frequency adds a Month field pushing later fields by one key.
 4: TX Method    Example: Cash, Bank, Card
 5: Amount       Example: 1000, 100+50, b - 100
 6: Frequency    Example: Daily/Weekly/Monthly/Yearly/d/w/m/y
-7: Every N      Example: 1, 2, 3 - how many Frequency units apart each occurrence is
+7: Every N      Example: with Monthly, 1 = every month, 2 = every 2 months, 3 = every 3 months
 8: Day of Week/Month  Example: Monday (Weekly), 15 (Monthly/Yearly)
 9: Month        Example: January (Yearly only)
 Tags            Example: Food, Car. Add a Comma for a new tag

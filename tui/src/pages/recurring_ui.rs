@@ -284,9 +284,16 @@ pub fn recurring_ui(
         .block(styled_block("Frequency", theme))
         .alignment(Alignment::Left);
 
+    let recur_interval_title = match frequency {
+        RecurrenceFrequency::Daily => "Every N Days",
+        RecurrenceFrequency::Weekly => "Every N Weeks",
+        RecurrenceFrequency::Monthly => "Every N Months",
+        RecurrenceFrequency::Yearly => "Every N Years",
+    };
+
     let recur_interval_sec = Paragraph::new(recur_interval_text)
         .style(Style::default().bg(theme.background()).fg(theme.text()))
-        .block(styled_block("Every N", theme))
+        .block(styled_block(recur_interval_title, theme))
         .alignment(Alignment::Left);
 
     let recur_value_title = match frequency {
