@@ -27,6 +27,14 @@ pub enum Field {
     TxType,
     #[error("Tags")]
     Tags,
+    #[error("Frequency")]
+    Frequency,
+    #[error("Recur Interval")]
+    RecurInterval,
+    #[error("Recur Value")]
+    RecurValue,
+    #[error("Recur Month")]
+    RecurMonth,
 }
 
 #[derive(Debug, Error)]
@@ -59,6 +67,18 @@ pub enum VerifierError {
     InvalidBValue,
     #[error("Tags: Non-existing tags cannot be accepted")]
     NonExistingTag,
+    #[error("Frequency: Value not acceptable. Values: Daily/Weekly/Monthly/Yearly")]
+    InvalidFrequency,
+    #[error("Recur Interval: Value must be a whole number of at least 1")]
+    InvalidRecurInterval,
+    #[error("Recur Value: Day of month must be between 1-31")]
+    InvalidRecurValueMonthly,
+    #[error("Recur Value: Day of week not acceptable. Values: Sunday-Saturday")]
+    InvalidRecurValueWeekly,
+    #[error("Recur Value: Day of week must match the start date's actual day of the week")]
+    RecurValueWeekdayMismatch,
+    #[error("Recur Month: Value not acceptable. Values: January-December")]
+    InvalidRecurMonth,
     #[error("Others: Something went wrong while verifying input. Error: {0}")]
     Others(String),
 }
@@ -77,6 +97,14 @@ pub enum SteppingError {
     InvalidTags,
     #[error("Amount: Failed to step value. Value of B cannot be determined")]
     UnknownBValue,
+    #[error("Frequency: Failed to step as the frequency is invalid")]
+    InvalidFrequency,
+    #[error("Recur Interval: Failed to step due to invalid interval format")]
+    InvalidRecurInterval,
+    #[error("Recur Value: Failed to step as the value does not exist for the current frequency")]
+    InvalidRecurValue,
+    #[error("Recur Month: Failed to step as the month does not exists")]
+    InvalidRecurMonth,
     #[error("{0}: Error acquired while validating input")]
     ParsingError(Field),
 }

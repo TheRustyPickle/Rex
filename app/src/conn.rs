@@ -1,14 +1,15 @@
 use anyhow::{Error, Result};
-use chrono::NaiveDate;
+use chrono::{Local, NaiveDate};
 use diesel::{Connection, SqliteConnection};
-pub use rex_db::models::FetchNature;
-use rex_db::models::{Balance, FullTx, NewSearch, NewTx, Tag, Tx, TxMethod};
+use rex_db::models::{Balance, FullTx, NewSearch, NewTx, RecurringTx, Tag, Tx, TxMethod};
+pub use rex_db::models::{FetchNature, FullRecurringTx, NewRecurringTx, RecurrenceFrequency};
 use rex_db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
 use std::collections::{HashMap, HashSet};
 
 use crate::modifier::{
     activity_delete_tx, activity_edit_tx, activity_new_tx, activity_search_tx,
-    activity_swap_position, add_new_tx, add_new_tx_methods, delete_tx,
+    activity_swap_position, add_new_recurring_tx, add_new_tx, add_new_tx_methods, advance_date,
+    delete_recurring_tx, delete_tx, edit_recurring_tx, process_one_due_tx,
 };
 use crate::ui_helper::{Autofiller, Stepper, Verifier};
 use crate::utils::parse_month_year;
@@ -179,6 +180,139 @@ impl DbConn {
         }
 
         Ok(())
+    }
+
+    pub fn add_recurring_tx(&mut self, new: NewRecurringTx, tags: &str) -> Result<()> {
+        self.conn.transaction::<_, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            let new_tags = add_new_recurring_tx(new, tags, &mut db_conn)?;
+
+            self.cache.new_tags(new_tags);
+
+            Ok(())
+        })?;
+
+        Ok(())
+    }
+
+    pub fn edit_recurring_tx(&mut self, id: i32, new: NewRecurringTx, tags: &str) -> Result<()> {
+        self.conn.transaction::<_, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            let new_tags = edit_recurring_tx(id, new, tags, &mut db_conn)?;
+
+            self.cache.new_tags(new_tags);
+
+            Ok(())
+        })?;
+
+        Ok(())
+    }
+
+    pub fn delete_recurring_tx(&mut self, id: i32) -> Result<()> {
+        self.conn.transaction::<_, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            delete_recurring_tx(id, &mut db_conn)?;
+
+            Ok(())
+        })?;
+
+        Ok(())
+    }
+
+    pub fn set_recurring_paused(&mut self, id: i32, paused: bool) -> Result<()> {
+        self.conn.transaction::<_, Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            RecurringTx::set_paused(id, paused, &mut db_conn)?;
+
+            Ok(())
+        })?;
+
+        Ok(())
+    }
+
+    pub fn get_recurring_txs(&mut self) -> Result<Vec<FullRecurringTx>> {
+        Ok(FullRecurringTx::get_all(self)?)
+    }
+
+    pub fn process_due_recurring_txs(&mut self) -> Result<usize> {
+        const MAX_OCCURRENCE: usize = 100_000;
+
+        let today = Local::now().date_naive();
+
+        let due_ids: Vec<i32> = RecurringTx::get_due(today, self)?
+            .into_iter()
+            .map(|r| r.id)
+            .collect();
+
+        let mut total_created = 0;
+
+        for id in due_ids {
+            let rule = FullRecurringTx::get_by_id(id, self)?;
+
+            if rule.is_paused {
+                continue;
+            }
+
+            let (created, new_tags) = self.conn.transaction::<_, Error, _>(|conn| {
+                let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+                let mut current_date = rule.next_recurring_date;
+                let mut last_date = rule.last_recurred_date;
+                let mut created = 0;
+                let mut new_tags = Vec::new();
+
+                for _ in 0..MAX_OCCURRENCE {
+                    if current_date > today {
+                        break;
+                    }
+
+                    if let Some(end) = rule.end_date
+                        && current_date > end
+                    {
+                        break;
+                    }
+
+                    new_tags.extend(process_one_due_tx(
+                        &rule,
+                        current_date,
+                        &mut db_conn,
+                    )?);
+
+                    last_date = Some(current_date);
+
+                    current_date = advance_date(
+                        current_date,
+                        rule.frequency,
+                        rule.recur_interval,
+                        rule.recur_value,
+                        rule.recur_month,
+                    );
+
+                    created += 1;
+                }
+
+                if created > 0 {
+                    RecurringTx::update_schedule(rule.id, last_date, current_date, &mut db_conn)?;
+                }
+
+                Ok((created, new_tags))
+            })?;
+
+            if created > 0
+                && let Some(details) = &rule.details
+            {
+                self.cache.new_details(details.clone());
+            }
+
+            self.cache.new_tags(new_tags);
+            total_created += created;
+        }
+
+        Ok(total_created)
     }
 
     pub fn add_new_methods(&mut self, method_list: &[String]) -> Result<()> {

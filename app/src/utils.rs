@@ -38,6 +38,75 @@ pub fn month_name_to_num(name: &str) -> Result<u32> {
     }
 }
 
+pub const WEEKDAY_NAMES: [&str; 7] = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+];
+
+pub const MONTH_NAMES: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+
+pub fn num_to_month_name(num: u32) -> Result<&'static str> {
+    match num {
+        1 => Ok("January"),
+        2 => Ok("February"),
+        3 => Ok("March"),
+        4 => Ok("April"),
+        5 => Ok("May"),
+        6 => Ok("June"),
+        7 => Ok("July"),
+        8 => Ok("August"),
+        9 => Ok("September"),
+        10 => Ok("October"),
+        11 => Ok("November"),
+        12 => Ok("December"),
+        _ => Err(anyhow!("Invalid month number {num}")),
+    }
+}
+
+pub fn weekday_name_to_num(name: &str) -> Result<i32> {
+    match name {
+        "Sunday" => Ok(0),
+        "Monday" => Ok(1),
+        "Tuesday" => Ok(2),
+        "Wednesday" => Ok(3),
+        "Thursday" => Ok(4),
+        "Friday" => Ok(5),
+        "Saturday" => Ok(6),
+        _ => Err(anyhow!("Invalid weekday name {name}")),
+    }
+}
+
+pub fn num_to_weekday_name(num: i32) -> Result<&'static str> {
+    match num {
+        0 => Ok("Sunday"),
+        1 => Ok("Monday"),
+        2 => Ok("Tuesday"),
+        3 => Ok("Wednesday"),
+        4 => Ok("Thursday"),
+        5 => Ok("Friday"),
+        6 => Ok("Saturday"),
+        _ => Err(anyhow!("Invalid weekday number {num}")),
+    }
+}
+
 pub fn month_year_to_unique(month: i32, year: i32) -> i32 {
     year * 100 + month
 }
