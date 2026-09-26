@@ -1,5 +1,4 @@
 use anyhow::Result as AResult;
-use chrono::NaiveDate;
 use chrono::prelude::Local;
 use rex_app::conn::{DbConn, FullRecurringTx, RecurrenceFrequency};
 use rex_app::modifier::{parse_recurring_tx_fields, parse_search_fields, parse_tx_fields};
@@ -563,11 +562,8 @@ impl TxData {
     pub fn check_recur_value(&mut self, conn: &mut DbConn) -> Result<Output, VerifierError> {
         let mut recur_value = self.recur_value.clone();
         let frequency = self.get_frequency();
-        let start_date = self.recurring_start_date();
 
-        let status = conn
-            .verify()
-            .recur_value(&mut recur_value, frequency, start_date);
+        let status = conn.verify().recur_value(&mut recur_value, frequency);
 
         self.recur_value = recur_value;
         self.go_current_index(&TxTab::RecurValue);
@@ -595,14 +591,6 @@ impl TxData {
         self.end_date = end_date;
         self.go_current_index(&TxTab::EndDate);
         status
-    }
-
-    /// The Recurring page's start date, parsed, falling back to today if it isn't set/valid
-    /// yet - used only for live field validation, never for the final saved value.
-    fn recurring_start_date(&self) -> NaiveDate {
-        self.date
-            .parse::<NaiveDate>()
-            .unwrap_or_else(|_| Local::now().date_naive())
     }
 
     /// Checks the inputted tags to make sure it's properly separated by a comma
@@ -994,11 +982,8 @@ impl TxData {
     ) -> Result<(), SteppingError> {
         let mut recur_value = self.recur_value.clone();
         let frequency = self.get_frequency();
-        let start_date = self.recurring_start_date();
 
-        let step_status =
-            conn.step()
-                .recur_value(&mut recur_value, frequency, start_date, step_type);
+        let step_status = conn.step().recur_value(&mut recur_value, frequency, step_type);
         self.recur_value = recur_value;
 
         self.go_current_index(&TxTab::RecurValue);
