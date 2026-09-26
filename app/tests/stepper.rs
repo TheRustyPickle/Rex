@@ -1,3 +1,4 @@
+use chrono::Local;
 use rex_app::ui_helper::{DateType, StepType, SteppingError};
 use std::fs;
 
@@ -96,26 +97,28 @@ fn step_date_from_empty_defaults() {
     let file_name = "test_step_date_empty.sqlite";
     let mut db_conn = create_test_db(file_name);
 
+    let today = Local::now().naive_local();
+
     let mut s = String::new();
     db_conn
         .step()
         .date(&mut s, StepType::StepUp, DateType::Exact)
         .unwrap();
-    assert_eq!(s, "2022-01-01");
+    assert_eq!(s, today.format("%Y-%m-%d").to_string());
 
     let mut s = String::new();
     db_conn
         .step()
         .date(&mut s, StepType::StepUp, DateType::Monthly)
         .unwrap();
-    assert_eq!(s, "2022-01");
+    assert_eq!(s, today.format("%Y-%m").to_string());
 
     let mut s = String::new();
     db_conn
         .step()
         .date(&mut s, StepType::StepUp, DateType::Yearly)
         .unwrap();
-    assert_eq!(s, "2022");
+    assert_eq!(s, today.format("%Y").to_string());
 
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
