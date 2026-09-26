@@ -226,6 +226,11 @@ pub enum TxTab {
     Amount,
     TxType,
     Tags,
+    Frequency,
+    RecurInterval,
+    RecurValue,
+    RecurMonth,
+    EndDate,
     Nothing,
 }
 
@@ -239,6 +244,7 @@ pub enum CurrentUi {
     Summary,
     Search,
     Activity,
+    Recurring,
 }
 
 pub enum ChartTab {

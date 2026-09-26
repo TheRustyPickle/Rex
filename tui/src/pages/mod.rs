@@ -4,6 +4,7 @@ mod chart_ui;
 mod home_ui;
 mod initial_ui;
 mod popups;
+mod recurring_ui;
 mod search_ui;
 mod summary_ui;
 
@@ -13,5 +14,6 @@ pub use chart_ui::*;
 pub use home_ui::*;
 pub use initial_ui::*;
 pub use popups::*;
+pub use recurring_ui::*;
 pub use search_ui::*;
 pub use summary_ui::*;

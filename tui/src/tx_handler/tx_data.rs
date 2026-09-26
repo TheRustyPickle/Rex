@@ -1,8 +1,10 @@
 use anyhow::Result as AResult;
+use chrono::NaiveDate;
 use chrono::prelude::Local;
-use rex_app::conn::DbConn;
-use rex_app::modifier::{parse_search_fields, parse_tx_fields};
+use rex_app::conn::{DbConn, FullRecurringTx, RecurrenceFrequency};
+use rex_app::modifier::{parse_recurring_tx_fields, parse_search_fields, parse_tx_fields};
 use rex_app::ui_helper::{DateType, Output, StepType, SteppingError, VerifierError};
+use rex_app::utils::{num_to_month_name, num_to_weekday_name};
 use rex_app::views::{FullTx, PartialTx, SearchView, TxViewGroup};
 use rex_shared::models::Cent;
 use std::cmp::Ordering;
@@ -21,6 +23,11 @@ pub struct TxData {
     pub amount: String,
     pub tx_type: String,
     pub tags: String,
+    pub frequency: String,
+    pub recur_interval: String,
+    pub recur_value: String,
+    pub recur_month: String,
+    pub end_date: String,
     pub tx_status: Vec<LogData>,
     pub editing_tx: bool,
     pub id_num: i32,
@@ -44,6 +51,11 @@ impl TxData {
             amount: String::new(),
             tx_type: String::new(),
             tags: String::new(),
+            frequency: String::new(),
+            recur_interval: String::new(),
+            recur_value: String::new(),
+            recur_month: String::new(),
+            end_date: String::new(),
             tx_status: Vec::new(),
             editing_tx: false,
             id_num: 0,
@@ -63,6 +75,11 @@ impl TxData {
             amount: String::new(),
             tx_type: String::new(),
             tags: String::new(),
+            frequency: String::new(),
+            recur_interval: String::new(),
+            recur_value: String::new(),
+            recur_month: String::new(),
+            end_date: String::new(),
             tx_status: Vec::new(),
             editing_tx: false,
             id_num: 0,
@@ -88,12 +105,68 @@ impl TxData {
                 .map(|t| t.name.as_str())
                 .collect::<Vec<&str>>()
                 .join(", "),
+            frequency: String::new(),
+            recur_interval: String::new(),
+            recur_value: String::new(),
+            recur_month: String::new(),
+            end_date: String::new(),
             tx_status: Vec::new(),
             editing_tx: edit,
             id_num: tx.id,
             current_index: 0,
             autofill: String::new(),
             from_search,
+        }
+    }
+
+    /// Populates the Recurring page's form from an existing recurring rule, for editing.
+    #[must_use]
+    pub fn from_full_recurring_tx(tx: &FullRecurringTx, edit: bool) -> Self {
+        let recur_value = match tx.frequency {
+            RecurrenceFrequency::Daily => String::new(),
+            RecurrenceFrequency::Weekly => tx
+                .recur_value
+                .and_then(|v| num_to_weekday_name(v).ok())
+                .unwrap_or_default()
+                .to_string(),
+            RecurrenceFrequency::Monthly | RecurrenceFrequency::Yearly => {
+                tx.recur_value.map(|v| v.to_string()).unwrap_or_default()
+            }
+        };
+
+        let recur_month = tx
+            .recur_month
+            .and_then(|m| num_to_month_name(m as u32).ok())
+            .unwrap_or_default()
+            .to_string();
+
+        Self {
+            date: tx.next_recurring_date.format("%Y-%m-%d").to_string(),
+            details: tx.details.clone().unwrap_or_default(),
+            from_method: tx.from_method.name.clone(),
+            to_method: tx.to_method.clone().map(|t| t.name).unwrap_or_default(),
+            amount: format!("{:.2}", tx.amount.dollar()),
+            tx_type: tx.tx_type.to_string(),
+            tags: tx
+                .tags
+                .iter()
+                .map(|t| t.name.as_str())
+                .collect::<Vec<&str>>()
+                .join(", "),
+            frequency: tx.frequency.to_string(),
+            recur_interval: tx.recur_interval.to_string(),
+            recur_value,
+            recur_month,
+            end_date: tx
+                .end_date
+                .map(|d| d.format("%Y-%m-%d").to_string())
+                .unwrap_or_default(),
+            tx_status: Vec::new(),
+            editing_tx: edit,
+            id_num: tx.id,
+            current_index: 0,
+            autofill: String::new(),
+            from_search: false,
         }
     }
 
@@ -128,6 +201,11 @@ impl TxData {
             amount: amount.to_string(),
             tx_type: tx_type.to_string(),
             tags: tags.to_string(),
+            frequency: String::new(),
+            recur_interval: String::new(),
+            recur_value: String::new(),
+            recur_month: String::new(),
+            end_date: String::new(),
             tx_status: Vec::new(),
             editing_tx: true,
             id_num,
@@ -169,6 +247,35 @@ impl TxData {
         TxType::IncomeExpense
     }
 
+    /// Returns the Recurring page's own fields: frequency, recur interval, recur value,
+    /// recur month and end date, in that order.
+    #[must_use]
+    pub fn get_recurring_texts(&self) -> Vec<&str> {
+        vec![
+            &self.frequency,
+            &self.recur_interval,
+            &self.recur_value,
+            &self.recur_month,
+            &self.end_date,
+        ]
+    }
+
+    /// Same safe-default idea as `get_tx_type`: never panics on an empty/partial frequency
+    /// field, defaulting to Daily.
+    #[must_use]
+    pub fn get_frequency(&self) -> RecurrenceFrequency {
+        if let Some(first_letter) = self.frequency.chars().next() {
+            match first_letter.to_ascii_lowercase() {
+                'd' => return RecurrenceFrequency::Daily,
+                'w' => return RecurrenceFrequency::Weekly,
+                'm' => return RecurrenceFrequency::Monthly,
+                'y' => return RecurrenceFrequency::Yearly,
+                _ => {}
+            }
+        }
+        RecurrenceFrequency::Daily
+    }
+
     /// Insert or remove from date field according to the index point
     pub fn edit_date(&mut self, to_add: Option<char>) {
         add_char_to(to_add, &mut self.current_index, &mut self.date);
@@ -204,6 +311,31 @@ impl TxData {
         add_char_to(to_add, &mut self.current_index, &mut self.tags);
     }
 
+    /// Insert or remove from frequency field according to the index point
+    pub fn edit_frequency(&mut self, to_add: Option<char>) {
+        add_char_to(to_add, &mut self.current_index, &mut self.frequency);
+    }
+
+    /// Insert or remove from recur interval field according to the index point
+    pub fn edit_recur_interval(&mut self, to_add: Option<char>) {
+        add_char_to(to_add, &mut self.current_index, &mut self.recur_interval);
+    }
+
+    /// Insert or remove from recur value field according to the index point
+    pub fn edit_recur_value(&mut self, to_add: Option<char>) {
+        add_char_to(to_add, &mut self.current_index, &mut self.recur_value);
+    }
+
+    /// Insert or remove from recur month field according to the index point
+    pub fn edit_recur_month(&mut self, to_add: Option<char>) {
+        add_char_to(to_add, &mut self.current_index, &mut self.recur_month);
+    }
+
+    /// Insert or remove from end date field according to the index point
+    pub fn edit_end_date(&mut self, to_add: Option<char>) {
+        add_char_to(to_add, &mut self.current_index, &mut self.end_date);
+    }
+
     /// Takes all data and adds it as a transaction
     pub fn add_tx(&mut self, tx_view: &TxViewGroup, migrated_conn: &mut DbConn) -> AResult<()> {
         self.check_all_fields()?;
@@ -230,6 +362,34 @@ impl TxData {
             migrated_conn.edit_tx(old_tx, parsed_tx, &self.tags)
         } else {
             migrated_conn.add_new_tx(parsed_tx, &self.tags)
+        }
+    }
+
+    /// Takes all Recurring page data and creates or updates a recurring transaction rule
+    pub fn add_recurring_tx(&mut self, migrated_conn: &mut DbConn) -> AResult<()> {
+        self.check_all_recurring_fields()?;
+
+        let editing_tx = self.editing_tx;
+
+        let parsed = parse_recurring_tx_fields(
+            &self.date,
+            &self.details,
+            &self.from_method,
+            &self.to_method,
+            &self.amount,
+            &self.tx_type,
+            &self.frequency,
+            &self.recur_interval,
+            &self.recur_value,
+            &self.recur_month,
+            &self.end_date,
+            migrated_conn,
+        )?;
+
+        if editing_tx {
+            migrated_conn.edit_recurring_tx(self.id_num, parsed, &self.tags)
+        } else {
+            migrated_conn.add_recurring_tx(parsed, &self.tags)
         }
     }
 
@@ -377,6 +537,74 @@ impl TxData {
         status
     }
 
+    /// Checks the inputted recurrence frequency by the user upon pressing Enter/Esc
+    pub fn check_frequency(&mut self, conn: &mut DbConn) -> Result<Output, VerifierError> {
+        let mut frequency = self.frequency.clone();
+
+        let status = conn.verify().frequency(&mut frequency);
+
+        self.frequency = frequency;
+        self.go_current_index(&TxTab::Frequency);
+        status
+    }
+
+    /// Checks the inputted recur interval by the user upon pressing Enter/Esc
+    pub fn check_recur_interval(&mut self, conn: &mut DbConn) -> Result<Output, VerifierError> {
+        let mut recur_interval = self.recur_interval.clone();
+
+        let status = conn.verify().recur_interval(&mut recur_interval);
+
+        self.recur_interval = recur_interval;
+        self.go_current_index(&TxTab::RecurInterval);
+        status
+    }
+
+    /// Checks the inputted recur value by the user upon pressing Enter/Esc
+    pub fn check_recur_value(&mut self, conn: &mut DbConn) -> Result<Output, VerifierError> {
+        let mut recur_value = self.recur_value.clone();
+        let frequency = self.get_frequency();
+        let start_date = self.recurring_start_date();
+
+        let status = conn
+            .verify()
+            .recur_value(&mut recur_value, frequency, start_date);
+
+        self.recur_value = recur_value;
+        self.go_current_index(&TxTab::RecurValue);
+        status
+    }
+
+    /// Checks the inputted recur month by the user upon pressing Enter/Esc
+    pub fn check_recur_month(&mut self, conn: &mut DbConn) -> Result<Output, VerifierError> {
+        let mut recur_month = self.recur_month.clone();
+
+        let status = conn.verify().recur_month(&mut recur_month);
+
+        self.recur_month = recur_month;
+        self.go_current_index(&TxTab::RecurMonth);
+        status
+    }
+
+    /// Checks the inputted end date by the user upon pressing Enter/Esc. Empty is valid -
+    /// it means the recurrence never ends.
+    pub fn check_end_date(&mut self, conn: &mut DbConn) -> Result<Output, VerifierError> {
+        let mut end_date = self.end_date.clone();
+
+        let status = conn.verify().date(&mut end_date, DateType::Exact);
+
+        self.end_date = end_date;
+        self.go_current_index(&TxTab::EndDate);
+        status
+    }
+
+    /// The Recurring page's start date, parsed, falling back to today if it isn't set/valid
+    /// yet - used only for live field validation, never for the final saved value.
+    fn recurring_start_date(&self) -> NaiveDate {
+        self.date
+            .parse::<NaiveDate>()
+            .unwrap_or_else(|_| Local::now().date_naive())
+    }
+
     /// Checks the inputted tags to make sure it's properly separated by a comma
     pub fn check_tags(&mut self, conn: &mut DbConn) {
         let mut tags = self.tags.clone();
@@ -415,6 +643,51 @@ impl TxData {
         {
             return Err(CheckingError::EmptyMethod);
         }
+        // Empty tags in a tx becomes as unknown
+        if self.tags.is_empty() {
+            self.tags = "Unknown".to_string();
+        }
+        Ok(())
+    }
+
+    /// Checks all Recurring page fields and verifies anything important is not empty
+    pub fn check_all_recurring_fields(&mut self) -> Result<(), CheckingError> {
+        if self.date.is_empty() {
+            return Err(CheckingError::EmptyDate);
+        } else if self.from_method.is_empty() && self.tx_type != "Transfer" {
+            return Err(CheckingError::EmptyMethod);
+        } else if self.amount.is_empty() {
+            return Err(CheckingError::EmptyAmount);
+        } else if self.tx_type.is_empty() {
+            return Err(CheckingError::EmptyTxType);
+        } else if self.tx_type == "Transfer" && self.from_method == self.to_method {
+            return Err(CheckingError::SameTxMethod);
+        } else if self.tx_type == "Transfer"
+            && (self.from_method.is_empty() || self.to_method.is_empty())
+        {
+            return Err(CheckingError::EmptyMethod);
+        } else if self.frequency.is_empty() {
+            return Err(CheckingError::EmptyFrequency);
+        } else if self.recur_interval.is_empty() {
+            return Err(CheckingError::EmptyRecurInterval);
+        }
+
+        match self.get_frequency() {
+            RecurrenceFrequency::Daily => {}
+            RecurrenceFrequency::Weekly | RecurrenceFrequency::Monthly => {
+                if self.recur_value.is_empty() {
+                    return Err(CheckingError::EmptyRecurValue);
+                }
+            }
+            RecurrenceFrequency::Yearly => {
+                if self.recur_value.is_empty() {
+                    return Err(CheckingError::EmptyRecurValue);
+                } else if self.recur_month.is_empty() {
+                    return Err(CheckingError::EmptyRecurMonth);
+                }
+            }
+        }
+
         // Empty tags in a tx becomes as unknown
         if self.tags.is_empty() {
             self.tags = "Unknown".to_string();
@@ -582,6 +855,11 @@ impl TxData {
             TxTab::Amount => self.amount.len(),
             TxTab::TxType => self.tx_type.len(),
             TxTab::Tags => self.tags.len(),
+            TxTab::Frequency => self.frequency.len(),
+            TxTab::RecurInterval => self.recur_interval.len(),
+            TxTab::RecurValue => self.recur_value.len(),
+            TxTab::RecurMonth => self.recur_month.len(),
+            TxTab::EndDate => self.end_date.len(),
             TxTab::Nothing => 0,
         }
     }
@@ -675,6 +953,85 @@ impl TxData {
 
         // Reload index to the final point as some data just got added/changed
         self.go_current_index(&TxTab::TxType);
+        step_status
+    }
+
+    /// Steps Frequency value by one
+    pub fn step_frequency(
+        &mut self,
+        step_type: StepType,
+        conn: &mut DbConn,
+    ) -> Result<(), SteppingError> {
+        let mut frequency = self.frequency.clone();
+
+        let step_status = conn.step().frequency(&mut frequency, step_type);
+        self.frequency = frequency;
+
+        self.go_current_index(&TxTab::Frequency);
+        step_status
+    }
+
+    /// Steps Recur Interval value by one
+    pub fn step_recur_interval(
+        &mut self,
+        step_type: StepType,
+        conn: &mut DbConn,
+    ) -> Result<(), SteppingError> {
+        let mut recur_interval = self.recur_interval.clone();
+
+        let step_status = conn.step().recur_interval(&mut recur_interval, step_type);
+        self.recur_interval = recur_interval;
+
+        self.go_current_index(&TxTab::RecurInterval);
+        step_status
+    }
+
+    /// Steps Recur Value value by one
+    pub fn step_recur_value(
+        &mut self,
+        step_type: StepType,
+        conn: &mut DbConn,
+    ) -> Result<(), SteppingError> {
+        let mut recur_value = self.recur_value.clone();
+        let frequency = self.get_frequency();
+        let start_date = self.recurring_start_date();
+
+        let step_status =
+            conn.step()
+                .recur_value(&mut recur_value, frequency, start_date, step_type);
+        self.recur_value = recur_value;
+
+        self.go_current_index(&TxTab::RecurValue);
+        step_status
+    }
+
+    /// Steps Recur Month value by one
+    pub fn step_recur_month(
+        &mut self,
+        step_type: StepType,
+        conn: &mut DbConn,
+    ) -> Result<(), SteppingError> {
+        let mut recur_month = self.recur_month.clone();
+
+        let step_status = conn.step().recur_month(&mut recur_month, step_type);
+        self.recur_month = recur_month;
+
+        self.go_current_index(&TxTab::RecurMonth);
+        step_status
+    }
+
+    /// Steps End Date value by one
+    pub fn step_end_date(
+        &mut self,
+        step_type: StepType,
+        conn: &mut DbConn,
+    ) -> Result<(), SteppingError> {
+        let mut end_date = self.end_date.clone();
+
+        let step_status = conn.step().date(&mut end_date, step_type, DateType::Exact);
+        self.end_date = end_date;
+
+        self.go_current_index(&TxTab::EndDate);
         step_status
     }
 

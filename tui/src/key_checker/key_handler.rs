@@ -1,6 +1,6 @@
 use anyhow::{Result, anyhow};
 use crossterm::event::{KeyCode, KeyEvent};
-use rex_app::conn::{DbConn, FetchNature};
+use rex_app::conn::{DbConn, FetchNature, FullRecurringTx, RecurrenceFrequency};
 use rex_app::ui_helper::{DateType, StepType};
 use rex_app::views::{ActivityView, ChartView, FullSummary, SearchView, SummaryView, TxViewGroup};
 use std::collections::HashMap;
@@ -15,8 +15,8 @@ use crate::page_handler::{
 };
 use crate::pages::{
     ACTIVITY_TABLE_ID, ChoicePopupState, ConfigChoices, DeletionChoices, HOME_TABLE_ID,
-    InfoPopupState, MovementDirection, NewPathChoices, PopupType, SEARCH_TABLE_ID,
-    SUMMARY_TABLE_ID,
+    InfoPopupState, MovementDirection, NewPathChoices, PopupType, RECURRING_TABLE_ID,
+    SEARCH_TABLE_ID, SUMMARY_TABLE_ID,
 };
 use crate::theme::Theme;
 use crate::tx_handler::TxData;
@@ -61,6 +61,10 @@ pub struct InputKeyHandler<'a> {
     activity_tab: &'a mut ActivityTab,
     activity_view: &'a mut ActivityView,
     activity_table: &'a mut TableData,
+    recurring_data: &'a mut TxData,
+    pub recurring_tab: &'a mut TxTab,
+    recurring_table: &'a mut TableData,
+    recurring_txs: &'a mut Vec<FullRecurringTx>,
     chart_hidden_mode: &'a mut bool,
     chart_hidden_legends: &'a mut bool,
     summary_hidden_mode: &'a mut bool,
@@ -108,6 +112,10 @@ impl<'a> InputKeyHandler<'a> {
         activity_tab: &'a mut ActivityTab,
         activity_view: &'a mut ActivityView,
         activity_table: &'a mut TableData,
+        recurring_data: &'a mut TxData,
+        recurring_tab: &'a mut TxTab,
+        recurring_table: &'a mut TableData,
+        recurring_txs: &'a mut Vec<FullRecurringTx>,
         chart_hidden_mode: &'a mut bool,
         chart_hidden_legends: &'a mut bool,
         summary_hidden_mode: &'a mut bool,
@@ -153,6 +161,10 @@ impl<'a> InputKeyHandler<'a> {
             activity_tab,
             activity_view,
             activity_table,
+            recurring_data,
+            recurring_tab,
+            recurring_table,
+            recurring_txs,
             chart_hidden_mode,
             chart_hidden_legends,
             summary_hidden_mode,
@@ -174,6 +186,10 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Search => {
                 *self.search_data = TxData::new_empty();
                 *self.search_tab = TxTab::Nothing;
+            }
+            CurrentUi::Recurring => {
+                *self.recurring_data = TxData::new_empty();
+                *self.recurring_tab = TxTab::Nothing;
             }
             _ => {}
         }
@@ -229,6 +245,13 @@ impl<'a> InputKeyHandler<'a> {
         self.lerp_state.clear();
     }
 
+    /// Moves the interface to the Recurring Transactions page
+    pub fn go_recurring(&mut self) {
+        *self.page = CurrentUi::Recurring;
+        *self.recurring_tab = TxTab::Nothing;
+        self.lerp_state.clear();
+    }
+
     /// Turns on help popup
     pub fn do_help_popup(&mut self) {
         let popup_state = match self.page {
@@ -238,6 +261,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Summary => InfoPopupState::SummaryHelp,
             CurrentUi::Search => InfoPopupState::SearchHelp,
             CurrentUi::Activity => InfoPopupState::ActivityHelp,
+            CurrentUi::Recurring => InfoPopupState::RecurringHelp,
             CurrentUi::Initial => unreachable!(),
         };
 
@@ -273,6 +297,9 @@ impl<'a> InputKeyHandler<'a> {
             }
             CurrentUi::Home => {}
             CurrentUi::Search if self.search_table.state.selected().is_some() => {
+                *self.popup_status = PopupType::new_choice_deletion(self.theme);
+            }
+            CurrentUi::Recurring if self.recurring_table.state.selected().is_some() => {
                 *self.popup_status = PopupType::new_choice_deletion(self.theme);
             }
             _ => {}
@@ -464,6 +491,44 @@ impl<'a> InputKeyHandler<'a> {
                     _ => {}
                 },
             },
+            CurrentUi::Recurring => {
+                let tx_type = self.recurring_data.get_tx_type();
+                let frequency = self.recurring_data.get_frequency();
+
+                let mut tabs = vec![
+                    TxTab::Date,
+                    TxTab::Details,
+                    TxTab::TxType,
+                    TxTab::FromMethod,
+                ];
+
+                if let TxType::Transfer = tx_type {
+                    tabs.push(TxTab::ToMethod);
+                }
+
+                tabs.push(TxTab::Amount);
+                tabs.push(TxTab::Frequency);
+                tabs.push(TxTab::RecurInterval);
+
+                match frequency {
+                    RecurrenceFrequency::Daily => {}
+                    RecurrenceFrequency::Weekly | RecurrenceFrequency::Monthly => {
+                        tabs.push(TxTab::RecurValue);
+                    }
+                    RecurrenceFrequency::Yearly => {
+                        tabs.push(TxTab::RecurValue);
+                        tabs.push(TxTab::RecurMonth);
+                    }
+                }
+
+                if let KeyCode::Char(c) = self.key.code
+                    && let Some(digit) = c.to_digit(10)
+                    && digit >= 1
+                    && let Some(tab) = tabs.into_iter().nth(digit as usize - 1)
+                {
+                    *self.recurring_tab = tab;
+                }
+            }
             _ => {}
         }
         self.go_correct_index();
@@ -487,6 +552,7 @@ impl<'a> InputKeyHandler<'a> {
             },
             CurrentUi::AddTx => self.add_tx_data.move_index_left(self.add_tx_tab),
             CurrentUi::Search => self.search_data.move_index_left(self.search_tab),
+            CurrentUi::Recurring => self.recurring_data.move_index_left(self.recurring_tab),
             CurrentUi::Chart => {
                 if !*self.chart_hidden_mode {
                     match self.chart_tab {
@@ -570,6 +636,10 @@ impl<'a> InputKeyHandler<'a> {
                 self.search_data.move_index_right(self.search_tab);
                 self.lerp_state.clear_lerp(SEARCH_TABLE_ID);
             }
+            CurrentUi::Recurring => {
+                self.recurring_data.move_index_right(self.recurring_tab);
+                self.lerp_state.clear_lerp(RECURRING_TABLE_ID);
+            }
             CurrentUi::Chart => {
                 if !*self.chart_hidden_mode {
                     match self.chart_tab {
@@ -649,6 +719,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Chart => self.do_chart_up(),
             CurrentUi::Search => self.do_search_step(step_type),
             CurrentUi::Activity => self.do_activity_up(),
+            CurrentUi::Recurring => self.do_recurring_step(step_type),
             CurrentUi::Initial => {}
         }
         self.check_autofill();
@@ -664,6 +735,7 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Chart => self.do_chart_down(),
             CurrentUi::Search => self.do_search_step(step_type),
             CurrentUi::Activity => self.do_activity_down(),
+            CurrentUi::Recurring => self.do_recurring_step(step_type),
             CurrentUi::Initial => {}
         }
         self.check_autofill();
@@ -674,6 +746,7 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_date(),
             CurrentUi::Search => self.check_search_date(),
+            CurrentUi::Recurring => self.check_recurring_date(),
             _ => {}
         }
     }
@@ -683,6 +756,7 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_details(),
             CurrentUi::Search => self.check_search_details(),
+            CurrentUi::Recurring => self.check_recurring_details(),
             _ => {}
         }
         self.check_autofill();
@@ -701,6 +775,11 @@ impl<'a> InputKeyHandler<'a> {
                 TxTab::ToMethod => self.check_search_to(),
                 _ => {}
             },
+            CurrentUi::Recurring => match self.recurring_tab {
+                TxTab::FromMethod => self.check_recurring_from()?,
+                TxTab::ToMethod => self.check_recurring_to()?,
+                _ => {}
+            },
             _ => {}
         }
         self.check_autofill();
@@ -713,6 +792,7 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_amount()?,
             CurrentUi::Search => self.check_search_amount()?,
+            CurrentUi::Recurring => self.check_recurring_amount()?,
             _ => {}
         }
 
@@ -724,6 +804,7 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_type()?,
             CurrentUi::Search => self.check_search_type(),
+            CurrentUi::Recurring => self.check_recurring_type()?,
             _ => {}
         }
         self.check_autofill();
@@ -736,9 +817,25 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_tags(),
             CurrentUi::Search => self.check_search_tags(),
+            CurrentUi::Recurring => self.check_recurring_tags(),
             _ => {}
         }
         self.check_autofill();
+    }
+
+    /// Checks and verifies the recurrence-specific fields (frequency, interval, day
+    /// value, month, end date)
+    pub fn handle_recurring_field(&mut self) -> Result<()> {
+        match self.recurring_tab {
+            TxTab::Frequency => self.check_recurring_frequency(),
+            TxTab::RecurInterval => self.check_recurring_recur_interval(),
+            TxTab::RecurValue => self.check_recurring_recur_value(),
+            TxTab::RecurMonth => self.check_recurring_recur_month(),
+            TxTab::EndDate => self.check_recurring_end_date(),
+            _ => {}
+        }
+
+        Ok(())
     }
 
     /// Resets all input boxes on Add TX and Transfer page
@@ -751,6 +848,9 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::Search => {
                 *self.search_data = TxData::new_empty();
                 self.reset_search_data();
+            }
+            CurrentUi::Recurring => {
+                *self.recurring_data = TxData::new_empty();
             }
             _ => {}
         }
@@ -773,6 +873,7 @@ impl<'a> InputKeyHandler<'a> {
         match self.page {
             CurrentUi::AddTx => *self.add_tx_tab = TxTab::Date,
             CurrentUi::Search => *self.search_tab = TxTab::Date,
+            CurrentUi::Recurring => *self.recurring_tab = TxTab::Date,
             _ => {}
         }
         self.go_correct_index();
@@ -822,6 +923,10 @@ impl<'a> InputKeyHandler<'a> {
                         }
                         CurrentUi::Search => {
                             self.search_delete_tx()?;
+                            *self.popup_status = PopupType::Nothing;
+                        }
+                        CurrentUi::Recurring => {
+                            self.recurring_delete_selected()?;
                             *self.popup_status = PopupType::Nothing;
                         }
                         _ => {}
@@ -1018,6 +1123,70 @@ impl<'a> InputKeyHandler<'a> {
         self.reload_chart_data()?;
         self.reload_summary()?;
         self.reset_search_data();
+
+        Ok(())
+    }
+
+    /// Creates a new recurring transaction rule, or saves changes if one is being edited
+    pub fn save_recurring_tx(&mut self) -> Result<()> {
+        let status = self.recurring_data.add_recurring_tx(self.conn);
+
+        match status {
+            Ok(()) => {
+                *self.recurring_data = TxData::new_empty();
+                *self.recurring_tab = TxTab::Nothing;
+                self.reload_recurring_table()?;
+            }
+            Err(e) => self
+                .recurring_data
+                .add_tx_status(e.to_string(), LogType::Info),
+        }
+
+        Ok(())
+    }
+
+    /// Loads the selected recurring rule from the table into the form for editing
+    pub fn recurring_edit_selected(&mut self) {
+        if let Some(index) = self.recurring_table.state.selected() {
+            let target = &self.recurring_txs[index];
+            *self.recurring_data = TxData::from_full_recurring_tx(target, true);
+            *self.recurring_tab = TxTab::Nothing;
+        }
+    }
+
+    /// Deletes the selected recurring rule. Previously materialized transactions are
+    /// untouched - only the schedule itself is removed.
+    pub fn recurring_delete_selected(&mut self) -> Result<()> {
+        let Some(index) = self.recurring_table.state.selected() else {
+            return Ok(());
+        };
+
+        let target_id = self.recurring_txs[index].id;
+        self.conn.delete_recurring_tx(target_id)?;
+
+        self.reload_recurring_table()?;
+
+        if self.recurring_table.items.is_empty() {
+            self.recurring_table.state.select(None);
+        } else if index >= self.recurring_table.items.len() {
+            self.recurring_table
+                .state
+                .select(Some(self.recurring_table.items.len() - 1));
+        }
+
+        Ok(())
+    }
+
+    /// Pauses/unpauses the selected recurring rule
+    pub fn recurring_toggle_pause(&mut self) -> Result<()> {
+        if let Some(index) = self.recurring_table.state.selected() {
+            let target = &self.recurring_txs[index];
+            let new_paused = !target.is_paused;
+            let id = target.id;
+
+            self.conn.set_recurring_paused(id, new_paused)?;
+            self.reload_recurring_table()?;
+        }
 
         Ok(())
     }
@@ -1645,6 +1814,474 @@ impl InputKeyHandler<'_> {
         }
     }
 
+    /// Handle key inputs for the Date field on the Recurring page
+    fn check_recurring_date(&mut self) {
+        match self.key.code {
+            KeyCode::Enter => {
+                let status = self.recurring_data.check_date(DateType::Exact, self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Details;
+                        self.go_correct_index();
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Esc => {
+                let status = self.recurring_data.check_date(DateType::Exact, self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Nothing;
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Backspace => self.recurring_data.edit_date(None),
+            KeyCode::Char(a) => self.recurring_data.edit_date(Some(a)),
+            _ => {}
+        }
+    }
+
+    /// Handle key inputs for the Details field on the Recurring page
+    fn check_recurring_details(&mut self) {
+        match self.key.code {
+            KeyCode::Enter => {
+                *self.recurring_tab = TxTab::TxType;
+                self.go_correct_index();
+            }
+            KeyCode::Esc => *self.recurring_tab = TxTab::Nothing,
+            KeyCode::Backspace => self.recurring_data.edit_details(None),
+            KeyCode::Char(a) => self.recurring_data.edit_details(Some(a)),
+            _ => {}
+        }
+    }
+
+    /// Handle key inputs for the TX Type field on the Recurring page
+    fn check_recurring_type(&mut self) -> Result<()> {
+        match self.key.code {
+            KeyCode::Enter => {
+                let status = self.recurring_data.check_tx_type(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::FromMethod;
+                        self.go_correct_index();
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Esc => {
+                let status = self.recurring_data.check_tx_type(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Nothing;
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Backspace => self.recurring_data.edit_tx_type(None),
+            KeyCode::Char(a) => self.recurring_data.edit_tx_type(Some(a)),
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    /// Handle key inputs for the From Method field on the Recurring page
+    fn check_recurring_from(&mut self) -> Result<()> {
+        match self.key.code {
+            KeyCode::Enter => {
+                let status = self.recurring_data.check_from_method(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        match self.recurring_data.get_tx_type() {
+                            TxType::IncomeExpense => *self.recurring_tab = TxTab::Amount,
+                            TxType::Transfer => *self.recurring_tab = TxTab::ToMethod,
+                        }
+                        self.go_correct_index();
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Esc => {
+                let status = self.recurring_data.check_from_method(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Nothing;
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Backspace => self.recurring_data.edit_from_method(None),
+            KeyCode::Char(a) => self.recurring_data.edit_from_method(Some(a)),
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    /// Handle key inputs for the To Method field on the Recurring page
+    fn check_recurring_to(&mut self) -> Result<()> {
+        match self.key.code {
+            KeyCode::Enter => {
+                let status = self.recurring_data.check_to_method(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Amount;
+                        self.go_correct_index();
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Esc => {
+                let status = self.recurring_data.check_to_method(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Nothing;
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Backspace => self.recurring_data.edit_to_method(None),
+            KeyCode::Char(a) => self.recurring_data.edit_to_method(Some(a)),
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    /// Handle key inputs for the Amount field on the Recurring page
+    fn check_recurring_amount(&mut self) -> Result<()> {
+        match self.key.code {
+            KeyCode::Enter => {
+                let status = self.recurring_data.check_amount(false, self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Frequency;
+                        self.go_correct_index();
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Esc => {
+                let status = self.recurring_data.check_amount(false, self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Nothing;
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Backspace => self.recurring_data.edit_amount(None),
+            KeyCode::Char(a) => self.recurring_data.edit_amount(Some(a)),
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    /// Handle key inputs for the Frequency field on the Recurring page
+    fn check_recurring_frequency(&mut self) {
+        match self.key.code {
+            KeyCode::Enter => {
+                let status = self.recurring_data.check_frequency(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::RecurInterval;
+                        self.go_correct_index();
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Esc => {
+                let status = self.recurring_data.check_frequency(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Nothing;
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Backspace => self.recurring_data.edit_frequency(None),
+            KeyCode::Char(a) => self.recurring_data.edit_frequency(Some(a)),
+            _ => {}
+        }
+    }
+
+    /// Handle key inputs for the Recur Interval field on the Recurring page
+    fn check_recurring_recur_interval(&mut self) {
+        match self.key.code {
+            KeyCode::Enter => {
+                let status = self.recurring_data.check_recur_interval(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = match self.recurring_data.get_frequency() {
+                            RecurrenceFrequency::Daily => TxTab::EndDate,
+                            RecurrenceFrequency::Weekly
+                            | RecurrenceFrequency::Monthly
+                            | RecurrenceFrequency::Yearly => TxTab::RecurValue,
+                        };
+                        self.go_correct_index();
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Esc => {
+                let status = self.recurring_data.check_recur_interval(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Nothing;
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Backspace => self.recurring_data.edit_recur_interval(None),
+            KeyCode::Char(a) => self.recurring_data.edit_recur_interval(Some(a)),
+            _ => {}
+        }
+    }
+
+    /// Handle key inputs for the Recur Value field on the Recurring page
+    fn check_recurring_recur_value(&mut self) {
+        match self.key.code {
+            KeyCode::Enter => {
+                let status = self.recurring_data.check_recur_value(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = match self.recurring_data.get_frequency() {
+                            RecurrenceFrequency::Yearly => TxTab::RecurMonth,
+                            RecurrenceFrequency::Daily
+                            | RecurrenceFrequency::Weekly
+                            | RecurrenceFrequency::Monthly => TxTab::EndDate,
+                        };
+                        self.go_correct_index();
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Esc => {
+                let status = self.recurring_data.check_recur_value(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Nothing;
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Backspace => self.recurring_data.edit_recur_value(None),
+            KeyCode::Char(a) => self.recurring_data.edit_recur_value(Some(a)),
+            _ => {}
+        }
+    }
+
+    /// Handle key inputs for the Recur Month field on the Recurring page
+    fn check_recurring_recur_month(&mut self) {
+        match self.key.code {
+            KeyCode::Enter => {
+                let status = self.recurring_data.check_recur_month(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::EndDate;
+                        self.go_correct_index();
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Esc => {
+                let status = self.recurring_data.check_recur_month(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Nothing;
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Backspace => self.recurring_data.edit_recur_month(None),
+            KeyCode::Char(a) => self.recurring_data.edit_recur_month(Some(a)),
+            _ => {}
+        }
+    }
+
+    /// Handle key inputs for the End Date field on the Recurring page
+    fn check_recurring_end_date(&mut self) {
+        match self.key.code {
+            KeyCode::Enter => {
+                let status = self.recurring_data.check_end_date(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Tags;
+                        self.go_correct_index();
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Esc => {
+                let status = self.recurring_data.check_end_date(self.conn);
+
+                match status {
+                    Ok(data) => {
+                        *self.recurring_tab = TxTab::Nothing;
+
+                        self.recurring_data
+                            .add_tx_status(data.to_string(), LogType::Info);
+                    }
+                    Err(e) => {
+                        self.recurring_data
+                            .add_tx_status(e.to_string(), LogType::Error);
+                    }
+                }
+            }
+            KeyCode::Backspace => self.recurring_data.edit_end_date(None),
+            KeyCode::Char(a) => self.recurring_data.edit_end_date(Some(a)),
+            _ => {}
+        }
+    }
+
+    /// Handle key inputs for the Tag field on the Recurring page
+    fn check_recurring_tags(&mut self) {
+        match self.key.code {
+            KeyCode::Enter | KeyCode::Esc => {
+                *self.recurring_tab = TxTab::Nothing;
+                self.recurring_data.check_tags(self.conn);
+            }
+            KeyCode::Backspace => self.recurring_data.edit_tags(None),
+            KeyCode::Char(a) => self.recurring_data.edit_tags(Some(a)),
+            _ => {}
+        }
+    }
+
     /// Handle key inputs for the Date field on the Search page
     fn check_search_date(&mut self) {
         match self.key.code {
@@ -2023,11 +2660,29 @@ impl InputKeyHandler<'_> {
         Ok(())
     }
 
+    /// Refetches the recurring transaction rules and rebuilds the Recurring page's table
+    fn reload_recurring_table(&mut self) -> Result<()> {
+        *self.recurring_txs = self.conn.get_recurring_txs()?;
+
+        let old_table_position = self.recurring_table.state;
+
+        let items = self
+            .recurring_txs
+            .iter()
+            .map(FullRecurringTx::to_array)
+            .collect();
+        *self.recurring_table = TableData::new(items);
+        self.recurring_table.state = old_table_position;
+
+        Ok(())
+    }
+
     /// Move the cursor for text fields to the correct position, if it's misplaced
     fn go_correct_index(&mut self) {
         match self.page {
             CurrentUi::AddTx => self.add_tx_data.go_current_index(self.add_tx_tab),
             CurrentUi::Search => self.search_data.go_current_index(self.search_tab),
+            CurrentUi::Recurring => self.recurring_data.go_current_index(self.recurring_tab),
             _ => {}
         }
     }
@@ -2075,11 +2730,57 @@ impl InputKeyHandler<'_> {
                 }
                 Ok(())
             }
-            TxTab::Details => Ok(()),
+            TxTab::Details
+            | TxTab::Frequency
+            | TxTab::RecurInterval
+            | TxTab::RecurValue
+            | TxTab::RecurMonth
+            | TxTab::EndDate => Ok(()),
         };
 
         if let Err(e) = status {
             self.search_data.add_tx_status(e.to_string(), LogType::Info);
+        }
+    }
+
+    fn do_recurring_step(&mut self, step_type: StepType) {
+        let status = match self.recurring_tab {
+            TxTab::Date => self
+                .recurring_data
+                .step_date(DateType::Exact, step_type, self.conn),
+            TxTab::FromMethod => self.recurring_data.step_from_method(step_type, self.conn),
+            TxTab::ToMethod => self.recurring_data.step_to_method(step_type, self.conn),
+            TxTab::Amount => self.recurring_data.step_amount(false, step_type, self.conn),
+            TxTab::TxType => self.recurring_data.step_tx_type(step_type, self.conn),
+            TxTab::Tags => self.recurring_data.step_tags(step_type, self.conn),
+            TxTab::Frequency => self.recurring_data.step_frequency(step_type, self.conn),
+            TxTab::RecurInterval => self
+                .recurring_data
+                .step_recur_interval(step_type, self.conn),
+            TxTab::RecurValue => self.recurring_data.step_recur_value(step_type, self.conn),
+            TxTab::RecurMonth => self.recurring_data.step_recur_month(step_type, self.conn),
+            TxTab::EndDate => self.recurring_data.step_end_date(step_type, self.conn),
+            TxTab::Nothing => {
+                match step_type {
+                    StepType::StepUp => {
+                        if !self.recurring_table.items.is_empty() {
+                            self.recurring_table.previous();
+                        }
+                    }
+                    StepType::StepDown => {
+                        if !self.recurring_table.items.is_empty() {
+                            self.recurring_table.next();
+                        }
+                    }
+                }
+                Ok(())
+            }
+            TxTab::Details => Ok(()),
+        };
+
+        if let Err(e) = status {
+            self.recurring_data
+                .add_tx_status(e.to_string(), LogType::Info);
         }
     }
 
@@ -2138,6 +2839,9 @@ impl InputKeyHandler<'_> {
         match self.page {
             CurrentUi::AddTx => self.add_tx_data.check_autofill(self.add_tx_tab, self.conn),
             CurrentUi::Search => self.search_data.check_autofill(self.search_tab, self.conn),
+            CurrentUi::Recurring => self
+                .recurring_data
+                .check_autofill(self.recurring_tab, self.conn),
             _ => {}
         }
     }

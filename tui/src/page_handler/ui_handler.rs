@@ -1,7 +1,7 @@
 use crossterm::event::{self, Event, KeyEventKind, poll};
 use ratatui::Terminal;
 use ratatui::backend::Backend;
-use rex_app::conn::{DbConn, FetchNature};
+use rex_app::conn::{DbConn, FetchNature, FullRecurringTx};
 use rex_app::ui_helper::DateType;
 use rex_app::views::SearchView;
 use std::sync::{Arc, Mutex};
@@ -9,8 +9,8 @@ use std::time::Duration;
 
 use crate::config::Config;
 use crate::key_checker::{
-    InputKeyHandler, activity_keys, add_tx_keys, chart_keys, home_keys, initial_keys, search_keys,
-    summary_keys,
+    InputKeyHandler, activity_keys, add_tx_keys, chart_keys, home_keys, initial_keys,
+    recurring_keys, search_keys, summary_keys,
 };
 use crate::outputs::{HandlingOutput, UiHandlingError};
 use crate::page_handler::{
@@ -18,8 +18,8 @@ use crate::page_handler::{
     TxTab,
 };
 use crate::pages::{
-    InfoPopupState, PopupType, activity_ui, add_tx_ui, chart_ui, home_ui, initial_ui, search_ui,
-    summary_ui,
+    InfoPopupState, PopupType, activity_ui, add_tx_ui, chart_ui, home_ui, initial_ui, recurring_ui,
+    search_ui, summary_ui,
 };
 use crate::theme::Theme;
 use crate::tx_handler::TxData;
@@ -98,11 +98,15 @@ pub fn start_app<B: Backend>(
     let mut search_date_type = DateType::Exact;
     // Store the current selected widget on Activity page
     let mut activity_tab = ActivityTab::Years;
+    // Store the current selected widget on Recurring page
+    let mut recurring_tab = TxTab::Nothing;
 
     // Holds the data that will be/are inserted into the Add TX page's input fields
     let mut add_tx_data = TxData::new();
     // Holds the data that will be/are inserted into the Search page's input fields
     let mut search_data = TxData::new_empty();
+    // Holds the data that will be/are inserted into the Recurring page's input fields
+    let mut recurring_data = TxData::new_empty();
 
     // Chart view contains TX list to create the chart.
     let mut chart_view = conn
@@ -141,6 +145,17 @@ pub fn start_app<B: Backend>(
 
     // Data for the Activity Page's table
     let mut activity_table = TableData::new(activity_view.get_activity_table());
+
+    // The currently known recurring transaction rules
+    let mut recurring_txs = conn.get_recurring_txs().unwrap();
+
+    // Data for the Recurring Page's table
+    let mut recurring_table = TableData::new(
+        recurring_txs
+            .iter()
+            .map(FullRecurringTx::to_array)
+            .collect(),
+    );
 
     // The initial page REX loading index
     let mut starter_index = 0;
@@ -271,6 +286,14 @@ pub fn start_app<B: Backend>(
                         &mut lerp_state,
                         &theme,
                     ),
+                    CurrentUi::Recurring => recurring_ui(
+                        f,
+                        &recurring_data,
+                        &recurring_tab,
+                        &mut recurring_table,
+                        &mut lerp_state,
+                        &theme,
+                    ),
                 }
 
                 popup_status.show_ui(f, &theme);
@@ -294,7 +317,8 @@ pub fn start_app<B: Backend>(
             | CurrentUi::Summary
             | CurrentUi::Search
             | CurrentUi::Chart
-            | CurrentUi::Activity => {
+            | CurrentUi::Activity
+            | CurrentUi::Recurring => {
                 // If at least 1 lerp is in progress and no key press detected, continue the loop
                 if lerp_state.has_active_lerps()
                     && !poll(Duration::from_millis(2)).map_err(UiHandlingError::Polling)?
@@ -346,6 +370,10 @@ pub fn start_app<B: Backend>(
                 &mut activity_tab,
                 &mut activity_view,
                 &mut activity_table,
+                &mut recurring_data,
+                &mut recurring_tab,
+                &mut recurring_table,
+                &mut recurring_txs,
                 &mut chart_hidden_mode,
                 &mut chart_hidden_legends,
                 &mut summary_hidden_mode,
@@ -364,6 +392,7 @@ pub fn start_app<B: Backend>(
                 CurrentUi::Summary => summary_keys(&mut handler),
                 CurrentUi::Search => search_keys(&mut handler),
                 CurrentUi::Activity => activity_keys(&mut handler),
+                CurrentUi::Recurring => recurring_keys(&mut handler),
             };
 
             match status {

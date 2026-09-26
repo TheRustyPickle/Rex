@@ -19,6 +19,7 @@ pub fn home_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutput>
             KeyCode::Char('e') => handler.home_edit_tx()?,
             KeyCode::Char('d') => handler.do_deletion_popup(),
             KeyCode::Char('y') => handler.go_activity(),
+            KeyCode::Char('u') => handler.go_recurring(),
             KeyCode::Char(',') => handler.switch_tx_position_up()?,
             KeyCode::Char('.') => handler.switch_tx_position_down()?,
             KeyCode::Char('v') => handler.show_home_tx_details(),
