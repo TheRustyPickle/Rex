@@ -276,11 +276,7 @@ impl DbConn {
                         break;
                     }
 
-                    new_tags.extend(process_one_due_tx(
-                        &rule,
-                        current_date,
-                        &mut db_conn,
-                    )?);
+                    new_tags.extend(process_one_due_tx(&rule, current_date, &mut db_conn)?);
 
                     last_date = Some(current_date);
 

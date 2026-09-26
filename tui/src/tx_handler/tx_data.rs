@@ -983,7 +983,9 @@ impl TxData {
         let mut recur_value = self.recur_value.clone();
         let frequency = self.get_frequency();
 
-        let step_status = conn.step().recur_value(&mut recur_value, frequency, step_type);
+        let step_status = conn
+            .step()
+            .recur_value(&mut recur_value, frequency, step_type);
         self.recur_value = recur_value;
 
         self.go_current_index(&TxTab::RecurValue);
