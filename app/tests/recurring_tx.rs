@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate, Weekday};
 use rex_app::conn::FetchNature;
 use rex_app::modifier::parse_recurring_tx_fields;
 use rex_db::ConnCache;
@@ -389,6 +389,120 @@ fn yearly_recurring_tx_across_leap_day() {
 
     assert!(dates.contains(&NaiveDate::from_ymd_opt(2024, 2, 29).unwrap()));
     assert!(dates.contains(&NaiveDate::from_ymd_opt(2025, 2, 28).unwrap()));
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn weekly_recurring_tx_fires_only_on_the_chosen_weekday() {
+    let file_name = "test_recurring_weekly_fires.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    // 2024-01-01 is a Monday; choosing Friday should roll the first occurrence
+    // forward to 2024-01-05, then every 7 days after that.
+    let new_recurring = parse_recurring_tx_fields(
+        "2024-01-01",
+        "Standing order",
+        "Cash",
+        "",
+        "20.00",
+        "Expense",
+        "Weekly",
+        "1",
+        "Friday",
+        "",
+        "",
+        &db_conn,
+    )
+    .unwrap();
+
+    assert_eq!(
+        new_recurring.next_recurring_date,
+        NaiveDate::from_ymd_opt(2024, 1, 5).unwrap()
+    );
+
+    db_conn.add_recurring_tx(new_recurring, "Bills").unwrap();
+    let created = db_conn.process_due_recurring_txs().unwrap();
+    assert!(created > 0);
+
+    let tx_view = db_conn
+        .fetch_txs_with_date(
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            FetchNature::All,
+        )
+        .unwrap();
+
+    let dates: Vec<NaiveDate> = (0..tx_view.len())
+        .map(|i| tx_view.get_tx(i).date.date())
+        .collect();
+
+    assert_eq!(dates.len(), created);
+    assert_eq!(dates[0], NaiveDate::from_ymd_opt(2024, 1, 5).unwrap());
+
+    for date in &dates {
+        assert_eq!(date.weekday(), Weekday::Fri);
+    }
+
+    // Every occurrence exactly 7 days after the previous one - no drift
+    for pair in dates.windows(2) {
+        assert_eq!((pair[1] - pair[0]).num_days(), 7);
+    }
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn biweekly_recurring_tx_spaces_occurrences_two_weeks_apart() {
+    let file_name = "test_recurring_biweekly.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    // 2024-01-01 is already a Monday, so it satisfies the rule immediately
+    let new_recurring = parse_recurring_tx_fields(
+        "2024-01-01",
+        "Paycheck",
+        "Cash",
+        "",
+        "500.00",
+        "Income",
+        "Weekly",
+        "2",
+        "Monday",
+        "",
+        "",
+        &db_conn,
+    )
+    .unwrap();
+
+    assert_eq!(
+        new_recurring.next_recurring_date,
+        NaiveDate::from_ymd_opt(2024, 1, 1).unwrap()
+    );
+
+    db_conn.add_recurring_tx(new_recurring, "Work").unwrap();
+    let created = db_conn.process_due_recurring_txs().unwrap();
+    assert!(created > 0);
+
+    let tx_view = db_conn
+        .fetch_txs_with_date(
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            FetchNature::All,
+        )
+        .unwrap();
+
+    let dates: Vec<NaiveDate> = (0..tx_view.len())
+        .map(|i| tx_view.get_tx(i).date.date())
+        .collect();
+
+    for date in &dates {
+        assert_eq!(date.weekday(), Weekday::Mon);
+    }
+
+    // Every-2-weeks: exactly 14 days apart, never 7
+    for pair in dates.windows(2) {
+        assert_eq!((pair[1] - pair[0]).num_days(), 14);
+    }
 
     drop(db_conn);
     fs::remove_file(file_name).unwrap();

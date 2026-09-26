@@ -1,3 +1,4 @@
+use rex_app::conn::RecurrenceFrequency;
 use rex_app::ui_helper::{DateType, Output, VerifierError};
 use std::fs;
 
@@ -639,6 +640,335 @@ fn verify_amount_integer_limits_to_10_chars() {
     let v = db_conn.verify();
     v.amount(&mut s).unwrap();
     assert_eq!(s, "1234567890.50");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+// ---- Recurring: Frequency verification ----
+
+#[test]
+fn verify_frequency_empty() {
+    let file_name = "test_verify_frequency_empty.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = String::new();
+    let v = db_conn.verify();
+    let result = v.frequency(&mut s).unwrap();
+    assert!(matches!(result, Output::Nothing(_)));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_frequency_shortcuts() {
+    let file_name = "test_verify_frequency_short.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    let cases = [
+        ("d", "Daily"),
+        ("D", "Daily"),
+        ("w", "Weekly"),
+        ("W", "Weekly"),
+        ("m", "Monthly"),
+        ("M", "Monthly"),
+        ("y", "Yearly"),
+        ("Y", "Yearly"),
+    ];
+
+    for (input, expected) in cases {
+        let mut s = input.to_string();
+        let v = db_conn.verify();
+        v.frequency(&mut s).unwrap();
+        assert_eq!(s, expected);
+    }
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_frequency_exact_match() {
+    let file_name = "test_verify_frequency_exact.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    for expected in ["Daily", "Weekly", "Monthly", "Yearly"] {
+        let mut s = expected.to_string();
+        let v = db_conn.verify();
+        let result = v.frequency(&mut s).unwrap();
+        assert!(matches!(result, Output::Accepted(_)));
+        assert_eq!(s, expected);
+    }
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_frequency_fuzzy_correction() {
+    let file_name = "test_verify_frequency_fuzzy.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "Dailz".to_string();
+    let v = db_conn.verify();
+    let result = v.frequency(&mut s);
+    assert!(matches!(result, Err(VerifierError::InvalidFrequency)));
+    assert_eq!(s, "Daily");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_frequency_short_invalid_fuzzy_corrects() {
+    let file_name = "test_verify_frequency_short_err.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "x".to_string();
+    let v = db_conn.verify();
+    let result = v.frequency(&mut s);
+    assert!(matches!(result, Err(VerifierError::InvalidFrequency)));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+// ---- Recurring: Recur Interval verification ----
+
+#[test]
+fn verify_recur_interval_empty() {
+    let file_name = "test_verify_recur_interval_empty.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = String::new();
+    let v = db_conn.verify();
+    let result = v.recur_interval(&mut s).unwrap();
+    assert!(matches!(result, Output::Nothing(_)));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_interval_valid() {
+    let file_name = "test_verify_recur_interval_valid.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "5".to_string();
+    let v = db_conn.verify();
+    let result = v.recur_interval(&mut s).unwrap();
+    assert!(matches!(result, Output::Accepted(_)));
+    assert_eq!(s, "5");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_interval_strips_non_digits() {
+    let file_name = "test_verify_recur_interval_strip.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "5a".to_string();
+    let v = db_conn.verify();
+    v.recur_interval(&mut s).unwrap();
+    assert_eq!(s, "5");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_interval_zero_is_rejected() {
+    let file_name = "test_verify_recur_interval_zero.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "0".to_string();
+    let v = db_conn.verify();
+    let result = v.recur_interval(&mut s);
+    assert!(matches!(result, Err(VerifierError::InvalidRecurInterval)));
+    assert_eq!(s, "1");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_interval_non_numeric_errors() {
+    let file_name = "test_verify_recur_interval_non_numeric.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "abc".to_string();
+    let v = db_conn.verify();
+    let result = v.recur_interval(&mut s);
+    assert!(result.is_err());
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+// ---- Recurring: Recur Value verification ----
+
+#[test]
+fn verify_recur_value_empty() {
+    let file_name = "test_verify_recur_value_empty.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = String::new();
+    let v = db_conn.verify();
+    let result = v.recur_value(&mut s, RecurrenceFrequency::Monthly).unwrap();
+    assert!(matches!(result, Output::Nothing(_)));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_value_daily_accepts_anything_non_empty() {
+    let file_name = "test_verify_recur_value_daily.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "irrelevant".to_string();
+    let v = db_conn.verify();
+    let result = v.recur_value(&mut s, RecurrenceFrequency::Daily).unwrap();
+    assert!(matches!(result, Output::Accepted(_)));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_value_weekly_exact_match() {
+    let file_name = "test_verify_recur_value_weekly_exact.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    for day in [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+    ] {
+        let mut s = day.to_string();
+        let v = db_conn.verify();
+        let result = v.recur_value(&mut s, RecurrenceFrequency::Weekly).unwrap();
+        assert!(matches!(result, Output::Accepted(_)));
+        assert_eq!(s, day);
+    }
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_value_weekly_fuzzy_correction() {
+    let file_name = "test_verify_recur_value_weekly_fuzzy.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "Mondey".to_string();
+    let v = db_conn.verify();
+    let result = v.recur_value(&mut s, RecurrenceFrequency::Weekly);
+    assert!(matches!(
+        result,
+        Err(VerifierError::InvalidRecurValueWeekly)
+    ));
+    assert_eq!(s, "Monday");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_value_monthly_valid_range() {
+    let file_name = "test_verify_recur_value_monthly_valid.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    for day in ["1", "15", "31"] {
+        let mut s = day.to_string();
+        let v = db_conn.verify();
+        let result = v.recur_value(&mut s, RecurrenceFrequency::Monthly).unwrap();
+        assert!(matches!(result, Output::Accepted(_)));
+        assert_eq!(s, day);
+    }
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_value_monthly_zero_is_rejected() {
+    let file_name = "test_verify_recur_value_monthly_zero.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "0".to_string();
+    let v = db_conn.verify();
+    let result = v.recur_value(&mut s, RecurrenceFrequency::Monthly);
+    assert!(matches!(
+        result,
+        Err(VerifierError::InvalidRecurValueMonthly)
+    ));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_value_monthly_above_31_is_rejected() {
+    let file_name = "test_verify_recur_value_monthly_32.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "32".to_string();
+    let v = db_conn.verify();
+    let result = v.recur_value(&mut s, RecurrenceFrequency::Monthly);
+    assert!(matches!(
+        result,
+        Err(VerifierError::InvalidRecurValueMonthly)
+    ));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_value_yearly_uses_same_monthly_range() {
+    let file_name = "test_verify_recur_value_yearly.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "29".to_string();
+    let v = db_conn.verify();
+    let result = v.recur_value(&mut s, RecurrenceFrequency::Yearly).unwrap();
+    assert!(matches!(result, Output::Accepted(_)));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_value_monthly_non_numeric_errors() {
+    let file_name = "test_verify_recur_value_monthly_non_numeric.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "abc".to_string();
+    let v = db_conn.verify();
+    let result = v.recur_value(&mut s, RecurrenceFrequency::Monthly);
+    assert!(result.is_err());
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+// ---- Recurring: Recur Month verification ----
+
+#[test]
+fn verify_recur_month_empty() {
+    let file_name = "test_verify_recur_month_empty.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = String::new();
+    let v = db_conn.verify();
+    let result = v.recur_month(&mut s).unwrap();
+    assert!(matches!(result, Output::Nothing(_)));
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_month_exact_match() {
+    let file_name = "test_verify_recur_month_exact.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    for month in ["January", "June", "December"] {
+        let mut s = month.to_string();
+        let v = db_conn.verify();
+        let result = v.recur_month(&mut s).unwrap();
+        assert!(matches!(result, Output::Accepted(_)));
+        assert_eq!(s, month);
+    }
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn verify_recur_month_fuzzy_correction() {
+    let file_name = "test_verify_recur_month_fuzzy.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "Januarz".to_string();
+    let v = db_conn.verify();
+    let result = v.recur_month(&mut s);
+    assert!(matches!(result, Err(VerifierError::InvalidRecurMonth)));
+    assert_eq!(s, "January");
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
 }
