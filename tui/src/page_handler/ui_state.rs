@@ -218,6 +218,7 @@ impl HomeTab {
 /// This enum is used inside the Add Transaction page.
 /// This is targeted to be used to keep track which widget of the Add Transaction
 /// is currently being interacted with.
+#[derive(Debug, PartialEq)]
 pub enum TxTab {
     Date,
     Details,

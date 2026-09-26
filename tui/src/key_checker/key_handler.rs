@@ -492,39 +492,14 @@ impl<'a> InputKeyHandler<'a> {
                 },
             },
             CurrentUi::Recurring => {
-                let tx_type = self.recurring_data.get_tx_type();
-                let frequency = self.recurring_data.get_frequency();
-
-                let mut tabs = vec![
-                    TxTab::Date,
-                    TxTab::Details,
-                    TxTab::TxType,
-                    TxTab::FromMethod,
-                ];
-
-                if let TxType::Transfer = tx_type {
-                    tabs.push(TxTab::ToMethod);
-                }
-
-                tabs.push(TxTab::Amount);
-                tabs.push(TxTab::Frequency);
-                tabs.push(TxTab::RecurInterval);
-
-                match frequency {
-                    RecurrenceFrequency::Daily => {}
-                    RecurrenceFrequency::Weekly | RecurrenceFrequency::Monthly => {
-                        tabs.push(TxTab::RecurValue);
-                    }
-                    RecurrenceFrequency::Yearly => {
-                        tabs.push(TxTab::RecurValue);
-                        tabs.push(TxTab::RecurMonth);
-                    }
-                }
+                let tabs = recurring_number_jump_tabs(
+                    self.recurring_data.get_tx_type(),
+                    self.recurring_data.get_frequency(),
+                );
 
                 if let KeyCode::Char(c) = self.key.code
                     && let Some(digit) = c.to_digit(10)
-                    && digit >= 1
-                    && let Some(tab) = tabs.into_iter().nth(digit as usize - 1)
+                    && let Some(tab) = tabs.into_iter().nth(digit_to_tab_index(digit))
                 {
                     *self.recurring_tab = tab;
                 }
@@ -2903,5 +2878,150 @@ impl InputKeyHandler<'_> {
         }
 
         (previous_month, previous_year)
+    }
+}
+
+fn recurring_number_jump_tabs(tx_type: TxType, frequency: RecurrenceFrequency) -> Vec<TxTab> {
+    let mut tabs = vec![
+        TxTab::Date,
+        TxTab::Details,
+        TxTab::TxType,
+        TxTab::FromMethod,
+    ];
+
+    if let TxType::Transfer = tx_type {
+        tabs.push(TxTab::ToMethod);
+    }
+
+    tabs.push(TxTab::Amount);
+    tabs.push(TxTab::Frequency);
+    tabs.push(TxTab::RecurInterval);
+
+    match frequency {
+        RecurrenceFrequency::Daily => {}
+        RecurrenceFrequency::Weekly | RecurrenceFrequency::Monthly => {
+            tabs.push(TxTab::RecurValue);
+        }
+        RecurrenceFrequency::Yearly => {
+            tabs.push(TxTab::RecurValue);
+            tabs.push(TxTab::RecurMonth);
+        }
+    }
+
+    tabs.push(TxTab::EndDate);
+    tabs.push(TxTab::Tags);
+
+    tabs
+}
+
+/// Maps a pressed digit to a 0-based field index: 1-9 -> 0-8 (the 1st-9th field), 0 -> 9
+/// (the 10th field).
+fn digit_to_tab_index(digit: u32) -> usize {
+    if digit == 0 { 9 } else { digit as usize - 1 }
+}
+
+#[cfg(test)]
+mod number_jump_tests {
+    use super::*;
+
+    #[test]
+    fn digit_to_tab_index_maps_1_through_9_to_0_through_8() {
+        for digit in 1..=9 {
+            assert_eq!(digit_to_tab_index(digit), digit as usize - 1);
+        }
+    }
+
+    #[test]
+    fn digit_to_tab_index_maps_0_to_the_tenth_field() {
+        assert_eq!(digit_to_tab_index(0), 9);
+    }
+
+    #[test]
+    fn income_expense_daily_has_nine_fields_both_end_date_and_tags_reachable() {
+        let tabs = recurring_number_jump_tabs(TxType::IncomeExpense, RecurrenceFrequency::Daily);
+        assert_eq!(
+            tabs,
+            vec![
+                TxTab::Date,
+                TxTab::Details,
+                TxTab::TxType,
+                TxTab::FromMethod,
+                TxTab::Amount,
+                TxTab::Frequency,
+                TxTab::RecurInterval,
+                TxTab::EndDate,
+                TxTab::Tags,
+            ]
+        );
+        assert_eq!(tabs[digit_to_tab_index(8)], TxTab::EndDate);
+        assert_eq!(tabs[digit_to_tab_index(9)], TxTab::Tags);
+        // No 10th field in this combination, so key 0 has nothing to jump to
+        assert!(tabs.get(digit_to_tab_index(0)).is_none());
+    }
+
+    #[test]
+    fn income_expense_weekly_or_monthly_has_ten_fields_both_end_date_and_tags_reachable() {
+        let tabs = recurring_number_jump_tabs(TxType::IncomeExpense, RecurrenceFrequency::Weekly);
+        assert_eq!(tabs.len(), 10);
+        assert_eq!(tabs[digit_to_tab_index(8)], TxTab::RecurValue);
+        assert_eq!(tabs[digit_to_tab_index(9)], TxTab::EndDate);
+        assert_eq!(tabs[digit_to_tab_index(0)], TxTab::Tags);
+    }
+
+    #[test]
+    fn income_expense_yearly_has_eleven_fields_tags_has_no_key_left() {
+        let tabs = recurring_number_jump_tabs(TxType::IncomeExpense, RecurrenceFrequency::Yearly);
+        assert_eq!(tabs.len(), 11);
+        assert_eq!(tabs[digit_to_tab_index(8)], TxTab::RecurValue);
+        assert_eq!(tabs[digit_to_tab_index(9)], TxTab::RecurMonth);
+        assert_eq!(tabs[digit_to_tab_index(0)], TxTab::EndDate);
+        // Tags is the 11th field - out of digits (1-9 then 0 only covers 10)
+        assert!(tabs.get(10).is_some());
+        assert_eq!(tabs[10], TxTab::Tags);
+    }
+
+    #[test]
+    fn transfer_daily_has_ten_fields_both_end_date_and_tags_reachable() {
+        let tabs = recurring_number_jump_tabs(TxType::Transfer, RecurrenceFrequency::Daily);
+        assert_eq!(tabs.len(), 10);
+        assert_eq!(tabs[4], TxTab::ToMethod);
+        assert_eq!(tabs[digit_to_tab_index(9)], TxTab::EndDate);
+        assert_eq!(tabs[digit_to_tab_index(0)], TxTab::Tags);
+    }
+
+    #[test]
+    fn transfer_weekly_or_monthly_has_eleven_fields_tags_has_no_key_left() {
+        let tabs = recurring_number_jump_tabs(TxType::Transfer, RecurrenceFrequency::Monthly);
+        assert_eq!(tabs.len(), 11);
+        assert_eq!(tabs[digit_to_tab_index(9)], TxTab::RecurValue);
+        assert_eq!(tabs[digit_to_tab_index(0)], TxTab::EndDate);
+        assert_eq!(tabs[10], TxTab::Tags);
+    }
+
+    #[test]
+    fn transfer_yearly_has_twelve_fields_end_date_and_tags_have_no_key_left() {
+        let tabs = recurring_number_jump_tabs(TxType::Transfer, RecurrenceFrequency::Yearly);
+        assert_eq!(tabs.len(), 12);
+        assert_eq!(
+            &tabs[..10],
+            [
+                TxTab::Date,
+                TxTab::Details,
+                TxTab::TxType,
+                TxTab::FromMethod,
+                TxTab::ToMethod,
+                TxTab::Amount,
+                TxTab::Frequency,
+                TxTab::RecurInterval,
+                TxTab::RecurValue,
+                TxTab::RecurMonth,
+            ]
+        );
+        assert_eq!(tabs[digit_to_tab_index(9)], TxTab::RecurValue);
+        assert_eq!(tabs[digit_to_tab_index(0)], TxTab::RecurMonth);
+        // End Date and Tags are the 11th/12th fields here - genuinely out of digits,
+        // only reachable via sequential Enter in this one combination
+        assert_eq!(tabs[10], TxTab::EndDate);
+        assert_eq!(tabs[11], TxTab::Tags);
     }
 }

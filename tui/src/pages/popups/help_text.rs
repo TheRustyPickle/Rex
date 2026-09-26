@@ -236,8 +236,8 @@ pub fn recurring_help_text() -> String {
     format!(
         "This page is for managing recurring transactions. Rules created here are \
 automatically turned into real transactions as they come due, each time the app starts. \
-On Transfer transaction there will be one additional field pushing Tags to the key 8. \
-Yearly frequency adds a Month field pushing later fields by one key.
+Number keys go 1-9 then 0 for a 10th field, in some combination Enter from the previous field is the \
+only way to reach them.
 
 1: Start Date   Example: 2022-05-12, YYYY-MM-DD
 2: TX details   Example: For Grocery, Salary
@@ -249,8 +249,8 @@ Yearly frequency adds a Month field pushing later fields by one key.
 7: Every N      Example: with Monthly, 1 = every month, 2 = every 2 months, 3 = every 3 months
 8: Day of Week/Month  Example: Monday (Weekly), 15 (Monthly/Yearly)
 9: Month        Example: January (Yearly only)
-Tags            Example: Food, Car. Add a Comma for a new tag
-End Date        Optional. Leave empty for a recurrence with no end
+End Date        Optional, comes right after the fields above. Leave empty for no end
+Tags            Example: Food, Car. Add a Comma for a new tag. Comes right after End Date
 
 S: Save the inputted data as a new recurring rule, or update the one being edited
 E: Edit the selected recurring rule from the table below
