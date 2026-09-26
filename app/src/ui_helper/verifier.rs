@@ -1,13 +1,14 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use rex_db::ConnCache;
-use rex_db::models::TxType;
+use rex_db::models::{RecurrenceFrequency, TxType};
 use strum::IntoEnumIterator;
 
 use crate::conn::MutDbConn;
 use crate::ui_helper::{DateType, Field, Output, VerifierError, get_best_match};
+use crate::utils::{MONTH_NAMES, WEEKDAY_NAMES, num_to_weekday_name};
 
 pub struct Verifier<'a> {
     conn: MutDbConn<'a>,
@@ -491,6 +492,155 @@ impl<'a> Verifier<'a> {
         }
 
         Ok(Output::Accepted(Field::TxType))
+    }
+
+    /// Checks if the inputted recurrence frequency (Daily/Weekly/Monthly/Yearly) is valid,
+    /// accepting the same short mnemonics (d/w/m/y)
+    pub fn frequency(&self, user_freq: &mut String) -> Result<Output, VerifierError> {
+        let trimmed_input = user_freq.trim();
+
+        if user_freq.is_empty() {
+            return Ok(Output::Nothing(Field::Frequency));
+        }
+
+        let frequencies = RecurrenceFrequency::iter()
+            .map(|f| f.to_string())
+            .collect::<Vec<String>>();
+
+        let return_best_match = || {
+            let best_match = get_best_match(user_freq, &frequencies);
+
+            if best_match == trimmed_input {
+                String::new()
+            } else {
+                best_match
+            }
+        };
+
+        let lowercase = user_freq.to_lowercase();
+
+        if lowercase.len() <= 2 {
+            if lowercase.starts_with('d') {
+                *user_freq = RecurrenceFrequency::Daily.to_string();
+            } else if lowercase.starts_with('w') {
+                *user_freq = RecurrenceFrequency::Weekly.to_string();
+            } else if lowercase.starts_with('m') {
+                *user_freq = RecurrenceFrequency::Monthly.to_string();
+            } else if lowercase.starts_with('y') {
+                *user_freq = RecurrenceFrequency::Yearly.to_string();
+            } else {
+                *user_freq = return_best_match();
+                return Err(VerifierError::InvalidFrequency);
+            }
+        } else {
+            if frequencies.contains(user_freq) {
+                return Ok(Output::Accepted(Field::Frequency));
+            }
+            *user_freq = return_best_match();
+            return Err(VerifierError::InvalidFrequency);
+        }
+
+        Ok(Output::Accepted(Field::Frequency))
+    }
+
+    /// Checks if the inputted "every N units" interval is a whole number of at least 1.
+    pub fn recur_interval(&self, user_value: &mut String) -> Result<Output, VerifierError> {
+        if user_value.is_empty() {
+            return Ok(Output::Nothing(Field::RecurInterval));
+        }
+
+        *user_value = user_value.chars().filter(char::is_ascii_digit).collect();
+
+        if user_value.is_empty() {
+            return Err(VerifierError::ParsingError(Field::RecurInterval));
+        }
+
+        let parsed = user_value
+            .parse::<i32>()
+            .map_err(|_| VerifierError::ParsingError(Field::RecurInterval))?;
+
+        if parsed < 1 {
+            *user_value = "1".to_string();
+            return Err(VerifierError::InvalidRecurInterval);
+        }
+
+        Ok(Output::Accepted(Field::RecurInterval))
+    }
+
+    /// Checks the recurrence's "which day" value. Meaning depends on `frequency`: unused for
+    /// Daily, a weekday name (matched against `start_date`'s actual day of the week) for
+    /// Weekly, and a day-of-month (1-31) for Monthly/Yearly.
+    pub fn recur_value(
+        &self,
+        user_value: &mut String,
+        frequency: RecurrenceFrequency,
+        start_date: NaiveDate,
+    ) -> Result<Output, VerifierError> {
+        if user_value.is_empty() {
+            return Ok(Output::Nothing(Field::RecurValue));
+        }
+
+        match frequency {
+            RecurrenceFrequency::Daily => Ok(Output::Accepted(Field::RecurValue)),
+            RecurrenceFrequency::Weekly => {
+                let weekday_names = WEEKDAY_NAMES
+                    .iter()
+                    .map(std::string::ToString::to_string)
+                    .collect::<Vec<String>>();
+
+                if !weekday_names.contains(user_value) {
+                    *user_value = get_best_match(user_value, &weekday_names);
+                    return Err(VerifierError::InvalidRecurValueWeekly);
+                }
+
+                let start_weekday_name =
+                    num_to_weekday_name(start_date.weekday().num_days_from_sunday() as i32)
+                        .map_err(|e| VerifierError::Others(e.to_string()))?;
+
+                if user_value != start_weekday_name {
+                    *user_value = start_weekday_name.to_string();
+                    return Err(VerifierError::RecurValueWeekdayMismatch);
+                }
+
+                Ok(Output::Accepted(Field::RecurValue))
+            }
+            RecurrenceFrequency::Monthly | RecurrenceFrequency::Yearly => {
+                *user_value = user_value.chars().filter(char::is_ascii_digit).collect();
+
+                if user_value.is_empty() {
+                    return Err(VerifierError::ParsingError(Field::RecurValue));
+                }
+
+                let parsed = user_value
+                    .parse::<i32>()
+                    .map_err(|_| VerifierError::ParsingError(Field::RecurValue))?;
+
+                if !(1..=31).contains(&parsed) {
+                    return Err(VerifierError::InvalidRecurValueMonthly);
+                }
+
+                Ok(Output::Accepted(Field::RecurValue))
+            }
+        }
+    }
+
+    /// Checks the recurrence's month name, only meaningful for Yearly.
+    pub fn recur_month(&self, user_value: &mut String) -> Result<Output, VerifierError> {
+        if user_value.is_empty() {
+            return Ok(Output::Nothing(Field::RecurMonth));
+        }
+
+        let month_names = MONTH_NAMES
+            .iter()
+            .map(std::string::ToString::to_string)
+            .collect::<Vec<String>>();
+
+        if month_names.contains(user_value) {
+            return Ok(Output::Accepted(Field::RecurMonth));
+        }
+
+        *user_value = get_best_match(user_value, &month_names);
+        Err(VerifierError::InvalidRecurMonth)
     }
 
     /// Checks if:
