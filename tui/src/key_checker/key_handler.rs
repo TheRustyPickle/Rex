@@ -289,7 +289,7 @@ impl<'a> InputKeyHandler<'a> {
         *self.popup_status = PopupType::new_choice_config(self.theme);
     }
 
-    /// Turns on deletion confirmation popup
+    /// Turns on deletion confirmation popup for the selected transaction
     pub fn do_deletion_popup(&mut self) {
         match self.page {
             CurrentUi::Home if self.home_table.state.selected().is_some() => {
