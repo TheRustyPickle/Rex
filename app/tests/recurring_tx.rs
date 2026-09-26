@@ -45,12 +45,14 @@ fn add_daily_recurring_tx_shows_up_in_list() {
 }
 
 #[test]
-fn weekly_recurring_tx_rejects_mismatched_weekday() {
+fn weekly_recurring_tx_rolls_forward_when_start_date_is_a_different_weekday() {
     let file_name = "test_recurring_weekly_mismatch.sqlite";
     let db_conn = create_test_db(file_name);
 
-    // 2024-06-01 is a Saturday, not a Monday
-    let result = parse_recurring_tx_fields(
+    // The start date is just an anchor, not a constraint on which weekday is picked.
+    // 2024-06-01 is a Saturday - choosing Monday should roll the first occurrence
+    // forward to 2024-06-03, not error.
+    let new_recurring = parse_recurring_tx_fields(
         "2024-06-01",
         "",
         "Cash",
@@ -63,9 +65,13 @@ fn weekly_recurring_tx_rejects_mismatched_weekday() {
         "",
         "",
         &db_conn,
-    );
+    )
+    .unwrap();
 
-    assert!(result.is_err());
+    assert_eq!(
+        new_recurring.next_recurring_date,
+        NaiveDate::from_ymd_opt(2024, 6, 3).unwrap()
+    );
 
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
