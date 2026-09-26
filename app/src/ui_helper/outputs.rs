@@ -75,8 +75,6 @@ pub enum VerifierError {
     InvalidRecurValueMonthly,
     #[error("Recur Value: Day of week not acceptable. Values: Sunday-Saturday")]
     InvalidRecurValueWeekly,
-    #[error("Recur Value: Day of week must match the start date's actual day of the week")]
-    RecurValueWeekdayMismatch,
     #[error("Recur Month: Value not acceptable. Values: January-December")]
     InvalidRecurMonth,
     #[error("Others: Something went wrong while verifying input. Error: {0}")]

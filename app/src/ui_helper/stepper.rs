@@ -1,4 +1,4 @@
-use chrono::{Datelike, Duration, Months, NaiveDate};
+use chrono::{Duration, Local, Months, NaiveDate};
 use rex_db::ConnCache;
 use rex_db::models::{RecurrenceFrequency, TxType};
 use strum::IntoEnumIterator;
@@ -7,7 +7,7 @@ use crate::conn::MutDbConn;
 use crate::ui_helper::{
     DateType, Field, Output, StepType, SteppingError, VerifierError, get_best_match,
 };
-use crate::utils::{MONTH_NAMES, num_to_weekday_name};
+use crate::utils::{MONTH_NAMES, WEEKDAY_NAMES};
 
 pub struct Stepper<'a> {
     conn: MutDbConn<'a>,
@@ -28,11 +28,15 @@ impl<'a> Stepper<'a> {
 
         match verify_status {
             Ok(data) => match data {
-                Output::Nothing(_) => match date_type {
-                    DateType::Exact => *user_date = String::from("2022-01-01"),
-                    DateType::Monthly => *user_date = String::from("2022-01"),
-                    DateType::Yearly => *user_date = String::from("2022"),
-                },
+                Output::Nothing(_) => {
+                    let current_date = Local::now().naive_local();
+
+                    match date_type {
+                        DateType::Exact => *user_date = current_date.format("%Y-%m-%d").to_string(),
+                        DateType::Monthly => *user_date = current_date.format("%Y-%m").to_string(),
+                        DateType::Yearly => *user_date = current_date.format("%Y").to_string(),
+                    }
+                }
                 Output::Accepted(_) => match date_type {
                     DateType::Exact => {
                         let mut current_date =
@@ -300,26 +304,42 @@ impl<'a> Stepper<'a> {
         mut self,
         user_value: &mut String,
         frequency: RecurrenceFrequency,
-        start_date: NaiveDate,
         step_type: StepType,
     ) -> Result<(), SteppingError> {
-        if let RecurrenceFrequency::Weekly = frequency {
-            let start_weekday_name =
-                num_to_weekday_name(start_date.weekday().num_days_from_sunday() as i32)
-                    .map_err(|_| SteppingError::InvalidRecurValue)?;
-
-            *user_value = start_weekday_name.to_string();
-            return Ok(());
-        }
-
         if let RecurrenceFrequency::Daily = frequency {
             return Ok(());
         }
 
-        let verify_status = self
-            .conn
-            .verify()
-            .recur_value(user_value, frequency, start_date);
+        let verify_status = self.conn.verify().recur_value(user_value, frequency);
+
+        if let RecurrenceFrequency::Weekly = frequency {
+            return match verify_status {
+                Ok(data) => match data {
+                    Output::Accepted(_) => {
+                        let mut current_index =
+                            WEEKDAY_NAMES.iter().position(|d| *d == user_value).unwrap();
+
+                        match step_type {
+                            StepType::StepUp => {
+                                current_index = (current_index + 1) % WEEKDAY_NAMES.len();
+                            }
+                            StepType::StepDown => {
+                                current_index =
+                                    (current_index + WEEKDAY_NAMES.len() - 1) % WEEKDAY_NAMES.len();
+                            }
+                        }
+
+                        *user_value = WEEKDAY_NAMES[current_index].to_string();
+                        Ok(())
+                    }
+                    Output::Nothing(_) => {
+                        *user_value = WEEKDAY_NAMES[0].to_string();
+                        Ok(())
+                    }
+                },
+                Err(_) => Err(SteppingError::InvalidRecurValue),
+            };
+        }
 
         match verify_status {
             Ok(data) => match data {

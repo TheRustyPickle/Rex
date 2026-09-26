@@ -1,14 +1,14 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
-use chrono::{Datelike, NaiveDate};
+use chrono::NaiveDate;
 use rex_db::ConnCache;
 use rex_db::models::{RecurrenceFrequency, TxType};
 use strum::IntoEnumIterator;
 
 use crate::conn::MutDbConn;
 use crate::ui_helper::{DateType, Field, Output, VerifierError, get_best_match};
-use crate::utils::{MONTH_NAMES, WEEKDAY_NAMES, num_to_weekday_name};
+use crate::utils::{MONTH_NAMES, WEEKDAY_NAMES};
 
 pub struct Verifier<'a> {
     conn: MutDbConn<'a>,
@@ -567,14 +567,10 @@ impl<'a> Verifier<'a> {
         Ok(Output::Accepted(Field::RecurInterval))
     }
 
-    /// Checks the recurrence's "which day" value. Meaning depends on `frequency`: unused for
-    /// Daily, a weekday name (matched against `start_date`'s actual day of the week) for
-    /// Weekly, and a day-of-month (1-31) for Monthly/Yearly.
     pub fn recur_value(
         &self,
         user_value: &mut String,
         frequency: RecurrenceFrequency,
-        start_date: NaiveDate,
     ) -> Result<Output, VerifierError> {
         if user_value.is_empty() {
             return Ok(Output::Nothing(Field::RecurValue));
@@ -591,15 +587,6 @@ impl<'a> Verifier<'a> {
                 if !weekday_names.contains(user_value) {
                     *user_value = get_best_match(user_value, &weekday_names);
                     return Err(VerifierError::InvalidRecurValueWeekly);
-                }
-
-                let start_weekday_name =
-                    num_to_weekday_name(start_date.weekday().num_days_from_sunday() as i32)
-                        .map_err(|e| VerifierError::Others(e.to_string()))?;
-
-                if user_value != start_weekday_name {
-                    *user_value = start_weekday_name.to_string();
-                    return Err(VerifierError::RecurValueWeekdayMismatch);
                 }
 
                 Ok(Output::Accepted(Field::RecurValue))

@@ -1,5 +1,5 @@
 use anyhow::{Result, anyhow};
-use chrono::{Datelike, Days, Local, Months, NaiveDate, NaiveTime};
+use chrono::{Days, Local, Months, NaiveDate, NaiveTime};
 use rex_db::ConnCache;
 use rex_db::models::{
     Balance, DateNature, FetchNature, NewRecurringTx, NewSearch, NewTx, RecurrenceFrequency, Tx,
@@ -170,13 +170,6 @@ pub fn parse_recurring_tx_fields<'a>(
         RecurrenceFrequency::Daily => (None, None),
         RecurrenceFrequency::Weekly => {
             let weekday = weekday_name_to_num(recur_value)?;
-            let start_weekday = start_date.weekday().num_days_from_sunday() as i32;
-
-            if weekday != start_weekday {
-                return Err(anyhow!(
-                    "The start date's day of the week must match the selected recurrence day"
-                ));
-            }
 
             (Some(weekday), None)
         }

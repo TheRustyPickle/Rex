@@ -182,9 +182,6 @@ pub(crate) fn advance_date(
     }
 }
 
-/// Finds the first occurrence on or after `start`. Used once, at creation time, to seed a
-/// new rule's `next_recurring_date`. If `start` already satisfies the rule, `start` itself
-/// is returned (the rule's first occurrence fires immediately on the next catch-up run).
 pub(crate) fn first_occurrence_on_or_after(
     start: NaiveDate,
     frequency: RecurrenceFrequency,
@@ -193,8 +190,13 @@ pub(crate) fn first_occurrence_on_or_after(
 ) -> NaiveDate {
     match frequency {
         RecurrenceFrequency::Daily => start,
-        // Weekly's weekday-matches-start-date invariant is validated at parse time.
-        RecurrenceFrequency::Weekly => start,
+        RecurrenceFrequency::Weekly => {
+            let target_weekday = recur_value.unwrap();
+            let start_weekday = start.weekday().num_days_from_sunday() as i32;
+            let days_to_add = (target_weekday - start_weekday).rem_euclid(7);
+
+            start + Days::new(days_to_add as u64)
+        }
         RecurrenceFrequency::Monthly => {
             let target_this_month = clamp_day(start.year(), start.month(), recur_value.unwrap());
 
@@ -286,6 +288,53 @@ mod tests {
         let leap_day = date(2024, 2, 29);
         let next = advance_date(leap_day, RecurrenceFrequency::Yearly, 1, Some(29), Some(2));
         assert_eq!(next, date(2025, 2, 28));
+    }
+
+    #[test]
+    fn first_occurrence_weekly_start_already_matches() {
+        let start = date(2026, 3, 16);
+        let target_weekday = start.weekday().num_days_from_sunday() as i32;
+
+        let first = first_occurrence_on_or_after(
+            start,
+            RecurrenceFrequency::Weekly,
+            Some(target_weekday),
+            None,
+        );
+        assert_eq!(first, start);
+    }
+
+    #[test]
+    fn first_occurrence_weekly_rolls_forward_to_chosen_weekday() {
+        // The start date's own weekday doesn't constrain which day can be chosen - it's
+        // just an anchor. Picking a day 2 days ahead in the week should roll forward, not error.
+        let start = date(2026, 3, 14);
+        let start_weekday = start.weekday().num_days_from_sunday() as i32;
+        let target_weekday = (start_weekday + 2).rem_euclid(7);
+
+        let first = first_occurrence_on_or_after(
+            start,
+            RecurrenceFrequency::Weekly,
+            Some(target_weekday),
+            None,
+        );
+        assert_eq!(first, start + Days::new(2));
+    }
+
+    #[test]
+    fn first_occurrence_weekly_wraps_to_next_week_when_day_already_passed() {
+        let start = date(2026, 3, 14);
+        let start_weekday = start.weekday().num_days_from_sunday() as i32;
+        // A day that's "behind" in the week relative to start wraps all the way to next week
+        let target_weekday = (start_weekday + 6).rem_euclid(7);
+
+        let first = first_occurrence_on_or_after(
+            start,
+            RecurrenceFrequency::Weekly,
+            Some(target_weekday),
+            None,
+        );
+        assert_eq!(first, start + Days::new(6));
     }
 
     #[test]
