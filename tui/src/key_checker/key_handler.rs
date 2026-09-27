@@ -350,7 +350,7 @@ impl<'a> InputKeyHandler<'a> {
         if self.search_data.check_all_empty() {
             self.search_data.add_tx_status(
                 "Search: All fields cannot be empty".to_string(),
-                LogType::Info,
+                LogType::Error,
             );
         } else {
             let search_txs = self.search_data.get_search_tx(self.conn)?;
@@ -396,7 +396,7 @@ impl<'a> InputKeyHandler<'a> {
                 self.reset_search_data();
                 self.reload_activity_table()?;
             }
-            Err(e) => self.add_tx_data.add_tx_status(e.to_string(), LogType::Info),
+            Err(e) => self.add_tx_data.add_tx_status(e.to_string(), LogType::Error),
         }
 
         Ok(())
@@ -1117,7 +1117,7 @@ impl<'a> InputKeyHandler<'a> {
             }
             Err(e) => self
                 .recurring_data
-                .add_tx_status(e.to_string(), LogType::Info),
+                .add_tx_status(e.to_string(), LogType::Error),
         }
 
         Ok(())
@@ -2677,7 +2677,7 @@ impl InputKeyHandler<'_> {
         };
 
         if let Err(e) = status {
-            self.add_tx_data.add_tx_status(e.to_string(), LogType::Info);
+            self.add_tx_data.add_tx_status(e.to_string(), LogType::Error);
         }
     }
 
@@ -2715,7 +2715,7 @@ impl InputKeyHandler<'_> {
         };
 
         if let Err(e) = status {
-            self.search_data.add_tx_status(e.to_string(), LogType::Info);
+            self.search_data.add_tx_status(e.to_string(), LogType::Error);
         }
     }
 
@@ -2756,7 +2756,7 @@ impl InputKeyHandler<'_> {
 
         if let Err(e) = status {
             self.recurring_data
-                .add_tx_status(e.to_string(), LogType::Info);
+                .add_tx_status(e.to_string(), LogType::Error);
         }
     }
 
