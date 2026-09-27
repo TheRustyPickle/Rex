@@ -396,7 +396,9 @@ impl<'a> InputKeyHandler<'a> {
                 self.reset_search_data();
                 self.reload_activity_table()?;
             }
-            Err(e) => self.add_tx_data.add_tx_status(e.to_string(), LogType::Error),
+            Err(e) => self
+                .add_tx_data
+                .add_tx_status(e.to_string(), LogType::Error),
         }
 
         Ok(())
@@ -2677,7 +2679,8 @@ impl InputKeyHandler<'_> {
         };
 
         if let Err(e) = status {
-            self.add_tx_data.add_tx_status(e.to_string(), LogType::Error);
+            self.add_tx_data
+                .add_tx_status(e.to_string(), LogType::Error);
         }
     }
 
@@ -2715,7 +2718,8 @@ impl InputKeyHandler<'_> {
         };
 
         if let Err(e) = status {
-            self.search_data.add_tx_status(e.to_string(), LogType::Error);
+            self.search_data
+                .add_tx_status(e.to_string(), LogType::Error);
         }
     }
 
