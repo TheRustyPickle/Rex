@@ -1115,7 +1115,15 @@ impl<'a> InputKeyHandler<'a> {
             Ok(()) => {
                 *self.recurring_data = TxData::new_empty();
                 *self.recurring_tab = TxTab::Nothing;
+                // new recurring tx can potentially add new pending txs, in case the start date
+                // matches or below the current date. In such a case if new txs are added but tables
+                // are not reloaded, stale data will be shown.
                 self.reload_recurring_table()?;
+                self.reload_home_table(true)?;
+                self.reload_chart_data()?;
+                self.reload_summary()?;
+                self.reset_search_data();
+                self.reload_activity_table()?;
             }
             Err(e) => self
                 .recurring_data
