@@ -338,7 +338,7 @@ impl TxData {
     }
 
     /// Takes all data and adds it as a transaction
-    pub fn add_tx(&mut self, tx_view: &TxViewGroup, migrated_conn: &mut DbConn) -> AResult<()> {
+    pub fn add_tx(&mut self, tx_view: &TxViewGroup, conn: &mut DbConn) -> AResult<()> {
         self.check_all_fields()?;
 
         let editing_tx = self.editing_tx;
@@ -349,7 +349,7 @@ impl TxData {
             &self.to_method,
             &self.amount,
             &self.tx_type,
-            migrated_conn,
+            conn,
         )?;
 
         if editing_tx {
@@ -357,17 +357,17 @@ impl TxData {
             let old_tx = if let Some(tx) = tx_view.get_tx_by_id(old_tx_id) {
                 tx
             } else {
-                &migrated_conn.fetch_tx_with_id(old_tx_id)?
+                &conn.fetch_tx_with_id(old_tx_id)?
             };
 
-            migrated_conn.edit_tx(old_tx, parsed_tx, &self.tags)
+            conn.edit_tx(old_tx, parsed_tx, &self.tags)
         } else {
-            migrated_conn.add_new_tx(parsed_tx, &self.tags)
+            conn.add_new_tx(parsed_tx, &self.tags)
         }
     }
 
     /// Takes all Recurring page data and creates or updates a recurring transaction rule
-    pub fn add_recurring_tx(&mut self, migrated_conn: &mut DbConn) -> AResult<()> {
+    pub fn add_recurring_tx(&mut self, conn: &mut DbConn) -> AResult<()> {
         self.check_all_recurring_fields()?;
 
         let editing_tx = self.editing_tx;
@@ -384,17 +384,17 @@ impl TxData {
             &self.recur_value,
             &self.recur_month,
             &self.end_date,
-            migrated_conn,
+            conn,
         )?;
 
         if editing_tx {
-            migrated_conn.edit_recurring_tx(self.id_num, parsed, &self.tags)
+            conn.edit_recurring_tx(self.id_num, parsed, &self.tags)
         } else {
-            migrated_conn.add_recurring_tx(parsed, &self.tags)
+            conn.add_recurring_tx(parsed, &self.tags)
         }
     }
 
-    pub fn get_search_tx(&self, migrated_conn: &mut DbConn) -> AResult<SearchView> {
+    pub fn get_search_tx(&self, conn: &mut DbConn) -> AResult<SearchView> {
         let new_search = parse_search_fields(
             &self.date,
             &self.details,
@@ -403,10 +403,10 @@ impl TxData {
             &self.amount,
             &self.tx_type,
             &self.tags,
-            migrated_conn,
+            conn,
         )?;
 
-        migrated_conn.search_txs(new_search)
+        conn.search_txs(new_search)
     }
 
     /// Adds a value to tx status
@@ -1107,7 +1107,7 @@ impl TxData {
         &self,
         tx_view: &TxViewGroup,
         index: Option<usize>,
-        migrated_conn: &mut DbConn,
+        conn: &mut DbConn,
     ) -> AResult<Vec<Vec<String>>> {
         if self.generation_fields_exists() {
             let partial_tx = PartialTx {
@@ -1117,9 +1117,9 @@ impl TxData {
                 tx_type: &self.tx_type,
             };
 
-            tx_view.add_tx_balance_array(index, Some(partial_tx), migrated_conn)
+            tx_view.add_tx_balance_array(index, Some(partial_tx), conn)
         } else {
-            tx_view.add_tx_balance_array(index, None, migrated_conn)
+            tx_view.add_tx_balance_array(index, None, conn)
         }
     }
 }

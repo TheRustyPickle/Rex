@@ -88,7 +88,8 @@ pub fn initialize_app(
         migrated_db_path.to_path_buf()
     };
 
-    let mut migrated_conn = get_conn(new_db_path.display().to_string().as_str());
+    let mut conn = get_conn(new_db_path.display().to_string().as_str());
+
 
     loop {
         let mut terminal = enter_tui_interface()?;
@@ -96,14 +97,14 @@ pub fn initialize_app(
             &mut terminal,
             new_update.clone(),
             &mut config,
-            &mut migrated_conn,
+            &mut conn,
         );
         exit_tui_interface()?;
 
         match result {
             Ok(output) => match output {
                 HandlingOutput::QuitUi => {
-                    drop(migrated_conn);
+                    drop(conn);
                     config.save_backup(&new_db_path.clone());
                     break;
                 }
