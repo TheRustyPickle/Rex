@@ -176,7 +176,8 @@ impl<'a> InputKeyHandler<'a> {
         }
     }
 
-    /// Moves the interface to Home page and resets any selected widget/data from Add TX or Transfer page to Nothing
+    /// Moves the interface to the Home page and clears both the fields and the
+    /// selected widget of the Add TX, Search and Recurring pages
     pub fn go_home_reset(&mut self) {
         match self.page {
             CurrentUi::AddTx => {
@@ -386,7 +387,8 @@ impl<'a> InputKeyHandler<'a> {
         match status {
             Ok(()) => {
                 self.go_home_reset();
-                // We just added a new TX, select the month tab again + reload the data of balance and table widgets to get updated data
+                // A new tx was added, so go back to the month tab and refetch the
+                // balances and the table to show it
                 *self.home_tab = HomeTab::Months;
                 self.reload_home_table(true)?;
                 self.reload_chart_data()?;
@@ -774,7 +776,7 @@ impl<'a> InputKeyHandler<'a> {
         Ok(())
     }
 
-    // Checks and verifies TX type field
+    /// Checks and verifies TX type field
     pub fn handle_tx_type(&mut self) -> Result<()> {
         match self.page {
             CurrentUi::AddTx => self.check_add_tx_type()?,
@@ -1169,8 +1171,9 @@ impl<'a> InputKeyHandler<'a> {
 
     pub fn switch_tx_position_up(&mut self) -> Result<()> {
         if let Some(index) = self.home_table.state.selected() {
-            // Don't do anything if there is 2 or less items or is selecting the first index which can't be moved up
-            if self.home_table.items.len() <= 2 || index == 0 {
+            // Nothing to swap with 1 tx, or when the first one is
+            // selected as it cannot move up
+            if self.home_table.items.len() <= 1 || index == 0 {
                 return Ok(());
             }
 
@@ -1190,8 +1193,9 @@ impl<'a> InputKeyHandler<'a> {
 
     pub fn switch_tx_position_down(&mut self) -> Result<()> {
         if let Some(index) = self.home_table.state.selected() {
-            // Don't do anything if there is 1 or less items or is selecting the last index which can't be moved up
-            if self.home_table.items.len() <= 2 || index == self.home_table.items.len() - 1 {
+            // Nothing to swap with 1 tx, or when the last one is
+            // selected as it cannot move down
+            if self.home_table.items.len() <= 1 || index == self.home_table.items.len() - 1 {
                 return Ok(());
             }
 
@@ -1292,10 +1296,9 @@ impl InputKeyHandler<'_> {
     fn do_home_up(&mut self) {
         match &self.home_tab {
             HomeTab::Table => {
-                // Do not select any table rows in the table section If
-                // there is no transaction
-                // if arrow key up is pressed and table index is 0, select the Month widget
-                // else just select the upper index of the table
+                // With no tx to select, step straight out of the table. Otherwise
+                // the first row moves the focus up to the month widget and any
+                // other row just moves the selection up
                 if self.home_txs.is_empty() {
                     *self.home_tab = self.home_tab.change_tab_up();
                 } else if self.home_table.state.selected() == Some(0) {
@@ -1306,13 +1309,11 @@ impl InputKeyHandler<'_> {
                 }
             }
             HomeTab::Years => {
-                // Do not select any table rows in the table section If
-                // there is no transaction
+                // With no tx to select, stay on the year widget. Otherwise enter
+                // the table on its last row
                 if self.home_txs.is_empty() {
                     *self.home_tab = self.home_tab.change_tab_down();
                 } else {
-                    // Move to the selected value on table widget
-                    // to the last row if pressed up on Year section
                     self.home_table
                         .state
                         .select(Some(self.home_table.items.len() - 1));
@@ -1327,10 +1328,9 @@ impl InputKeyHandler<'_> {
     fn do_home_down(&mut self) {
         match &self.home_tab {
             HomeTab::Table => {
-                // Do not proceed to the table section If
-                // there is no transaction
-                // if arrow key down is pressed and table index is final, select the year widget
-                // else just select the next index of the table
+                // With no tx to select, step straight out of the table. Otherwise
+                // the last row moves the focus down to the year widget and any
+                // other row just moves the selection down
                 if self.home_txs.is_empty() {
                     *self.home_tab = self.home_tab.change_tab_down();
                 } else if self.home_table.state.selected() == Some(self.home_table.items.len() - 1)
@@ -1342,8 +1342,8 @@ impl InputKeyHandler<'_> {
                 }
             }
             HomeTab::Months => {
-                // Do not select any table rows in the table section If
-                // there is no transaction
+                // With no tx to select, stay on the month widget. Otherwise enter
+                // the table on its first row
                 if self.home_txs.is_empty() {
                     *self.home_tab = self.home_tab.change_tab_up();
                 } else {
@@ -1533,7 +1533,7 @@ impl InputKeyHandler<'_> {
         }
     }
 
-    /// Handle key inputs for the Details field on the Add TX page
+    /// Handle key inputs for the Date field on the Add TX page
     fn check_add_tx_date(&mut self) {
         match self.key.code {
             KeyCode::Enter => {
