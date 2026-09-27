@@ -17,8 +17,10 @@ pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Re
 
     tidy_recursive(max_date, date, db_conn)?;
 
-    // From bad delete txs, final balance got corrupted but monthly balances are fine.
-    // If does not match, trust the monthly balances
+    // A bad delete can corrupt the final balance while the monthly ones stay
+    // correct, so whenever the two disagree, trust the latest monthly balance.
+    // This issue is from an older version which has since been fixed and should not occur again.
+    // This is just as a safety net.
     let mut final_balance = Balance::get_final_balance(db_conn)?;
     let balance_highest_date = Balance::get_balance_highest_date(db_conn)?;
 

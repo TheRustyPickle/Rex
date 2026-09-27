@@ -46,13 +46,14 @@ pub fn initial_ui(f: &mut Frame, start_from: usize, theme: &Theme) {
   |_|  \_\ |______| /_/ \_\"
         .to_string();
 
-    // To work with this and add a slight touch of animation, we will split the entire
-    // text by \n. Once it is done, we will loop through each line and take a specific amount of chars from each line.
+    // To animate it, the text is split by \n and each line reveals `total_to_add`
+    // chars starting at `start_from`, wrapping around to the beginning of the line
+    // when the end is reached
     let split_text = text.split('\n').collect::<Vec<&str>>();
     let mut upper_text = String::new();
 
     for line in split_text {
-        // If the line is 20 chars and the index is 15, take the chars from 15-20 and 0-3 indexes.
+        // A line of 20 chars at index 15 takes chars 15-20 and then 0-3
         // This var stores how many to take from 0 index
         let mut to_add_from_start = 0;
         // amount of chars per line
@@ -60,8 +61,8 @@ pub fn initial_ui(f: &mut Frame, start_from: usize, theme: &Theme) {
 
         if start_from + total_to_add > line.len() {
             let extra_index = (start_from + total_to_add) - line.len();
-            // Add extra index to take from beginning and remove from the starting point
-            // if it will go out of bound
+            // Take that many chars from the start instead, since taking them from
+            // the starting point would go out of bounds
             total_to_add -= extra_index;
             to_add_from_start += extra_index;
         }
@@ -69,15 +70,15 @@ pub fn initial_ui(f: &mut Frame, start_from: usize, theme: &Theme) {
         // Go through each char of the line
         for (index, char) in line.chars().enumerate() {
             if to_add_from_start != 0 {
-                // Add chars if we have to take anything from index 0 to something index
+                // Wrapping around, so keep the chars until the count runs out
                 upper_text.push(char);
                 to_add_from_start -= 1;
             } else if total_to_add != 0 && index >= start_from {
-                // If we are at the start point, take the char
+                // Past the start point and the limit isn't reached yet
                 upper_text.push(char);
                 total_to_add -= 1;
             } else if index != start_from || total_to_add == 0 {
-                // If the 10 char limit is crossed, only add empty space
+                // Everything past the 10 char limit stays blank
                 upper_text.push(' ');
             }
         }
@@ -133,7 +134,7 @@ Enter: Select the first field if nothing is selected
 Enter: Verify, submit a field and continue
 Esc: Stop editing a field";
 
-    // Bold a part of the text before rendering
+    // create_bolded_text does the bolding while rendering
     let first_text = create_bolded_text(&unmodified_first_help);
     let second_text = create_bolded_text(unmodified_second_help);
     let third_text = create_bolded_text(&unmodified_third_help);

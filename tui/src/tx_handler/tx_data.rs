@@ -12,7 +12,8 @@ use crate::outputs::{CheckingError, ComparisonType, TxType};
 use crate::page_handler::{LogData, LogType, TxTab};
 use crate::utility::{add_char_to, check_comparison};
 
-/// Contains all data for a Transaction to work
+/// Every field of the Add TX, Search and Recurring page forms, plus the cursor
+/// index, the status log shown under the inputs and the editing state
 #[derive(Default)]
 pub struct TxData {
     pub date: String,
@@ -36,8 +37,8 @@ pub struct TxData {
 }
 
 impl TxData {
-    /// Creates an instance of the struct however the date field is
-    /// edited with the current local date of the device.
+    /// All fields start out empty, except the date which is prefilled with the
+    /// device's current local date
     #[must_use]
     pub fn new() -> Self {
         let current_date = Local::now().to_string();
@@ -169,8 +170,9 @@ impl TxData {
         }
     }
 
-    /// Used to adding custom pre-defined data inside the widgets of Add Transaction Page.
-    /// Currently used on Editing transaction.
+    /// Builds a `TxData` with only the given fields prefilled. Currently used to
+    /// open the Search page with a single tag already filled in.
+    /// `date` is expected as `DD-MM-YYYY` and gets stored as `YYYY-MM-DD`.
     #[must_use]
     pub fn custom(
         date: &str,
@@ -214,7 +216,7 @@ impl TxData {
         }
     }
 
-    /// Returns all the data saved
+    /// Returns the Add TX page's text fields in widget order, autofill included
     #[must_use]
     pub fn get_all_texts(&self) -> Vec<&str> {
         vec![
@@ -593,7 +595,7 @@ impl TxData {
         status
     }
 
-    /// Checks the inputted tags to make sure it's properly separated by a comma
+    /// Trims and de-duplicates the inputted tags, keeping unknown ones
     pub fn check_tags(&mut self, conn: &mut DbConn) {
         let mut tags = self.tags.clone();
 
@@ -603,7 +605,8 @@ impl TxData {
         self.go_current_index(&TxTab::Tags);
     }
 
-    /// Checks the inputted tags to make sure it's properly separated by a comma
+    /// Same as [`Self::check_tags`], but tags that don't exist in the database are
+    /// dropped and reported back as an error
     pub fn check_tags_forced(&mut self, conn: &mut DbConn) -> Result<Output, VerifierError> {
         let mut tags = self.tags.clone();
 
@@ -614,7 +617,7 @@ impl TxData {
         status
     }
 
-    /// Checks all field and verifies anything important is not empty
+    /// Ensures every field that must be filled in before saving a tx is filled in
     pub fn check_all_fields(&mut self) -> Result<(), CheckingError> {
         if self.date.is_empty() {
             return Err(CheckingError::EmptyDate);
@@ -631,14 +634,15 @@ impl TxData {
         {
             return Err(CheckingError::EmptyMethod);
         }
-        // Empty tags in a tx becomes as unknown
+        // A tx saved without any tag is stored as "Unknown"
         if self.tags.is_empty() {
             self.tags = "Unknown".to_string();
         }
         Ok(())
     }
 
-    /// Checks all Recurring page fields and verifies anything important is not empty
+    /// Ensures every field that must be filled in before saving a recurring rule
+    /// is filled in, plus the ones the chosen frequency needs
     pub fn check_all_recurring_fields(&mut self) -> Result<(), CheckingError> {
         if self.date.is_empty() {
             return Err(CheckingError::EmptyDate);
@@ -676,7 +680,7 @@ impl TxData {
             }
         }
 
-        // Empty tags in a tx becomes as unknown
+        // A tx saved without any tag is stored as "Unknown"
         if self.tags.is_empty() {
             self.tags = "Unknown".to_string();
         }
@@ -703,12 +707,12 @@ impl TxData {
         false
     }
 
-    /// Checks for b on amount field to replace with the balance of the tx method field
+    /// Replaces a `b` in the amount with the current balance of the from method
     fn check_b_field(&mut self, conn: &mut DbConn) -> Result<(), VerifierError> {
         self.check_suffixes();
         let user_amount = self.amount.to_lowercase();
 
-        // 'b' represents the current balance of the original tx method
+        // 'b' stands for the current balance of the from method
         if user_amount.contains('b') && !self.from_method.is_empty() {
             let final_balances = conn
                 .get_final_balances()
@@ -718,8 +722,7 @@ impl TxData {
                 .get_tx_method_by_name(self.from_method.as_str())
                 .map_err(|e| VerifierError::Others(e.to_string()))?;
 
-            // Get all the method's final balance, loop through the balances and match the tx method name
-
+            // Find the final balance of the target method
             for balance in final_balances.values() {
                 if balance.method_id == target_method.id {
                     self.amount = user_amount
@@ -732,7 +735,8 @@ impl TxData {
         Ok(())
     }
 
-    /// If `k` and `m` are present, multiplies the number 1 thousand and 1 million respectively
+    /// Multiplies a number by 1 thousand for each `k` and by 1 million for each `m`
+    /// that follows it
     fn check_suffixes(&mut self) {
         let mut user_amount = self.amount.to_lowercase();
         let mut failed_to_parse = false;
@@ -741,10 +745,9 @@ impl TxData {
         let target_letters = ['k', 'm'];
 
         'starter: for letter in target_letters {
-            // How many times this target char is present in the string
+            // One replacement per occurrence, so this runs `count` times
             let count = user_amount.chars().filter(|c| c == &letter).count();
 
-            // We will loop the `count` of times to ensure all the target are handled
             for _ in 0..count {
                 // Convert the string to a vec of char for easier indexing
                 let amount_vec: Vec<char> = user_amount.chars().collect();
@@ -753,8 +756,9 @@ impl TxData {
                 let target_index = user_amount.find(letter).unwrap();
                 let mut gathered_value = String::new();
 
-                // Ending here would be smaller than the target index.
-                // We are looping from target index to the beginning of the string
+                // Walk left from the suffix to collect the number it applies to.
+                // `ending_index` marks the char right after that number, so the
+                // suffix can be replaced without touching the rest of the string
                 let mut ending_index = 0;
 
                 for index in (0..target_index).rev() {
@@ -772,17 +776,15 @@ impl TxData {
                     if let Ok(num_amount) = value.to_string().parse::<u16>() {
                         gathered_value = format!("{num_amount}{gathered_value}");
                     } else {
-                        // 100 + 5k
-                        // If this is the + char, then break the loop. The ending index is index of '+' + 1
-                        // + 1 so we don't replace the original char itself after the calculation is done
+                        // e.g. `100 + 5k`: stop at the `+` and set `ending_index`
+                        // to the char right after it, so the `+` itself is kept
                         ending_index = index + 1;
                         break;
                     }
                 }
 
-                // In the case like this: 1k1, 5m12
-                // This is invalid. This ensure the next char where k or m was found is not a number
-                // If number, we can't parse it here
+                // A digit right after the suffix (`1k1`, `5m12`) is invalid, so give
+                // up and leave the amount untouched
                 for value in amount_vec
                     .iter()
                     .take(user_amount.len())
@@ -806,9 +808,9 @@ impl TxData {
                         _ => unreachable!(),
                     };
 
-                    // Example string: 100 + 5k
-                    // Target index would be the index of 'k' and ending index is the index of '+' + 1
-                    // Replace everything in that range with the new calculated value
+                    // e.g. `100 + 5k`: the target index is the index of `k` and
+                    // `ending_index` is the index of `+` + 1, so everything in
+                    // between is replaced with the expanded number
                     user_amount = user_amount.replacen(
                         &user_amount[ending_index..=target_index],
                         &suffixed_added_value.to_string(),
@@ -912,7 +914,7 @@ impl TxData {
         step_status
     }
 
-    /// Steps To Value value by one
+    /// Steps the To Method value by one
     pub fn step_to_method(
         &mut self,
         step_type: StepType,

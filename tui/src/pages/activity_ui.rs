@@ -30,7 +30,7 @@ pub fn activity_ui(
         false
     };
 
-    // Extra status field for search txs and edit txs
+    // Search and edit txs get an extra Status column
     let activity_tx_header_vec = if add_extra_field {
         vec![
             "Date",
@@ -45,7 +45,7 @@ pub fn activity_ui(
         vec!["Date", "Details", "TX Method", "Amount", "Type", "Tags"]
     };
 
-    // Based on extra field, allocate size
+    // The column widths have to match the extra column above
     let activity_tx_header_widths = if add_extra_field {
         vec![
             Constraint::Percentage(10),
@@ -119,8 +119,8 @@ pub fn activity_ui(
 
     let activity_tx_rows = activity_txs_table.items.iter().map(|item| {
         let height = 1;
-        // First index is the date field. Do not add commas to the value
-        // In case search happens by yearly value, this can add comma to the year
+        // The first column is the date, which gets no separators. A yearly search
+        // would otherwise end up with a comma in the year
         let mut first_index_passed = false;
         let cells = item.iter().map(|c| {
             if first_index_passed {

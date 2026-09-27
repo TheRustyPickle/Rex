@@ -6,7 +6,7 @@ use crate::outputs::HandlingOutput;
 use crate::page_handler::TxTab;
 use crate::pages::PopupType;
 
-/// Tracks the keys of the Add Tx page and calls relevant function based on it
+/// Tracks the keys of the Search page and calls relevant function based on it
 pub fn search_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutput>> {
     match handler.popup_status {
         // We don't want to move this interface while the popup is on

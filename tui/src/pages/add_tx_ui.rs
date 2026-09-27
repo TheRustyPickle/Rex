@@ -39,8 +39,9 @@ pub fn add_tx_ui(
     }
 
     let status_data = add_tx_data.get_tx_status();
-    // Contains date, details, from method, to method, amount, tx type, tags.
-    // Except to method, rest will be used for the widgets
+    // Date, details, from method, to method, amount, tx type, tags and autofill.
+    // The widgets are rendered from this, skipping the to method unless the tx is
+    // a transfer
     let input_data = add_tx_data.get_all_texts();
     // The index of the cursor position
     let current_index = add_tx_data.get_current_index();
@@ -70,8 +71,8 @@ pub fn add_tx_ui(
         ])
         .split(size);
 
-    // Based on the tx type divide the first chunk into 5 or 6 parts horizontally
-    // this chunk contains the input boxes take takes input
+    // Depending on the tx type, split the first chunk into 5 or 6 columns.
+    // This chunk holds the input boxes that take the user input
     let input_chunk = {
         match tx_type {
             TxType::IncomeExpense => Layout::default()
@@ -132,8 +133,8 @@ pub fn add_tx_ui(
                 let lerp_id = format!("{row_type}:{index}");
                 let to_show = lerp_state.lerp(&lerp_id, actual_data, None);
 
-                // re-add the previously removed symbol if is the Changes row
-                // Otherwise separate the number with commas
+                // Put the symbol back on the Changes row, otherwise the number
+                // gets thousands separators
                 if let Some(sym) = symbol {
                     format!("{sym}{to_show:.2}",).separate_with_commas()
                 } else {
@@ -165,8 +166,8 @@ pub fn add_tx_ui(
 
     let mut status_text = vec![];
 
-    // Iter through the data in reverse mode because we want the latest status text
-    // to be at the top which is the final value of the vector.
+    // Iterate in reverse so the latest status line, which is the last value of the
+    // vector, ends up at the top
     for i in status_data.iter().rev() {
         let (initial, rest) = i.text.split_once(':').unwrap();
 
@@ -196,7 +197,8 @@ pub fn add_tx_ui(
         }
     }
 
-    // We already fetched the data for each of these. Assign them now and then use them to load the widget
+    // The values were already fetched above, so they just need to be assigned
+    // and loaded into their widgets
     let date_text = Line::from(format!("{} ", input_data[0]));
 
     let mut details_text = Line::from(format!("{} ", input_data[1]));
@@ -285,8 +287,8 @@ pub fn add_tx_ui(
         .block(styled_block("Tags", theme))
         .alignment(Alignment::Left);
 
-    // We will be adding a cursor based on which tab is selected + the selected index.
-    // This was created utilizing the tui-rs example named user_input.rs
+    // Put the cursor at the index of the currently selected field.
+    // Adapted from the tui-rs example named user_input.rs
     match add_tx_tab {
         TxTab::Date => f.set_cursor_position(Position {
             x: input_chunk[0].x + current_index as u16 + 1,

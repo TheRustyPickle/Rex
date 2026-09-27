@@ -111,7 +111,7 @@ pub fn month_year_to_unique(month: i32, year: i32) -> i32 {
     year * 100 + month
 }
 
-/// Takes 2 numbers and returns how much % are each of them
+/// Returns what percentage each of the two values is of their combined total
 pub fn get_percentages(value1: f64, value2: f64) -> (f64, f64) {
     if value1 == 0.0 && value2 == 0.0 {
         return (0.0, 0.0);

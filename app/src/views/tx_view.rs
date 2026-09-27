@@ -18,7 +18,7 @@ pub struct PartialTx<'a> {
 #[derive(Debug)]
 pub(crate) struct TxView {
     pub(crate) tx: FullTx,
-    /// Tx Method ID -> Balance after this tx was committed
+    /// Tx Method ID -> Balance of that method right after this tx was applied
     balance: HashMap<i32, Cent>,
 }
 
@@ -66,7 +66,7 @@ pub(crate) fn get_txs(
         all_tx_views.push(tx_view);
     }
 
-    // If not calculating on monthly bases, no attempt to tidy up balances
+    // Only monthly views are allowed to rewrite the stored balances
     if nature != FetchNature::Monthly {
         return Ok(TxViewGroup(all_tx_views));
     }
@@ -500,8 +500,8 @@ impl TxViewGroup {
             tx_1.tx.date.date()
         };
 
-        // If has unset/display order = 0, set display order from 1 to N.
-        // Once order has been set, only then switch display order and commit
+        // Txs of the same day can still have no display order (0). Give that day's
+        // txs an order of 1..N first, otherwise the swap below would mix unset values in
         let has_unset = self
             .0
             .iter()

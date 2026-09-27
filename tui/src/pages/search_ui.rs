@@ -113,8 +113,8 @@ pub fn search_ui(
         ])
         .split(size);
 
-    // Based on the tx type divide the first chunk into 5 or 6 parts horizontally
-    // this chunk contains the input boxes take takes input
+    // Depending on the tx type, split the first chunk into 5 or 6 columns.
+    // This chunk holds the input boxes that take the user input
     let input_chunk = {
         match tx_type {
             TxType::IncomeExpense => Layout::default()
@@ -160,8 +160,8 @@ pub fn search_ui(
 
     let mut status_text = vec![];
 
-    // Iter through the data in reverse mode because we want the latest status text
-    // to be at the top which is the final value of the vector.
+    // Iterate in reverse so the latest status line, which is the last value of the
+    // vector, ends up at the top
     for i in status_data.iter().rev() {
         let (initial, rest) = i.text.split_once(':').unwrap();
 
@@ -191,7 +191,8 @@ pub fn search_ui(
         }
     }
 
-    // We already fetched the data for each of these. Assign them now and then use them to load the widget
+    // The values were already fetched above, so they just need to be assigned
+    // and loaded into their widgets
     let date_text = Line::from(format!("{} ", input_data[0]));
 
     let mut details_text = Line::from(format!("{} ", input_data[1]));
@@ -281,8 +282,8 @@ pub fn search_ui(
         .block(styled_block("Tags", theme))
         .alignment(Alignment::Left);
 
-    // We will be adding a cursor based on which tab is selected + the selected index.
-    // This was created utilizing the tui-rs example named user_input.rs
+    // Put the cursor at the index of the currently selected field.
+    // Adapted from the tui-rs example named user_input.rs
     match search_tab {
         TxTab::Date => f.set_cursor_position(Position {
             x: input_chunk[0].x + current_index as u16 + 1,

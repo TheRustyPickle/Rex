@@ -26,21 +26,20 @@ pub const YEARS: [&str; 16] = [
 
 pub const MODES: [&str; 3] = ["Monthly", "Yearly", "All Time"];
 
-/// The struct stores all transaction data for the Transaction widget
-/// and creates an index to keep track of which transactions row is selected
-/// if any. Each vec inside the vec of items contains 1 full transaction.
+/// The rows of a transaction table, each row holding the already formatted
+/// columns of one transaction, plus the state ratatui needs to know which row
+/// is selected and where the viewport starts.
 ///
-/// state : `None` or an index
-/// items : `[["2022-05-01", "test", "source_1", "15.50", Expense], ]`
+/// state: `None` when nothing is selected, otherwise the selected row index
+/// items: `[["2022-05-01", "test", "source_1", "15.50", "Expense"], ]`
 pub struct TableData {
     pub state: TableState,
     pub items: Vec<Vec<String>>,
 }
 
 impl TableData {
-    /// Creates the default table state and adds the manual transaction data
-    /// that was passed to it as an argument to consider them as a value of an index.
-    /// State is the library default.
+    /// Wraps the given rows in a table whose selection state is ratatui's
+    /// default, meaning nothing is selected yet
     #[must_use]
     pub fn new(data: Vec<Vec<String>>) -> Self {
         TableData {
@@ -80,8 +79,8 @@ impl TableData {
     }
 }
 
-/// This struct takes anything inside a vector and adds an index it it.
-/// It is used for keeping track of the Months and Years current index.
+/// Wraps a list of values and keeps track of which one is currently selected.
+/// Used for the month and year lists of the selectors.
 ///
 /// titles: `["January", "February",]`
 #[derive(Clone)]
@@ -185,10 +184,8 @@ impl IndexedData {
     }
 }
 
-/// The enum is used to keep track of which tab is currently set at active
-/// or being interacted with in the Homepage. There are 3 interact-able widgets
-/// in the homepage thus three values. The goal is to keep them cycling through
-/// all values.
+/// Which of the homepage's 3 selectable widgets is currently focused. The focus
+/// cycles through all of them, so it never gets stuck at an end.
 pub enum HomeTab {
     Years,
     Months,
@@ -215,9 +212,9 @@ impl HomeTab {
     }
 }
 
-/// This enum is used inside the Add Transaction page.
-/// This is targeted to be used to keep track which widget of the Add Transaction
-/// is currently being interacted with.
+/// Which field of a transaction form is currently being edited. The Add
+/// Transaction, Search and Recurring pages each keep their own value of this.
+/// The last five values only ever appear on the Recurring page.
 #[derive(Debug, PartialEq)]
 pub enum TxTab {
     Date,
@@ -235,8 +232,7 @@ pub enum TxTab {
     Nothing,
 }
 
-/// Shows the currently active page in the terminal. Used to properly
-/// direct keypresses to the relevant structs and widget selection.
+/// Which page is currently shown, used to send keypresses to the right handler
 pub enum CurrentUi {
     Initial,
     Home,

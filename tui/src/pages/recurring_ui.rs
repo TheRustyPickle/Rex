@@ -27,6 +27,7 @@ pub fn recurring_ui(
     let input_data = recurring_data.get_all_texts();
     // frequency, recur interval, recur value, recur month, end date
     let recur_data = recurring_data.get_recurring_texts();
+    // The index of the cursor position
     let current_index = recurring_data.get_current_index();
 
     let tx_type = recurring_data.get_tx_type();
@@ -141,8 +142,9 @@ pub fn recurring_ui(
             .split(chunks[0]),
     };
 
-    // Frequency, Recur Interval, and depending on frequency, Recur Value/Recur Month, then
-    // End Date
+    // Number of recurrence boxes to render: frequency and interval are always
+    // shown, then the frequency decides whether a value, a month and the end date
+    // follow
     let recur_box_count = match frequency {
         RecurrenceFrequency::Daily => 3,
         RecurrenceFrequency::Weekly | RecurrenceFrequency::Monthly => 4,

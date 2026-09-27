@@ -190,8 +190,8 @@ pub fn summary_ui(
 
     let chunks = main_layout.split(size);
 
-    // Horizontal split for the peak + largest area. Split the main block into several vertical
-    // chunk => Take a specific vertical take and split it into two Horizontal chunk once again
+    // The peak + largest area sits in a horizontal split: take the matching
+    // vertical chunk of the main layout and split that one horizontally again
     let summary_chunk = if summary_hidden_mode {
         summary_layout.split(chunks[3])
     } else {
@@ -340,7 +340,7 @@ pub fn summary_ui(
                         let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
                         let text = if index == 1 && row_index == 2 {
-                            // Month checked value. No need float for this
+                            // Month count, so whole numbers are enough here
                             let new_c = new_c as i64;
                             format!("{new_c}").separate_with_commas()
                         } else {
@@ -581,8 +581,8 @@ pub fn summary_ui(
         .style(Style::default().fg(theme.border()));
 
     match current_page {
-        // Previously added a black block to year and month widget if a value is not selected
-        // Now we will turn that black block into green if a value is selected
+        // A black block was added to the year and month widgets when no value is
+        // selected, so turn it green for the selected one
         SummaryTab::Months => month_tab = month_tab.highlight_style(tab_highlight_style(theme)),
         SummaryTab::Years => year_tab = year_tab.highlight_style(tab_highlight_style(theme)),
         SummaryTab::ModeSelection => {

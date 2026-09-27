@@ -25,40 +25,31 @@ use crate::theme::Theme;
 use crate::tx_handler::TxData;
 use crate::utility::LerpState;
 
-/// Starts the interface and run the app
+/// Starts the interface and runs the app
 pub fn start_app<B: Backend>(
     terminal: &mut Terminal<B>,
     new_version_data: Arc<Mutex<Option<Vec<String>>>>,
     config: &mut Config,
     conn: &mut DbConn,
 ) -> Result<HandlingOutput, UiHandlingError> {
-    // Setting up some default values. Let's go through all of them
+    // Set up the initial state of every page and widget
 
     let mut theme = Theme::new_index(config.theme_index.unwrap_or(0));
 
-    // Contains the homepage month list that is indexed
+    // Indexed month/year/mode/method lists backing each page's selectors. The
+    // `_no_local` variants start at the first entry instead of the device's
+    // current month or year
     let mut home_months = IndexedData::new_monthly();
-    // Contains the homepage year list that is indexed
     let mut home_years = IndexedData::new_yearly();
-    // Contains the chart page month list that is indexed
     let mut chart_months = IndexedData::new_monthly_no_local();
-    // Contains the chart page year list that is indexed
     let mut chart_years = IndexedData::new_yearly_no_local();
-    // Contains the chart page mode selection list that is indexed
     let mut chart_modes = IndexedData::new_modes();
-    // Contains the chart page TX method selection list that is indexed
     let mut chart_tx_methods = IndexedData::new_tx_methods_cumulative(conn);
-
-    // Contains the summary page month list that is indexed
     let mut summary_months = IndexedData::new_monthly_no_local();
-    // Contains the summary page year list that is indexed
     let mut summary_years = IndexedData::new_yearly_no_local();
-    // Contains the summary page mode selection list that is indexed
     let mut summary_modes = IndexedData::new_modes();
-    // Contains the Activity page month list that is indexed
-    let mut activity_years = IndexedData::new_yearly();
-    // Contains the Activity page month list that is indexed
     let mut activity_months = IndexedData::new_monthly();
+    let mut activity_years = IndexedData::new_yearly();
 
     // The selected widget on the homepage. Default set to the month selection
     let mut home_tab = HomeTab::Months;
@@ -108,7 +99,7 @@ pub fn start_app<B: Backend>(
     // Holds the data that will be/are inserted into the Recurring page's input fields
     let mut recurring_data = TxData::new_empty();
 
-    // Chart view contains TX list to create the chart.
+    // TXs of the selected period, used to draw the chart
     let mut chart_view = conn
         .get_chart_view_with_str(
             chart_months.get_selected_value(),
@@ -117,7 +108,7 @@ pub fn start_app<B: Backend>(
         )
         .unwrap();
 
-    // Summary view contains TX list to create the summary.
+    // TXs of the selected period, used to generate the summary
     let mut summary_view = conn
         .get_summary_with_str(
             summary_months.get_selected_value(),
@@ -126,7 +117,7 @@ pub fn start_app<B: Backend>(
         )
         .unwrap();
 
-    // Activity view contains TX list to create the activity.
+    // TXs of the selected month and year, used to generate the activity table
     let mut activity_view = conn
         .get_activity_view_with_str(
             activity_months.get_selected_value(),
@@ -178,19 +169,18 @@ pub fn start_app<B: Backend>(
 
     // The generated balance section on the Add TX UI
     let mut add_tx_balance = Vec::new();
-    // Home and add TX page balance section's column space
 
     let mut lerp_state = LerpState::new(1.0);
 
     let mut version_checked = false;
 
-    // How it work:
-    // Default value from above -> Goes to an interface page and render -> Wait for an event key press.
+    // How it works:
+    // Every value set up above -> rendered on the matching page -> wait for a key press.
     //
-    // Based on whether there is any active lerp, the UI will continue to render until all lerp ends
+    // As long as a lerp is running the UI keeps re-rendering until all of them end
     //
-    // If key press is detected, send most of the mutable values to InputKeyHandler -> Gets mutated based on keypress
-    // -> loop ends -> start from beginning -> Send the new mutated values to the interface -> Keep up
+    // On a key press the mutable values are handed to InputKeyHandler, which mutates
+    // them -> the loop restarts -> the new values are sent to the interface -> repeat
     loop {
         if !version_checked {
             let update_lock = new_version_data.lock().unwrap();
@@ -202,7 +192,7 @@ pub fn start_app<B: Backend>(
                 version_checked = true;
             }
         }
-        // If TX method list is empty, forcefully ask to create a new TX method
+        // With no TX method at all, keep asking the user to create one
         if conn.is_tx_method_empty()
             && let PopupType::Nothing = popup_status
         {

@@ -198,13 +198,9 @@ fn step_amount_from_empty_defaults() {
 fn step_amount_negative_restores_to_one() {
     let file_name = "test_step_amount_negative.sqlite";
     let mut db_conn = create_test_db(file_name);
-    // After previous verification corrects negative to positive, stepping up
-    // from a state where VerifierError::AmountBelowZero would be returned
-    // should set the amount to 1.00. The easiest way to trigger this is
-    // to call with "0.00" which after verify returns AmountBelowZero.
-    // But 0.00 is caught by the stepping branch: if step_up && AmountBelowZero → 1.00
-    // Actually '0.00' amount verify returns AmountBelowZero.
-    // Let's verify: stepping up on "0.00" → verify rejects → AmountBelowZero, StepUp → sets "1.00"
+    // Verification rejects a zero or negative amount with AmountBelowZero, and
+    // stepping up from that state falls back to 1.00. "0.00" is the input that
+    // reaches the branch
     let mut s = "0.00".to_string();
     db_conn.step().amount(&mut s, StepType::StepUp).unwrap();
     assert_eq!(s, "1.00");
@@ -601,9 +597,8 @@ fn step_tx_type_unknown_errors() {
 fn step_tag_empty_db_errors() {
     let file_name = "test_step_tag_err.sqlite";
     let mut db_conn = create_test_db(file_name);
-    // No tags added — only pre-seeded "Unknown" exists, so empty+step finds it
-    // Actually "Unknown" is always there from migrations. Test with no user tags.
-    // Stepping from empty when no user tags exist still finds Unknown.
+    // No user tags were added, so "Unknown" (always seeded by the migrations) is
+    // all there is to fuzzy correct towards
     let mut s = "NonExistent".to_string();
     let result = db_conn.step().tag(&mut s, StepType::StepUp);
     // Fuzzy-corrects to best match and errors

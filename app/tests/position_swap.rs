@@ -343,9 +343,8 @@ fn swap_three_txs_first_and_middle() {
     db_conn.swap_tx_position(0, 1, &mut tx_view).unwrap();
 
     // First.do=Middle.id, Middle.do=First.id, Last.do=0
-    // Sort: non-zero: Middle(do=1), First(do=2); zero: Last(do=0)
-    // Assuming First.id=1, Middle.id=2: First.do=2, Middle.do=1
-    // Order: Middle(1), First(2), Last(0)
+    // Sort: non-zero orders first, then the zero ones. With First.id=1 and
+    // Middle.id=2 that gives Middle(1), First(2), Last(0)
     assert_eq!(
         tx_details_order(&mut db_conn, date),
         vec![
@@ -518,41 +517,33 @@ fn swap_four_txs_all_pairwise() {
         "D",
     );
 
-    // Swap to reverse completely: D, C, B, A via multiple swaps
-    // Step 1: A<->D -> B, C, A, D (based on first/last pattern)
+    // Three swaps, tracing the display orders after each one
+    // Step 1: swap A(0) and D(3) -> B, C, A, D
     let mut tx_view = db_conn
         .fetch_txs_with_date(date, FetchNature::Monthly)
         .unwrap();
     db_conn.swap_tx_position(0, 3, &mut tx_view).unwrap();
 
-    // Now: A.do=D.id, B.do=0, C.do=0, D.do=A.id
-    // non-zero: D(1), A(4); zero: B(2), C(3)
-    // Order: D, A, B, C
+    // A.do=D.id, B.do=0, C.do=0, D.do=A.id
+    // non-zero: D(1), A(4); zero: B(2), C(3) -> Order: D, A, B, C
 
     let mut tx_view = db_conn
         .fetch_txs_with_date(date, FetchNature::Monthly)
         .unwrap();
-    // Swap A(1) and C(3) —  A at index 1, C at index 3
+    // Step 2: swap A(1) and C(3)
     db_conn.swap_tx_position(1, 3, &mut tx_view).unwrap();
 
-    // A.do=C.id, C.do=A.do=4. D.do=1, B.do=0
-    // non-zero: D(1), C(4), A(C.id=3); zero: B(2)
-    // Order: D, C, A, B
+    // A.do=C.id, C.do=4, D.do=1, B.do=0
+    // non-zero: D(1), C(4), A(3); zero: B(2) -> Order: D, C, A, B
 
     let mut tx_view = db_conn
         .fetch_txs_with_date(date, FetchNature::Monthly)
         .unwrap();
-    // Swap A(2) and B(3) — A at index 2, B at index 3
+    // Step 3: swap A(2) and B(3)
     db_conn.swap_tx_position(2, 3, &mut tx_view).unwrap();
 
-    // A.do=B.id, B.do=A.do=3. D.do=1, C.do=4
-    // non-zero: D(1), B(2), A(3), C(4)?
-    // Wait: B.id=2 so A.do=2. B.do=A.do=3
-    // non-zero: D(1), A(2), B(3), C(4) — all non-zero now!
-    // Order: D, A, B, C
-    // Hmm, that's not fully reversed yet.
-
-    // Actually let me just check that we got some valid reordering
+    // A.do=2, B.do=3, D.do=1, C.do=4, so every order is set and the
+    // resulting order is D, A, B, C
     let final_order = tx_details_order(&mut db_conn, date);
     assert_eq!(final_order.len(), 4);
     // All 4 should still be present

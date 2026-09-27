@@ -1,6 +1,7 @@
 use strsim::normalized_levenshtein;
 
-/// Uses Levenshtein algorithm to get the best match of a string in a vec of strings
+/// Uses the normalized Levenshtein distance to find the closest match for
+/// `data` among `matching_set`
 #[must_use]
 pub(crate) fn get_best_match(data: &str, matching_set: &[String]) -> String {
     let mut best_match = &matching_set[0];

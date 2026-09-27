@@ -16,13 +16,15 @@ use crate::utility::{
     check_version, enter_tui_interface, exit_tui_interface, migrate_to_new_schema, start_terminal,
 };
 
-/// Initialize the TUI loop
+/// Sets up a terminal, the migrated database and config plus a background
+/// version check, then runs the TUI loop until the user quits
 pub fn initialize_app(
     old_db_path: &PathBuf,
     migrated_db_path: &Path,
     original_dir: &PathBuf,
 ) -> Result<()> {
-    // If is not terminal, try to start a terminal otherwise create an error.txt file with the error message
+    // Without a terminal, try to start one. If that fails, write the message to
+    // Error.txt and exit
     if !atty::is(Stream::Stdout) && !start_terminal(original_dir.to_str().unwrap()) {
         let mut error_location = PathBuf::from(&original_dir);
         error_location.push("Error.txt");

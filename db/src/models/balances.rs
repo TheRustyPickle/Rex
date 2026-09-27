@@ -162,7 +162,7 @@ impl Balance {
         Ok(balance_list)
     }
 
-    /// Get the last non-final balance of a method. Date = Current date
+    /// The last non-final balance of every method before the given date
     pub fn get_last_balance(
         date: NaiveDate,
         nature: FetchNature,
@@ -180,8 +180,8 @@ impl Balance {
 
         let mut pending_balance_tx_methods = HashSet::new();
 
-        // All means all TXs were fetched. The last balance is the balance before the first TX
-        // which is 0
+        // "All" means every tx was fetched, so the balance before the very first
+        // one is 0
         if let FetchNature::All = nature {
             let mut to_return = HashMap::new();
 
@@ -224,7 +224,8 @@ impl Balance {
             }
         }
 
-        // Fallback. Start from the previous month and look for the last non-final balance
+        // Fallback: any method the loop above could not resolve gets its most
+        // recent balance recorded before the previous month
         let date = date - Months::new(1);
 
         if !pending_balance_tx_methods.is_empty() {
