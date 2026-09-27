@@ -90,15 +90,9 @@ pub fn initialize_app(
 
     let mut conn = get_conn(new_db_path.display().to_string().as_str());
 
-
     loop {
         let mut terminal = enter_tui_interface()?;
-        let result = start_app(
-            &mut terminal,
-            new_update.clone(),
-            &mut config,
-            &mut conn,
-        );
+        let result = start_app(&mut terminal, new_update.clone(), &mut config, &mut conn);
         exit_tui_interface()?;
 
         match result {
