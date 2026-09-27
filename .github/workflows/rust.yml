@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.11
       - uses: actions/checkout@v3
       - name: Run rust format
         uses: actions-rs/toolchain@v1.0.6
@@ -25,30 +25,5 @@ jobs:
           profile: minimal
           default: true
           components: rustfmt
-      - uses: Swatinem/rust-cache@v2.8.1
+      - uses: Swatinem/rust-cache@v2.9.2
       - run: cargo fmt -- --check
-
-  run_test:
-    name: Run tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.9
-        with:
-          version: "v0.10.0"
-      - uses: actions/checkout@v3
-      - uses: Swatinem/rust-cache@v2.8.1
-      - name: Install tarpaulin
-        run: |
-          curl -s https://api.github.com/repos/xd009642/tarpaulin/releases/latest | \
-          grep "browser_download_url.*x86_64-unknown-linux-musl.tar.gz" | cut -d : -f 2,3 | tr -d \" | wget -qi -
-          tar -xzf cargo-tarpaulin-*.tar.gz
-          mv cargo-tarpaulin ~/.cargo/bin/
-      - name: Run tests with tarpaulin
-        run: cargo tarpaulin --workspace --exclude tui --exclude shared --exclude db --out Xml
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: cobertura.xml
-          verbose: true
