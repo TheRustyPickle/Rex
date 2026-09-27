@@ -33,6 +33,12 @@ pub fn start_app<B: Backend>(
     conn: &mut DbConn,
 ) -> Result<HandlingOutput, UiHandlingError> {
     // Set up the initial state of every page and widget
+    let mut popup_status = PopupType::Nothing;
+
+    if let Err(e) = conn.process_due_recurring_txs() {
+        let state = InfoPopupState::Error(format!("Failed to process recurring TXs: {e}"));
+        popup_status = PopupType::new_info(state);
+    };
 
     let mut theme = Theme::new_index(config.theme_index.unwrap_or(0));
 
@@ -74,8 +80,6 @@ pub fn start_app<B: Backend>(
 
     // The page which is currently selected. Default is the initial page
     let mut page = CurrentUi::Initial;
-
-    let mut popup_status = PopupType::Nothing;
 
     // Stores the current selected widget on Add Transaction page
     let mut add_tx_tab = TxTab::Nothing;
