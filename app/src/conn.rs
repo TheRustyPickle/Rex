@@ -193,6 +193,8 @@ impl DbConn {
             Ok(())
         })?;
 
+        self.process_due_recurring_txs()?;
+
         Ok(())
     }
 
@@ -206,6 +208,8 @@ impl DbConn {
 
             Ok(())
         })?;
+
+        self.process_due_recurring_txs()?;
 
         Ok(())
     }
