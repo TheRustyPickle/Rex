@@ -18,8 +18,8 @@ use crate::page_handler::{
     TxTab,
 };
 use crate::pages::{
-    InfoPopupState, PopupType, activity_ui, add_tx_ui, chart_ui, home_ui, initial_ui, recurring_ui,
-    search_ui, summary_ui,
+    InfoPopupState, InitialData, PopupType, activity_ui, add_tx_ui, chart_ui, home_ui, initial_ui,
+    recurring_ui, search_ui, summary_ui,
 };
 use crate::theme::Theme;
 use crate::tx_handler::TxData;
@@ -35,9 +35,13 @@ pub fn start_app<B: Backend>(
     // Set up the initial state of every page and widget
     let mut popup_status = PopupType::Nothing;
 
-    if let Err(e) = conn.process_due_recurring_txs() {
-        let state = InfoPopupState::Error(format!("Failed to process recurring TXs: {e}"));
-        popup_status = PopupType::new_info(state);
+    let recurring_added = match conn.process_due_recurring_txs() {
+        Ok(count) => count,
+        Err(e) => {
+            let state = InfoPopupState::Error(format!("Failed to process recurring TXs: {e}"));
+            popup_status = PopupType::new_info(state);
+            0
+        }
     };
 
     let mut theme = Theme::new_index(config.theme_index.unwrap_or(0));
@@ -144,6 +148,9 @@ pub fn start_app<B: Backend>(
     // The currently known recurring transaction rules
     let mut recurring_txs = conn.get_recurring_txs().unwrap();
 
+    // Startup screen data, loaded once since that page redraws every few milliseconds
+    let initial_data = InitialData::load(conn, &recurring_txs, recurring_added);
+
     // Data for the Recurring Page's table
     let mut recurring_table = TableData::new(
         recurring_txs
@@ -229,7 +236,7 @@ pub fn start_app<B: Backend>(
                         conn,
                     ),
 
-                    CurrentUi::Initial => initial_ui(f, starter_index, &theme),
+                    CurrentUi::Initial => initial_ui(f, starter_index, &initial_data, &theme),
 
                     CurrentUi::Chart => chart_ui(
                         f,
