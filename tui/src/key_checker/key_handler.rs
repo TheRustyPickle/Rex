@@ -813,6 +813,7 @@ impl<'a> InputKeyHandler<'a> {
             TxTab::EndDate => self.check_recurring_end_date(),
             _ => {}
         }
+        self.check_autofill();
 
         Ok(())
     }

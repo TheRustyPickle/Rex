@@ -201,10 +201,10 @@ pub fn recurring_ui(
     let mut tx_type_text = Line::from(format!("{} ", input_data[5]));
     let mut tags_text = Line::from(format!("{} ", input_data[6]));
 
-    let frequency_text = Line::from(format!("{} ", recur_data[0]));
+    let mut frequency_text = Line::from(format!("{} ", recur_data[0]));
     let recur_interval_text = Line::from(format!("{} ", recur_data[1]));
-    let recur_value_text = Line::from(format!("{} ", recur_data[2]));
-    let recur_month_text = Line::from(format!("{} ", recur_data[3]));
+    let mut recur_value_text = Line::from(format!("{} ", recur_data[2]));
+    let mut recur_month_text = Line::from(format!("{} ", recur_data[3]));
     let end_date_text = Line::from(format!("{} ", recur_data[4]));
 
     match recurring_tab {
@@ -229,6 +229,24 @@ pub fn recurring_ui(
         TxTab::Tags => {
             tags_text = Line::from(vec![
                 Span::from(format!("{} ", input_data[6])),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
+            ]);
+        }
+        TxTab::Frequency => {
+            frequency_text = Line::from(vec![
+                Span::from(format!("{} ", recur_data[0])),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
+            ]);
+        }
+        TxTab::RecurValue => {
+            recur_value_text = Line::from(vec![
+                Span::from(format!("{} ", recur_data[2])),
+                Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
+            ]);
+        }
+        TxTab::RecurMonth => {
+            recur_month_text = Line::from(vec![
+                Span::from(format!("{} ", recur_data[3])),
                 Span::styled(input_data[7], Style::default().fg(theme.autocomplete())),
             ]);
         }
@@ -453,4 +471,55 @@ pub fn recurring_ui(
     }
 
     f.render_stateful_widget(table_area, chunks[4], &mut recurring_table.state);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
+
+    fn render(data: &TxData, tab: &TxTab) -> String {
+        let (width, height) = (140, 40);
+        let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+        let theme = Theme::new_index(0);
+        let mut table = TableData::new(Vec::new());
+        let mut lerp = LerpState::new(1.0);
+
+        terminal
+            .draw(|f| recurring_ui(f, data, tab, &mut table, &mut lerp, &theme))
+            .unwrap();
+
+        let buffer = terminal.backend().buffer().clone();
+        (0..height)
+            .map(|y| {
+                (0..width)
+                    .map(|x| buffer[(x, y)].symbol().to_string())
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    #[test]
+    fn suggestion_shows_next_to_the_selected_recurrence_field_only() {
+        let mut data = TxData::new_empty();
+        // Yearly is the only frequency that shows all three boxes at once
+        data.frequency = "y".to_string();
+        data.recur_value = "mon".to_string();
+        data.recur_month = "sep".to_string();
+        data.autofill = "SUGGESTION".to_string();
+
+        for tab in [TxTab::Frequency, TxTab::RecurValue, TxTab::RecurMonth] {
+            let screen = render(&data, &tab);
+            assert_eq!(
+                screen.matches("SUGGESTION").count(),
+                1,
+                "exactly one box should show the suggestion for {tab:?}"
+            );
+        }
+
+        let screen = render(&data, &TxTab::Nothing);
+        assert!(!screen.contains("SUGGESTION"));
+    }
 }

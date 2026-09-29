@@ -428,6 +428,11 @@ impl TxData {
             TxTab::ToMethod => conn.autofill().tx_method(&self.to_method),
             TxTab::Tags => conn.autofill().tags(&self.tags),
             TxTab::TxType => conn.autofill().tx_type(&self.tx_type),
+            TxTab::Frequency => conn.autofill().frequency(&self.frequency),
+            TxTab::RecurValue => conn
+                .autofill()
+                .recur_value(&self.recur_value, self.get_frequency()),
+            TxTab::RecurMonth => conn.autofill().recur_month(&self.recur_month),
             _ => String::new(),
         }
     }
@@ -438,6 +443,9 @@ impl TxData {
             TxTab::FromMethod => self.from_method = self.autofill.clone(),
             TxTab::ToMethod => self.to_method = self.autofill.clone(),
             TxTab::TxType => self.tx_type = self.autofill.clone(),
+            TxTab::Frequency => self.frequency = self.autofill.clone(),
+            TxTab::RecurValue => self.recur_value = self.autofill.clone(),
+            TxTab::RecurMonth => self.recur_month = self.autofill.clone(),
             TxTab::Tags => {
                 let mut split_tags = self.tags.split(',').map(str::trim).collect::<Vec<&str>>();
 
@@ -1121,5 +1129,46 @@ impl TxData {
         } else {
             tx_view.add_tx_balance_array(index, None, conn)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accept_autofill_fills_frequency_day_of_week_and_month() {
+        let mut data = TxData::new_empty();
+
+        data.frequency = "we".to_string();
+        data.autofill = "Weekly".to_string();
+        data.accept_autofill(&TxTab::Frequency);
+        assert_eq!(data.frequency, "Weekly");
+        assert!(data.autofill.is_empty());
+        assert_eq!(data.get_current_index(), "Weekly".len());
+
+        data.recur_value = "mon".to_string();
+        data.autofill = "Monday".to_string();
+        data.accept_autofill(&TxTab::RecurValue);
+        assert_eq!(data.recur_value, "Monday");
+
+        data.recur_month = "sep".to_string();
+        data.autofill = "September".to_string();
+        data.accept_autofill(&TxTab::RecurMonth);
+        assert_eq!(data.recur_month, "September");
+    }
+
+    #[test]
+    fn accept_autofill_leaves_other_recurring_fields_alone() {
+        let mut data = TxData::new_empty();
+        data.recur_interval = "2".to_string();
+        data.end_date = "2027-01-01".to_string();
+        data.autofill = "Weekly".to_string();
+
+        data.accept_autofill(&TxTab::RecurInterval);
+        data.accept_autofill(&TxTab::EndDate);
+
+        assert_eq!(data.recur_interval, "2");
+        assert_eq!(data.end_date, "2027-01-01");
     }
 }
