@@ -1,12 +1,30 @@
-use chrono::{Datelike, NaiveDate, Weekday};
-use rex_app::conn::FetchNature;
+use chrono::{Datelike, Local, NaiveDate, Weekday};
+use rex_app::conn::{DbConn, FetchNature};
 use rex_app::modifier::parse_recurring_tx_fields;
 use rex_db::ConnCache;
+use rex_db::models::RecurringTx;
 use std::fs;
 
 use crate::common::create_test_db;
 
 mod common;
+
+/// Adding or editing a rule already processes everything due, so the number of
+/// materialized transactions is simply the number of transactions present. A follow-up
+/// explicit run must then have nothing left to do.
+fn materialized_count(db_conn: &mut DbConn) -> usize {
+    let count = db_conn
+        .fetch_txs_with_date(
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            FetchNature::All,
+        )
+        .unwrap()
+        .len();
+
+    assert_eq!(db_conn.process_due_recurring_txs().unwrap(), 0);
+
+    count
+}
 
 #[test]
 fn add_daily_recurring_tx_shows_up_in_list() {
@@ -34,10 +52,11 @@ fn add_daily_recurring_tx_shows_up_in_list() {
     let all = db_conn.get_recurring_txs().unwrap();
     assert_eq!(all.len(), 1);
     assert_eq!(all[0].amount.value(), 500);
-    assert_eq!(
-        all[0].next_recurring_date,
-        NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()
-    );
+    // Start date is in the past, so adding the rule already created its due occurrences
+    // and advanced the schedule past today
+    let today = Local::now().date_naive();
+    assert_eq!(all[0].last_recurred_date, Some(today));
+    assert!(all[0].next_recurring_date > today);
     assert!(!all[0].is_paused);
 
     drop(db_conn);
@@ -91,7 +110,7 @@ fn process_due_recurring_txs_creates_transaction_and_updates_balance() {
 
     db_conn.add_recurring_tx(new_recurring, "Work").unwrap();
 
-    let created = db_conn.process_due_recurring_txs().unwrap();
+    let created = materialized_count(&mut db_conn);
     assert!(created >= 1);
 
     let cash_id = db_conn.cache().get_method_id("Cash").unwrap();
@@ -129,7 +148,7 @@ fn process_due_recurring_txs_catches_up_multiple_missed_daily_occurrences() {
 
     db_conn.add_recurring_tx(new_recurring, "Food").unwrap();
 
-    let created = db_conn.process_due_recurring_txs().unwrap();
+    let created = materialized_count(&mut db_conn);
 
     // From 2024-01-01 to today is a lot more than a handful of days
     assert!(created > 30);
@@ -168,7 +187,7 @@ fn monthly_recurring_tx_clamps_end_of_month_without_drift() {
     .unwrap();
 
     db_conn.add_recurring_tx(new_recurring, "Bills").unwrap();
-    db_conn.process_due_recurring_txs().unwrap();
+    materialized_count(&mut db_conn);
 
     let tx_view = db_conn
         .fetch_txs_with_date(
@@ -212,11 +231,24 @@ fn paused_recurring_tx_is_skipped_by_processing() {
 
     db_conn.add_recurring_tx(new_recurring, "").unwrap();
 
+    // Adding already processed everything due. Pause it, then rewind its schedule so it is
+    // due again - a paused rule must still be skipped.
+    let before = materialized_count(&mut db_conn);
+    assert!(before > 0);
+
     let id = db_conn.get_recurring_txs().unwrap()[0].id;
     db_conn.set_recurring_paused(id, true).unwrap();
+    RecurringTx::update_schedule(
+        id,
+        None,
+        NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+        &mut db_conn,
+    )
+    .unwrap();
 
     let created = db_conn.process_due_recurring_txs().unwrap();
     assert_eq!(created, 0);
+    assert_eq!(materialized_count(&mut db_conn), before);
 
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
@@ -296,7 +328,7 @@ fn delete_recurring_tx_keeps_previously_materialized_transactions() {
     .unwrap();
 
     db_conn.add_recurring_tx(new_recurring, "Food").unwrap();
-    let created = db_conn.process_due_recurring_txs().unwrap();
+    let created = materialized_count(&mut db_conn);
     assert!(created > 0);
 
     let id = db_conn.get_recurring_txs().unwrap()[0].id;
@@ -338,7 +370,7 @@ fn end_date_stops_generating_further_occurrences() {
     .unwrap();
 
     db_conn.add_recurring_tx(new_recurring, "").unwrap();
-    let created = db_conn.process_due_recurring_txs().unwrap();
+    let created = materialized_count(&mut db_conn);
 
     // 2024-01-01 through 2024-01-05 inclusive = 5 occurrences, regardless of how long
     // ago that end date is relative to "today"
@@ -374,7 +406,7 @@ fn yearly_recurring_tx_across_leap_day() {
     .unwrap();
 
     db_conn.add_recurring_tx(new_recurring, "").unwrap();
-    db_conn.process_due_recurring_txs().unwrap();
+    materialized_count(&mut db_conn);
 
     let tx_view = db_conn
         .fetch_txs_with_date(
@@ -423,7 +455,7 @@ fn weekly_recurring_tx_fires_only_on_the_chosen_weekday() {
     );
 
     db_conn.add_recurring_tx(new_recurring, "Bills").unwrap();
-    let created = db_conn.process_due_recurring_txs().unwrap();
+    let created = materialized_count(&mut db_conn);
     assert!(created > 0);
 
     let tx_view = db_conn
@@ -481,7 +513,7 @@ fn biweekly_recurring_tx_spaces_occurrences_two_weeks_apart() {
     );
 
     db_conn.add_recurring_tx(new_recurring, "Work").unwrap();
-    let created = db_conn.process_due_recurring_txs().unwrap();
+    let created = materialized_count(&mut db_conn);
     assert!(created > 0);
 
     let tx_view = db_conn
