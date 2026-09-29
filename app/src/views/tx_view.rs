@@ -85,6 +85,7 @@ pub(crate) fn get_txs(
 
     for to_insert in to_insert_balance {
         to_insert.insert(db_conn)?;
+        log::info!("Inserted balance: {to_insert:#?}");
     }
 
     Ok(TxViewGroup(all_tx_views))
