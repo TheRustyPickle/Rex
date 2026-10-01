@@ -678,7 +678,7 @@ impl<'a> InputKeyHandler<'a> {
                         self.reload_activity_table()?;
                     }
                     ActivityTab::List => {}
-                };
+                }
 
                 self.lerp_state.clear_lerp(ACTIVITY_TABLE_ID);
             }

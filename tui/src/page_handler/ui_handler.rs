@@ -197,7 +197,7 @@ pub fn start_app<B: Backend>(
             let update_lock = new_version_data.lock().unwrap();
             if let Some(data) = update_lock.as_ref() {
                 if !data.is_empty() {
-                    let state = InfoPopupState::NewUpdate(data.to_vec());
+                    let state = InfoPopupState::NewUpdate(data.clone());
                     popup_status = PopupType::new_info(state);
                 }
                 version_checked = true;
