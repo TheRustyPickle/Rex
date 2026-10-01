@@ -8,7 +8,7 @@ pub fn split_tags(input: &str) -> Vec<String> {
         .split(',')
         .map(str::trim)
         .filter(|s| !s.is_empty())
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
         .collect()
 }
 
@@ -107,11 +107,13 @@ pub fn num_to_weekday_name(num: i32) -> Result<&'static str> {
     }
 }
 
+#[must_use]
 pub fn month_year_to_unique(month: i32, year: i32) -> i32 {
     year * 100 + month
 }
 
 /// Returns what percentage each of the two values is of their combined total
+#[must_use]
 pub fn get_percentages(value1: f64, value2: f64) -> (f64, f64) {
     if value1 == 0.0 && value2 == 0.0 {
         return (0.0, 0.0);
@@ -144,6 +146,7 @@ pub fn parse_amount_nature_cent(amount: &str) -> Result<Option<AmountNature>> {
     Ok(Some(res))
 }
 
+#[must_use]
 pub fn compare_change(current: Dollar, previous: Dollar) -> String {
     match current.cent().percent_change(previous.cent()) {
         None => "∞".to_string(),
@@ -152,6 +155,7 @@ pub fn compare_change(current: Dollar, previous: Dollar) -> String {
     }
 }
 
+#[must_use]
 pub fn compare_change_opt(current: Dollar, previous: Option<Dollar>) -> String {
     match previous {
         None => "∞".to_string(),

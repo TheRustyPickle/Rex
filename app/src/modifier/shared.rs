@@ -11,9 +11,9 @@ use crate::modifier::first_occurrence_on_or_after;
 use crate::utils::{month_name_to_num, parse_amount_nature_cent, weekday_name_to_num};
 
 pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Result<()> {
-    let tx = Balance::get_highest_date(db_conn)?;
+    let balance = Balance::get_highest_date(db_conn)?;
 
-    let max_date = NaiveDate::from_ymd_opt(tx.year, tx.month as u32, 1).unwrap();
+    let max_date = NaiveDate::from_ymd_opt(balance.year, balance.month as u32, 1).unwrap();
 
     tidy_recursive(max_date, date, db_conn)?;
 

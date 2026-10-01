@@ -13,7 +13,8 @@ use crate::config::{Config, migrate_config};
 use crate::outputs::HandlingOutput;
 use crate::page_handler::start_app;
 use crate::utility::{
-    check_version, enter_tui_interface, exit_tui_interface, migrate_to_new_schema, start_terminal,
+    already_relaunched, check_version, enter_tui_interface, exit_tui_interface,
+    migrate_to_new_schema, start_terminal,
 };
 
 /// Sets up a terminal, the migrated database and config plus a background
@@ -23,18 +24,18 @@ pub fn initialize_app(
     migrated_db_path: &Path,
     original_dir: &PathBuf,
 ) -> Result<()> {
-    // Without a terminal, try to start one. If that fails, write the message to
-    // Error.txt and exit
-    if !atty::is(Stream::Stdout) && !start_terminal(original_dir.to_str().unwrap()) {
-        let mut error_location = PathBuf::from(&original_dir);
-        error_location.push("Error.txt");
+    if !atty::is(Stream::Stdout) {
+        if already_relaunched() || !start_terminal(original_dir) {
+            let mut error_location = PathBuf::from(&original_dir);
+            error_location.push("Error.txt");
 
-        let mut open = File::create(error_location)?;
-        let to_write =
-            "Failed to start a terminal. Please open one manually by executing the binary"
-                .to_string();
-        open.write_all(to_write.as_bytes())?;
-        process::exit(1);
+            let mut open = File::create(error_location)?;
+            let to_write = "Failed to start a terminal. Please open one manually".to_string();
+            open.write_all(to_write.as_bytes())?;
+            process::exit(1);
+        }
+
+        process::exit(0);
     }
 
     let result =
@@ -89,6 +90,17 @@ pub fn initialize_app(
     };
 
     let mut conn = get_conn(new_db_path.display().to_string().as_str());
+
+    let v1_migration_done = config.migration_v1_done.unwrap_or(false);
+
+    if !v1_migration_done {
+        if let Err(e) = conn.initiate_v1_migration() {
+            println!("Failed to perform balance v1 migration. Error: {e:?}");
+            process::exit(1);
+        }
+
+        config.set_migration_v1_done()?;
+    }
 
     loop {
         let mut terminal = enter_tui_interface()?;

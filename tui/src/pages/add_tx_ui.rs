@@ -136,7 +136,7 @@ pub fn add_tx_ui(
                 // Put the symbol back on the Changes row, otherwise the number
                 // gets thousands separators
                 if let Some(sym) = symbol {
-                    format!("{sym}{to_show:.2}",).separate_with_commas()
+                    format!("{sym}{to_show:.2}").separate_with_commas()
                 } else {
                     format!("{to_show:.2}").separate_with_commas()
                 }
