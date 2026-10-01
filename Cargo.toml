@@ -11,9 +11,9 @@ diesel = { version = "2.3.13", default-features = false, features = [
   "returning_clauses_for_sqlite_3_35",
   "sqlite",
 ] }
-rex-app = "0.2.9"
-rex-db = "0.2.9"
-rex-shared = "0.2.9"
+rex-app = "0.3.0"
+rex-db = "0.3.0"
+rex-shared = "0.3.0"
 strum = "0.28.0"
 strum_macros = "0.28"
 

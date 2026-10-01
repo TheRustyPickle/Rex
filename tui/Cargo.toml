@@ -1,10 +1,8 @@
 [package]
 name = "rex-tui"
-version = "0.2.9"
+version = "0.3.0"
 edition = "2024"
-description = """
-A TUI app for managing Incomes and Expenses
-"""
+description = "A TUI app for managing Incomes and Expenses."
 readme = "../README.md"
 homepage = "https://github.com/TheRustyPickle/Rex"
 repository = "https://github.com/TheRustyPickle/Rex"

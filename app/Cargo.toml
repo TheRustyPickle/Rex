@@ -1,10 +1,8 @@
 [package]
 name = "rex-app"
-version = "0.2.9"
+version = "0.3.0"
 edition = "2024"
-description = """
-Core functionality for Rex
-"""
+description = "Core functionality for Rex"
 homepage = "https://github.com/TheRustyPickle/Rex"
 repository = "https://github.com/TheRustyPickle/Rex"
 license = "MIT"
@@ -19,7 +17,6 @@ strsim = "0.11.1"
 strum.workspace = true
 strum_macros.workspace = true
 thiserror = "2.0.21"
-
 
 [lints.clippy]
 too_many_arguments = { level = "allow" }
