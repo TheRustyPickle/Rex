@@ -8,9 +8,7 @@ mod tx_handler;
 mod utility;
 
 use dirs::data_local_dir;
-use log::LevelFilter;
 use page_handler::initialize_app;
-use simplelog::{Config, WriteLogger};
 use std::env::{current_dir, set_current_dir};
 use std::fs::{self, File};
 
@@ -33,12 +31,6 @@ fn main() {
             println!("Failed to set the working path. Exiting program...");
             return;
         };
-
-        let _ = WriteLogger::init(
-            LevelFilter::Info,
-            Config::default(),
-            File::create("logs.log").unwrap(),
-        );
 
         let mut migrated_path = working_path.clone();
         migrated_path.push("rex.sqlite");

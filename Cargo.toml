@@ -4,9 +4,9 @@ members = ["app", "db", "shared", "tui"]
 resolver = "2"
 
 [workspace.dependencies]
-anyhow = "1.0.103"
+anyhow = "1.0.104"
 chrono = "0.4.45"
-diesel = { version = "2.3.10", default-features = false, features = [
+diesel = { version = "2.3.13", default-features = false, features = [
   "chrono",
   "returning_clauses_for_sqlite_3_35",
   "sqlite",
