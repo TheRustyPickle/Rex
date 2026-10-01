@@ -10,7 +10,7 @@ mod utility;
 use dirs::data_local_dir;
 use page_handler::initialize_app;
 use std::env::{current_dir, set_current_dir};
-use std::fs::{self, File};
+use std::fs::{self};
 
 fn main() {
     if let Some(dir) = data_local_dir() {

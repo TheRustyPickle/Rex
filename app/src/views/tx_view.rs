@@ -31,8 +31,6 @@ pub(crate) fn get_txs(
 ) -> Result<TxViewGroup> {
     let txs = FullTx::get_txs(date, nature, db_conn)?;
 
-    let current_balance = Balance::get_balance(date, nature, db_conn)?;
-
     let last_balance = Balance::get_last_balance(date, nature, db_conn)?;
 
     let mut last_balance = last_balance
@@ -64,27 +62,6 @@ pub(crate) fn get_txs(
 
         let tx_view = TxView::new(tx, last_balance.clone());
         all_tx_views.push(tx_view);
-    }
-
-    // Only monthly views are allowed to rewrite the stored balances
-    if nature != FetchNature::Monthly {
-        return Ok(TxViewGroup(all_tx_views));
-    }
-
-    let mut to_insert_balance = Vec::new();
-
-    for mut balance in current_balance {
-        let method_id = balance.method_id;
-        let last_balance = *last_balance.get(&method_id).unwrap();
-
-        if last_balance != balance.balance {
-            balance.balance = last_balance.value();
-            to_insert_balance.push(balance);
-        }
-    }
-
-    for to_insert in to_insert_balance {
-        to_insert.insert(db_conn)?;
     }
 
     Ok(TxViewGroup(all_tx_views))

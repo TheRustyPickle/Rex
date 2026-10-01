@@ -6,6 +6,7 @@ pub use rex_db::models::{FetchNature, FullRecurringTx, NewRecurringTx, Recurrenc
 use rex_db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
 use std::collections::{HashMap, HashSet};
 
+use crate::migration::migrate_to_v1;
 use crate::modifier::{
     activity_delete_tx, activity_edit_tx, activity_new_tx, activity_search_tx,
     activity_swap_position, add_new_recurring_tx, add_new_tx, add_new_tx_methods, advance_date,
@@ -565,5 +566,13 @@ impl DbConn {
     pub fn step(&mut self) -> Stepper<'_> {
         let db_conn = MutDbConn::new(&mut self.conn, &self.cache);
         Stepper::new(db_conn)
+    }
+
+    pub fn initiate_v1_migration(&mut self) -> Result<()> {
+        self.conn.transaction::<(), Error, _>(|conn| {
+            let mut db_conn = MutDbConn::new(conn, &self.cache);
+
+            migrate_to_v1(&mut db_conn)
+        })
     }
 }

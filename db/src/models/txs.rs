@@ -1,5 +1,5 @@
 use chrono::{Datelike, Days, Months, NaiveDate, NaiveDateTime, NaiveTime};
-use diesel::dsl::{count_star, sql};
+use diesel::dsl::{count_star, max, min, sql};
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel::sql_types::{Integer, Text};
@@ -469,6 +469,20 @@ impl Tx {
             ))
             .select(Tx::as_select())
             .load(db_conn.conn())
+    }
+
+    /// The date of the oldest transaction, or `None` if there are no transactions at all
+    pub fn get_lowest_date(db_conn: &mut impl ConnCache) -> Result<Option<NaiveDateTime>, Error> {
+        use crate::schema::txs::dsl::{date, txs};
+
+        txs.select(min(date)).first(db_conn.conn())
+    }
+
+    /// The date of the newest transaction, or `None` if there are no transactions at all
+    pub fn get_highest_date(db_conn: &mut impl ConnCache) -> Result<Option<NaiveDateTime>, Error> {
+        use crate::schema::txs::dsl::{date, txs};
+
+        txs.select(max(date)).first(db_conn.conn())
     }
 
     pub fn delete_tx(id: i32, db_conn: &mut impl ConnCache) -> Result<usize, Error> {

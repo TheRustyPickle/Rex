@@ -22,6 +22,7 @@ pub struct Config {
     pub backup_db_path: Option<Vec<PathBuf>>,
     pub new_location: Option<PathBuf>,
     pub theme_index: Option<usize>,
+    pub migration_v1_done: Option<bool>,
 }
 
 impl Config {
@@ -37,6 +38,7 @@ impl Config {
                 new_location: None,
                 location: target_dir,
                 theme_index: Some(0),
+                migration_v1_done: None,
             });
         }
 
@@ -157,6 +159,11 @@ impl Config {
             );
         }
     }
+
+    pub fn set_migration_v1_done(&mut self) -> Result<()> {
+        self.migration_v1_done = Some(true);
+        self.save_config()
+    }
 }
 
 pub fn migrate_config(config_path: &PathBuf) -> Result<()> {
@@ -165,6 +172,7 @@ pub fn migrate_config(config_path: &PathBuf) -> Result<()> {
         new_location: None,
         location: PathBuf::new(),
         theme_index: Some(0),
+        migration_v1_done: None,
     };
 
     let mut backup_path = config_path.to_owned();

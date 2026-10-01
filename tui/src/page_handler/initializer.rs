@@ -90,6 +90,17 @@ pub fn initialize_app(
 
     let mut conn = get_conn(new_db_path.display().to_string().as_str());
 
+    let v1_migration_done = config.migration_v1_done.unwrap_or(false);
+
+    if !v1_migration_done {
+        if let Err(e) = conn.initiate_v1_migration() {
+            println!("Failed to perform balance v1 migration. Error: {e:?}");
+            process::exit(1);
+        }
+
+        config.set_migration_v1_done()?;
+    }
+
     loop {
         let mut terminal = enter_tui_interface()?;
         let result = start_app(&mut terminal, new_update.clone(), &mut config, &mut conn);
