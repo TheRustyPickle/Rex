@@ -24,6 +24,14 @@ pub enum CheckingError {
     EmptyTxType,
     #[strum(to_string = "Tx Method: From and To methods cannot be the same for Transfer")]
     SameTxMethod,
+    #[strum(to_string = "Frequency: Frequency cannot be empty")]
+    EmptyFrequency,
+    #[strum(to_string = "Recur Interval: Recur Interval cannot be empty")]
+    EmptyRecurInterval,
+    #[strum(to_string = "Recur Value: Recur Value cannot be empty for this frequency")]
+    EmptyRecurValue,
+    #[strum(to_string = "Recur Month: Recur Month cannot be empty for Yearly frequency")]
+    EmptyRecurMonth,
 }
 
 impl Error for CheckingError {}

@@ -22,6 +22,7 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutpu
                 KeyCode::Char('w') => handler.go_search(),
                 KeyCode::Char('c') => handler.clear_input()?,
                 KeyCode::Char('y') => handler.go_activity(),
+                KeyCode::Char('u') => handler.go_recurring(),
                 KeyCode::Char('t') => handler.next_theme()?,
                 KeyCode::Enter => handler.select_date_field(),
                 KeyCode::Char(c) if c.is_numeric() => {
@@ -42,7 +43,12 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutpu
                     TxTab::Amount => handler.handle_amount()?,
                     TxTab::TxType => handler.handle_tx_type()?,
                     TxTab::Tags => handler.handle_tags(),
-                    TxTab::Nothing => {}
+                    TxTab::Nothing
+                    | TxTab::Frequency
+                    | TxTab::RecurInterval
+                    | TxTab::RecurValue
+                    | TxTab::RecurMonth
+                    | TxTab::EndDate => {}
                 },
             },
         },

@@ -1,3 +1,5 @@
+use chrono::Local;
+use rex_app::conn::RecurrenceFrequency;
 use rex_app::ui_helper::{DateType, StepType, SteppingError};
 use std::fs;
 
@@ -96,26 +98,28 @@ fn step_date_from_empty_defaults() {
     let file_name = "test_step_date_empty.sqlite";
     let mut db_conn = create_test_db(file_name);
 
+    let today = Local::now().naive_local();
+
     let mut s = String::new();
     db_conn
         .step()
         .date(&mut s, StepType::StepUp, DateType::Exact)
         .unwrap();
-    assert_eq!(s, "2022-01-01");
+    assert_eq!(s, today.format("%Y-%m-%d").to_string());
 
     let mut s = String::new();
     db_conn
         .step()
         .date(&mut s, StepType::StepUp, DateType::Monthly)
         .unwrap();
-    assert_eq!(s, "2022-01");
+    assert_eq!(s, today.format("%Y-%m").to_string());
 
     let mut s = String::new();
     db_conn
         .step()
         .date(&mut s, StepType::StepUp, DateType::Yearly)
         .unwrap();
-    assert_eq!(s, "2022");
+    assert_eq!(s, today.format("%Y").to_string());
 
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
@@ -194,13 +198,9 @@ fn step_amount_from_empty_defaults() {
 fn step_amount_negative_restores_to_one() {
     let file_name = "test_step_amount_negative.sqlite";
     let mut db_conn = create_test_db(file_name);
-    // After previous verification corrects negative to positive, stepping up
-    // from a state where VerifierError::AmountBelowZero would be returned
-    // should set the amount to 1.00. The easiest way to trigger this is
-    // to call with "0.00" which after verify returns AmountBelowZero.
-    // But 0.00 is caught by the stepping branch: if step_up && AmountBelowZero → 1.00
-    // Actually '0.00' amount verify returns AmountBelowZero.
-    // Let's verify: stepping up on "0.00" → verify rejects → AmountBelowZero, StepUp → sets "1.00"
+    // Verification rejects a zero or negative amount with AmountBelowZero, and
+    // stepping up from that state falls back to 1.00. "0.00" is the input that
+    // reaches the branch
     let mut s = "0.00".to_string();
     db_conn.step().amount(&mut s, StepType::StepUp).unwrap();
     assert_eq!(s, "1.00");
@@ -597,13 +597,273 @@ fn step_tx_type_unknown_errors() {
 fn step_tag_empty_db_errors() {
     let file_name = "test_step_tag_err.sqlite";
     let mut db_conn = create_test_db(file_name);
-    // No tags added — only pre-seeded "Unknown" exists, so empty+step finds it
-    // Actually "Unknown" is always there from migrations. Test with no user tags.
-    // Stepping from empty when no user tags exist still finds Unknown.
+    // No user tags were added, so "Unknown" (always seeded by the migrations) is
+    // all there is to fuzzy correct towards
     let mut s = "NonExistent".to_string();
     let result = db_conn.step().tag(&mut s, StepType::StepUp);
     // Fuzzy-corrects to best match and errors
     assert!(result.is_err());
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+// ---- Recurring: Frequency stepping ----
+
+#[test]
+fn step_frequency_from_empty_defaults_to_daily() {
+    let file_name = "test_step_frequency_empty.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = String::new();
+    db_conn.step().frequency(&mut s, StepType::StepUp).unwrap();
+    assert_eq!(s, "Daily");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_frequency_cycles_all() {
+    let file_name = "test_step_frequency_cycle.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "Daily".to_string();
+
+    for expected in ["Weekly", "Monthly", "Yearly", "Daily"] {
+        db_conn.step().frequency(&mut s, StepType::StepUp).unwrap();
+        assert_eq!(s, expected);
+    }
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_frequency_down_wraps() {
+    let file_name = "test_step_frequency_wrap.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "Daily".to_string();
+    db_conn
+        .step()
+        .frequency(&mut s, StepType::StepDown)
+        .unwrap();
+    assert_eq!(s, "Yearly");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+// ---- Recurring: Recur Interval stepping ----
+
+#[test]
+fn step_recur_interval_from_empty_defaults_to_one() {
+    let file_name = "test_step_recur_interval_empty.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = String::new();
+    db_conn
+        .step()
+        .recur_interval(&mut s, StepType::StepUp)
+        .unwrap();
+    assert_eq!(s, "1");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_recur_interval_up() {
+    let file_name = "test_step_recur_interval_up.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "5".to_string();
+    db_conn
+        .step()
+        .recur_interval(&mut s, StepType::StepUp)
+        .unwrap();
+    assert_eq!(s, "6");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_recur_interval_down_floors_at_one() {
+    let file_name = "test_step_recur_interval_floor.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "1".to_string();
+    db_conn
+        .step()
+        .recur_interval(&mut s, StepType::StepDown)
+        .unwrap();
+    assert_eq!(s, "1");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_recur_interval_up_caps_at_9999() {
+    let file_name = "test_step_recur_interval_cap.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "9999".to_string();
+    db_conn
+        .step()
+        .recur_interval(&mut s, StepType::StepUp)
+        .unwrap();
+    assert_eq!(s, "9999");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+// ---- Recurring: Recur Value stepping ----
+
+#[test]
+fn step_recur_value_daily_is_a_no_op() {
+    let file_name = "test_step_recur_value_daily.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = String::new();
+    db_conn
+        .step()
+        .recur_value(&mut s, RecurrenceFrequency::Daily, StepType::StepUp)
+        .unwrap();
+    assert_eq!(s, "");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_recur_value_weekly_from_empty_defaults_to_sunday() {
+    let file_name = "test_step_recur_value_weekly_empty.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = String::new();
+    db_conn
+        .step()
+        .recur_value(&mut s, RecurrenceFrequency::Weekly, StepType::StepUp)
+        .unwrap();
+    assert_eq!(s, "Sunday");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_recur_value_weekly_cycles_all_days() {
+    let file_name = "test_step_recur_value_weekly_cycle.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "Sunday".to_string();
+
+    for expected in [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ] {
+        db_conn
+            .step()
+            .recur_value(&mut s, RecurrenceFrequency::Weekly, StepType::StepUp)
+            .unwrap();
+        assert_eq!(s, expected);
+    }
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_recur_value_weekly_down_wraps() {
+    let file_name = "test_step_recur_value_weekly_wrap.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "Sunday".to_string();
+    db_conn
+        .step()
+        .recur_value(&mut s, RecurrenceFrequency::Weekly, StepType::StepDown)
+        .unwrap();
+    assert_eq!(s, "Saturday");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_recur_value_monthly_from_empty_defaults_to_one() {
+    let file_name = "test_step_recur_value_monthly_empty.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = String::new();
+    db_conn
+        .step()
+        .recur_value(&mut s, RecurrenceFrequency::Monthly, StepType::StepUp)
+        .unwrap();
+    assert_eq!(s, "1");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_recur_value_monthly_up_wraps_at_31() {
+    let file_name = "test_step_recur_value_monthly_wrap.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "31".to_string();
+    db_conn
+        .step()
+        .recur_value(&mut s, RecurrenceFrequency::Monthly, StepType::StepUp)
+        .unwrap();
+    assert_eq!(s, "1");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_recur_value_monthly_down_wraps_at_one() {
+    let file_name = "test_step_recur_value_monthly_wrap_down.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "1".to_string();
+    db_conn
+        .step()
+        .recur_value(&mut s, RecurrenceFrequency::Monthly, StepType::StepDown)
+        .unwrap();
+    assert_eq!(s, "31");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+// ---- Recurring: Recur Month stepping ----
+
+#[test]
+fn step_recur_month_from_empty_defaults_to_january() {
+    let file_name = "test_step_recur_month_empty.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = String::new();
+    db_conn
+        .step()
+        .recur_month(&mut s, StepType::StepUp)
+        .unwrap();
+    assert_eq!(s, "January");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_recur_month_down_wraps_to_december() {
+    let file_name = "test_step_recur_month_wrap.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "January".to_string();
+    db_conn
+        .step()
+        .recur_month(&mut s, StepType::StepDown)
+        .unwrap();
+    assert_eq!(s, "December");
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn step_recur_month_cycles_all() {
+    let file_name = "test_step_recur_month_cycle.sqlite";
+    let mut db_conn = create_test_db(file_name);
+    let mut s = "November".to_string();
+    db_conn
+        .step()
+        .recur_month(&mut s, StepType::StepUp)
+        .unwrap();
+    assert_eq!(s, "December");
+    db_conn
+        .step()
+        .recur_month(&mut s, StepType::StepUp)
+        .unwrap();
+    assert_eq!(s, "January");
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
 }

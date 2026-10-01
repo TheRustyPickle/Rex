@@ -67,7 +67,7 @@ pub(crate) fn activity_edit_tx(
 
     let new_activity = NewActivity::new(activity_type).insert(conn)?;
 
-    // New one always first!
+    // The new tx row is inserted first so the activity view lists it above the old one
     let new_tx_activity = NewActivityTx::new_from_new_tx(new_tx, new_activity.id).insert(conn)?;
     let old_tx_activity =
         NewActivityTx::new_from_full_tx(old_tx, false, new_activity.id).insert(conn)?;

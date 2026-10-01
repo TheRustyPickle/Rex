@@ -8,7 +8,8 @@ use ratatui::widgets::{
 
 use crate::pages::{
     InfoPopup, InfoPopupState, activity_help_text, add_tx_help_text, chart_help_text, choice_help,
-    home_help_text, new_update_text, reposition_help, search_help_text, summary_help_text,
+    home_help_text, new_update_text, recurring_help_text, reposition_help, search_help_text,
+    summary_help_text,
 };
 use crate::theme::Theme;
 use crate::utility::{centered_rect_exact, create_bolded_text, main_block};
@@ -44,6 +45,9 @@ impl InfoPopup {
             }
             InfoPopupState::ActivityHelp => {
                 message = activity_help_text();
+            }
+            InfoPopupState::RecurringHelp => {
+                message = recurring_help_text();
             }
             InfoPopupState::Error(err) => {
                 title = "Error";

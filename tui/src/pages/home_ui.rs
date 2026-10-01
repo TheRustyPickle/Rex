@@ -99,17 +99,10 @@ pub fn home_ui(
                 .style(Style::default().bg(theme.background()).fg(theme.text()))
         });
 
-    // Decides how many chunks of spaces in the terminal will be.
-    // Each constraint creates an empty space in the terminal with the given
-    // length. The final one was given 0 as minimum value which is the Transaction
-    // field to keep it expanding.
-
-    // Chunks are used in this format respectively
     // - The Balance tab
     // - The year tab
     // - The month tab
     // - The transaction list/Table
-
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -190,8 +183,8 @@ pub fn home_ui(
                 let lerp_id = format!("{row_type}:{index}");
                 let to_show = lerp_state.lerp(&lerp_id, actual_data, None);
 
-                // re-add the previously removed symbol if is the Changes row
-                // Otherwise separate the number with commas
+                // Put the symbol back on the Changes row, otherwise the number
+                // gets thousands separators
                 if let Some(sym) = symbol {
                     format!("{sym}{to_show:.2}",).separate_with_commas()
                 } else {
@@ -224,11 +217,11 @@ pub fn home_ui(
         .style(Style::default().fg(theme.border()));
 
     match current_tab {
-        // Previously added a black block to year and month widget if a value is not selected
-        // Now we will turn that black block into green if a value is selected
+        // A black block was added to the year and month widgets when no value is
+        // selected, so turn it green for the selected one
         HomeTab::Months => month_tab = month_tab.highlight_style(tab_highlight_style(theme)),
         HomeTab::Years => year_tab = year_tab.highlight_style(tab_highlight_style(theme)),
-        // Changes the color of row based on Expense or Income tx type on Transaction widget.
+        // Color the selected row based on its Expense or Income tx type
         HomeTab::Table => {
             if let Some(a) = home_table.state.selected() {
                 table_area = table_area.highlight_symbol(">> ");
@@ -266,12 +259,12 @@ pub fn home_ui(
         *home_table.state.offset_mut() = index - 10;
     }
 
-    // After all data is in place, render the widgets one by one
-    // the chunks are selected based on the format I want the widgets to render
+    // Now that every widget holds its data, render them one by one into the
+    // chunks laid out above
     f.render_widget(balance_area, chunks[0]);
     f.render_widget(month_tab, chunks[2]);
     f.render_widget(year_tab, chunks[1]);
 
-    // This one is different because the Transaction widget interface works differently
+    // The table is the only stateful widget, as its selection has to be tracked
     f.render_stateful_widget(table_area, chunks[3], &mut home_table.state);
 }

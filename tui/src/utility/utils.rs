@@ -94,8 +94,7 @@ pub fn main_block(theme: &Theme) -> Block<'_> {
     Block::default().style(Style::default().bg(theme.background()).fg(theme.border()))
 }
 
-/// Takes a string and makes any word before the first occurrence of : to Bold
-/// Used for rendering
+/// Bolds everything before the first `:` of each line, for rendering
 #[must_use]
 pub fn create_bolded_text(text: &str) -> Vec<Line<'_>> {
     let mut text_data = Vec::new();
@@ -115,7 +114,7 @@ pub fn create_bolded_text(text: &str) -> Vec<Line<'_>> {
     text_data
 }
 
-/// Tabs from some given data for the UI
+/// Builds a tab widget out of the given indexed data for the UI
 #[must_use]
 pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str, theme: &'a Theme) -> Tabs<'a> {
     let titles: Vec<Line> = data
@@ -135,7 +134,8 @@ pub fn create_tab<'a>(data: &'a IndexedData, name: &'a str, theme: &'a Theme) ->
         )
 }
 
-/// Create a tab with some values where each value's color will depend on the provided `HashMap` bool value
+/// Same as [`create_tab`], except every title is colored by the bool the
+/// provided `HashMap` holds for it
 #[must_use]
 pub fn create_tab_activation<'a>(
     data: &'a IndexedData,
@@ -169,7 +169,7 @@ pub fn parse_github_body(body: &str) -> String {
     let body = body.replace('*', "•");
     let body = body.replace('\r', "");
     let end_point = body.find("## Changes").unwrap();
-    format!("\n{}\n", &body[..end_point].trim())
+    format!("\n{}\n", body[..end_point].trim())
 }
 
 /// Used for sorting summary table data
@@ -217,8 +217,8 @@ pub fn add_char_to(to_add: Option<char>, current_index: &mut usize, current_data
 /// Checks if the string contains any symbol indicating comparison
 #[must_use]
 pub fn check_comparison(input: &str) -> ComparisonType {
-    // Need to handle 2 letter ones first otherwise in case of >=
-    // it will match with >
+    // The 2 character symbols have to be checked first, otherwise `>=` would
+    // match as `>`
     if input.starts_with("<=") {
         ComparisonType::EqualOrSmaller
     } else if input.starts_with(">=") {

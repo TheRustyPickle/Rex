@@ -42,6 +42,34 @@ diesel::table! {
 }
 
 diesel::table! {
+    recurring_tx_tags (recurring_tx_id, tag_id) {
+        recurring_tx_id -> Integer,
+        tag_id -> Integer,
+        is_primary -> Bool,
+    }
+}
+
+diesel::table! {
+    recurring_txs (id) {
+        id -> Integer,
+        created_at -> Timestamp,
+        details -> Nullable<Text>,
+        from_method -> Integer,
+        to_method -> Nullable<Integer>,
+        amount -> BigInt,
+        tx_type -> Text,
+        frequency -> Text,
+        recur_interval -> Integer,
+        recur_value -> Nullable<Integer>,
+        recur_month -> Nullable<Integer>,
+        last_recurred_date -> Nullable<Date>,
+        next_recurring_date -> Date,
+        end_date -> Nullable<Date>,
+        is_paused -> Bool,
+    }
+}
+
+diesel::table! {
     tags (id) {
         id -> Integer,
         name -> Text,
@@ -81,6 +109,8 @@ diesel::joinable!(activity_tx_tags -> activity_txs (tx_id));
 diesel::joinable!(activity_tx_tags -> tags (tag_id));
 diesel::joinable!(activity_txs -> activities (activity_num));
 diesel::joinable!(balances -> tx_methods (method_id));
+diesel::joinable!(recurring_tx_tags -> recurring_txs (recurring_tx_id));
+diesel::joinable!(recurring_tx_tags -> tags (tag_id));
 diesel::joinable!(tx_tags -> tags (tag_id));
 diesel::joinable!(tx_tags -> txs (tx_id));
 
@@ -89,6 +119,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     activity_tx_tags,
     activity_txs,
     balances,
+    recurring_tx_tags,
+    recurring_txs,
     tags,
     tx_methods,
     tx_tags,

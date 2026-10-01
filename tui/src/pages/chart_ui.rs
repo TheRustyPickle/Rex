@@ -33,7 +33,7 @@ pub fn chart_ui(
 ) {
     let size = f.area();
 
-    // Divide the terminal into various chunks to draw the interface. This is a vertical chunk
+    // Split the terminal into the vertical chunks the interface is drawn from
     let mut main_layout = Layout::default().direction(Direction::Vertical).margin(2);
 
     // Don't create any other chunk if hidden mode is enabled. Create 1 chunk that will be used for the chart itself
@@ -104,12 +104,12 @@ pub fn chart_ui(
     let mut all_tx_methods: Vec<&str> = tx_methods.iter().map(|t| t.name.as_str()).collect();
     all_tx_methods.push("Cumulative");
 
-    // A vector containing another vector vec![X, Y] with coordinate of where to render chart points
+    // One [X, Y] coordinate per point to draw, one such vec per tx method
     let mut datasets: Vec<Vec<(f64, f64)>> = Vec::new();
 
     let mut last_balances = Vec::new();
 
-    // Adding default initial value if no data to load
+    // Default initial values in case there is no data to load
     if chart_view.is_empty() {
         for _ in 0..all_tx_methods.len() {
             datasets.push(vec![(0.0, 0.0)]);
@@ -141,9 +141,9 @@ pub fn chart_ui(
         date_labels.push(checking_date.to_string());
         date_labels.push(final_date.to_string());
 
-        // `data_num` represents which index to check out from all the txs and balances data.
-        // `to_add_again` will become true in cases where two or more transactions shares the same date simultaneously.
-        // Same date transactions movements will be combined together into 1 chart location
+        // `data_num` is the index to read the txs and balances from.
+        // `to_add_again` becomes true when two or more txs share the same date, as
+        // the movements of such a day are combined into a single chart point
 
         let mut to_add_again = false;
         let mut data_num = 0;
@@ -157,8 +157,9 @@ pub fn chart_ui(
                 if chart_view.len() > data_num + 1 {
                     next_date = chart_view.get_tx(data_num + 1).date.date();
                 }
-                // New valid transactions so the earlier looped balance is not required.
-                // If no tx exists in a date, data from last_balances/previous valid date is used to compensate for it
+                // A tx was found for this date, so the balances from the previous
+                // valid date are no longer needed. A date without a tx is filled in
+                // from `last_balances` instead
                 last_balances = Vec::new();
 
                 let mut cumulative_balance = 0.0;
@@ -176,9 +177,10 @@ pub fn chart_ui(
                         balance.value()
                     };
 
-                    // We will not consider the highest/lowest balance if the method is currently deactivated on chart.
-                    // We can't directly skip it because the dataset vector expects something in the index of this method.
-                    // We will have the data but it just won't be shown on the chart.
+                    // A deactivated method must not move the highest/lowest
+                    // balance, but it cannot be skipped either since the dataset
+                    // expects a value at every method's index. The data is there,
+                    // it just isn't drawn
                     if chart_activated_methods[all_tx_methods[method_index]] {
                         if current_balance > highest_balance {
                             highest_balance = current_balance;
@@ -188,10 +190,10 @@ pub fn chart_ui(
                     }
 
                     if to_add_again {
-                        // If to_add_again is true, means in the last loop, the date, and the current date was the same
-                        // as the date is the same, the data needs to be merged thus using the same x y point in the chart.
-                        // Pop the last one added and that to last_balance. If the next date is the same,
-                        // last_balance will be used to keep on merging the data.
+                        // `to_add_again` means the last loop already added a point
+                        // for this same date, so pop it and re-add it with this
+                        // loop's balance merged in. As long as the next date stays
+                        // the same, `last_balance` keeps feeding the merge.
 
                         let (position, _balance) = datasets[method_index].pop().unwrap();
                         let to_push = vec![(position, current_balance)];
@@ -210,7 +212,7 @@ pub fn chart_ui(
                 }
 
                 if next_date == checking_date {
-                    // The axis won't move if the next date is the same.
+                    // The axis stays put while the next date is the same
                     to_add_again = true;
                 } else {
                     to_add_again = false;
@@ -218,10 +220,10 @@ pub fn chart_ui(
                     checking_date += Duration::days(1);
                 }
 
-                // Successfully checked a transaction, we will check the new index in the next iteration
+                // This tx was consumed, so read the next index on the next iteration
                 data_num += 1;
             } else {
-                // As the date does not exist in the transaction list, we will use the last used balance and add a point in the chart
+                // No tx on this date, so repeat the last known balance as a point
                 for method_index in 0..all_tx_methods.len() {
                     let to_push = vec![(current_axis, last_balances[method_index])];
                     datasets[method_index].extend(to_push);
@@ -245,8 +247,8 @@ pub fn chart_ui(
             }
         }
     }
-    // Add a few % extra value to the highest and the lowest balance
-    // so the chart can properly render
+
+    // Pad the highest and lowest balance by a few % so the chart has some room
     highest_balance += highest_balance * 5.0 / 100.0;
     lowest_balance -= lowest_balance * 5.0 / 100.0;
 
@@ -254,9 +256,10 @@ pub fn chart_ui(
 
     let mut to_add = lowest_balance;
 
-    // Go through the lowest balance and keep adding the difference until the highest point
+    // Start at the lowest balance and keep adding the difference to reach the
+    // highest one. 10 labels, so loop 10 times
     let mut labels = vec![lowest_balance.to_string()];
-    // 10 labels, so loop 10 times
+
     for _i in 0..10 {
         to_add += diff;
         labels.push(format!("{to_add:.2}"));

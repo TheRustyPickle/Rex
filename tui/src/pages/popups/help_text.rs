@@ -4,6 +4,7 @@ pub const R: &str = "R: Chart Page";
 pub const Z: &str = "Z: Summary Page";
 pub const Y: &str = "Y: Activity Page";
 pub const W: &str = "W: Search Page";
+pub const U: &str = "U: Recurring Transactions Page";
 pub const Q: &str = "Q: Quit";
 pub const H: &str = "H: Show help";
 pub const V: &str = "V: Show selected transaction details";
@@ -57,6 +58,7 @@ Example amount: 100 + b, b + b, 5 * b, 1.2k + 1m
 {Z}
 {Y}
 {W}
+{U}
 {H}
 {J}
 {Q}
@@ -83,6 +85,7 @@ Arrow Left/Right: Move value of the widget
 {Z}
 {Y}
 {W}
+{U}
 {H}
 {J}
 {Q}
@@ -109,6 +112,7 @@ Arrow Left/Right: Move value of the widget
 {R}
 {Y}
 {W}
+{U}
 {H}
 {J}
 {Q}
@@ -138,6 +142,7 @@ Swapping transaction location will only work if they are on the same date.
 {Z}
 {Y}
 {W}
+{U}
 {H}
 {J}
 {Q}
@@ -193,6 +198,7 @@ Example amount : <1000, >=10000
 {R}
 {Z}
 {Y}
+{U}
 {H}
 {J}
 {Q}
@@ -218,6 +224,58 @@ Arrow Left/Right: Move value of the widget
 {R}
 {Z}
 {W}
+{U}
+{H}
+{J}
+{Q}
+"
+    )
+}
+
+pub fn recurring_help_text() -> String {
+    format!(
+        "This page is for managing recurring transactions. Rules created here are \
+automatically turned into real transactions as they come due, each time the app starts. \
+Number keys go 1-9 then 0 for a 10th field, in some combination Enter from the previous field is the \
+only way to reach them.
+
+1: Start Date   Example: 2022-05-12, YYYY-MM-DD
+2: TX details   Example: For Grocery, Salary
+3: TX Type      Example: Income/Expense/Transfer/I/E/T
+3: New TX Type  Example: Borrow/Borrow Repay/Lend/Lend Repay/b/br/l/lr
+4: TX Method    Example: Cash, Bank, Card
+5: Amount       Example: 1000, 100+50, b - 100
+6: Frequency    Example: Daily/Weekly/Monthly/Yearly/d/w/m/y
+7: Every N      Example: with Monthly, 1 = every month, 2 = every 2 months, 3 = every 3 months
+8: Day of Week/Month  Example: Monday (Weekly), 15 (Monthly/Yearly)
+9: Month        Example: January (Yearly only)
+End Date        Optional, comes right after the fields above. Leave empty for no end
+Tags            Example: Food, Car. Add a Comma for a new tag. Comes right after End Date
+
+S: Save the inputted data as a new recurring rule, or update the one being edited
+E: Edit the selected recurring rule from the table below
+D: Delete the selected recurring rule from the table below
+P: Pause/Unpause the selected recurring rule
+Enter: Submit field and continue. Also selects the first field if nothing is selected
+Esc: Stop editing field
+Tab: Accept Autocompletion. Pressing again will remove the autocompleted value
+
+Arrow Up/Down: Steps value up/down by 1. With no field selected, moves the table selection
+Arrow Left/Right: Move cursor on input fields
+
+C: Clear all fields/Reset all changes, including discarding an edit if one was in progress
+b: On amount field 'b' gets replaced with the current balance of Tx Method field
+k: On amount field 'k' is considered as 1000 or a thousand
+m: On amount field 'm' is considered as 1,000,000 or a million
+Calculation: Amount field supports simple calculation with +, -, *, /
+
+{F}
+{T}
+{A}
+{R}
+{Z}
+{W}
+{Y}
 {H}
 {J}
 {Q}

@@ -21,6 +21,30 @@ pub enum TxType {
     LendRepay,
 }
 
+#[derive(Clone, Debug, Copy, Display, EnumIter, Eq, PartialEq)]
+pub enum RecurrenceFrequency {
+    #[strum(to_string = "Daily")]
+    Daily,
+    #[strum(to_string = "Weekly")]
+    Weekly,
+    #[strum(to_string = "Monthly")]
+    Monthly,
+    #[strum(to_string = "Yearly")]
+    Yearly,
+}
+
+impl From<&str> for RecurrenceFrequency {
+    fn from(s: &str) -> Self {
+        match s {
+            "Daily" => RecurrenceFrequency::Daily,
+            "Weekly" => RecurrenceFrequency::Weekly,
+            "Monthly" => RecurrenceFrequency::Monthly,
+            "Yearly" => RecurrenceFrequency::Yearly,
+            other => panic!("Invalid RecurrenceFrequency string: {other}"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Copy, Eq, PartialEq)]
 pub enum FetchNature {
     Monthly,

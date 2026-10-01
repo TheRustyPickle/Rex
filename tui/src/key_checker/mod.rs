@@ -5,6 +5,7 @@ mod home;
 mod initial;
 mod key_handler;
 mod popup;
+mod recurring;
 mod search;
 mod summary;
 
@@ -15,5 +16,6 @@ pub use home::home_keys;
 pub use initial::initial_keys;
 pub use key_handler::InputKeyHandler;
 pub use popup::popup_keys;
+pub use recurring::recurring_keys;
 pub use search::search_keys;
 pub use summary::summary_keys;

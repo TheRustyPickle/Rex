@@ -16,6 +16,7 @@ pub fn activity_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOut
             KeyCode::Char('h') => handler.do_help_popup(),
             KeyCode::Char('z') => handler.go_summary()?,
             KeyCode::Char('w') => handler.go_search(),
+            KeyCode::Char('u') => handler.go_recurring(),
             KeyCode::Char('v') => handler.show_activity_tx_details()?,
             KeyCode::Char('t') => handler.next_theme()?,
             KeyCode::Right => handler.handle_right_arrow()?,

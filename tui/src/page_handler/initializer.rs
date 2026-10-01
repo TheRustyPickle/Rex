@@ -16,13 +16,15 @@ use crate::utility::{
     check_version, enter_tui_interface, exit_tui_interface, migrate_to_new_schema, start_terminal,
 };
 
-/// Initialize the TUI loop
+/// Sets up a terminal, the migrated database and config plus a background
+/// version check, then runs the TUI loop until the user quits
 pub fn initialize_app(
     old_db_path: &PathBuf,
     migrated_db_path: &Path,
     original_dir: &PathBuf,
 ) -> Result<()> {
-    // If is not terminal, try to start a terminal otherwise create an error.txt file with the error message
+    // Without a terminal, try to start one. If that fails, write the message to
+    // Error.txt and exit
     if !atty::is(Stream::Stdout) && !start_terminal(original_dir.to_str().unwrap()) {
         let mut error_location = PathBuf::from(&original_dir);
         error_location.push("Error.txt");
@@ -86,22 +88,17 @@ pub fn initialize_app(
         migrated_db_path.to_path_buf()
     };
 
-    let mut migrated_conn = get_conn(new_db_path.display().to_string().as_str());
+    let mut conn = get_conn(new_db_path.display().to_string().as_str());
 
     loop {
         let mut terminal = enter_tui_interface()?;
-        let result = start_app(
-            &mut terminal,
-            new_update.clone(),
-            &mut config,
-            &mut migrated_conn,
-        );
+        let result = start_app(&mut terminal, new_update.clone(), &mut config, &mut conn);
         exit_tui_interface()?;
 
         match result {
             Ok(output) => match output {
                 HandlingOutput::QuitUi => {
-                    drop(migrated_conn);
+                    drop(conn);
                     config.save_backup(&new_db_path.clone());
                     break;
                 }

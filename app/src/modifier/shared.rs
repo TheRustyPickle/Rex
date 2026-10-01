@@ -1,10 +1,14 @@
 use anyhow::{Result, anyhow};
 use chrono::{Days, Local, Months, NaiveDate, NaiveTime};
 use rex_db::ConnCache;
-use rex_db::models::{Balance, DateNature, FetchNature, NewSearch, NewTx, Tx, TxType};
+use rex_db::models::{
+    Balance, DateNature, FetchNature, NewRecurringTx, NewSearch, NewTx, RecurrenceFrequency, Tx,
+    TxType,
+};
 use rex_shared::models::{Dollar, LAST_POSSIBLE_TIME};
 
-use crate::utils::parse_amount_nature_cent;
+use crate::modifier::first_occurrence_on_or_after;
+use crate::utils::{month_name_to_num, parse_amount_nature_cent, weekday_name_to_num};
 
 pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Result<()> {
     let tx = Balance::get_highest_date(db_conn)?;
@@ -13,8 +17,10 @@ pub(crate) fn tidy_balances(date: NaiveDate, db_conn: &mut impl ConnCache) -> Re
 
     tidy_recursive(max_date, date, db_conn)?;
 
-    // From bad delete txs, final balance got corrupted but monthly balances are fine.
-    // If does not match, trust the monthly balances
+    // A bad delete can corrupt the final balance while the monthly ones stay
+    // correct, so whenever the two disagree, trust the latest monthly balance.
+    // This issue is from an older version which has since been fixed and should not occur again.
+    // This is just as a safety net.
     let mut final_balance = Balance::get_final_balance(db_conn)?;
     let balance_highest_date = Balance::get_balance_highest_date(db_conn)?;
 
@@ -125,6 +131,82 @@ pub fn parse_tx_fields<'a>(
 
     let new_tx = NewTx::new(new_date, details, from_method, to_method, amount, tx_type);
     Ok(new_tx)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn parse_recurring_tx_fields<'a>(
+    date: &'a str,
+    details: &'a str,
+    from_method: &'a str,
+    to_method: &'a str,
+    amount: &'a str,
+    tx_type: &'a str,
+    frequency: &'a str,
+    recur_interval: &'a str,
+    recur_value: &'a str,
+    recur_month: &'a str,
+    end_date: &'a str,
+    db_conn: &impl ConnCache,
+) -> Result<NewRecurringTx<'a>> {
+    let start_date = date.parse::<NaiveDate>()?;
+
+    let details = if details.is_empty() {
+        None
+    } else {
+        Some(details)
+    };
+
+    let amount = Dollar::new(amount.parse()?).cent().value();
+
+    let from_method = db_conn.cache().get_method_id(from_method)?;
+    let to_method = if to_method.is_empty() {
+        None
+    } else {
+        Some(db_conn.cache().get_method_id(to_method)?)
+    };
+
+    let frequency_value: RecurrenceFrequency = frequency.into();
+    let interval = recur_interval.parse::<i32>()?;
+
+    let (value, month) = match frequency_value {
+        RecurrenceFrequency::Daily => (None, None),
+        RecurrenceFrequency::Weekly => {
+            let weekday = weekday_name_to_num(recur_value)?;
+
+            (Some(weekday), None)
+        }
+        RecurrenceFrequency::Monthly => (Some(recur_value.parse::<i32>()?), None),
+        RecurrenceFrequency::Yearly => (
+            Some(recur_value.parse::<i32>()?),
+            Some(month_name_to_num(recur_month)? as i32),
+        ),
+    };
+
+    let next_recurring_date =
+        first_occurrence_on_or_after(start_date, frequency_value, value, month);
+
+    let end_date = if end_date.is_empty() {
+        None
+    } else {
+        Some(end_date.parse::<NaiveDate>()?)
+    };
+
+    let created_at = Local::now().naive_local();
+
+    Ok(NewRecurringTx::new(
+        created_at,
+        details,
+        from_method,
+        to_method,
+        amount,
+        tx_type,
+        frequency,
+        interval,
+        value,
+        month,
+        next_recurring_date,
+        end_date,
+    ))
 }
 
 pub fn parse_search_fields<'a>(

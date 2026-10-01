@@ -1,4 +1,5 @@
-<div align="center"><h1>Rex</h1></div>
+<!-- rumdl-disable-file no-inline-html -->
+<div align="center"><h1>Rex</h1></div> <!-- rumdl-disable-line first-line-heading -->
 <div align="center">
 <a href="https://wakatime.com/@RustyPickle"><img src="https://wakatime.com/badge/github/TheRustyPickle/Rex.svg" alt="wakatime"></a>
 <a href="https://crates.io/crates/rex-tui">
@@ -15,12 +16,15 @@ Rex is a terminal user interface app for managing incomes, expenses, and transac
 <h2>Key Features</h2>
 
 * Easily view, add, edit, and delete transactions.
-* Navigate through transactions and instantly observe balance changes after each transaction.
+* Navigate through transactions and instantly observe balance changes after
+each transaction.
 * Chart for visualizing balance changes over a specific month, year, or all transactions.
-* Access a summary with key insights and information on income, expense, and percentage distribution.
+* Access a summary with key insights and information on income, expense, and
+percentage distribution.
 * Built using SQLite database and keeps everything local.
 * Find transactions quickly using partial or specific information.
 * Organize transactions with custom tags for easy filtering.
+* Add recurring transactions with flexible interval rules.
 * Works fully offline.
 
 <h2>Installation</h2>
@@ -39,10 +43,11 @@ cargo run --release
 **2. Run the Latest Release:**
 
 * Download the latest executable from [Release](https://github.com/TheRustyPickle/Rex/releases/latest).
-  * Open terminal/CMD and start the program by the command `./rex` or `rex` depending on the OS at the correct directory.
-  
+  * Open terminal/CMD and start the program by the command `./rex` or `rex`
+  depending on the OS at the correct directory.
+
   or
-  
+
   * Double-click the executable which will try to open a terminal/CMD by itself.
 
 **3. Install from Cargo:**
@@ -52,7 +57,8 @@ cargo run --release
 
 **4. Install using a package manager:**
 
-* On NetBSD a package is available from the [official repositories](https://pkgsrc.se/finance/rex). To install it simply run:
+* On NetBSD a package is available from the
+[official repositories](https://pkgsrc.se/finance/rex). To install it simply run:
 
 ```sh
 pkgin install rex
@@ -60,7 +66,9 @@ pkgin install rex
 
 <h2>App Data Location</h2>
 
-See [here](https://docs.rs/dirs/latest/dirs/fn.data_local_dir.html) to learn about the initial directory where Rex data gets saved which is determined based on the OS.
+See [here](https://docs.rs/dirs/latest/dirs/fn.data_local_dir.html) to learn <!-- rumdl-disable-line descriptive-link-text -->
+about the initial directory where Rex data gets saved which is determined based
+on the OS.
 
 <h2>Feedback & Bug Reports</h2>
 

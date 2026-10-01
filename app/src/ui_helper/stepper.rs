@@ -1,12 +1,13 @@
-use chrono::{Duration, Months, NaiveDate};
+use chrono::{Duration, Local, Months, NaiveDate};
 use rex_db::ConnCache;
-use rex_db::models::TxType;
+use rex_db::models::{RecurrenceFrequency, TxType};
 use strum::IntoEnumIterator;
 
 use crate::conn::MutDbConn;
 use crate::ui_helper::{
     DateType, Field, Output, StepType, SteppingError, VerifierError, get_best_match,
 };
+use crate::utils::{MONTH_NAMES, WEEKDAY_NAMES};
 
 pub struct Stepper<'a> {
     conn: MutDbConn<'a>,
@@ -27,11 +28,15 @@ impl<'a> Stepper<'a> {
 
         match verify_status {
             Ok(data) => match data {
-                Output::Nothing(_) => match date_type {
-                    DateType::Exact => *user_date = String::from("2022-01-01"),
-                    DateType::Monthly => *user_date = String::from("2022-01"),
-                    DateType::Yearly => *user_date = String::from("2022"),
-                },
+                Output::Nothing(_) => {
+                    let current_date = Local::now().naive_local();
+
+                    match date_type {
+                        DateType::Exact => *user_date = current_date.format("%Y-%m-%d").to_string(),
+                        DateType::Monthly => *user_date = current_date.format("%Y-%m").to_string(),
+                        DateType::Yearly => *user_date = current_date.format("%Y").to_string(),
+                    }
+                }
                 Output::Accepted(_) => match date_type {
                     DateType::Exact => {
                         let mut current_date =
@@ -208,6 +213,189 @@ impl<'a> Stepper<'a> {
             },
             Err(_) => {
                 return Err(SteppingError::InvalidTxType);
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn frequency(
+        mut self,
+        user_freq: &mut String,
+        step_type: StepType,
+    ) -> Result<(), SteppingError> {
+        let verify_status = self.conn.verify().frequency(user_freq);
+
+        match verify_status {
+            Ok(data) => match data {
+                Output::Accepted(_) => {
+                    let frequencies: Vec<String> =
+                        RecurrenceFrequency::iter().map(|f| f.to_string()).collect();
+
+                    let mut current_index =
+                        frequencies.iter().position(|f| f == user_freq).unwrap();
+
+                    match step_type {
+                        StepType::StepUp => {
+                            current_index = (current_index + 1) % frequencies.len();
+                        }
+                        StepType::StepDown => {
+                            current_index =
+                                (current_index + frequencies.len() - 1) % frequencies.len();
+                        }
+                    }
+
+                    *user_freq = frequencies[current_index].clone();
+                }
+                Output::Nothing(_) => {
+                    *user_freq = RecurrenceFrequency::Daily.to_string();
+                }
+            },
+            Err(_) => {
+                return Err(SteppingError::InvalidFrequency);
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn recur_interval(
+        mut self,
+        user_value: &mut String,
+        step_type: StepType,
+    ) -> Result<(), SteppingError> {
+        let verify_status = self.conn.verify().recur_interval(user_value);
+
+        match verify_status {
+            Ok(data) => match data {
+                Output::Accepted(_) => {
+                    let mut current = user_value
+                        .parse::<i32>()
+                        .map_err(|_| SteppingError::ParsingError(Field::RecurInterval))?;
+
+                    match step_type {
+                        StepType::StepUp => {
+                            if current < 9999 {
+                                current += 1;
+                            }
+                        }
+                        StepType::StepDown => {
+                            if current > 1 {
+                                current -= 1;
+                            }
+                        }
+                    }
+
+                    *user_value = current.to_string();
+                }
+                Output::Nothing(_) => {
+                    *user_value = "1".to_string();
+                }
+            },
+            Err(_) => {
+                return Err(SteppingError::InvalidRecurInterval);
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn recur_value(
+        mut self,
+        user_value: &mut String,
+        frequency: RecurrenceFrequency,
+        step_type: StepType,
+    ) -> Result<(), SteppingError> {
+        if let RecurrenceFrequency::Daily = frequency {
+            return Ok(());
+        }
+
+        let verify_status = self.conn.verify().recur_value(user_value, frequency);
+
+        if let RecurrenceFrequency::Weekly = frequency {
+            return match verify_status {
+                Ok(data) => match data {
+                    Output::Accepted(_) => {
+                        let mut current_index =
+                            WEEKDAY_NAMES.iter().position(|d| *d == user_value).unwrap();
+
+                        match step_type {
+                            StepType::StepUp => {
+                                current_index = (current_index + 1) % WEEKDAY_NAMES.len();
+                            }
+                            StepType::StepDown => {
+                                current_index =
+                                    (current_index + WEEKDAY_NAMES.len() - 1) % WEEKDAY_NAMES.len();
+                            }
+                        }
+
+                        *user_value = WEEKDAY_NAMES[current_index].to_string();
+                        Ok(())
+                    }
+                    Output::Nothing(_) => {
+                        *user_value = WEEKDAY_NAMES[0].to_string();
+                        Ok(())
+                    }
+                },
+                Err(_) => Err(SteppingError::InvalidRecurValue),
+            };
+        }
+
+        match verify_status {
+            Ok(data) => match data {
+                Output::Accepted(_) => {
+                    let mut current = user_value
+                        .parse::<i32>()
+                        .map_err(|_| SteppingError::ParsingError(Field::RecurValue))?;
+
+                    match step_type {
+                        StepType::StepUp => current = if current >= 31 { 1 } else { current + 1 },
+                        StepType::StepDown => current = if current <= 1 { 31 } else { current - 1 },
+                    }
+
+                    *user_value = current.to_string();
+                }
+                Output::Nothing(_) => {
+                    *user_value = "1".to_string();
+                }
+            },
+            Err(_) => {
+                return Err(SteppingError::InvalidRecurValue);
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn recur_month(
+        mut self,
+        user_value: &mut String,
+        step_type: StepType,
+    ) -> Result<(), SteppingError> {
+        let verify_status = self.conn.verify().recur_month(user_value);
+
+        match verify_status {
+            Ok(data) => match data {
+                Output::Accepted(_) => {
+                    let mut current_index =
+                        MONTH_NAMES.iter().position(|m| *m == user_value).unwrap();
+
+                    match step_type {
+                        StepType::StepUp => current_index = (current_index + 1) % MONTH_NAMES.len(),
+                        StepType::StepDown => {
+                            current_index =
+                                (current_index + MONTH_NAMES.len() - 1) % MONTH_NAMES.len();
+                        }
+                    }
+
+                    *user_value = MONTH_NAMES[current_index].to_string();
+                }
+                Output::Nothing(_) => {
+                    *user_value = MONTH_NAMES[0].to_string();
+                }
+            },
+            Err(_) => {
+                return Err(SteppingError::InvalidRecurMonth);
             }
         }
 
