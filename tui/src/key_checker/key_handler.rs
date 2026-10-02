@@ -613,11 +613,9 @@ impl<'a> InputKeyHandler<'a> {
             CurrentUi::AddTx => self.add_tx_data.move_index_right(self.add_tx_tab),
             CurrentUi::Search => {
                 self.search_data.move_index_right(self.search_tab);
-                self.lerp_state.clear_lerp(SEARCH_TABLE_ID);
             }
             CurrentUi::Recurring => {
                 self.recurring_data.move_index_right(self.recurring_tab);
-                self.lerp_state.clear_lerp(RECURRING_TABLE_ID);
             }
             CurrentUi::Chart => {
                 if !*self.chart_hidden_mode {
@@ -662,26 +660,20 @@ impl<'a> InputKeyHandler<'a> {
                         }
                         SummaryTab::Table => {}
                     }
-
-                    self.lerp_state.clear_lerp(SUMMARY_TABLE_ID);
                 }
             }
-            CurrentUi::Activity => {
-                match self.activity_tab {
-                    ActivityTab::Years => {
-                        self.activity_months.set_index_zero();
-                        self.activity_years.next_yearly();
-                        self.reload_activity_table()?;
-                    }
-                    ActivityTab::Months => {
-                        self.activity_months.next();
-                        self.reload_activity_table()?;
-                    }
-                    ActivityTab::List => {}
+            CurrentUi::Activity => match self.activity_tab {
+                ActivityTab::Years => {
+                    self.activity_months.set_index_zero();
+                    self.activity_years.next_yearly();
+                    self.reload_activity_table()?;
                 }
-
-                self.lerp_state.clear_lerp(ACTIVITY_TABLE_ID);
-            }
+                ActivityTab::Months => {
+                    self.activity_months.next();
+                    self.reload_activity_table()?;
+                }
+                ActivityTab::List => {}
+            },
             CurrentUi::Initial => {}
         }
 
@@ -2597,6 +2589,8 @@ impl InputKeyHandler<'_> {
             *self.summary_view = summary_view;
         }
 
+        self.lerp_state.clear_lerp(SUMMARY_TABLE_ID);
+
         Ok(())
     }
 
@@ -2644,6 +2638,8 @@ impl InputKeyHandler<'_> {
         *self.activity_table = TableData::new(self.activity_view.get_activity_table());
         self.activity_table.state = old_table_position;
 
+        self.lerp_state.clear_lerp(ACTIVITY_TABLE_ID);
+
         Ok(())
     }
 
@@ -2660,6 +2656,7 @@ impl InputKeyHandler<'_> {
             .collect();
         *self.recurring_table = TableData::new(items);
         self.recurring_table.state = old_table_position;
+        self.lerp_state.clear_lerp(RECURRING_TABLE_ID);
 
         Ok(())
     }

@@ -2172,7 +2172,7 @@ dependencies = [
 
 [[package]]
 name = "rex-app"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2187,7 +2187,7 @@ dependencies = [
 
 [[package]]
 name = "rex-db"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2201,14 +2201,14 @@ dependencies = [
 
 [[package]]
 name = "rex-shared"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "chrono",
 ]
 
 [[package]]
 name = "rex-tui"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "anyhow",
  "atty",
