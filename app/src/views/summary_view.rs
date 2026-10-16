@@ -3,7 +3,7 @@ use chrono::{Datelike, NaiveDate};
 use rex_db::ConnCache;
 use rex_db::models::{FetchNature, FullTx, TxType};
 use rex_shared::models::{Cent, Dollar};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::utils::{compare_change, compare_change_opt, get_percentages, month_year_to_unique};
 use crate::views::{
@@ -206,23 +206,29 @@ impl SummaryView {
         let mut income_tags = HashMap::new();
         let mut expense_tags = HashMap::new();
 
+        // Only the primary tag. In case in previous month tag x was secondary but in the current
+        // month x is primary tag, the amount will become inaccurate and secondary tag becomes
+        // counted. So do not count anything except the primary tag
         for tx in &self.txs {
-            for tag in &tx.tags {
-                match tx.tx_type {
-                    TxType::Income => {
-                        let value = income_tags.entry(tag.name.clone()).or_insert(Cent::new(0));
-                        *value += tx.amount;
-                    }
-                    TxType::Expense => {
-                        let value = expense_tags.entry(tag.name.clone()).or_insert(Cent::new(0));
-                        *value += tx.amount;
-                    }
-                    TxType::Transfer
-                    | TxType::Borrow
-                    | TxType::Lend
-                    | TxType::BorrowRepay
-                    | TxType::LendRepay => {}
+            // First tag is always the primary tag
+            let Some(tag) = tx.tags.first() else {
+                continue;
+            };
+
+            match tx.tx_type {
+                TxType::Income => {
+                    let value = income_tags.entry(tag.name.clone()).or_insert(Cent::new(0));
+                    *value += tx.amount;
                 }
+                TxType::Expense => {
+                    let value = expense_tags.entry(tag.name.clone()).or_insert(Cent::new(0));
+                    *value += tx.amount;
+                }
+                TxType::Transfer
+                | TxType::Borrow
+                | TxType::Lend
+                | TxType::BorrowRepay
+                | TxType::LendRepay => {}
             }
         }
 
@@ -258,20 +264,13 @@ impl SummaryView {
 
         let mut ongoing_month = 0;
 
-        let mut ongoing_date = NaiveDate::default();
-
-        let mut peak_earning = PeakMonthlyMovement::default();
-        let mut peak_expense = PeakMonthlyMovement::default();
-
-        let mut last_peak_earning = PeakMonthlyMovement::default();
-        let mut last_peak_expense = PeakMonthlyMovement::default();
+        // Income and expense totals per month, keyed by year-month
+        let mut monthly_totals: BTreeMap<i32, (NaiveDate, Cent, Cent)> = BTreeMap::new();
 
         let mut outstanding_borrows = Cent::new(0);
         let mut outstanding_lends = Cent::new(0);
 
         for tx in &self.txs {
-            ongoing_date = tx.date.date();
-
             let time_unique = month_year_to_unique(tx.date.month() as i32, tx.date.year());
 
             if ongoing_month == 0 {
@@ -281,17 +280,14 @@ impl SummaryView {
             if time_unique != ongoing_month {
                 ongoing_month = time_unique;
                 total_month_checked += 1;
-
-                if last_peak_earning.amount > peak_earning.amount {
-                    peak_earning = last_peak_earning;
-                    last_peak_earning = PeakMonthlyMovement::new(tx.date.date());
-                }
-
-                if last_peak_expense.amount > peak_expense.amount {
-                    peak_expense = last_peak_expense;
-                    last_peak_expense = PeakMonthlyMovement::new(tx.date.date());
-                }
             }
+
+            let month_start = tx.date.date().with_day(1).unwrap();
+            let month_total = monthly_totals.entry(time_unique).or_insert((
+                month_start,
+                Cent::new(0),
+                Cent::new(0),
+            ));
 
             match tx.tx_type {
                 TxType::Income => {
@@ -308,7 +304,7 @@ impl SummaryView {
                         biggest_earning.method.clone_from(&tx.from_method.name);
                     }
 
-                    last_peak_earning.amount += tx.amount;
+                    month_total.1 += tx.amount;
                 }
                 TxType::Expense => {
                     total_expense += tx.amount;
@@ -324,7 +320,7 @@ impl SummaryView {
                         biggest_expense.method.clone_from(&tx.from_method.name);
                     }
 
-                    last_peak_expense.amount += tx.amount;
+                    month_total.2 += tx.amount;
                 }
                 TxType::Borrow => {
                     outstanding_borrows += tx.amount;
@@ -344,14 +340,23 @@ impl SummaryView {
 
         total_month_checked += 1;
 
-        if last_peak_earning.amount > peak_earning.amount {
-            peak_earning = last_peak_earning;
-            peak_earning.date = ongoing_date;
-        }
+        let mut peak_earning = PeakMonthlyMovement::default();
+        let mut peak_expense = PeakMonthlyMovement::default();
 
-        if last_peak_expense.amount > peak_expense.amount {
-            peak_expense = last_peak_expense;
-            peak_expense.date = ongoing_date;
+        for (date, earning, expense) in monthly_totals.values() {
+            if *earning > peak_earning.amount {
+                peak_earning = PeakMonthlyMovement {
+                    date: *date,
+                    amount: *earning,
+                };
+            }
+
+            if *expense > peak_expense.amount {
+                peak_expense = PeakMonthlyMovement {
+                    date: *date,
+                    amount: *expense,
+                };
+            }
         }
 
         let (income_percentage, expense_percentage) =
@@ -363,7 +368,7 @@ impl SummaryView {
             Some(total_income.dollar() / f64::from(total_month_checked))
         };
 
-        let mut average_expense = if total_income == 0 {
+        let mut average_expense = if total_expense == 0 {
             Some(Dollar::new(0.0))
         } else {
             Some(total_expense.dollar() / f64::from(total_month_checked))
