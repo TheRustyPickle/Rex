@@ -15,15 +15,6 @@ pub(crate) struct PeakMonthlyMovement {
     pub(crate) amount: Cent,
 }
 
-impl PeakMonthlyMovement {
-    pub(crate) fn new(date: NaiveDate) -> Self {
-        Self {
-            date,
-            amount: Cent::new(0),
-        }
-    }
-}
-
 #[derive(Debug)]
 pub(crate) struct SummaryNet {
     pub(crate) total_income: Dollar,
