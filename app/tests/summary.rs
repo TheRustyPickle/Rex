@@ -188,6 +188,44 @@ fn summary_peak_across_months() {
 }
 
 #[test]
+fn summary_peak_does_not_accumulate_across_months() {
+    let file_name = "test_summary_peak_no_accumulate.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    // Jan is the true peak. Feb and Mar are each lower, but sum to more than Jan
+    for (date, income, expense) in [
+        ("2024-01-10", "1000.00", "800.00"),
+        ("2024-02-10", "600.00", "500.00"),
+        ("2024-03-10", "600.00", "500.00"),
+    ] {
+        add_tx(&mut db_conn, date, "I", "Cash", "", income, "Income", "A");
+        add_tx(&mut db_conn, date, "E", "Cash", "", expense, "Expense", "B");
+    }
+
+    let summary_view = db_conn
+        .get_summary_with_str("January", "2024", FetchNature::Yearly)
+        .unwrap();
+    let full = summary_view.generate_summary(None, &db_conn);
+
+    let peak = full.peak_array();
+    assert_eq!(peak[0][1], "01-2024");
+    assert_eq!(peak[0][2], "1000.00");
+    assert_eq!(peak[1][1], "01-2024");
+    assert_eq!(peak[1][2], "800.00");
+
+    // Same for all time
+    let summary_view = db_conn
+        .get_summary_with_str("January", "2024", FetchNature::All)
+        .unwrap();
+    let peak = summary_view.generate_summary(None, &db_conn).peak_array();
+    assert_eq!(peak[0][1], "01-2024");
+    assert_eq!(peak[0][2], "1000.00");
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
 fn summary_lend_borrows() {
     let file_name = "test_summary_lend_borrow.sqlite";
     let mut db_conn = create_test_db(file_name);
@@ -463,6 +501,62 @@ fn summary_tags_array_with_compare() {
     assert_eq!(work_row[1], "2500.00");
     // Should have compare columns (positions 6-7 after income/expense %)
     assert!(work_row.len() > 6, "Should have compare columns");
+
+    drop(db_conn);
+    fs::remove_file(file_name).unwrap();
+}
+
+#[test]
+fn summary_tags_compare_counts_primary_tag_only_on_both_sides() {
+    let file_name = "test_summary_tags_compare_primary.sqlite";
+    let mut db_conn = create_test_db(file_name);
+
+    // August: Work primary on one tx, secondary on another
+    add_tx(
+        &mut db_conn,
+        "2024-08-01",
+        "A",
+        "Cash",
+        "",
+        "500.00",
+        "Income",
+        "Work",
+    );
+    add_tx(
+        &mut db_conn,
+        "2024-08-02",
+        "B",
+        "Cash",
+        "",
+        "300.00",
+        "Income",
+        "Side, Work",
+    );
+    // September: the same Work income as the primary tag in August
+    add_tx(
+        &mut db_conn,
+        "2024-09-01",
+        "C",
+        "Cash",
+        "",
+        "500.00",
+        "Income",
+        "Work",
+    );
+
+    let sep = db_conn
+        .get_summary_with_str("September", "2024", FetchNature::Monthly)
+        .unwrap();
+    let aug = db_conn
+        .get_summary_with_str("August", "2024", FetchNature::Monthly)
+        .unwrap();
+
+    let tags = sep.tags_array(Some(&aug), &db_conn);
+    let work_row = tags.iter().find(|r| r[0] == "Work").unwrap();
+
+    assert_eq!(work_row[1], "500.00");
+    // 500 against 500, not against the 800 of every tx that merely mentions Work
+    assert_eq!(work_row[5], "↑0.00");
 
     drop(db_conn);
     fs::remove_file(file_name).unwrap();
