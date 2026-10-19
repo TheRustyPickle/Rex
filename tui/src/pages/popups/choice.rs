@@ -34,12 +34,12 @@ impl ChoicePopup {
                 title = "Configuration";
                 message = "Select an option to configure";
 
-                y_value = 13;
+                y_value = 14;
 
                 constraints = vec![
                     Constraint::Length(4),
                     Constraint::Min(1),
-                    Constraint::Length(8),
+                    Constraint::Length(9),
                 ];
             }
             ChoicePopupState::ConfigForced => {

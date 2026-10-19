@@ -60,6 +60,13 @@ impl InfoPopup {
                 x_value = 40;
                 y_value = 20;
             }
+            InfoPopupState::Notice(notice) => {
+                title = "Done";
+                message = notice.clone();
+
+                x_value = 50;
+                y_value = 12;
+            }
             InfoPopupState::ChoiceHelp => {
                 message = choice_help();
 

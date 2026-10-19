@@ -1,6 +1,6 @@
 use anyhow::Result;
 use atty::Stream;
-use rex_app::conn::get_conn;
+use rex_app::conn::{DbConn, OpenError};
 use std::env::set_current_dir;
 use std::fs::{self, File};
 use std::io::prelude::*;
@@ -11,7 +11,8 @@ use std::thread::spawn;
 
 use crate::config::{Config, migrate_config};
 use crate::outputs::HandlingOutput;
-use crate::page_handler::start_app;
+use crate::page_handler::{ask_password, start_app};
+use crate::theme::Theme;
 use crate::utility::{
     already_relaunched, check_version, enter_tui_interface, exit_tui_interface,
     migrate_to_new_schema, start_terminal,
@@ -89,7 +90,11 @@ pub fn initialize_app(
         migrated_db_path.to_path_buf()
     };
 
-    let mut conn = get_conn(new_db_path.display().to_string().as_str());
+    let Some(mut conn) = open_database(new_db_path.display().to_string().as_str(), &mut config)?
+    else {
+        // Quit from the password screen
+        return Ok(());
+    };
 
     let v1_migration_done = config.migration_v1_done.unwrap_or(false);
 
@@ -126,4 +131,41 @@ pub fn initialize_app(
     }
 
     Ok(())
+}
+
+/// Opens the database, asking for the password first if it is encrypted. Returns `None` if the
+/// user quits instead of entering one.
+fn open_database(path: &str, config: &mut Config) -> Result<Option<DbConn>> {
+    match DbConn::open(path, None) {
+        Ok(conn) => {
+            if config.db_encrypted.unwrap_or(false) {
+                config.set_db_encrypted(false)?;
+            }
+
+            return Ok(Some(conn));
+        }
+        Err(OpenError::NotReadable) => {}
+        Err(e) => return Err(e.into()),
+    }
+
+    let theme = Theme::new_index(config.theme_index.unwrap_or(0));
+    let mut error = None;
+
+    loop {
+        let Some(password) = ask_password(&theme, error)? else {
+            return Ok(None);
+        };
+
+        match DbConn::open(path, Some(&password)) {
+            Ok(conn) => {
+                if !config.db_encrypted.unwrap_or(false) {
+                    config.set_db_encrypted(true)?;
+                }
+
+                return Ok(Some(conn));
+            }
+            Err(OpenError::NotReadable) => error = Some("Wrong password"),
+            Err(e) => return Err(e.into()),
+        }
+    }
 }
