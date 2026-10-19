@@ -2,6 +2,7 @@ pub mod models;
 mod schema;
 
 use anyhow::{Result, anyhow};
+use diesel::connection::SimpleConnection;
 use diesel::prelude::*;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 use std::collections::{HashMap, HashSet};
@@ -91,19 +92,70 @@ impl Cache {
     }
 }
 
-#[must_use]
-pub fn get_connection(db_url: &str) -> SqliteConnection {
-    let mut conn =
-        SqliteConnection::establish(db_url).expect("Failed to create connection to database");
+/// Why a database could not be opened
+#[derive(Debug, thiserror::Error)]
+pub enum OpenError {
+    /// SQLite could not read the file. With an encrypted database this is the only signal a wrong
+    /// or missing password gives, and the same goes for a plain database opened with a password
+    #[error("Wrong password, or the file is not a database")]
+    NotReadable,
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
+}
+
+/// Quotes text for use inside a SQL string literal
+fn sql_quote(text: &str) -> String {
+    format!("'{}'", text.replace('\'', "''"))
+}
+
+/// Opens the database, unlocking it with `key` if given, then runs pending migrations. A wrong
+/// key is reported as [`OpenError::NotReadable`] instead of a panic or a failing later query.
+pub fn open_connection(db_url: &str, key: Option<&str>) -> Result<SqliteConnection, OpenError> {
+    let mut conn = SqliteConnection::establish(db_url).map_err(|e| OpenError::Other(e.into()))?;
+
+    if let Some(key) = key {
+        conn.batch_execute(&format!("PRAGMA key = {};", sql_quote(key)))
+            .map_err(|e| OpenError::Other(e.into()))?;
+    }
+
+    // Opening never reads the file, so a wrong key only shows on the first real query
+    if conn
+        .batch_execute("SELECT count(*) FROM sqlite_master;")
+        .is_err()
+    {
+        return Err(OpenError::NotReadable);
+    }
 
     conn.run_pending_migrations(MIGRATIONS)
-        .expect("Failed to run database migrations");
+        .map_err(|e| OpenError::Other(anyhow!("Failed to run database migrations: {e}")))?;
 
-    diesel::sql_query("PRAGMA foreign_keys = ON;")
-        .execute(&mut conn)
-        .unwrap();
+    conn.batch_execute("PRAGMA foreign_keys = ON;")
+        .map_err(|e| OpenError::Other(e.into()))?;
 
-    conn
+    Ok(conn)
+}
+
+/// Changes the key of an already unlocked encrypted database
+pub fn change_key(conn: &mut SqliteConnection, new_key: &str) -> Result<()> {
+    conn.batch_execute(&format!("PRAGMA rekey = {};", sql_quote(new_key)))?;
+    Ok(())
+}
+
+/// Copies the whole database into a new encrypted file at `target` using `key`
+pub fn export_encrypted(conn: &mut SqliteConnection, target: &str, key: &str) -> Result<()> {
+    conn.batch_execute(&format!(
+        "ATTACH DATABASE {} AS encrypted KEY {};
+         SELECT sqlcipher_export('encrypted');
+         DETACH DATABASE encrypted;",
+        sql_quote(target),
+        sql_quote(key)
+    ))?;
+    Ok(())
+}
+
+#[must_use]
+pub fn get_connection(db_url: &str) -> SqliteConnection {
+    open_connection(db_url, None).expect("Failed to create connection to database")
 }
 
 #[must_use]
