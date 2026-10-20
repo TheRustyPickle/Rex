@@ -1,9 +1,13 @@
-use anyhow::{Error, Result};
+use anyhow::{Context, Error, Result, anyhow};
 use chrono::{Local, NaiveDate};
-use diesel::{Connection, SqliteConnection};
+use diesel::sql_types::{BigInt, Text};
+use diesel::{Connection, QueryableByName, RunQueryDsl, SqliteConnection, sql_query};
+pub use rex_db::OpenError;
 use rex_db::models::{Balance, FullTx, NewSearch, NewTx, RecurringTx, Tag, Tx, TxMethod};
 pub use rex_db::models::{FetchNature, FullRecurringTx, NewRecurringTx, RecurrenceFrequency};
-use rex_db::{Cache, ConnCache, get_connection, get_connection_no_migrations};
+use rex_db::{
+    Cache, ConnCache, change_key, export_encrypted, get_connection_no_migrations, open_connection,
+};
 use std::collections::{HashMap, HashSet};
 
 use crate::migration::migrate_to_v1;
@@ -58,6 +62,8 @@ impl ConnCache for MutDbConn<'_> {
 pub struct DbConn {
     pub conn: SqliteConnection,
     pub cache: Cache,
+    location: String,
+    encrypted: bool,
 }
 
 impl ConnCache for DbConn {
@@ -73,7 +79,12 @@ impl ConnCache for DbConn {
 impl DbConn {
     #[must_use]
     pub fn new(db_url: &str) -> Self {
-        let conn = get_connection(db_url);
+        Self::open(db_url, None).expect("Failed to create connection to database")
+    }
+
+    /// Opens the database, unlocking it with `key` if it is encrypted.
+    pub fn open(db_url: &str, key: Option<&str>) -> Result<Self, OpenError> {
+        let conn = open_connection(db_url, key)?;
 
         let mut to_return = DbConn {
             conn,
@@ -82,13 +93,15 @@ impl DbConn {
                 tx_methods: HashMap::new(),
                 details: HashSet::new(),
             },
+            location: db_url.to_string(),
+            encrypted: key.is_some(),
         };
 
         to_return.reload_methods();
         to_return.reload_tags();
         to_return.reload_details();
 
-        to_return
+        Ok(to_return)
     }
 
     #[must_use]
@@ -101,7 +114,81 @@ impl DbConn {
                 tx_methods: HashMap::new(),
                 details: HashSet::new(),
             },
+            location: db_url.to_string(),
+            encrypted: false,
         }
+    }
+
+    #[must_use]
+    pub fn is_encrypted(&self) -> bool {
+        self.encrypted
+    }
+
+    /// Path of the database file this connection is using
+    #[must_use]
+    pub fn location(&self) -> &str {
+        &self.location
+    }
+
+    /// Encrypts the database with `password`, or changes the password if it already is.
+    ///
+    /// An unencrypted database is copied into a new encrypted file, which is checked to hold
+    /// the same rows before it replaces the original. Nothing is touched if any step fails.
+    pub fn set_password(&mut self, password: &str) -> Result<()> {
+        if password.is_empty() {
+            return Err(anyhow!("Password cannot be empty"));
+        }
+
+        if self.encrypted {
+            change_key(&mut self.conn, password)?;
+            return Ok(());
+        }
+
+        let temp_path = format!("{}.encrypting", self.location);
+        remove_file_if_exists(&temp_path)?;
+
+        let result = self.encrypt_into(&temp_path, password);
+
+        if result.is_err() {
+            let _ = std::fs::remove_file(&temp_path);
+        }
+
+        result
+    }
+
+    fn encrypt_into(&mut self, temp_path: &str, password: &str) -> Result<()> {
+        export_encrypted(&mut self.conn, temp_path, password)
+            .context("Failed to create the encrypted copy")?;
+
+        // Prove the copy can be opened with the password and holds everything before the
+        // original is replaced
+        let mut copy = open_connection(temp_path, Some(password))
+            .map_err(|e| anyhow!("Encrypted copy could not be reopened: {e}"))?;
+
+        let expected = table_row_counts(&mut self.conn)?;
+        let actual = table_row_counts(&mut copy)?;
+
+        if expected != actual {
+            return Err(anyhow!("Encrypted copy does not match the original data"));
+        }
+
+        // The files can't be swapped while either connection holds them open
+        drop(copy);
+        let placeholder = SqliteConnection::establish(":memory:")?;
+        drop(std::mem::replace(&mut self.conn, placeholder));
+
+        let swapped = std::fs::rename(temp_path, &self.location)
+            .with_context(|| format!("Failed to replace {}", self.location));
+
+        // Reopen whichever file is in place so the connection is never left on the placeholder
+        let key = swapped.is_ok().then_some(password);
+        self.conn = open_connection(&self.location, key)
+            .map_err(|e| anyhow!("Failed to reopen the database: {e}"))?;
+
+        swapped?;
+        self.encrypted = true;
+
+        Ok(())
     }
 
     pub(crate) fn reload_methods(&mut self) {
@@ -575,4 +662,43 @@ impl DbConn {
             migrate_to_v1(&mut db_conn)
         })
     }
+}
+
+fn remove_file_if_exists(path: &str) -> Result<()> {
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(e.into()),
+    }
+}
+
+/// Row count of every table, to compare two databases that should hold the same data
+fn table_row_counts(conn: &mut SqliteConnection) -> Result<Vec<(String, i64)>> {
+    #[derive(QueryableByName)]
+    struct TableName {
+        #[diesel(sql_type = Text)]
+        name: String,
+    }
+
+    #[derive(QueryableByName)]
+    struct Count {
+        #[diesel(sql_type = BigInt)]
+        count: i64,
+    }
+
+    let tables: Vec<TableName> = sql_query(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' \
+         ORDER BY name",
+    )
+    .load(conn)?;
+
+    let mut counts = Vec::new();
+
+    for table in tables {
+        let count: Count = sql_query(format!("SELECT COUNT(*) AS count FROM \"{}\"", table.name))
+            .get_result(conn)?;
+        counts.push((table.name, count.count));
+    }
+
+    Ok(counts)
 }

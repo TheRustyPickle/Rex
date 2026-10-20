@@ -18,6 +18,7 @@ pub enum PopupType {
     Reposition(RepositionPopup),
     Input(InputPopup),
     NewPaths(NewPathsPopup),
+    Password(PasswordPopup),
     Nothing,
 }
 
@@ -35,6 +36,7 @@ pub enum InfoPopupState {
     RepositionHelp,
     Error(String),
     ShowDetails(String),
+    Notice(String),
 }
 
 pub struct InfoPopup {
@@ -60,6 +62,30 @@ pub struct NewPathsPopup {
     pub new_location: bool,
     pub paths: Vec<PathBuf>,
     pub table: TableData,
+}
+
+pub const MIN_PASSWORD_LEN: usize = 8;
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum PasswordStage {
+    Enter,
+    Confirm,
+}
+
+pub struct PasswordPopup {
+    pub stage: PasswordStage,
+    pub text: String,
+    first: String,
+    pub status: String,
+    /// The database already has a password, so this replaces it instead of creating one
+    pub changing: bool,
+}
+
+pub enum PasswordOutcome {
+    /// More input needed. The status explains why when something was wrong
+    Pending,
+    /// Entered twice, identical and long enough
+    Accepted(String),
 }
 
 pub struct InputPopup {
@@ -121,6 +147,9 @@ pub enum ConfigChoices {
     BackupPaths,
     #[strum(to_string = "Rename a Tag")]
     RenameTag,
+    /// The text changes to match whether a password exists already
+    #[strum(to_string = "Set a password for app data")]
+    SetPassword,
 }
 
 impl InfoPopup {
@@ -162,6 +191,7 @@ impl PopupType {
             PopupType::Reposition(reposition) => reposition.show_ui(f, theme),
             PopupType::NewPaths(new_paths) => new_paths.show_ui(f, theme),
             PopupType::Input(input) => input.show_ui(f, theme),
+            PopupType::Password(password) => password.show_ui(f, theme),
             PopupType::Nothing => {}
         }
     }
@@ -209,7 +239,7 @@ impl PopupType {
                     reposition.reposition_selected = true;
                 }
             }
-            PopupType::Input(_) | PopupType::Nothing => unreachable!(),
+            PopupType::Input(_) | PopupType::Password(_) | PopupType::Nothing => unreachable!(),
         }
     }
 
@@ -248,7 +278,7 @@ impl PopupType {
                     reposition.reposition_selected = true;
                 }
             }
-            PopupType::Input(_) | PopupType::Nothing => unreachable!(),
+            PopupType::Input(_) | PopupType::Password(_) | PopupType::Nothing => unreachable!(),
         }
     }
 
@@ -324,6 +354,7 @@ impl PopupType {
             PopupType::Info(_)
             | PopupType::Choice(_)
             | PopupType::Input(_)
+            | PopupType::Password(_)
             | PopupType::NewPaths(_)
             | PopupType::Nothing => {}
         }
@@ -354,9 +385,18 @@ impl PopupType {
         }
     }
 
-    pub fn new_choice_config(theme: &Theme) -> Self {
-        let choices: Vec<ChoiceDetails> =
-            ConfigChoices::iter().map(|v| v.to_choice(theme)).collect();
+    pub fn new_choice_config(theme: &Theme, has_password: bool) -> Self {
+        let choices: Vec<ChoiceDetails> = ConfigChoices::iter()
+            .map(|v| {
+                let mut choice = v.to_choice(theme);
+
+                if has_password && matches!(v, ConfigChoices::SetPassword) {
+                    choice.text = String::from("Change the password of app data");
+                }
+
+                choice
+            })
+            .collect();
 
         let table_items = choices.iter().map(|c| vec![c.text.clone()]).collect();
         let mut table_data = TableData::new(table_items);
@@ -691,5 +731,189 @@ impl PopupType {
                 }
             }
         }
+    }
+
+    pub fn new_password(changing: bool) -> Self {
+        PopupType::Password(PasswordPopup {
+            stage: PasswordStage::Enter,
+            text: String::new(),
+            first: String::new(),
+            status: format!("Use at least {MIN_PASSWORD_LEN} characters"),
+            changing,
+        })
+    }
+
+    pub fn password_char(&mut self, char: Option<char>) {
+        if let PopupType::Password(password) = self {
+            match char {
+                Some(c) => password.text.push(c),
+                None => {
+                    password.text.pop();
+                }
+            }
+        }
+    }
+
+    pub fn accept_password(&mut self) -> PasswordOutcome {
+        let PopupType::Password(password) = self else {
+            return PasswordOutcome::Pending;
+        };
+
+        match password.stage {
+            PasswordStage::Enter => {
+                if password.text.chars().count() < MIN_PASSWORD_LEN {
+                    password.status = format!("Needs at least {MIN_PASSWORD_LEN} characters");
+                    return PasswordOutcome::Pending;
+                }
+
+                password.first = std::mem::take(&mut password.text);
+                password.stage = PasswordStage::Confirm;
+                password.status = String::from("Enter the same password again");
+
+                PasswordOutcome::Pending
+            }
+            PasswordStage::Confirm => {
+                if password.text != password.first {
+                    password.text.clear();
+                    password.first.clear();
+                    password.stage = PasswordStage::Enter;
+                    password.status = String::from("Passwords did not match. Start again");
+
+                    return PasswordOutcome::Pending;
+                }
+
+                PasswordOutcome::Accepted(std::mem::take(&mut password.text))
+            }
+        }
+    }
+
+    /// Shows why saving the password failed and starts over
+    pub fn password_failed(&mut self, error: &str) {
+        if let PopupType::Password(password) = self {
+            password.text.clear();
+            password.first.clear();
+            password.stage = PasswordStage::Enter;
+            password.status = format!("Failed: {error}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod password_tests {
+    use super::*;
+
+    fn type_text(popup: &mut PopupType, text: &str) {
+        for c in text.chars() {
+            popup.password_char(Some(c));
+        }
+    }
+
+    fn status(popup: &PopupType) -> &str {
+        let PopupType::Password(password) = popup else {
+            panic!("not a password popup");
+        };
+        &password.status
+    }
+
+    fn stage(popup: &PopupType) -> PasswordStage {
+        let PopupType::Password(password) = popup else {
+            panic!("not a password popup");
+        };
+        password.stage
+    }
+
+    #[test]
+    fn matching_passwords_are_accepted_after_confirming() {
+        let mut popup = PopupType::new_password(false);
+
+        type_text(&mut popup, "correct horse");
+        assert!(matches!(popup.accept_password(), PasswordOutcome::Pending));
+        assert_eq!(stage(&popup), PasswordStage::Confirm);
+
+        type_text(&mut popup, "correct horse");
+        let PasswordOutcome::Accepted(password) = popup.accept_password() else {
+            panic!("should have been accepted");
+        };
+        assert_eq!(password, "correct horse");
+    }
+
+    #[test]
+    fn short_passwords_are_refused_and_stay_on_the_first_step() {
+        let mut popup = PopupType::new_password(false);
+
+        type_text(&mut popup, "1234567");
+        assert!(matches!(popup.accept_password(), PasswordOutcome::Pending));
+
+        assert_eq!(stage(&popup), PasswordStage::Enter);
+        assert!(status(&popup).contains("at least 8"));
+    }
+
+    #[test]
+    fn exactly_the_minimum_length_is_enough() {
+        let mut popup = PopupType::new_password(false);
+
+        type_text(&mut popup, "12345678");
+        popup.accept_password();
+
+        assert_eq!(stage(&popup), PasswordStage::Confirm);
+    }
+
+    #[test]
+    fn length_counts_characters_not_bytes() {
+        let mut popup = PopupType::new_password(false);
+
+        // 4 characters, 8 bytes
+        type_text(&mut popup, "éééé");
+        popup.accept_password();
+
+        assert_eq!(stage(&popup), PasswordStage::Enter);
+    }
+
+    #[test]
+    fn a_mismatch_starts_over_and_clears_both_entries() {
+        let mut popup = PopupType::new_password(false);
+
+        type_text(&mut popup, "correct horse");
+        popup.accept_password();
+        type_text(&mut popup, "correct horsf");
+        assert!(matches!(popup.accept_password(), PasswordOutcome::Pending));
+
+        assert_eq!(stage(&popup), PasswordStage::Enter);
+        assert!(status(&popup).contains("did not match"));
+
+        // The first attempt must not linger as the thing to match
+        type_text(&mut popup, "another one");
+        popup.accept_password();
+        type_text(&mut popup, "correct horse");
+        assert!(matches!(popup.accept_password(), PasswordOutcome::Pending));
+    }
+
+    #[test]
+    fn backspace_removes_the_last_character() {
+        let mut popup = PopupType::new_password(false);
+
+        type_text(&mut popup, "abc");
+        popup.password_char(None);
+        popup.password_char(None);
+        popup.password_char(None);
+        // Nothing left to remove
+        popup.password_char(None);
+
+        let PopupType::Password(password) = &popup else {
+            panic!();
+        };
+        assert!(password.text.is_empty());
+    }
+
+    #[test]
+    fn a_failure_shows_its_reason_and_starts_over() {
+        let mut popup = PopupType::new_password(false);
+
+        type_text(&mut popup, "correct horse");
+        popup.accept_password();
+        popup.password_failed("disk is full");
+
+        assert_eq!(stage(&popup), PasswordStage::Enter);
+        assert!(status(&popup).contains("disk is full"));
     }
 }

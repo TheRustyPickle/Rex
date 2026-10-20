@@ -5,6 +5,7 @@ use rex_app::ui_helper::{DateType, StepType};
 use rex_app::views::{ActivityView, ChartView, FullSummary, SearchView, SummaryView, TxViewGroup};
 use std::collections::HashMap;
 use std::fmt::Write;
+use std::path::PathBuf;
 
 use crate::config::Config;
 use crate::outputs::HandlingOutput;
@@ -15,8 +16,8 @@ use crate::page_handler::{
 };
 use crate::pages::{
     ACTIVITY_TABLE_ID, ChoicePopupState, ConfigChoices, DeletionChoices, HOME_TABLE_ID,
-    InfoPopupState, MovementDirection, NewPathChoices, PopupType, RECURRING_TABLE_ID,
-    SEARCH_TABLE_ID, SUMMARY_TABLE_ID,
+    InfoPopupState, MovementDirection, NewPathChoices, PasswordOutcome, PopupType,
+    RECURRING_TABLE_ID, SEARCH_TABLE_ID, SUMMARY_TABLE_ID,
 };
 use crate::theme::Theme;
 use crate::tx_handler::TxData;
@@ -282,12 +283,12 @@ impl<'a> InputKeyHandler<'a> {
                 let status = InfoPopupState::RepositionHelp;
                 *self.popup_status = PopupType::new_info(status);
             }
-            PopupType::Input(_) => unreachable!(),
+            PopupType::Input(_) | PopupType::Password(_) => unreachable!(),
         }
     }
 
     pub fn do_config_popup(&mut self) {
-        *self.popup_status = PopupType::new_choice_config(self.theme);
+        *self.popup_status = PopupType::new_choice_config(self.theme, self.conn.is_encrypted());
     }
 
     /// Turns on deletion confirmation popup for the selected transaction
@@ -931,6 +932,9 @@ impl<'a> InputKeyHandler<'a> {
                     ConfigChoices::AddNewTxMethod => {
                         *self.popup_status = PopupType::new_input(None, false);
                     }
+                    ConfigChoices::SetPassword => {
+                        *self.popup_status = PopupType::new_password(self.conn.is_encrypted());
+                    }
                 }
             }
             ChoicePopupState::TxMethods => {
@@ -1051,6 +1055,49 @@ impl<'a> InputKeyHandler<'a> {
             KeyCode::Right => self.popup_status.move_cursor(MovementDirection::Right),
             _ => {}
         }
+
+        Ok(())
+    }
+
+    pub fn handle_popup_password(&mut self) -> Result<()> {
+        match self.key.code {
+            KeyCode::Enter => {
+                if let PasswordOutcome::Accepted(password) = self.popup_status.accept_password() {
+                    self.save_password(&password)?;
+                }
+            }
+            KeyCode::Esc => self.do_empty_popup(),
+            KeyCode::Backspace => self.popup_status.password_char(None),
+            KeyCode::Char(a) => self.popup_status.password_char(Some(a)),
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    /// Encrypts the database with the password, or changes it if there already is one
+    fn save_password(&mut self, password: &str) -> Result<()> {
+        let changing = self.conn.is_encrypted();
+
+        if let Err(e) = self.conn.set_password(password) {
+            self.popup_status.password_failed(&e.to_string());
+            return Ok(());
+        }
+
+        self.config.set_db_encrypted(true)?;
+
+        // Backups and the default location hold copies from before the password existed, so
+        // replace them right away instead of waiting for the app to close
+        self.config
+            .save_backup(&PathBuf::from(self.conn.location()));
+
+        let notice = if changing {
+            "Password changed. The new password will be asked the next time Rex starts"
+        } else {
+            "Database encrypted. The password will be asked every time Rex starts. A forgotten password cannot be recovered"
+        };
+
+        *self.popup_status = PopupType::new_info(InfoPopupState::Notice(notice.to_string()));
 
         Ok(())
     }

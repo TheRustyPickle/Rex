@@ -12,7 +12,8 @@ anyhow.workspace = true
 chrono.workspace = true
 diesel.workspace = true
 diesel_migrations = "2.3.2"
-libsqlite3-sys = { version = "0.38.2", features = ["bundled"] }
+libsqlite3-sys = { version = "0.38.2", features = ["bundled-sqlcipher-vendored-openssl"] }
 rex-shared.workspace = true
 strum.workspace = true
 strum_macros.workspace = true
+thiserror.workspace = true

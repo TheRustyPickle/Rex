@@ -53,6 +53,7 @@ pub fn popup_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutput
             _ => handler.do_empty_popup(),
         },
         PopupType::Input(_) => handler.handle_popup_input()?,
+        PopupType::Password(_) => handler.handle_popup_password()?,
         PopupType::Nothing => unreachable!(),
     }
     Ok(None)
