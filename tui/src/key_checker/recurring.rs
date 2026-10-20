@@ -27,6 +27,7 @@ pub fn recurring_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOu
                 KeyCode::Char('w') => handler.go_search(),
                 KeyCode::Char('y') => handler.go_activity(),
                 KeyCode::Char('t') => handler.next_theme()?,
+                KeyCode::Char('P') => handler.toggle_privacy()?,
                 KeyCode::Up => handler.handle_up_arrow(),
                 KeyCode::Down => handler.handle_down_arrow(),
                 KeyCode::Enter => handler.select_date_field(),

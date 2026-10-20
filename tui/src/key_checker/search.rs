@@ -27,6 +27,7 @@ pub fn search_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutpu
                 KeyCode::Char('y') => handler.go_activity(),
                 KeyCode::Char('u') => handler.go_recurring(),
                 KeyCode::Char('t') => handler.next_theme()?,
+                KeyCode::Char('P') => handler.toggle_privacy()?,
                 KeyCode::Up => handler.handle_up_arrow(),
                 KeyCode::Down => handler.handle_down_arrow(),
                 KeyCode::Enter => handler.select_date_field(),
