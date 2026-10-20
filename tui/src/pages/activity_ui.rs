@@ -7,7 +7,9 @@ use thousands::Separable;
 
 use crate::page_handler::{ActivityTab, IndexedData, TableData};
 use crate::theme::Theme;
-use crate::utility::{LerpState, create_tab, main_block, styled_block, tab_highlight_style};
+use crate::utility::{
+    LerpState, PRIVACY_MASK, create_tab, main_block, styled_block, tab_highlight_style,
+};
 
 pub const ACTIVITY_TABLE_ID: &str = "activity_table_row";
 
@@ -20,6 +22,7 @@ pub fn activity_ui(
     table_data: &mut TableData,
     lerp_state: &mut LerpState,
     theme: &Theme,
+    privacy: bool,
 ) {
     let activity_txs_data = activity_view.get_activity_txs_table(table_data.state.selected());
     let mut activity_txs_table = TableData::new(activity_txs_data);
@@ -122,7 +125,12 @@ pub fn activity_ui(
         // The first column is the date, which gets no separators. A yearly search
         // would otherwise end up with a comma in the year
         let mut first_index_passed = false;
-        let cells = item.iter().map(|c| {
+        let cells = item.iter().enumerate().map(|(index, c)| {
+            // Index 3 is the Amount column
+            if privacy && index == 3 {
+                return Cell::from(PRIVACY_MASK);
+            }
+
             if first_index_passed {
                 Cell::from(c.separate_with_commas())
             } else {
