@@ -10,7 +10,7 @@ use crate::outputs::TxType;
 use crate::page_handler::{LogType, TableData, TxTab};
 use crate::theme::Theme;
 use crate::tx_handler::TxData;
-use crate::utility::{LerpState, main_block, styled_block};
+use crate::utility::{LerpState, PRIVACY_MASK, main_block, styled_block};
 
 pub const SEARCH_TABLE_ID: &str = "search_table_row";
 
@@ -22,6 +22,7 @@ pub fn search_ui(
     date_type: DateType,
     lerp_state: &mut LerpState,
     theme: &Theme,
+    privacy: bool,
 ) {
     // Get the data to insert into the Status widget of this page
 
@@ -59,6 +60,11 @@ pub fn search_ui(
         .map(|(row_index, item)| {
             let height = 1;
             let cells = item.iter().enumerate().map(|(index, c)| {
+                // Index 3 is the Amount column
+                if privacy && index == 3 {
+                    return Cell::from(PRIVACY_MASK);
+                }
+
                 let Ok(parsed_num) = c.parse::<f64>() else {
                     if index == 0 {
                         return Cell::from(c.clone());

@@ -8,7 +8,9 @@ use thousands::Separable;
 
 use crate::page_handler::{HomeRow, HomeTab, IndexedData, TableData};
 use crate::theme::Theme;
-use crate::utility::{LerpState, create_tab, main_block, styled_block, tab_highlight_style};
+use crate::utility::{
+    LerpState, PRIVACY_MASK, create_tab, main_block, styled_block, tab_highlight_style,
+};
 
 pub const HOME_TABLE_ID: &str = "home_table_row";
 
@@ -32,6 +34,7 @@ pub fn home_ui(
     lerp_state: &mut LerpState,
     view_group: &mut TxViewGroup,
     theme: &Theme,
+    privacy: bool,
     conn: &mut DbConn,
 ) {
     let all_methods: Vec<String> = conn
@@ -84,6 +87,11 @@ pub fn home_ui(
         .enumerate()
         .map(|(row_index, item)| {
             let cells = item.iter().enumerate().map(|(index, c)| {
+                // Index 3 is the Amount column
+                if privacy && index == 3 {
+                    return Cell::from(PRIVACY_MASK);
+                }
+
                 let Ok(parsed_num) = c.parse::<f64>() else {
                     return Cell::from(c.separate_with_commas());
                 };
@@ -169,6 +177,10 @@ pub fn home_ui(
                 };
 
                 index += 1;
+
+                if privacy {
+                    return Cell::from(PRIVACY_MASK);
+                }
 
                 // If loading was complete then this value is to be shown
                 let actual_data: f64 = if row_type != HomeRow::Changes {

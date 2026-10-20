@@ -10,6 +10,7 @@ pub const H: &str = "H: Show help";
 pub const V: &str = "V: Show selected transaction details";
 pub const J: &str = "J: Configuration";
 pub const T: &str = "T: Cycle through themes";
+pub const PRIVACY: &str = "Shift+P: Hide or show balances and amounts";
 
 pub fn new_update_text(data: &[String]) -> String {
     format!(
@@ -54,6 +55,7 @@ Example amount: 100 + b, b + b, 5 * b, 1.2k + 1m
 
 {F}
 {T}
+{PRIVACY}
 {R}
 {Z}
 {Y}
@@ -81,6 +83,7 @@ Arrow Left/Right: Move value of the widget
 
 {F}
 {T}
+{PRIVACY}
 {A}
 {Z}
 {Y}
@@ -108,6 +111,7 @@ Arrow Left/Right: Move value of the widget
 
 {F}
 {T}
+{PRIVACY}
 {A}
 {R}
 {Y}
@@ -138,6 +142,7 @@ Swapping transaction location will only work if they are on the same date.
 
 {A}
 {T}
+{PRIVACY}
 {R}
 {Z}
 {Y}
@@ -194,6 +199,7 @@ Example amount : <1000, >=10000
 
 {F}
 {T}
+{PRIVACY}
 {A}
 {R}
 {Z}
@@ -220,6 +226,7 @@ Arrow Left/Right: Move value of the widget
 
 {F}
 {T}
+{PRIVACY}
 {A}
 {R}
 {Z}
@@ -271,6 +278,7 @@ Calculation: Amount field supports simple calculation with +, -, *, /
 
 {F}
 {T}
+{PRIVACY}
 {A}
 {R}
 {Z}

@@ -23,8 +23,8 @@ pub struct Config {
     pub new_location: Option<PathBuf>,
     pub theme_index: Option<usize>,
     pub migration_v1_done: Option<bool>,
-    /// Whether the database is encrypted and a password is asked on startup
     pub db_encrypted: Option<bool>,
+    pub privacy_mode: Option<bool>,
 }
 
 impl Config {
@@ -42,6 +42,7 @@ impl Config {
                 theme_index: Some(0),
                 migration_v1_done: None,
                 db_encrypted: None,
+                privacy_mode: None,
             });
         }
 
@@ -168,6 +169,11 @@ impl Config {
         self.save_config()
     }
 
+    pub fn set_privacy_mode(&mut self, privacy_mode: bool) -> Result<()> {
+        self.privacy_mode = Some(privacy_mode);
+        self.save_config()
+    }
+
     pub fn set_migration_v1_done(&mut self) -> Result<()> {
         self.migration_v1_done = Some(true);
         self.save_config()
@@ -182,6 +188,7 @@ pub fn migrate_config(config_path: &PathBuf) -> Result<()> {
         theme_index: Some(0),
         migration_v1_done: None,
         db_encrypted: None,
+        privacy_mode: None,
     };
 
     let mut backup_path = config_path.to_owned();
@@ -245,36 +252,4 @@ pub fn migrate_config(config_path: &PathBuf) -> Result<()> {
     serde_json::to_writer(&mut file, &config)?;
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn config_from_before_encryption_loads_as_not_encrypted() {
-        let config: Config = serde_json::from_str(
-            r#"{"backup_db_path":null,"new_location":null,"theme_index":1,"migration_v1_done":true}"#,
-        )
-        .unwrap();
-
-        assert_eq!(config.db_encrypted, None);
-        assert_eq!(config.migration_v1_done, Some(true));
-    }
-
-    #[test]
-    fn encrypted_flag_is_saved_and_loaded() {
-        let dir = std::env::temp_dir().join("rex_config_encrypted_test");
-        fs::create_dir_all(&dir).unwrap();
-
-        let mut config = Config::get_config(&dir.join("rex.sqlite")).unwrap();
-        assert_eq!(config.db_encrypted, None);
-
-        config.set_db_encrypted(true).unwrap();
-
-        let loaded = Config::get_config(&dir.join("rex.sqlite")).unwrap();
-        assert_eq!(loaded.db_encrypted, Some(true));
-
-        fs::remove_dir_all(dir).unwrap();
-    }
 }

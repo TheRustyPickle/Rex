@@ -19,6 +19,7 @@ pub fn activity_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOut
             KeyCode::Char('u') => handler.go_recurring(),
             KeyCode::Char('v') => handler.show_activity_tx_details()?,
             KeyCode::Char('t') => handler.next_theme()?,
+            KeyCode::Char('P') => handler.toggle_privacy()?,
             KeyCode::Right => handler.handle_right_arrow()?,
             KeyCode::Left => handler.handle_left_arrow()?,
             KeyCode::Up => handler.handle_up_arrow(),

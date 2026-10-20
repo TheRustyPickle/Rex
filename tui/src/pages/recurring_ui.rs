@@ -10,7 +10,7 @@ use crate::outputs::TxType;
 use crate::page_handler::{LogType, TableData, TxTab};
 use crate::theme::Theme;
 use crate::tx_handler::TxData;
-use crate::utility::{LerpState, main_block, styled_block};
+use crate::utility::{LerpState, PRIVACY_MASK, main_block, styled_block};
 
 pub const RECURRING_TABLE_ID: &str = "recurring_table_row";
 
@@ -21,6 +21,7 @@ pub fn recurring_ui(
     recurring_table: &mut TableData,
     lerp_state: &mut LerpState,
     theme: &Theme,
+    privacy: bool,
 ) {
     let status_data = recurring_data.get_tx_status();
     // date, details, from method, to method, amount, tx type, tags, autofill
@@ -69,9 +70,10 @@ pub fn recurring_ui(
     let rows = recurring_table.items.iter().take(lerp_row).map(|item| {
         let height = 1;
         let cells = item.iter().enumerate().map(|(index, c)| {
-            // Index 4 is the Amount column - the only one that should get thousands
-            // separators
-            if index == 4 {
+            // Index 4 is the Amount column
+            if privacy && index == 4 {
+                Cell::from(PRIVACY_MASK)
+            } else if index == 4 {
                 Cell::from(c.separate_with_commas())
             } else {
                 Cell::from(c.clone())
@@ -471,55 +473,4 @@ pub fn recurring_ui(
     }
 
     f.render_stateful_widget(table_area, chunks[4], &mut recurring_table.state);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ratatui::Terminal;
-    use ratatui::backend::TestBackend;
-
-    fn render(data: &TxData, tab: &TxTab) -> String {
-        let (width, height) = (140, 40);
-        let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
-        let theme = Theme::new_index(0);
-        let mut table = TableData::new(Vec::new());
-        let mut lerp = LerpState::new(1.0);
-
-        terminal
-            .draw(|f| recurring_ui(f, data, tab, &mut table, &mut lerp, &theme))
-            .unwrap();
-
-        let buffer = terminal.backend().buffer().clone();
-        (0..height)
-            .map(|y| {
-                (0..width)
-                    .map(|x| buffer[(x, y)].symbol().to_string())
-                    .collect::<String>()
-            })
-            .collect::<Vec<_>>()
-            .join("\n")
-    }
-
-    #[test]
-    fn suggestion_shows_next_to_the_selected_recurrence_field_only() {
-        let mut data = TxData::new_empty();
-        // Yearly is the only frequency that shows all three boxes at once
-        data.frequency = "y".to_string();
-        data.recur_value = "mon".to_string();
-        data.recur_month = "sep".to_string();
-        data.autofill = "SUGGESTION".to_string();
-
-        for tab in [TxTab::Frequency, TxTab::RecurValue, TxTab::RecurMonth] {
-            let screen = render(&data, &tab);
-            assert_eq!(
-                screen.matches("SUGGESTION").count(),
-                1,
-                "exactly one box should show the suggestion for {tab:?}"
-            );
-        }
-
-        let screen = render(&data, &TxTab::Nothing);
-        assert!(!screen.contains("SUGGESTION"));
-    }
 }

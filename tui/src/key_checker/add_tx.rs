@@ -24,6 +24,7 @@ pub fn add_tx_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutpu
                 KeyCode::Char('y') => handler.go_activity(),
                 KeyCode::Char('u') => handler.go_recurring(),
                 KeyCode::Char('t') => handler.next_theme()?,
+                KeyCode::Char('P') => handler.toggle_privacy()?,
                 KeyCode::Enter => handler.select_date_field(),
                 KeyCode::Char(c) if c.is_numeric() => {
                     handler.handle_number_press();

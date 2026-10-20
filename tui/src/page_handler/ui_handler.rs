@@ -210,6 +210,8 @@ pub fn start_app<B: Backend>(
             popup_status = PopupType::new_choice_config_forced(&theme);
         }
 
+        let privacy = config.privacy_mode.unwrap_or(false);
+
         // Passing out relevant data to the UI function
         terminal
             .draw(|f| {
@@ -223,6 +225,7 @@ pub fn start_app<B: Backend>(
                         &mut lerp_state,
                         &mut home_txs,
                         &theme,
+                        privacy,
                         conn,
                     ),
 
@@ -233,6 +236,7 @@ pub fn start_app<B: Backend>(
                         &add_tx_tab,
                         &mut lerp_state,
                         &theme,
+                        privacy,
                         conn,
                     ),
 
@@ -251,6 +255,7 @@ pub fn start_app<B: Backend>(
                         &mut lerp_state,
                         &chart_view,
                         &theme,
+                        privacy,
                         conn,
                     ),
 
@@ -266,6 +271,7 @@ pub fn start_app<B: Backend>(
                         &mut lerp_state,
                         &full_summary,
                         &theme,
+                        privacy,
                         conn,
                     ),
                     CurrentUi::Search => search_ui(
@@ -276,6 +282,7 @@ pub fn start_app<B: Backend>(
                         search_date_type,
                         &mut lerp_state,
                         &theme,
+                        privacy,
                     ),
                     CurrentUi::Activity => activity_ui(
                         f,
@@ -286,6 +293,7 @@ pub fn start_app<B: Backend>(
                         &mut activity_table,
                         &mut lerp_state,
                         &theme,
+                        privacy,
                     ),
                     CurrentUi::Recurring => recurring_ui(
                         f,
@@ -294,6 +302,7 @@ pub fn start_app<B: Backend>(
                         &mut recurring_table,
                         &mut lerp_state,
                         &theme,
+                        privacy,
                     ),
                 }
 

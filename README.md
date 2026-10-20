@@ -25,6 +25,8 @@ percentage distribution.
 * Find transactions quickly using partial or specific information.
 * Organize transactions with custom tags for easy filtering.
 * Add recurring transactions with flexible interval rules.
+* Privacy mode for hiding balances and amounts.
+* Password protection option for the DB with SQLite cipher.
 * Works fully offline.
 
 <h2>Installation</h2>

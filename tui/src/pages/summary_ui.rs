@@ -9,8 +9,8 @@ use thousands::Separable;
 use crate::page_handler::{IndexedData, SortingType, SummaryTab, TableData};
 use crate::theme::Theme;
 use crate::utility::{
-    LerpState, create_tab, main_block, styled_block, styled_block_no_bottom, styled_block_no_top,
-    tab_highlight_style,
+    LerpState, create_tab, main_block, mask_numeric_cells, styled_block, styled_block_no_bottom,
+    styled_block_no_top, tab_highlight_style,
 };
 
 pub const SUMMARY_TABLE_ID: &str = "summary_table_row";
@@ -28,8 +28,18 @@ pub fn summary_ui(
     lerp_state: &mut LerpState,
     full_summary: &FullSummary,
     theme: &Theme,
+    privacy: bool,
     conn: &mut DbConn,
 ) {
+    // While privacy mode is on, every number of every table gets masked
+    let mask_row = |row: Vec<String>| {
+        if privacy {
+            mask_numeric_cells(row, true)
+        } else {
+            row
+        }
+    };
+
     let size = f.area();
 
     let tags_count = table_data.items.len();
@@ -210,6 +220,8 @@ pub fn summary_ui(
     let rows = table_data
         .items
         .iter()
+        .cloned()
+        .map(mask_row)
         .take(lerp_row)
         .enumerate()
         .map(|(row_index, item)| {
@@ -284,36 +296,36 @@ pub fn summary_ui(
         .block(styled_block(&tags_text, theme))
         .style(Style::default().fg(theme.border()));
 
-    let summary_rows_largest =
-        full_summary
-            .largest_array()
-            .into_iter()
-            .enumerate()
-            .map(|(row_index, item)| {
-                let cells = item.into_iter().enumerate().map(|(index, c)| {
-                    let mut cell = if let Ok(parsed_num) = c.parse::<f64>() {
-                        let lerp_id = format!("summary_table_largest:{index}:{row_index}");
-                        let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
+    let summary_rows_largest = full_summary
+        .largest_array()
+        .into_iter()
+        .map(mask_row)
+        .enumerate()
+        .map(|(row_index, item)| {
+            let cells = item.into_iter().enumerate().map(|(index, c)| {
+                let mut cell = if let Ok(parsed_num) = c.parse::<f64>() {
+                    let lerp_id = format!("summary_table_largest:{index}:{row_index}");
+                    let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
-                        Cell::from(format!("{new_c:.2}").separate_with_commas())
-                    } else {
-                        Cell::from(c.separate_with_commas())
-                    };
+                    Cell::from(format!("{new_c:.2}").separate_with_commas())
+                } else {
+                    Cell::from(c.separate_with_commas())
+                };
 
-                    if index == 0 {
-                        cell = cell.style(
-                            Style::default()
-                                .fg(theme.text())
-                                .add_modifier(Modifier::BOLD),
-                        );
-                    }
-                    cell
-                });
-                Row::new(cells)
-                    .height(1)
-                    .bottom_margin(0)
-                    .style(Style::default().fg(theme.text()))
+                if index == 0 {
+                    cell = cell.style(
+                        Style::default()
+                            .fg(theme.text())
+                            .add_modifier(Modifier::BOLD),
+                    );
+                }
+                cell
             });
+            Row::new(cells)
+                .height(1)
+                .bottom_margin(0)
+                .style(Style::default().fg(theme.text()))
+        });
 
     let summary_area_largest = Table::new(
         summary_rows_largest,
@@ -327,45 +339,45 @@ pub fn summary_ui(
     .block(styled_block("", theme))
     .style(Style::default().fg(theme.border()));
 
-    let summary_rows_peak =
-        full_summary
-            .peak_array()
-            .into_iter()
-            .enumerate()
-            .map(|(row_index, item)| {
-                let height = 1;
-                let cells = item.into_iter().enumerate().map(|(index, c)| {
-                    let mut cell = if let Ok(parsed_num) = c.parse::<f64>() {
-                        let lerp_id = format!("summary_table_peak:{index}:{row_index}");
-                        let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
+    let summary_rows_peak = full_summary
+        .peak_array()
+        .into_iter()
+        .map(mask_row)
+        .enumerate()
+        .map(|(row_index, item)| {
+            let height = 1;
+            let cells = item.into_iter().enumerate().map(|(index, c)| {
+                let mut cell = if let Ok(parsed_num) = c.parse::<f64>() {
+                    let lerp_id = format!("summary_table_peak:{index}:{row_index}");
+                    let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
-                        let text = if index == 1 && row_index == 2 {
-                            // Month count, so whole numbers are enough here
-                            let new_c = new_c as i64;
-                            format!("{new_c}").separate_with_commas()
-                        } else {
-                            format!("{new_c:.2}").separate_with_commas()
-                        };
-
-                        Cell::from(text)
+                    let text = if index == 1 && row_index == 2 {
+                        // Month count, so whole numbers are enough here
+                        let new_c = new_c as i64;
+                        format!("{new_c}").separate_with_commas()
                     } else {
-                        Cell::from(c.separate_with_commas())
+                        format!("{new_c:.2}").separate_with_commas()
                     };
 
-                    if index == 0 {
-                        cell = cell.style(
-                            Style::default()
-                                .fg(theme.text())
-                                .add_modifier(Modifier::BOLD),
-                        );
-                    }
-                    cell
-                });
-                Row::new(cells)
-                    .height(height)
-                    .bottom_margin(0)
-                    .style(Style::default().fg(theme.text()))
+                    Cell::from(text)
+                } else {
+                    Cell::from(c.separate_with_commas())
+                };
+
+                if index == 0 {
+                    cell = cell.style(
+                        Style::default()
+                            .fg(theme.text())
+                            .add_modifier(Modifier::BOLD),
+                    );
+                }
+                cell
             });
+            Row::new(cells)
+                .height(height)
+                .bottom_margin(0)
+                .style(Style::default().fg(theme.text()))
+        });
 
     let summary_area_peak = Table::new(
         summary_rows_peak,
@@ -378,58 +390,56 @@ pub fn summary_ui(
     .block(styled_block("", theme))
     .style(Style::default().fg(theme.border()));
 
-    let method_rows =
-        full_summary
-            .method_array()
-            .into_iter()
-            .enumerate()
-            .map(|(row_index, item)| {
-                let cells = item.into_iter().enumerate().map(|(index, c)| {
-                    let mut cell = if let Ok(parsed_num) = c.parse::<f64>() {
-                        let lerp_id = format!("method_table:{index}:{row_index}");
-                        let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
+    let method_rows = full_summary
+        .method_array()
+        .into_iter()
+        .map(mask_row)
+        .enumerate()
+        .map(|(row_index, item)| {
+            let cells = item.into_iter().enumerate().map(|(index, c)| {
+                let mut cell = if let Ok(parsed_num) = c.parse::<f64>() {
+                    let lerp_id = format!("method_table:{index}:{row_index}");
+                    let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
 
-                        Cell::from(format!("{new_c:.2}").separate_with_commas())
+                    Cell::from(format!("{new_c:.2}").separate_with_commas())
+                } else {
+                    let symbol = if c.contains('↑') || c.contains('↓') {
+                        c.chars().next()
                     } else {
-                        let symbol = if c.contains('↑') || c.contains('↓') {
-                            c.chars().next()
-                        } else {
-                            None
-                        };
-
-                        if let Some(sym) = symbol {
-                            let c = c.replace(sym, "");
-                            if let Ok(parsed_num) = c.parse::<f64>() {
-                                let lerp_id = format!("method_table:{index}:{row_index}");
-                                let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
-
-                                return Cell::from(
-                                    format!("{sym}{new_c:.2}").separate_with_commas(),
-                                );
-                            }
-                        }
-
-                        if c == "∞" {
-                            let lerp_id = format!("method_table:{index}:{row_index}");
-                            lerp_state.lerp(&lerp_id, 0.0, None);
-                        }
-                        Cell::from(c.separate_with_commas())
+                        None
                     };
 
-                    if index == 0 {
-                        cell = cell.style(
-                            Style::default()
-                                .fg(theme.text())
-                                .add_modifier(Modifier::BOLD),
-                        );
+                    if let Some(sym) = symbol {
+                        let c = c.replace(sym, "");
+                        if let Ok(parsed_num) = c.parse::<f64>() {
+                            let lerp_id = format!("method_table:{index}:{row_index}");
+                            let new_c = lerp_state.lerp(&lerp_id, parsed_num, None);
+
+                            return Cell::from(format!("{sym}{new_c:.2}").separate_with_commas());
+                        }
                     }
-                    cell
-                });
-                Row::new(cells)
-                    .height(1)
-                    .bottom_margin(0)
-                    .style(Style::default().fg(theme.text()))
+
+                    if c == "∞" {
+                        let lerp_id = format!("method_table:{index}:{row_index}");
+                        lerp_state.lerp(&lerp_id, 0.0, None);
+                    }
+                    Cell::from(c.separate_with_commas())
+                };
+
+                if index == 0 {
+                    cell = cell.style(
+                        Style::default()
+                            .fg(theme.text())
+                            .add_modifier(Modifier::BOLD),
+                    );
+                }
+                cell
             });
+            Row::new(cells)
+                .height(1)
+                .bottom_margin(0)
+                .style(Style::default().fg(theme.text()))
+        });
 
     let method_widths = if mode_selection.index == 2 {
         vec![
@@ -473,6 +483,13 @@ pub fn summary_ui(
     let lend_borrow_rows = full_summary
         .lend_borrows_array()
         .into_iter()
+        .map(|row| {
+            if privacy {
+                mask_numeric_cells(row, false)
+            } else {
+                row
+            }
+        })
         .enumerate()
         .map(|(row_index, item)| {
             let cells = item.into_iter().enumerate().map(|(index, c)| {
@@ -529,6 +546,7 @@ pub fn summary_ui(
     let net_row = full_summary
         .net_array()
         .into_iter()
+        .map(mask_row)
         .enumerate()
         .map(|(row_index, item)| {
             let cells = item.iter().enumerate().map(|(index, c)| {
