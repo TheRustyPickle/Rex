@@ -11,7 +11,7 @@ use crate::page_handler::{HomeRow, LogType, TxTab};
 use crate::pages::BALANCE_BOLD;
 use crate::theme::Theme;
 use crate::tx_handler::TxData;
-use crate::utility::{LerpState, main_block, styled_block};
+use crate::utility::{LerpState, PRIVACY_MASK, main_block, styled_block};
 
 /// The function draws the Add Transaction page of the interface.
 pub fn add_tx_ui(
@@ -21,6 +21,7 @@ pub fn add_tx_ui(
     add_tx_tab: &TxTab,
     lerp_state: &mut LerpState,
     theme: &Theme,
+    privacy: bool,
     conn: &mut DbConn,
 ) {
     let all_methods: Vec<String> = conn
@@ -117,6 +118,10 @@ pub fn add_tx_ui(
                 } else {
                     None
                 };
+
+                if privacy {
+                    return Cell::from(PRIVACY_MASK);
+                }
 
                 // If loading was complete then this value is to be shown
                 let actual_data: f64 = if row_type != HomeRow::Changes {

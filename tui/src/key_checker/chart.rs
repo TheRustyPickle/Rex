@@ -21,6 +21,7 @@ pub fn chart_keys(handler: &mut InputKeyHandler) -> Result<Option<HandlingOutput
             KeyCode::Char('y') => handler.go_activity(),
             KeyCode::Char('u') => handler.go_recurring(),
             KeyCode::Char('t') => handler.next_theme()?,
+            KeyCode::Char('P') => handler.toggle_privacy()?,
             KeyCode::Right => handler.handle_right_arrow()?,
             KeyCode::Left => handler.handle_left_arrow()?,
             KeyCode::Up => handler.handle_up_arrow(),

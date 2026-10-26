@@ -1,10 +1,10 @@
 use chrono::{Duration, naive::NaiveDate};
 use ratatui::Frame;
-use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::symbols::Marker;
 use ratatui::text::Span;
-use ratatui::widgets::{Axis, Block, Chart, Dataset, GraphType};
+use ratatui::widgets::{Axis, Block, Chart, Dataset, GraphType, Paragraph};
 use rex_app::conn::DbConn;
 use rex_app::views::ChartView;
 use std::collections::HashMap;
@@ -29,6 +29,7 @@ pub fn chart_ui(
     lerp_state: &mut LerpState,
     chart_view: &ChartView,
     theme: &Theme,
+    privacy: bool,
     conn: &mut DbConn,
 ) {
     let size = f.area();
@@ -350,8 +351,11 @@ pub fn chart_ui(
         }
     }
 
+    // The chart is always the last chunk
+    let chart_chunk = chunks[chunks.len() - 1];
+
     if chart_hidden_mode {
-        f.render_widget(chart, chunks[0]);
+        render_chart(f, chart, chart_chunk, privacy, theme);
     } else {
         f.render_widget(mode_selection_tab, chunks[0]);
 
@@ -360,18 +364,28 @@ pub fn chart_ui(
                 f.render_widget(year_tab, chunks[1]);
                 f.render_widget(month_tab, chunks[2]);
                 f.render_widget(tx_method_selection_tab, chunks[3]);
-                f.render_widget(chart, chunks[4]);
             }
             1 => {
                 f.render_widget(year_tab, chunks[1]);
                 f.render_widget(tx_method_selection_tab, chunks[2]);
-                f.render_widget(chart, chunks[3]);
             }
             2 => {
                 f.render_widget(tx_method_selection_tab, chunks[1]);
-                f.render_widget(chart, chunks[2]);
             }
             _ => {}
         }
+
+        render_chart(f, chart, chart_chunk, privacy, theme);
+    }
+}
+
+fn render_chart(f: &mut Frame, chart: Chart, area: Rect, privacy: bool, theme: &Theme) {
+    if privacy {
+        let placeholder = Paragraph::new("Privacy mode is on. Press P to show the chart")
+            .alignment(Alignment::Center)
+            .style(Style::default().bg(theme.background()).fg(theme.border()));
+        f.render_widget(placeholder, area);
+    } else {
+        f.render_widget(chart, area);
     }
 }

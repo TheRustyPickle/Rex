@@ -19,6 +19,25 @@ use crate::outputs::ComparisonType;
 use crate::page_handler::{IndexedData, SortingType};
 use crate::theme::Theme;
 
+pub const PRIVACY_MASK: &str = "••••";
+
+#[must_use]
+pub fn mask_numeric_cells(row: Vec<String>, keep_first: bool) -> Vec<String> {
+    row.into_iter()
+        .enumerate()
+        .map(|(index, cell)| {
+            let without_arrow = cell.trim_start_matches(['↑', '↓']);
+            let numeric = cell == "∞" || without_arrow.parse::<f64>().is_ok();
+
+            if numeric && !(keep_first && index == 0) {
+                PRIVACY_MASK.to_string()
+            } else {
+                cell
+            }
+        })
+        .collect()
+}
+
 pub const RESTRICTED: [&str; 8] = [
     "Total",
     "Balance",
